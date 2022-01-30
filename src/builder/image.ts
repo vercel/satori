@@ -18,13 +18,7 @@ export default function image(
   },
   style: Record<string, number | string>
 ) {
-  let fill = 'transparent'
-  let stroke = 'transparent'
   let clip = ''
-
-  if (style.backgroundColor) {
-    fill = style.backgroundColor as string
-  }
 
   const preserveAspectRatio =
     style.objectFit === 'contain'

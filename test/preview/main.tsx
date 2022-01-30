@@ -78,6 +78,7 @@ const img = document.querySelector('#preview') as HTMLImageElement
           borderTopRightRadius: 20,
           borderBottomRightRadius: 200,
           borderBottomLeftRadius: 20,
+          border: '8px solid gold',
         }}
       >
         7 Principles of Rich Web Applications
