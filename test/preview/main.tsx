@@ -23,6 +23,8 @@ const img = document.querySelector('#preview') as HTMLImageElement
   const width = 400 * 2
   const height = 225 * 2
 
+  const time1 = performance.now()
+
   const svg = satori(
     <div
       style={{
@@ -90,6 +92,7 @@ const img = document.querySelector('#preview') as HTMLImageElement
         style={{
           marginTop: 30,
           borderRadius: 128,
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)',
         }}
       />
     </div>,
@@ -115,6 +118,8 @@ const img = document.querySelector('#preview') as HTMLImageElement
 
   container.innerHTML = svg
 
+  const time2 = performance.now()
+
   const png = await svg2png(svg, {
     scale: 2,
     width: width * 2,
@@ -125,4 +130,9 @@ const img = document.querySelector('#preview') as HTMLImageElement
 
   img.src = blobUrl
   img.style.width = width + 'px'
+
+  const time3 = performance.now()
+
+  console.log('[satori] SVG generated in', time2 - time1, 'ms')
+  console.log('[satori] PNG generated in', time3 - time2, 'ms')
 })()

@@ -19,6 +19,12 @@ satori(
 
 ## Documentation
 
+Satori supports a limited subset of HTML and CSS.
+
+### HTML Elements
+
+### CSS Properties
+
 (TBD)
 
 ## Contribute

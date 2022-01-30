@@ -1,4 +1,5 @@
-import radius from './radius'
+import radius from './border-radius'
+import shadow from './box-shadow'
 
 export default function image(
   {
@@ -36,7 +37,11 @@ export default function image(
     clip = `<clipPath id="satori_c-${id}"><path x="${left}" y="${top}" width="${width}" height="${height}" d="${path}"></path></clipPath>`
   }
 
-  return `${clip}<image href="${src}" x="${left}" y="${top}" width="${width}" height="${height}" preserveAspectRatio="${preserveAspectRatio}" ${
+  const filter = shadow({ width, height, id }, style)
+
+  return `${filter}${
+    filter ? `<g filter="url(#satori_s-${id})">` : ''
+  }${clip}<image href="${src}" x="${left}" y="${top}" width="${width}" height="${height}" preserveAspectRatio="${preserveAspectRatio}" ${
     clip ? `clip-path="url(#satori_c-${id})"` : ''
-  }></image>`
+  }></image>${filter ? '</g>' : ''}`
 }

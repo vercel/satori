@@ -1,7 +1,9 @@
-import radius from './radius'
+import radius from './border-radius'
+import shadow from './box-shadow'
 
 export default function rect(
   {
+    id,
     left,
     top,
     width,
@@ -37,7 +39,11 @@ export default function rect(
     type = 'path'
   }
 
-  return `<${type} x="${left}" y="${top}" width="${width}" height="${height}" fill="${fill}" ${
+  const filter = shadow({ width, height, id }, style)
+
+  return `${filter}${
+    filter ? `<g filter="url(#satori_s-${id})">` : ''
+  }<${type} x="${left}" y="${top}" width="${width}" height="${height}" fill="${fill}" ${
     strokeWidth ? `stroke="${stroke}" stroke-width="${strokeWidth}"` : ''
-  } ${path ? `d="${path}"` : ''}></${type}>`
+  } ${path ? `d="${path}"` : ''}></${type}>${filter ? '</g>' : ''}`
 }
