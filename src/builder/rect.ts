@@ -1,3 +1,5 @@
+import radius from './radius'
+
 export default function rect(
   {
     left,
@@ -5,6 +7,7 @@ export default function rect(
     width,
     height,
   }: {
+    id: number
     left: number
     top: number
     width: number
@@ -12,6 +15,7 @@ export default function rect(
   },
   style: Record<string, number | string>
 ) {
+  let type = 'rect'
   let fill = 'transparent'
   let stroke = 'transparent'
 
@@ -19,5 +23,16 @@ export default function rect(
     fill = style.backgroundColor as string
   }
 
-  return `<rect x="${left}" y="${top}" width="${width}" height="${height}" fill="${fill}" stroke="${stroke}"></rect>`
+  const path = radius(
+    { left, top, width, height },
+    style as Record<string, number>
+  )
+
+  if (path) {
+    type = 'path'
+  }
+
+  return `<${type} x="${left}" y="${top}" width="${width}" height="${height}" fill="${fill}" stroke="${stroke}" ${
+    path ? `d="${path}"` : ''
+  }></${type}>`
 }

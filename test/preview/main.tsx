@@ -73,6 +73,10 @@ const img = document.querySelector('#preview') as HTMLImageElement
           textAlign: 'center',
           background: 'black',
           color: 'white',
+          borderTopLeftRadius: 200,
+          borderTopRightRadius: 20,
+          borderBottomRightRadius: 200,
+          borderBottomLeftRadius: 20,
         }}
       >
         7 Principles of Rich Web Applications

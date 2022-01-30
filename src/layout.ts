@@ -74,9 +74,10 @@ export default function* layout(
     typeof children === 'undefined' ? [] : [].concat(children)
   const iterators: Generator<undefined, string, [number, number]>[] = []
 
+  let i = 0
   for (const child of normalizedChildren) {
     const iter = layout(child, {
-      id,
+      id: id * normalizedChildren.length + ++i,
       parentStyle: computedStyle,
       inheritedStyle: newInheritableStyle,
       parent: node,
@@ -104,7 +105,7 @@ export default function* layout(
     result += iter.next([left, top]).value
   }
 
-  result = rect({ left, top, width, height }, computedStyle) + result
+  result = rect({ id, left, top, width, height }, computedStyle) + result
 
   return result
 }

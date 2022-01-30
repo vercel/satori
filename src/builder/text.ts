@@ -6,6 +6,7 @@ export default function text(
     height,
     content,
   }: {
+    id: number
     left: number
     top: number
     width: number

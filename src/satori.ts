@@ -24,7 +24,7 @@ export default function satori(
   root.setFlexWrap(Yoga.WRAP_WRAP)
 
   const handler = layout(element, {
-    id: 0,
+    id: 1,
     parentStyle: {},
     inheritedStyle: {
       fontSize: 16,

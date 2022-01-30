@@ -12,7 +12,7 @@ import type { LayoutContext } from './layout'
 import text from './builder/text'
 
 export default function* buildTextNodes(content, context: LayoutContext) {
-  const { parentStyle, parent, font } = context
+  const { parentStyle, parent, font, id } = context
 
   const breaker = LineBreaker(content, {
     lineBreak: 'strict',
@@ -71,7 +71,10 @@ export default function* buildTextNodes(content, context: LayoutContext) {
     left += x
     top += y
 
-    result += text({ left, top, width, height, content: words[i] }, parentStyle)
+    result += text(
+      { id, left, top, width, height, content: words[i] },
+      parentStyle
+    )
   }
 
   return result
