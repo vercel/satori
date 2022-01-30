@@ -22,13 +22,22 @@ export default function handler(
   node: YogaNode,
   type: SatoriElement | string,
   inheritedStyle: Record<string, string | number>,
-  definedStyle: Record<string, string | number>
+  definedStyle: Record<string, string | number>,
+  props: Record<string, any>
 ): [Record<string, string | number>, Record<string, string | number>] {
   // Extend the default style with defined and inherited styles.
   const style = {
     ...inheritedStyle,
     ...expand(presets[type], inheritedStyle),
     ...expand(definedStyle, inheritedStyle),
+  }
+
+  if (type === 'img') {
+    const width = parseInt(props.width)
+    const height = parseInt(props.height)
+    const r = height / width
+    if (!style.width) style.width = width
+    if (!style.height) style.height = r * (style.width as number)
   }
 
   // Set properties for Yoga.

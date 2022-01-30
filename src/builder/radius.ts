@@ -79,11 +79,11 @@ export default function radius(
   // Generate the path (GitHub Copilot wrote these for me).
   return `M${left + borderTopLeftRadius},${top} h${
     width - borderTopLeftRadius - borderTopRightRadius
-  } q${borderTopRightRadius},0 ${borderTopRightRadius},${borderTopRightRadius} v${
+  } a${borderTopRightRadius},${borderTopRightRadius} 0 0 1 ${borderTopRightRadius},${borderTopRightRadius} v${
     height - borderTopRightRadius - borderBottomRightRadius
-  } q0,${borderBottomRightRadius} ${-borderBottomRightRadius},${borderBottomRightRadius} h${
+  } a${borderBottomRightRadius},${borderBottomRightRadius} 0 0 1 ${-borderBottomRightRadius},${borderBottomRightRadius} h${
     borderBottomRightRadius + borderBottomLeftRadius - width
-  } q${-borderBottomLeftRadius},0 ${-borderBottomLeftRadius},${-borderBottomLeftRadius} v${
+  } a${borderBottomLeftRadius},${borderBottomLeftRadius} 0 0 1 ${-borderBottomLeftRadius},${-borderBottomLeftRadius} v${
     borderBottomLeftRadius + borderTopLeftRadius - height
-  } q0,${-borderTopLeftRadius} ${borderTopLeftRadius},${-borderTopLeftRadius}`
+  } a${borderTopLeftRadius},${borderTopLeftRadius} 0 0 1 ${borderTopLeftRadius},${-borderTopLeftRadius}`
 }

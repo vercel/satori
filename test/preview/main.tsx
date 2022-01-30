@@ -8,6 +8,7 @@ import fontBold from '../assets/Roboto-Bold.ttf?url'
 // @ts-ignore
 import svg2pngWasm from '../assets/svg2png_wasm_bg.wasm?url'
 
+import image from './image'
 import satori from '../../src'
 
 const container = document.querySelector('#svg')
@@ -81,6 +82,15 @@ const img = document.querySelector('#preview') as HTMLImageElement
       >
         7 Principles of Rich Web Applications
       </div>
+      <img
+        src={image}
+        width={128 * 0.5}
+        height={128 * 0.5}
+        style={{
+          marginTop: 30,
+          borderRadius: 128,
+        }}
+      />
     </div>,
     {
       width,

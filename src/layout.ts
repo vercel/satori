@@ -11,6 +11,7 @@ import handler from './handler'
 import FontLoader from './font'
 import layoutText from './text'
 import rect from './builder/rect'
+import image from './builder/image'
 
 export interface LayoutContext {
   id: number
@@ -66,7 +67,8 @@ export default function* layout(
     node,
     type,
     inheritedStyle,
-    style
+    style,
+    props
   )
 
   // 2. Do layout recursively for its children.
@@ -105,7 +107,13 @@ export default function* layout(
     result += iter.next([left, top]).value
   }
 
-  result = rect({ id, left, top, width, height }, computedStyle) + result
+  if (type === 'img') {
+    result =
+      image({ id, left, top, width, height, src: props.src }, computedStyle) +
+      result
+  } else {
+    result = rect({ id, left, top, width, height }, computedStyle) + result
+  }
 
   return result
 }
