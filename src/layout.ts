@@ -3,24 +3,28 @@
  */
 
 import type { ReactNode } from 'react'
+import type { YogaNode } from 'yoga-layout-prebuilt'
 
 import Yoga from 'yoga-layout-prebuilt'
 import { isReactElement, isClass } from './utils'
 import handler from './handler'
 import FontLoader from './font'
+import layoutText from './text'
+import rect from './builder/rect'
 
-interface LayoutContext {
+export interface LayoutContext {
   id: number
+  parentStyle: Record<string, number | string>
   inheritedStyle: Record<string, number | string>
-  parent: Yoga.YogaNode
+  parent: YogaNode
   font: FontLoader
 }
 
 export default function* layout(
   element: ReactNode,
   context: LayoutContext
-): Generator<undefined, string> {
-  const { id, inheritedStyle, parent, font } = context
+): Generator<undefined, string, [number, number]> {
+  const { id, parentStyle, inheritedStyle, parent, font } = context
 
   // 1. Pre-process the node.
   if (element === null || typeof element === 'undefined') {
@@ -28,62 +32,52 @@ export default function* layout(
     return ''
   }
 
-  // Process as text node.
-  if (!isReactElement(element)) {
-    const content = String(element)
+  // Not a normal element.
+  if (!isReactElement(element) || typeof element.type === 'function') {
+    let iter: ReturnType<typeof layout>
 
-    const node = Yoga.Node.create()
-    parent.insertChild(node, parent.getChildCount())
+    if (!isReactElement(element)) {
+      // Process as text node.
+      iter = layoutText(String(element), context)
+    } else {
+      if (isClass(element.type as Function)) {
+        throw new Error('Class component is not supported.')
+      }
+      // If it's a custom component, Satori strictly requires it to be pure,
+      // stateless, and not relying on any React APIs such as hooks or suspense.
+      // So we can safely evaluate it to render. Otherwise, an error will be
+      // thrown by React.
+      iter = layout((element.type as Function)(element.props), context)
+    }
 
-    const measured = font.measure(content, {
-      ...inheritedStyle,
-      name: inheritedStyle.fontFamily,
-    } as any)
-
-    node.setDisplay(Yoga.DISPLAY_FLEX)
-    node.setWidth(measured.width)
-    node.setHeight((measured.ascent + measured.descent) * 1.2)
-
-    yield
-
-    const { left, top, width, height } = node.getComputedLayout()
-    return `<text x="${left}" y="${top}" width="${width}" height="${height}">${content}</text>`
+    iter.next()
+    const offset = yield
+    return iter.next(offset).value
   }
 
   // Process as element.
   const { type, props } = element
   const { style, children } = props
 
-  if (typeof type === 'function') {
-    if (isClass(type)) {
-      throw new Error('Class component is not supported.')
-    }
-    // If it's a custom component, Satori strictly requires it to be pure,
-    // stateless, and not relying on any React APIs such as hooks or suspense.
-    // So we can safely evaluate it to render. Otherwise, an error will be
-    // thrown by React.
-    const iter = layout((type as Function)(props), context)
-    iter.next().value
-    yield
-    return iter.next().value
-  }
-
   const node = Yoga.Node.create()
   parent.insertChild(node, parent.getChildCount())
 
-  const newInheritableStyle = handler(node, type, {
-    ...inheritedStyle,
-    ...style,
-  })
+  const [computedStyle, newInheritableStyle] = handler(
+    node,
+    type,
+    inheritedStyle,
+    style
+  )
 
   // 2. Do layout recursively for its children.
   const normalizedChildren =
     typeof children === 'undefined' ? [] : [].concat(children)
-  const iterators: Generator<undefined, string>[] = []
+  const iterators: Generator<undefined, string, [number, number]>[] = []
 
   for (const child of normalizedChildren) {
     const iter = layout(child, {
       id,
+      parentStyle: computedStyle,
       inheritedStyle: newInheritableStyle,
       parent: node,
       font,
@@ -92,17 +86,21 @@ export default function* layout(
     iterators.push(iter)
   }
 
-  yield
-
   // 3. Post-process the node.
+  const [x, y] = yield
+
+  let { left, top, width, height } = node.getComputedLayout()
+
+  // Attach offset to the current node.
+  left += x
+  top += y
+
   let result = ''
   for (const iter of iterators) {
-    result += iter.next().value
+    result += iter.next([left, top]).value
   }
 
-  const { left, top, width, height } = node.getComputedLayout()
-
-  result = `<${type} x="${left}" y="${top}" width="${width}" height="${height}">\n${result}\n</${type}>`
+  result = rect({ left, top, width, height }, computedStyle) + result
 
   return result
 }

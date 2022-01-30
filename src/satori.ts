@@ -19,11 +19,12 @@ export default function satori(
   const root = Yoga.Node.create()
   root.setWidth(options.width)
   root.setHeight(options.height)
-  root.setFlexDirection(Yoga.FLEX_DIRECTION_COLUMN)
+  root.setFlexDirection(Yoga.FLEX_DIRECTION_ROW)
   root.setFlexWrap(Yoga.WRAP_WRAP)
 
   const handler = layout(element, {
     id: 0,
+    parentStyle: {},
     inheritedStyle: {
       fontSize: 16,
       fontWeight: 'normal',
@@ -38,5 +39,7 @@ export default function satori(
 
   handler.next()
   root.calculateLayout(options.width, options.height, Yoga.DIRECTION_LTR)
-  return handler.next().value
+
+  const content = handler.next([0, 0]).value
+  return `<svg width="${options.width}" height="${options.height}" viewBox="0 0 ${options.width} ${options.height}" xmlns="http://www.w3.org/2000/svg">${content}</svg>`
 }

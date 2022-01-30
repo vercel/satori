@@ -8,6 +8,7 @@ import type { YogaNode } from 'yoga-layout-prebuilt'
 
 import Yoga from 'yoga-layout-prebuilt'
 import presets from './presets'
+import inheritable from './inheritable'
 
 type SatoriElement = keyof typeof presets
 
@@ -19,10 +20,11 @@ function v(field: string, map: Record<string, any>, fallback: any) {
 export default function handler(
   node: YogaNode,
   type: SatoriElement | string,
-  inheritedStyle: Record<string, string | number>
-): Record<string, string | number> {
+  inheritedStyle: Record<string, string | number>,
+  definedStyle: Record<string, string | number>
+): [Record<string, string | number>, Record<string, string | number>] {
   // Extend the default style with defined and inherited styles.
-  const style = { ...presets[type], ...inheritedStyle }
+  const style = { ...inheritedStyle, ...presets[type], ...definedStyle }
 
   // Set properties for Yoga.
   node.setDisplay(
@@ -49,7 +51,7 @@ export default function handler(
         baseline: Yoga.ALIGN_BASELINE,
         normal: Yoga.ALIGN_AUTO,
       },
-      Yoga.ALIGN_AUTO
+      Yoga.ALIGN_FLEX_START
     )
   )
   node.setAlignItems(
@@ -63,7 +65,7 @@ export default function handler(
         baseline: Yoga.ALIGN_BASELINE,
         normal: Yoga.ALIGN_AUTO,
       },
-      Yoga.ALIGN_AUTO
+      Yoga.ALIGN_FLEX_START
     )
   )
   node.setAlignSelf(
@@ -98,7 +100,13 @@ export default function handler(
   // @TODO: node.setFlex
   if (typeof style.flexBasis !== 'undefined') {
     node.setFlexBasis(style.flexBasis)
+  } else {
+    // For block elements, `flexBasis` is set to 100% by default.
+    if (style.display === 'block') {
+      node.setFlexBasisPercent(100)
+    }
   }
+
   node.setFlexDirection(
     v(
       style.flexDirection,
@@ -197,5 +205,5 @@ export default function handler(
     node.setWidthAuto()
   }
 
-  return style
+  return [style, inheritable(style)]
 }

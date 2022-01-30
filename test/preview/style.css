@@ -1,0 +1,33 @@
+@font-face {
+  font-family: Roboto;
+  font-weight: 400;
+  src: url('../assets/Roboto-Regular.ttf');
+}
+@font-face {
+  font-family: Roboto;
+  font-weight: 700;
+  src: url('../assets/Roboto-Bold.ttf');
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
+    Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji,
+    Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+  -webkit-font-smoothing: antialiased;
+  font-variant: common-ligatures contextual;
+  letter-spacing: -0.015em;
+  margin: 0;
+  padding: 2em;
+  max-width: 100%;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+#container {
+  display: flex;
+  gap: 1em;
+}
+#svg,
+#preview {
+  display: flex;
+  border: 1px solid;
+}

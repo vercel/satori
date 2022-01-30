@@ -109,18 +109,22 @@ export default class FontLoader {
   public measure(
     content: string,
     {
-      name,
+      fontFamily,
       fontSize,
       fontWeight = 400,
       fontStyle = 'normal',
     }: {
-      name: string
+      fontFamily: string
       fontSize: number
       fontWeight?: Weight | WeigthName
       fontStyle?: Style
     }
   ) {
-    const font = this.get({ name, weight: fontWeight, style: fontStyle })
+    const font = this.get({
+      name: fontFamily,
+      weight: fontWeight,
+      style: fontStyle,
+    })
 
     return {
       width: font.getAdvanceWidth(content, fontSize),
