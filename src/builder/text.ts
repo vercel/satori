@@ -14,5 +14,13 @@ export default function text(
   },
   style: Record<string, number | string>
 ) {
-  return `<text x="${left}" y="${top}" width="${width}" height="${height}" fill="${style.color}" font-weight="${style.fontWeight}" font-style="${style.fontStyle}" font-size="${style.fontSize}" font-family="${style.fontFamily}">${content}</text>`
+  return `<text x="${left}" y="${
+    top + height
+  }" width="${width}" height="${height}" fill="${style.color}" font-weight="${
+    style.fontWeight
+  }" font-style="${style.fontStyle}" font-size="${
+    style.fontSize
+  }" font-family="${style.fontFamily}" letter-spacing="${
+    style.letterSpacing
+  }">${content}</text>`
 }

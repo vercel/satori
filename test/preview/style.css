@@ -24,10 +24,17 @@ body {
 }
 #container {
   display: flex;
+  max-width: 100%;
+  flex-direction: column;
   gap: 1em;
 }
 #svg,
 #preview {
   display: flex;
+}
+#container svg,
+#container img {
   border: 1px solid;
+  max-width: 100%;
+  height: auto;
 }

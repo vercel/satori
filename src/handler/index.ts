@@ -9,10 +9,11 @@ import type { YogaNode } from 'yoga-layout-prebuilt'
 import Yoga from 'yoga-layout-prebuilt'
 import presets from './presets'
 import inheritable from './inheritable'
+import expand from './expand'
 
 type SatoriElement = keyof typeof presets
 
-function v(field: string, map: Record<string, any>, fallback: any) {
+function v(field: string | number, map: Record<string, any>, fallback: any) {
   const value = map[field]
   return typeof value === 'undefined' ? fallback : value
 }
@@ -24,7 +25,11 @@ export default function handler(
   definedStyle: Record<string, string | number>
 ): [Record<string, string | number>, Record<string, string | number>] {
   // Extend the default style with defined and inherited styles.
-  const style = { ...inheritedStyle, ...presets[type], ...definedStyle }
+  const style = {
+    ...inheritedStyle,
+    ...expand(presets[type], inheritedStyle),
+    ...expand(definedStyle, inheritedStyle),
+  }
 
   // Set properties for Yoga.
   node.setDisplay(
@@ -38,6 +43,7 @@ export default function handler(
     )
   )
 
+  // if (style.alignContent) {
   node.setAlignContent(
     v(
       style.alignContent,
@@ -51,9 +57,11 @@ export default function handler(
         baseline: Yoga.ALIGN_BASELINE,
         normal: Yoga.ALIGN_AUTO,
       },
-      Yoga.ALIGN_FLEX_START
+      Yoga.ALIGN_AUTO
     )
   )
+  // }
+
   node.setAlignItems(
     v(
       style.alignItems,
@@ -102,7 +110,11 @@ export default function handler(
     node.setFlexBasis(style.flexBasis)
   } else {
     // For block elements, `flexBasis` is set to 100% by default.
-    if (style.display === 'block') {
+    if (
+      style.display === 'block' &&
+      (typeof style.width === 'undefined' || style.width === 'auto') &&
+      (typeof style.maxWidth === 'undefined' || style.maxWidth === 'auto')
+    ) {
       node.setFlexBasisPercent(100)
     }
   }
@@ -119,8 +131,8 @@ export default function handler(
       Yoga.FLEX_DIRECTION_ROW
     )
   )
-  node.setFlexGrow(style.flexGrow || 0)
-  node.setFlexShrink(style.flexShrink || 1)
+  node.setFlexGrow((style.flexGrow as number) || 0)
+  node.setFlexShrink((style.flexShrink as number) || 1)
   node.setFlexWrap(
     v(
       style.flexWrap,
@@ -157,15 +169,15 @@ export default function handler(
     )
   )
 
-  node.setMargin(Yoga.EDGE_TOP, style.marginTop || 0)
-  node.setMargin(Yoga.EDGE_BOTTOM, style.marginBottom || 0)
-  node.setMargin(Yoga.EDGE_LEFT, style.marginLeft || 0)
-  node.setMargin(Yoga.EDGE_RIGHT, style.marginRight || 0)
+  node.setMargin(Yoga.EDGE_TOP, (style.marginTop as number) || 0)
+  node.setMargin(Yoga.EDGE_BOTTOM, (style.marginBottom as number) || 0)
+  node.setMargin(Yoga.EDGE_LEFT, (style.marginLeft as number) || 0)
+  node.setMargin(Yoga.EDGE_RIGHT, (style.marginRight as number) || 0)
 
-  node.setBorder(Yoga.EDGE_TOP, style.borderTopWidth || 0)
-  node.setBorder(Yoga.EDGE_BOTTOM, style.borderBottomWidth || 0)
-  node.setBorder(Yoga.EDGE_LEFT, style.borderLeftWidth || 0)
-  node.setBorder(Yoga.EDGE_RIGHT, style.borderRightWidth || 0)
+  node.setBorder(Yoga.EDGE_TOP, (style.borderTopWidth as number) || 0)
+  node.setBorder(Yoga.EDGE_BOTTOM, (style.borderBottomWidth as number) || 0)
+  node.setBorder(Yoga.EDGE_LEFT, (style.borderLeftWidth as number) || 0)
+  node.setBorder(Yoga.EDGE_RIGHT, (style.borderRightWidth as number) || 0)
 
   node.setPadding(Yoga.EDGE_TOP, style.paddingTop || 0)
   node.setPadding(Yoga.EDGE_BOTTOM, style.paddingBottom || 0)

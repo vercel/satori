@@ -24,7 +24,7 @@ export default function* layout(
   element: ReactNode,
   context: LayoutContext
 ): Generator<undefined, string, [number, number]> {
-  const { id, parentStyle, inheritedStyle, parent, font } = context
+  const { id, inheritedStyle, parent, font } = context
 
   // 1. Pre-process the node.
   if (element === null || typeof element === 'undefined') {
@@ -88,6 +88,10 @@ export default function* layout(
 
   // 3. Post-process the node.
   const [x, y] = yield
+
+  if (style.position === 'absolute') {
+    node.calculateLayout()
+  }
 
   let { left, top, width, height } = node.getComputedLayout()
 

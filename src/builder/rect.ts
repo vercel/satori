@@ -12,5 +12,12 @@ export default function rect(
   },
   style: Record<string, number | string>
 ) {
-  return `<rect x="${left}" y="${top}" width="${width}" height="${height}" fill="transparent"></rect>`
+  let fill = 'transparent'
+  let stroke = 'transparent'
+
+  if (style.backgroundColor) {
+    fill = style.backgroundColor as string
+  }
+
+  return `<rect x="${left}" y="${top}" width="${width}" height="${height}" fill="${fill}" stroke="${stroke}"></rect>`
 }

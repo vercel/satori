@@ -19,20 +19,63 @@ const img = document.querySelector('#preview') as HTMLImageElement
   const fontData = await (await fetch(font)).arrayBuffer()
   const fontData2 = await (await fetch(fontBold)).arrayBuffer()
 
-  const width = 200
-  const height = 400
+  const width = 400 * 2
+  const height = 225 * 2
 
   const svg = satori(
-    <div style={{ fontFamily: 'Roboto' }}>
-      <p>
-        test <b>hi</b>
-        <b style={{ color: 'red' }}>hi</b>
-      </p>
-      <div>
-        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Aliquid quis
-        voluptate dolore, quaerat pariatur soluta vel, sint tempora quibusdam
-        obcaecati, quas sunt unde! Hic numquam magni nihil tenetur corporis
-        consectetur.
+    <div
+      style={{
+        display: 'flex',
+        height: '100%',
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        fontFamily: 'Roboto',
+        backgroundColor: 'white',
+      }}
+    >
+      <div
+        style={{
+          left: 42,
+          top: 42,
+          position: 'absolute',
+          display: 'flex',
+          alignItems: 'center',
+        }}
+      >
+        <span
+          style={{
+            width: 24,
+            height: 24,
+            background: 'black',
+          }}
+        />
+        <span
+          style={{
+            marginLeft: 8,
+            letterSpacing: -0.2,
+            fontSize: 20,
+            fontWeight: 700,
+          }}
+        >
+          rauchg.com
+        </span>
+      </div>
+      <div
+        style={{
+          padding: '20px 40px',
+          letterSpacing: -0.05,
+          fontSize: 40,
+          fontWeight: 700,
+          width: 'auto',
+          maxWidth: 600,
+          textAlign: 'center',
+          background: 'black',
+          color: 'white',
+        }}
+      >
+        7 Principles of Rich Web Applications
       </div>
     </div>,
     {
@@ -67,5 +110,4 @@ const img = document.querySelector('#preview') as HTMLImageElement
 
   img.src = blobUrl
   img.style.width = width + 'px'
-  img.style.height = height + 'px'
 })()

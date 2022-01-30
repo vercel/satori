@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import Yoga from 'yoga-layout-prebuilt'
 import layout from './layout'
 import FontLoader, { FontOptions } from './font'
+import svg from './builder/svg'
 
 interface SatoriOptions {
   width: number
@@ -41,5 +42,5 @@ export default function satori(
   root.calculateLayout(options.width, options.height, Yoga.DIRECTION_LTR)
 
   const content = handler.next([0, 0]).value
-  return `<svg width="${options.width}" height="${options.height}" viewBox="0 0 ${options.width} ${options.height}" xmlns="http://www.w3.org/2000/svg">${content}</svg>`
+  return svg({ width: options.width, height: options.height, content })
 }
