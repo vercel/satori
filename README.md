@@ -86,6 +86,10 @@ For example, the `<input>` HTML element, the `cursor` CSS property are not in co
 | `background-color` | Supported |
 | `background-image` | Support `linear-gradient`, `url` |
 | `background-clip` | TBD |
+| `background-size` | TBD |
+| `background-position` | TBD |
+| `background-repeat` | TBD |
+| `background-origin` | TBD |
 | `text-decoration` | TBD |
 | `text-shadow` | TBD |
 | `text-transform` | TBD |

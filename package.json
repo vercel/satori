@@ -40,15 +40,10 @@
   "dependencies": {
     "css-background-parser": "^0.1.0",
     "css-line-break": "^2.1.0",
-    "css-property-parser": "^1.0.6",
-    "css-shorthand-expanders": "^1.1.0",
     "css-to-react-native": "^3.0.0",
     "gradient-parser": "^1.0.2",
     "opentype.js": "^1.3.4",
     "parse-css-dimension": "^1.1.0",
-    "parse-css-font": "^4.0.0",
-    "yoga-layout-prebuilt": "^1.10.0",
-    "yoga-layout-wasm": "^1.9.3-alpha.7",
-    "yoga-wasm": "^0.0.2"
+    "yoga-layout-prebuilt": "^1.10.0"
   }
 }
