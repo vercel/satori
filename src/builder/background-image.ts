@@ -125,13 +125,21 @@ export default function backgroundImage(
     }
 
     return [
-      `satori_lg${id}`,
-      `<linearGradient id="satori_lg${id}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${stops
+      `satori_bi${id}`,
+      `<linearGradient id="satori_bi${id}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${stops
         .map(
           (stop) =>
             `<stop offset="${stop.offset * 100}%" stop-color="${stop.color}"/>`
         )
         .join('')}</linearGradient>`,
+    ]
+  }
+
+  if (image.startsWith('url(')) {
+    const src = image.slice(4, -1)
+    return [
+      `satori_bi${id}`,
+      `<pattern id="satori_bi${id}" patternContentUnits="objectBoundingBox" width="1" height="1"><image href="${src}" x="0" y="0" width="1" height="1"/></pattern>`,
     ]
   }
 }

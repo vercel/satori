@@ -35,7 +35,7 @@ const img = document.querySelector('#preview') as HTMLImageElement
         justifyContent: 'center',
         flexDirection: 'column',
         fontFamily: 'Roboto',
-        backgroundColor: 'white',
+        backgroundImage: 'linear-gradient(to bottom, white, #ddd)',
       }}
     >
       <div
@@ -74,9 +74,7 @@ const img = document.querySelector('#preview') as HTMLImageElement
           width: 'auto',
           maxWidth: 550,
           textAlign: 'center',
-          backgroundColor: 'blue',
-          backgroundImage:
-            'linear-gradient(to bottom, red, transparent), linear-gradient(to right, green, transparent)',
+          backgroundImage: `url(${image}), linear-gradient(to bottom, red, transparent), linear-gradient(to right, green, transparent)`,
           color: 'white',
           borderTopLeftRadius: 100,
           borderTopRightRadius: 20,
