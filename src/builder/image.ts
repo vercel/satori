@@ -19,6 +19,8 @@ export default function image(
   },
   style: Record<string, number | string>
 ) {
+  if (style.display === 'none') return ''
+
   let clip = ''
 
   const preserveAspectRatio =

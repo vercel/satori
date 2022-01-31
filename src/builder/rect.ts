@@ -17,6 +17,8 @@ export default function rect(
   },
   style: Record<string, number | string>
 ) {
+  if (style.display === 'none') return ''
+
   let type = 'rect'
   let fill = 'transparent'
   let stroke = 'transparent'
