@@ -9,12 +9,14 @@ export default function rect(
     top,
     width,
     height,
+    isInheritingTransform,
   }: {
     id: number
     left: number
     top: number
     width: number
     height: number
+    isInheritingTransform: boolean
   },
   style: Record<string, number | string>
 ) {
@@ -38,7 +40,8 @@ export default function rect(
   if (style.transform) {
     matrix = transform(
       { left, top, width, height },
-      style.transform as unknown as number[]
+      style.transform as unknown as number[],
+      isInheritingTransform
     )
   }
 

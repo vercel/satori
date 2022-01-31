@@ -157,7 +157,7 @@ export default function expand(
         matrix = multiply(matrix, transformMatrix)
       }
 
-      transformedStyle.transform = multiply(baseMatrix, matrix)
+      transformedStyle.transform = multiply(baseTransform, matrix)
     }
   }
 

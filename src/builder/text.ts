@@ -1,3 +1,5 @@
+import transform from './transform'
+
 export default function text(
   {
     left,
@@ -5,6 +7,7 @@ export default function text(
     width,
     height,
     content,
+    isInheritingTransform,
   }: {
     id: number
     left: number
@@ -12,9 +15,20 @@ export default function text(
     width: number
     height: number
     content: string
+    isInheritingTransform: boolean
   },
   style: Record<string, number | string>
 ) {
+  let matrix = ''
+
+  if (style.transform) {
+    matrix = transform(
+      { left, top, width, height },
+      style.transform as unknown as number[],
+      isInheritingTransform
+    )
+  }
+
   return `<text x="${left}" y="${
     top + height
   }" width="${width}" height="${height}" fill="${style.color}" font-weight="${
@@ -23,5 +37,5 @@ export default function text(
     style.fontSize
   }" font-family="${style.fontFamily}" ${
     style.letterSpacing ? `letter-spacing="${style.letterSpacing}"` : ''
-  }>${content}</text>`
+  } ${matrix ? `transform="${matrix}"` : ''}>${content}</text>`
 }

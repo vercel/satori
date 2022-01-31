@@ -17,6 +17,7 @@ export interface LayoutContext {
   id: number
   parentStyle: Record<string, number | string>
   inheritedStyle: Record<string, number | string>
+  isInheritingTransform?: boolean
   parent: YogaNode
   font: FontLoader
 }
@@ -70,11 +71,15 @@ export default function* layout(
     style,
     props
   )
+  // If the element is inheriting the parent `transform`, or applying its own.
+  // This affects the coordinate system.
+  const isInheritingTransform =
+    computedStyle.transform === inheritedStyle.transform
 
   // 2. Do layout recursively for its children.
   const normalizedChildren =
     typeof children === 'undefined' ? [] : [].concat(children)
-  const iterators: Generator<undefined, string, [number, number]>[] = []
+  const iterators: ReturnType<typeof layout>[] = []
 
   let i = 0
   for (const child of normalizedChildren) {
@@ -82,6 +87,7 @@ export default function* layout(
       id: id * normalizedChildren.length + ++i,
       parentStyle: computedStyle,
       inheritedStyle: newInheritableStyle,
+      isInheritingTransform: true,
       parent: node,
       font,
     })
@@ -103,16 +109,21 @@ export default function* layout(
   top += y
 
   let result = ''
-  for (const iter of iterators) {
-    result += iter.next([left, top]).value
-  }
 
   if (type === 'img') {
-    result =
-      image({ id, left, top, width, height, src: props.src }, computedStyle) +
-      result
+    result = image(
+      { id, left, top, width, height, src: props.src, isInheritingTransform },
+      computedStyle
+    )
   } else {
-    result = rect({ id, left, top, width, height }, computedStyle) + result
+    result = rect(
+      { id, left, top, width, height, isInheritingTransform },
+      computedStyle
+    )
+  }
+
+  for (const iter of iterators) {
+    result += iter.next([left, top]).value
   }
 
   return result

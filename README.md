@@ -88,6 +88,7 @@ For example, the `<input>` HTML element, the `cursor` CSS property are not in co
 | `text-shadow` | TBD |
 | `text-transform` | TBD |
 | `word-break` | TBD |
+| `transform-origin` | TBD |
 
 Note:
 

@@ -10,7 +10,7 @@ import type { LayoutContext } from './layout'
 import text from './builder/text'
 
 export default function* buildTextNodes(content, context: LayoutContext) {
-  const { parentStyle, parent, font, id } = context
+  const { parentStyle, parent, font, id, isInheritingTransform } = context
 
   const breaker = LineBreaker(content, {
     lineBreak: 'strict',
@@ -70,7 +70,15 @@ export default function* buildTextNodes(content, context: LayoutContext) {
     top += y
 
     result += text(
-      { id, left, top, width, height, content: words[i] },
+      {
+        id,
+        left,
+        top,
+        width,
+        height,
+        content: words[i],
+        isInheritingTransform,
+      },
       parentStyle
     )
   }

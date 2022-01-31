@@ -85,7 +85,8 @@ const img = document.querySelector('#preview') as HTMLImageElement
             'rotate(-10deg) translate(0, -10px) skewX(-10deg) scale(1.2, 1.2)',
         }}
       >
-        7 Principles of Rich Web Applications
+        7 Principles of Rich <span style={{ color: 'red' }}>Web</span>{' '}
+        Applications
       </div>
       <img
         src={image}

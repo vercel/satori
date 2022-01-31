@@ -8,8 +8,9 @@ const list = new Set([
   'lineHeight',
   'textAlign',
   'textTransform',
-  'white-space',
-  'letter-spacing',
+  'whiteSpace',
+  'letterSpacing',
+  'transform',
 ])
 
 export default function inheritable(style: Record<string, any>) {

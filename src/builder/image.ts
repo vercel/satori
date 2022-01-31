@@ -16,6 +16,7 @@ export default function image(
     width: number
     height: number
     src: string
+    isInheritingTransform: boolean
   },
   style: Record<string, number | string>
 ) {
