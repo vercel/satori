@@ -68,13 +68,15 @@ const img = document.querySelector('#preview') as HTMLImageElement
       <div
         style={{
           padding: '20px 40px',
-          letterSpacing: -0.05,
+          letterSpacing: -2,
           fontSize: 40,
           fontWeight: 700,
           width: 'auto',
           maxWidth: 550,
           textAlign: 'center',
-          background: 'black',
+          backgroundColor: 'blue',
+          backgroundImage:
+            'linear-gradient(to bottom, red, transparent), linear-gradient(to right, green, transparent)',
           color: 'white',
           borderTopLeftRadius: 100,
           borderTopRightRadius: 20,
@@ -85,11 +87,16 @@ const img = document.querySelector('#preview') as HTMLImageElement
             'rotate(-10deg) translate(0, -10px) skewX(-10deg) scale(1.2, 1.2)',
         }}
       >
-        7 Principles of Rich{' '}
-        <span style={{ color: 'red', transform: 'rotate(45deg) scale(2, 2)' }}>
-          Web
+        7 Principles of{' '}
+        <span
+          style={{
+            color: 'red',
+            transform: 'rotate(45deg) scale(1.8, 1.8)',
+          }}
+        >
+          Rich
         </span>{' '}
-        Applications
+        Web Applications
       </div>
       <img
         src={image}

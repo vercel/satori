@@ -5,6 +5,7 @@
 
 import transform, { getPropertyName } from 'css-to-react-native'
 import CssDimension from 'parse-css-dimension'
+import { parseElementStyle } from 'css-background-parser'
 import { multiply } from '../utils'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
@@ -74,6 +75,12 @@ export default function expand(
     rules.push([name, purify(name, style[prop])])
   }
   const transformedStyle = transform(rules)
+
+  // Parse background images.
+  if (transformedStyle.backgroundImage) {
+    const { backgrounds } = parseElementStyle(transformedStyle)
+    transformedStyle.backgroundImage = backgrounds
+  }
 
   // Calculate the base font size.
   let baseFontSize: number =

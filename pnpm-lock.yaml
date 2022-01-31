@@ -5,10 +5,12 @@ specifiers:
   '@types/node': ^17.0.13
   '@types/opentype.js': ^1.3.3
   '@types/react': ^17.0.38
+  css-background-parser: ^0.1.0
   css-line-break: ^2.1.0
   css-property-parser: ^1.0.6
   css-shorthand-expanders: ^1.1.0
   css-to-react-native: ^3.0.0
+  gradient-parser: ^1.0.2
   opentype.js: ^1.3.4
   parse-css-dimension: ^1.1.0
   parse-css-font: ^4.0.0
@@ -22,10 +24,12 @@ specifiers:
   yoga-wasm: ^0.0.2
 
 dependencies:
+  css-background-parser: 0.1.0
   css-line-break: 2.1.0
   css-property-parser: 1.0.6
   css-shorthand-expanders: 1.1.0
   css-to-react-native: 3.0.0
+  gradient-parser: 1.0.2
   opentype.js: 1.3.4
   parse-css-dimension: 1.1.0
   parse-css-font: 4.0.0
@@ -197,6 +201,10 @@ packages:
   /css-angle-units/1.0.1:
     resolution: {integrity: sha1-MobuZr323LBHAPaNrDzZZDJftjU=}
     engines: {node: '>=0.10.0'}
+    dev: false
+
+  /css-background-parser/0.1.0:
+    resolution: {integrity: sha1-SKF/f+bU1PG8oxd93xbFYXlQdBs=}
     dev: false
 
   /css-color-keywords/1.0.0:
@@ -525,6 +533,11 @@ packages:
 
   /graceful-fs/4.2.9:
     resolution: {integrity: sha512-NtNxqUcXgpW2iMrfqSfR73Glt39K+BLwWsPs94yR63v45T0Wbej7eRmL5cWfwEgqXnmjQp3zaJTshdRW/qC2ZQ==}
+
+  /gradient-parser/1.0.2:
+    resolution: {integrity: sha512-gR6nY33xC9yJoH4wGLQtZQMXDi6RI3H37ERu7kQCVUzlXjNedpZM7xcA489Opwbq0BSGohtWGsWsntupmxelMg==}
+    engines: {node: '>=0.10.0'}
+    dev: false
 
   /has-flag/3.0.0:
     resolution: {integrity: sha1-tdRU3CGZriJWmfNGfloH87lVuv0=}

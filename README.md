@@ -1,5 +1,5 @@
 <h1 align="center">
-  🄪 Satori
+  Satori
 </h1>
 
 ## Quick Start
@@ -76,14 +76,15 @@ For example, the `<input>` HTML element, the `cursor` CSS property are not in co
 | `font-style` | Supported |
 | `text-align` | Supported |
 | `letter-spacing` | Supported |
-| `box-shadow` | All supported except spread-radius |
+| `box-shadow` | All supported except spread-radius (works like `drop-shadow`) |
 | `border-radius` | Supported |
 | `overflow` | `visible`, `hidden` |
 | `color` | Supported |
 | `transform` | Support absolute values |
 | `object-fit` | `contain`, `cover`, `none` |
 | `background-color` | Supported |
-| `background-image` | TBD |
+| `background-image` | Support `linear-gradient` |
+| `background-clip` | TBD |
 | `opacity` | TBD |
 | `text-decoration` | TBD |
 | `text-shadow` | TBD |
