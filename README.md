@@ -81,6 +81,7 @@ For example, the `<input>` HTML element, the `cursor` CSS property are not in co
 | `overflow` | `visible`, `hidden` |
 | `color` | Supported |
 | `transform` | Support absolute values |
+| `object-fit` | `contain`, `cover`, `none` |
 | `background-color` | Supported |
 | `background-image` | TBD |
 | `opacity` | TBD |

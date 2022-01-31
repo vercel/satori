@@ -75,6 +75,9 @@ export default function* layout(
   // This affects the coordinate system.
   const isInheritingTransform =
     computedStyle.transform === inheritedStyle.transform
+  if (!isInheritingTransform) {
+    ;(computedStyle.transform as any).__parent = inheritedStyle.transform
+  }
 
   // 2. Do layout recursively for its children.
   const normalizedChildren =

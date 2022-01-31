@@ -95,10 +95,6 @@ export default function expand(
   }
   transformedStyle.fontSize = baseFontSize
 
-  // Base transform matrix.
-  const baseTransform =
-    (inheritedStyle.transform as unknown as number[]) || baseMatrix
-
   for (const prop in transformedStyle) {
     const value = transformedStyle[prop]
 
@@ -118,8 +114,7 @@ export default function expand(
       const transforms = value as { [type: string]: number | string }[]
 
       // Transforms are applied from right to left.
-      for (let i = transforms.length - 1; i >= 0; i--) {
-        const transform = transforms[i]
+      for (const transform of transforms) {
         const type = Object.keys(transform)[0]
         const v = transform[type]
         const len = typeof v === 'string' ? lengthToNumber(v, baseFontSize) : v
@@ -157,7 +152,7 @@ export default function expand(
         matrix = multiply(matrix, transformMatrix)
       }
 
-      transformedStyle.transform = multiply(baseTransform, matrix)
+      transformedStyle.transform = matrix
     }
   }
 
