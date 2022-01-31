@@ -4,7 +4,7 @@
 
 ## Quick Start
 
-`satori` is a synchronous function that takes a JSX string and returns a SVG string:
+`satori` is a function that takes a JSX element and returns a SVG string:
 
 ```jsx
 satori(
@@ -25,7 +25,7 @@ satori(
 )
 ```
 
-Yields:
+Which yields:
 
 ```js
 '<svg ...><text x="0" y="16" width="45" height="16" fill="black">hello, world</text></svg>'
@@ -93,8 +93,20 @@ For example, the `<input>` HTML element, the `cursor` CSS property are not in co
 
 This project uses [pnpm](https://pnpm.io). To install dependencies, run:
 
-```base
+```bash
 pnpm install
+```
+
+To start the preview mode, run:
+
+```bash
+pnpm dev:preview
+```
+
+To start and live-watch the tests, run:
+
+```bash
+pnpm dev:test
 ```
 
 ## Author
