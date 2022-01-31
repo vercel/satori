@@ -21,7 +21,7 @@ export default function text(
     style.fontWeight
   }" font-style="${style.fontStyle}" font-size="${
     style.fontSize
-  }" font-family="${style.fontFamily}" letter-spacing="${
-    style.letterSpacing
-  }">${content}</text>`
+  }" font-family="${style.fontFamily}" ${
+    style.letterSpacing ? `letter-spacing="${style.letterSpacing}"` : ''
+  }>${content}</text>`
 }

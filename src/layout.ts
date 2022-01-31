@@ -92,7 +92,7 @@ export default function* layout(
   // 3. Post-process the node.
   const [x, y] = yield
 
-  if (style.position === 'absolute') {
+  if (computedStyle.position === 'absolute') {
     node.calculateLayout()
   }
 

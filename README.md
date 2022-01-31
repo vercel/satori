@@ -80,6 +80,7 @@ For example, the `<input>` HTML element, the `cursor` CSS property are not in co
 | `border-radius` | Supported |
 | `overflow` | `visible`, `hidden` |
 | `color` | Supported |
+| `transform` | Support absolute values |
 | `background-color` | Supported |
 | `background-image` | TBD |
 | `opacity` | TBD |
@@ -87,7 +88,11 @@ For example, the `<input>` HTML element, the `cursor` CSS property are not in co
 | `text-shadow` | TBD |
 | `text-transform` | TBD |
 | `word-break` | TBD |
-| `transform` | TBD |
+
+Note:
+
+1. Three-dimensional transforms are not supported.
+2. There is no `z-index` support in SVG. Elements that come later in the document will be drawn on top.
 
 ## Contribute
 

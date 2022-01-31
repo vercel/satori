@@ -3,8 +3,6 @@
  * supported inline node is text. All other nodes are using block layout.
  */
 
-// @TODO: Handle `text-align` options other than `left`.
-
 import Yoga from 'yoga-layout-prebuilt'
 import { LineBreaker } from 'css-line-break'
 

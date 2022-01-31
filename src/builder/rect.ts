@@ -1,5 +1,6 @@
 import radius from './border-radius'
 import shadow from './box-shadow'
+import transform from './transform'
 
 export default function rect(
   {
@@ -23,6 +24,7 @@ export default function rect(
   let fill = 'transparent'
   let stroke = 'transparent'
   let strokeWidth = 0
+  let matrix = ''
 
   if (style.backgroundColor) {
     fill = style.backgroundColor as string
@@ -31,6 +33,13 @@ export default function rect(
   if (style.borderWidth) {
     strokeWidth = style.borderWidth as number
     stroke = style.borderColor as string
+  }
+
+  if (style.transform) {
+    matrix = transform(
+      { left, top, width, height },
+      style.transform as unknown as number[]
+    )
   }
 
   const path = radius(
@@ -47,5 +56,7 @@ export default function rect(
     filter ? `<g filter="url(#satori_s-${id})">` : ''
   }<${type} x="${left}" y="${top}" width="${width}" height="${height}" fill="${fill}" ${
     strokeWidth ? `stroke="${stroke}" stroke-width="${strokeWidth}"` : ''
-  } ${path ? `d="${path}"` : ''}></${type}>${filter ? '</g>' : ''}`
+  } ${path ? `d="${path}"` : ''} ${
+    matrix ? `transform="${matrix}"` : ''
+  }></${type}>${filter ? '</g>' : ''}`
 }
