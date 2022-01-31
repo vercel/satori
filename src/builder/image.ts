@@ -23,6 +23,7 @@ export default function image(
   if (style.display === 'none') return ''
 
   let clip = ''
+  let opacity = 1
 
   const preserveAspectRatio =
     style.objectFit === 'contain'
@@ -40,11 +41,17 @@ export default function image(
     clip = `<clipPath id="satori_c-${id}"><path x="${left}" y="${top}" width="${width}" height="${height}" d="${path}"></path></clipPath>`
   }
 
+  if (style.opacity) {
+    opacity = +style.opacity
+  }
+
   const filter = shadow({ width, height, id }, style)
 
   return `${filter}${
     filter ? `<g filter="url(#satori_s-${id})">` : ''
   }${clip}<image href="${src}" x="${left}" y="${top}" width="${width}" height="${height}" preserveAspectRatio="${preserveAspectRatio}" ${
     clip ? `clip-path="url(#satori_c-${id})"` : ''
-  }></image>${filter ? '</g>' : ''}`
+  } ${opacity !== 1 ? `opacity="${opacity}"` : ''}></image>${
+    filter ? '</g>' : ''
+  }`
 }

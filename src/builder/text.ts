@@ -20,6 +20,7 @@ export default function text(
   style: Record<string, number | string>
 ) {
   let matrix = ''
+  let opacity = 1
 
   if (style.transform) {
     matrix = transform(
@@ -27,6 +28,10 @@ export default function text(
       style.transform as unknown as number[],
       isInheritingTransform
     )
+  }
+
+  if (style.opacity) {
+    opacity = +style.opacity
   }
 
   return `<text x="${left}" y="${
@@ -37,5 +42,7 @@ export default function text(
     style.fontSize
   }" font-family="${style.fontFamily}" ${
     style.letterSpacing ? `letter-spacing="${style.letterSpacing}"` : ''
-  } ${matrix ? `transform="${matrix}"` : ''}>${content}</text>`
+  } ${matrix ? `transform="${matrix}"` : ''} ${
+    opacity !== 1 ? `opacity="${opacity}"` : ''
+  }>${content}</text>`
 }

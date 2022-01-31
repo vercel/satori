@@ -33,6 +33,7 @@ export default function satori(
       fontStyle: 'normal',
       lineHeight: 1.2,
       color: 'black',
+      opacity: 1,
     },
     parent: root,
     font,

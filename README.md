@@ -82,10 +82,10 @@ For example, the `<input>` HTML element, the `cursor` CSS property are not in co
 | `color` | Supported |
 | `transform` | Support absolute values |
 | `object-fit` | `contain`, `cover`, `none` |
+| `opacity` | Supported |
 | `background-color` | Supported |
 | `background-image` | Support `linear-gradient`, `url` |
 | `background-clip` | TBD |
-| `opacity` | TBD |
 | `text-decoration` | TBD |
 | `text-shadow` | TBD |
 | `text-transform` | TBD |

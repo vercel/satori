@@ -103,12 +103,19 @@ export default function expand(
   transformedStyle.fontSize = baseFontSize
 
   for (const prop in transformedStyle) {
-    const value = transformedStyle[prop]
+    let value = transformedStyle[prop]
 
     // Convert em and rem values to px (number).
     if (typeof value === 'string') {
       const len = lengthToNumber(value, baseFontSize)
       if (typeof len !== 'undefined') transformedStyle[prop] = len
+      value = transformedStyle[prop]
+    }
+
+    // Inherit the opacity.
+    if (prop === 'opacity') {
+      value = transformedStyle[prop] =
+        value * (inheritedStyle.opacity as number)
     }
 
     // Handle CSS transforms To make it easier, we convert different transform

@@ -11,6 +11,10 @@ const list = new Set([
   'whiteSpace',
   'letterSpacing',
   'transform',
+
+  // Special case: SVG doesn't apply opacity to children elements so we need to
+  // make it inheritable here.
+  'opacity',
 ])
 
 export default function inheritable(style: Record<string, any>) {

@@ -29,6 +29,7 @@ export default function rect(
   let matrix = ''
   let defs = ''
   let fills: string[] = []
+  let opacity = 1
 
   if (style.backgroundColor) {
     fills.push(style.backgroundColor as string)
@@ -37,6 +38,10 @@ export default function rect(
   if (style.borderWidth) {
     strokeWidth = style.borderWidth as number
     stroke = style.borderColor as string
+  }
+
+  if (style.opacity) {
+    opacity = +style.opacity
   }
 
   if (style.transform) {
@@ -73,7 +78,7 @@ export default function rect(
 
   return `${defs ? `<defs>${defs}</defs>` : ''}${
     filter ? `${filter}<g filter="url(#satori_s-${id})">` : ''
-  }${
+  }${opacity !== 1 ? `<g opacity="${opacity}">` : ''}${
     // Each background generates a new rectangle.
     fills
       .map((fill, i) => {
@@ -89,5 +94,5 @@ export default function rect(
         }></${type}>`
       })
       .join('')
-  }${filter ? '</g>' : ''}`
+  }${opacity !== 1 ? `</g>` : ''}${filter ? '</g>' : ''}`
 }

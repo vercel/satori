@@ -74,6 +74,7 @@ const img = document.querySelector('#preview') as HTMLImageElement
           width: 'auto',
           maxWidth: 550,
           textAlign: 'center',
+          backgroundColor: 'red',
           backgroundImage: `url(${image}), linear-gradient(to bottom, red, transparent), linear-gradient(to right, green, transparent)`,
           color: 'white',
           borderTopLeftRadius: 100,
@@ -104,6 +105,7 @@ const img = document.querySelector('#preview') as HTMLImageElement
           marginTop: 30,
           borderRadius: 128,
           boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)',
+          opacity: 0.5,
         }}
       />
     </div>,
