@@ -5,7 +5,7 @@ import layout from './layout'
 import FontLoader, { FontOptions } from './font'
 import svg from './builder/svg'
 
-interface SatoriOptions {
+export interface SatoriOptions {
   width: number
   height: number
   fonts: FontOptions[]

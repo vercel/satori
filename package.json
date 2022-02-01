@@ -1,13 +1,18 @@
 {
   "name": "satori",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "description": "A lightweight library to convert HTML JSX to SVG string.",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**"
+  ],
   "scripts": {
     "dev:preview": "vite test/preview",
     "dev:test": "vitest",
     "test": "vitest run",
-    "postinstall": "patch-package"
+    "build": "tsup src/index.ts --dts --minify --format cjs,esm --legacy-output"
   },
   "repository": {
     "type": "git",
@@ -27,14 +32,12 @@
   },
   "homepage": "https://github.com/vercel/satori#readme",
   "devDependencies": {
-    "@milahu/patch-package-with-pnpm-support": "github:milahu/patch-package#pnpm-support-2",
     "@types/node": "^17.0.13",
     "@types/opentype.js": "^1.3.3",
     "@types/react": "^17.0.38",
     "react": "^17.0.2",
-    "svg2png-wasm": "^1.3.2",
+    "tsup": "^5.11.13",
     "typescript": "^4.5.5",
-    "vite": "^2.7.13",
     "vitest": "^0.2.5"
   },
   "dependencies": {
