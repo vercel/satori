@@ -59,6 +59,7 @@ export default function* buildTextNodes(content, context: LayoutContext) {
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i]
+    const word = words[i]
     if (parentStyle.position === 'absolute') {
       node.calculateLayout()
     }
@@ -69,6 +70,13 @@ export default function* buildTextNodes(content, context: LayoutContext) {
     left += x
     top += y
 
+    const path = font.getSVG(word, {
+      ...parentStyle,
+      top,
+      left,
+      letterSpacing: parentStyle.letterSpacing,
+    } as any)
+
     result += text(
       {
         id,
@@ -76,8 +84,8 @@ export default function* buildTextNodes(content, context: LayoutContext) {
         top,
         width,
         height,
-        content: words[i],
         isInheritingTransform,
+        path,
       },
       parentStyle
     )

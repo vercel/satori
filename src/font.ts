@@ -132,4 +132,40 @@ export default class FontLoader {
       descent: -(font.descender / font.unitsPerEm) * fontSize,
     }
   }
+
+  public getSVG(
+    content: string,
+    {
+      fontFamily,
+      fontSize,
+      fontWeight = 400,
+      fontStyle = 'normal',
+      top,
+      left,
+      letterSpacing = 0,
+    }: {
+      fontFamily: string
+      fontSize: number
+      fontWeight?: Weight | WeigthName
+      fontStyle?: Style
+      top: number
+      left: number
+      letterSpacing: number
+    }
+  ) {
+    const font = this.get({
+      name: fontFamily,
+      weight: fontWeight,
+      style: fontStyle,
+    })
+
+    // Since we need to pass the baseline position, add the ascender to the top.
+    top += (font.ascender / font.unitsPerEm) * fontSize
+
+    return font
+      .getPath(content, left, top, fontSize, {
+        letterSpacing: letterSpacing / fontSize,
+      })
+      .toPathData(3)
+  }
 }

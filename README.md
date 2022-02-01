@@ -28,8 +28,10 @@ satori(
 Which yields:
 
 ```js
-'<svg ...><text x="0" y="16" width="45" height="16" fill="black">hello, world</text></svg>'
+'<svg ...><path d="..." fill="black"></path></svg>'
 ```
+
+Text will be embedded in the SVG as path.
 
 ## Playground
 
@@ -109,10 +111,11 @@ This project uses [pnpm](https://pnpm.io). To install dependencies, run:
 pnpm install
 ```
 
-To start the preview mode, run:
+To start the playground, run:
 
 ```bash
-pnpm dev:preview
+cd playground
+pnpm dev
 ```
 
 To start and live-watch the tests, run:
