@@ -35,7 +35,7 @@ Text will be embedded in the SVG as path.
 
 ## Playground
 
-(TBD)
+https://satori-playground.vercel.app
 
 ## Documentation
 
@@ -111,7 +111,7 @@ This project uses [pnpm](https://pnpm.io). To install dependencies, run:
 pnpm install
 ```
 
-To start the playground, run:
+To start the playground locally, run:
 
 ```bash
 cd playground

@@ -247,7 +247,7 @@ export default function App() {
           style={{
             marginLeft: 8,
             letterSpacing: -0.2,
-            fontSize: 20,
+            fontSize: 15,
             fontWeight: 700,
           }}
         >
