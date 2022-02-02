@@ -216,10 +216,10 @@ export default function App() {
             'rotate(-10deg) translate(0, 10px) skewX(-10deg)',
         }}
       >
-        Making the Web.<br/>
+        Making the Web.
         <span
           style={{
-            display: 'inline-block',
+            display: 'block',
             color: 'gold',
             transform: 'rotate(10deg) scale(2, 1.3)',
           }}

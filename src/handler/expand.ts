@@ -163,7 +163,7 @@ export default function expand(
             transformMatrix[1] = Math.tan((len * Math.PI) / 180)
             break
         }
-        matrix = multiply(matrix, transformMatrix)
+        matrix = multiply(transformMatrix, matrix)
       }
 
       transformedStyle.transform = matrix
