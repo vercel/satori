@@ -273,7 +273,7 @@ export default function Playground() {
           dependencies: {
             react: '17.0.2',
             'react-dom': '17.0.2',
-            satori: '0.0.5',
+            satori: '0.0.6',
           },
         }}
       >

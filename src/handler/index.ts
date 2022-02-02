@@ -114,20 +114,6 @@ export default function handler(
   )
   // @TODO: node.setAspectRatio
 
-  // @TODO: node.setFlex
-  if (typeof style.flexBasis !== 'undefined') {
-    node.setFlexBasis(style.flexBasis)
-  } else {
-    // For block elements, `flexBasis` is set to 100% by default.
-    if (
-      style.display === 'block' &&
-      (typeof style.width === 'undefined' || style.width === 'auto') &&
-      (typeof style.maxWidth === 'undefined' || style.maxWidth === 'auto')
-    ) {
-      node.setFlexBasisPercent(100)
-    }
-  }
-
   node.setFlexDirection(
     v(
       style.flexDirection,
@@ -140,8 +126,6 @@ export default function handler(
       Yoga.FLEX_DIRECTION_ROW
     )
   )
-  node.setFlexGrow((style.flexGrow as number) || 0)
-  node.setFlexShrink((style.flexShrink as number) || 1)
   node.setFlexWrap(
     v(
       style.flexWrap,
@@ -152,6 +136,26 @@ export default function handler(
       },
       Yoga.WRAP_WRAP
     )
+  )
+
+  // @TODO: node.setFlex
+  if (typeof style.flexBasis !== 'undefined') {
+    // We can't use `auto` here due to this:
+    // https://github.com/facebook/yoga/pull/1112
+    node.setFlexBasis(style.flexBasis)
+  } else {
+    // For block elements, `flexBasis` is set to 100% by default.
+    if (
+      style.display === 'block' &&
+      (typeof style.width === 'undefined' || style.width === 'auto') &&
+      (typeof style.maxWidth === 'undefined' || style.maxWidth === 'auto')
+    ) {
+      node.setFlexBasisPercent(100)
+    }
+  }
+  node.setFlexGrow(typeof style.flexGrow === 'undefined' ? 0 : style.flexGrow)
+  node.setFlexShrink(
+    typeof style.flexShrink === 'undefined' ? 1 : style.flexShrink
   )
 
   if (typeof style.maxHeight !== 'undefined') {

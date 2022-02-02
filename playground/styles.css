@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');
 
 * {
   box-sizing: border-box;
@@ -16,6 +16,10 @@ body {
   max-width: 100%;
   line-height: 1.5;
   box-sizing: border-box;
+}
+
+svg {
+  border: 1px solid;
 }
 
 /* Sandpack */

@@ -101,7 +101,8 @@ For example, the `<input>` HTML element, the `cursor` CSS property are not in co
 Note:
 
 1. Three-dimensional transforms are not supported.
-2. There is no `z-index` support in SVG. Elements that come later in the document will be drawn on top.
+2. There is no `z-index` support in SVG. Elements that come later in the document will be painted on top.
+3. `box-sizing` is set to `border-box` for all elements.
 
 ## Contribute
 
