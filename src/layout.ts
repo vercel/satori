@@ -20,13 +20,14 @@ export interface LayoutContext {
   isInheritingTransform?: boolean
   parent: YogaNode
   font: FontLoader
+  debug?: boolean
 }
 
 export default function* layout(
   element: ReactNode,
   context: LayoutContext
 ): Generator<undefined, string, [number, number]> {
-  const { id, inheritedStyle, parent, font } = context
+  const { id, inheritedStyle, parent, font, debug } = context
 
   // 1. Pre-process the node.
   if (element === null || typeof element === 'undefined') {
@@ -93,6 +94,7 @@ export default function* layout(
       isInheritingTransform: true,
       parent: node,
       font,
+      debug,
     })
     iter.next()
     iterators.push(iter)
@@ -115,12 +117,21 @@ export default function* layout(
 
   if (type === 'img') {
     result = image(
-      { id, left, top, width, height, src: props.src, isInheritingTransform },
+      {
+        id,
+        left,
+        top,
+        width,
+        height,
+        src: props.src,
+        isInheritingTransform,
+        debug,
+      },
       computedStyle
     )
   } else {
     result = rect(
-      { id, left, top, width, height, isInheritingTransform },
+      { id, left, top, width, height, isInheritingTransform, debug },
       computedStyle
     )
   }

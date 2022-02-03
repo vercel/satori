@@ -9,9 +9,10 @@
     "dist/**"
   ],
   "scripts": {
-    "dev:test": "vitest",
+    "dev": "tsup src/index.ts --watch --format cjs,esm --legacy-output --ignore-watch playground",
+    "build": "tsup src/index.ts --dts --minify --format cjs,esm --legacy-output",
     "test": "vitest run",
-    "build": "tsup src/index.ts --dts --minify --format cjs,esm --legacy-output"
+    "dev:test": "vitest"
   },
   "repository": {
     "type": "git",

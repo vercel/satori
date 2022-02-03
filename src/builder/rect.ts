@@ -11,6 +11,7 @@ export default function rect(
     width,
     height,
     isInheritingTransform,
+    debug,
   }: {
     id: number
     left: number
@@ -18,6 +19,7 @@ export default function rect(
     width: number
     height: number
     isInheritingTransform: boolean
+    debug?: boolean
   },
   style: Record<string, number | string>
 ) {
@@ -30,6 +32,7 @@ export default function rect(
   let defs = ''
   let fills: string[] = []
   let opacity = 1
+  let extra = ''
 
   if (style.backgroundColor) {
     fills.push(style.backgroundColor as string)
@@ -76,6 +79,12 @@ export default function rect(
 
   if (!fills.length) fills.push('transparent')
 
+  if (debug) {
+    extra = `<rect x="${left}" y="${top}" width="${width}" height="${height}" fill="transparent" stroke="#ff5757" stroke-width="1" ${
+      matrix ? `transform="${matrix}"` : ''
+    }></rect>`
+  }
+
   return `${defs ? `<defs>${defs}</defs>` : ''}${
     filter ? `${filter}<g filter="url(#satori_s-${id})">` : ''
   }${opacity !== 1 ? `<g opacity="${opacity}">` : ''}${
@@ -94,5 +103,5 @@ export default function rect(
         }></${type}>`
       })
       .join('')
-  }${opacity !== 1 ? `</g>` : ''}${filter ? '</g>' : ''}`
+  }${opacity !== 1 ? `</g>` : ''}${filter ? '</g>' : ''}${extra}`
 }

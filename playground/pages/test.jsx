@@ -84,9 +84,9 @@ function Item({ title, subtitle, icon }) {
     <div
       style={{
         display: 'flex',
-        flexDirection: 'column',
-        flex: 1,
+        flexDirection: 'row',
         color: '#333',
+        flexGrow: 1,
       }}
     >
       <span
@@ -99,7 +99,7 @@ function Item({ title, subtitle, icon }) {
       >
         {icon}
       </span>
-      <div>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
         <div style={{ color: '#000', fontSize: 20 }}>{title}</div>
         <div>{subtitle}</div>
       </div>
@@ -111,31 +111,43 @@ const example_github = (
     style={{
       fontFamily: 'Inter',
       padding: 80,
+      height: '100%',
       display: 'flex',
-      flexDirection: 'row',
+      flexDirection: 'column',
+      flexGrow: 1,
     }}
   >
     <div
       style={{
+        height: 100,
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'flex-start',
-        height: '85%',
+        flexGrow: 1,
       }}
     >
       <div
         style={{
+          display: 'flex',
+          flexDirection: 'column',
           flexGrow: 1,
           flexShrink: 1,
-          flexBasis: '75%',
+          flexBasis: 492,
         }}
       >
         <h1 style={{ fontSize: 56, fontWeight: 300, margin: 0 }}>
           vercel/<span style={{ fontWeight: 700 }}>next.js</span>
         </h1>
-        <p style={{ fontSize: 24, color: '#666' }}>The React Framework</p>
+        <p
+          style={{
+            fontSize: 24,
+            color: '#666',
+          }}
+        >
+          The React Framework
+        </p>
       </div>
-      <div style={{ flexBasis: '25%' }}>
+      <div style={{ flexBasis: 148, flexGrow: 1, flexShrink: 1 }}>
         <img
           width={148}
           height={148}
@@ -146,7 +158,7 @@ const example_github = (
         ></img>
       </div>
     </div>
-    <div style={{ display: 'flex', flexBasis: '100%' }}>
+    <div style={{ display: 'flex', width: '100%', height: 53 }}>
       <Item title='2k' subtitle='Contributors' icon='&#xE7FB;' />
       <Item title='18k' subtitle='Used by' icon='&#xe0df;' />
       <Item title='9k' subtitle='Discussions' icon='&#xe0bf;' />
@@ -214,6 +226,7 @@ export default function Playground() {
         width,
         height,
         fonts,
+        // debug: true,
       })
 
       setSvg(result)
@@ -223,7 +236,19 @@ export default function Playground() {
   return (
     <div id='container'>
       <div id='svg' dangerouslySetInnerHTML={{ __html: svg }}></div>
-      {/* <div style={{ position: 'relative', width, height }}>{element}</div> */}
+      <div
+        style={{
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          width,
+          height,
+          overflow: 'hidden',
+        }}
+      >
+        {element}
+      </div>
     </div>
   )
 }

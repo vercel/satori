@@ -8,6 +8,7 @@ export default function text(
     height,
     isInheritingTransform,
     path,
+    debug,
   }: {
     id: number
     left: number
@@ -16,11 +17,13 @@ export default function text(
     height: number
     isInheritingTransform: boolean
     path: string
+    debug?: boolean
   },
   style: Record<string, number | string>
 ) {
   let matrix = ''
   let opacity = 1
+  let extra = ''
 
   if (style.transform) {
     matrix = transform(
@@ -34,7 +37,13 @@ export default function text(
     opacity = +style.opacity
   }
 
+  if (debug) {
+    extra = `<rect x="${left}" y="${top}" width="${width}" height="${height}" fill="transparent" stroke="#575eff" stroke-width="1" ${
+      matrix ? `transform="${matrix}"` : ''
+    }></rect>`
+  }
+
   return `<path fill="${style.color}" ${
     matrix ? `transform="${matrix}"` : ''
-  } ${opacity !== 1 ? `opacity="${opacity}"` : ''} d="${path}"></path>`
+  } ${opacity !== 1 ? `opacity="${opacity}"` : ''} d="${path}"></path>${extra}`
 }

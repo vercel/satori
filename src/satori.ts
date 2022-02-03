@@ -9,6 +9,7 @@ export interface SatoriOptions {
   width: number
   height: number
   fonts: FontOptions[]
+  debug?: boolean
 }
 
 export default function satori(
@@ -22,6 +23,9 @@ export default function satori(
   root.setHeight(options.height)
   root.setFlexDirection(Yoga.FLEX_DIRECTION_ROW)
   root.setFlexWrap(Yoga.WRAP_WRAP)
+  root.setAlignContent(Yoga.ALIGN_AUTO)
+  root.setAlignItems(Yoga.ALIGN_FLEX_START)
+  root.setJustifyContent(Yoga.JUSTIFY_FLEX_START)
 
   const handler = layout(element, {
     id: 1,
@@ -37,6 +41,7 @@ export default function satori(
     },
     parent: root,
     font,
+    debug: options.debug,
   })
 
   handler.next()

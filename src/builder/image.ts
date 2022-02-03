@@ -9,6 +9,7 @@ export default function image(
     width,
     height,
     src,
+    debug,
   }: {
     id: number
     left: number
@@ -17,6 +18,7 @@ export default function image(
     height: number
     src: string
     isInheritingTransform: boolean
+    debug?: boolean
   },
   style: Record<string, number | string>
 ) {
