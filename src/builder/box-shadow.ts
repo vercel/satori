@@ -1,5 +1,6 @@
 // @TODO: It seems that SVG filters are pretty expensive for resvg, PNG
 // generation time 10x'd when adding this filter (WASM in browser).
+// https://drafts.fxtf.org/filter-effects/#feGaussianBlurElement
 
 export default function shadow(
   { id, width, height }: { id: number; width: number; height: number },

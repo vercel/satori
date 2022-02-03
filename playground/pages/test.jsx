@@ -156,8 +156,6 @@ const example_github = (
   </div>
 )
 
-const element = example_rauchg
-
 async function init() {
   if (typeof window === 'undefined') return []
   if (window.__initialized) return window.__initialized
@@ -207,6 +205,7 @@ const height = 255 * 2
 
 export default function Playground() {
   const [svg, setSvg] = useState('')
+  const element = example_github
 
   useEffect(() => {
     ;(async () => {
@@ -224,7 +223,7 @@ export default function Playground() {
   return (
     <div id='container'>
       <div id='svg' dangerouslySetInnerHTML={{ __html: svg }}></div>
-      <div style={{ position: 'relative', width, height }}>{element}</div>
+      {/* <div style={{ position: 'relative', width, height }}>{element}</div> */}
     </div>
   )
 }

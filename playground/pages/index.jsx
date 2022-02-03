@@ -78,13 +78,15 @@ async function init() {
   if (typeof window === 'undefined') return
   if (globalThis.__fonts) return
 
-  const [req1, req2] = await Promise.all([
+  const [req1, req2, req3] = await Promise.all([
     fetch('https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'),
     fetch('https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-700-normal.woff'),
+    fetch('https://unpkg.com/@fontsource/material-icons@4.5.2/files/material-icons-base-400-normal.woff')
   ])
-  const [font, fontBold] = await Promise.all([
+  const [font, fontBold, fontIcon] = await Promise.all([
     req1.arrayBuffer(),
     req2.arrayBuffer(),
+    req3.arrayBuffer()
   ])
 
   globalThis.__fonts = [
@@ -98,6 +100,12 @@ async function init() {
       name: 'Inter',
       data: fontBold,
       weight: 700,
+      style: 'normal',
+    },
+    {
+      name: 'Material Icons',
+      data: fontIcon,
+      weight: 400,
       style: 'normal',
     },
   ]
@@ -192,36 +200,37 @@ export default function App() {
         justifyContent: 'center',
         flexDirection: 'column',
         fontFamily: 'Inter',
-        backgroundImage: 'linear-gradient(to bottom, white, #ddd)',
       }}
     >
       <div
         style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
           padding: '20px 40px',
           letterSpacing: -1,
           fontSize: 44,
           fontWeight: 700,
           maxWidth: '75%',
-          width: '100%',
           textAlign: 'center',
-          backgroundColor: '#666',
-          backgroundImage: 'linear-gradient(to top, black, transparent)',
           color: 'white',
-          borderTopLeftRadius: 100,
-          borderTopRightRadius: 20,
-          borderBottomRightRadius: 100,
-          borderBottomLeftRadius: 20,
-          border: '8px solid gold',
-          transform:
-            'rotate(-10deg) translate(0, 10px) skewX(-10deg)',
+          backgroundColor: '#000',
+          // border: '8px solid #008cff',
+          // borderTopLeftRadius: 100,
+          // borderTopRightRadius: 20,
+          // borderBottomRightRadius: 100,
+          // borderBottomLeftRadius: 20,
+          // backgroundImage: 'linear-gradient(to bottom, black)',
+          // transform: 'rotate(-10deg) translate(0, 10px)',
         }}
       >
-        Making the Web.
+        <span>
+          Making the Web.
+        </span>
         <span
           style={{
-            display: 'block',
-            color: 'gold',
-            transform: 'rotate(10deg) scale(2, 1.3)',
+            // color: 'gold',
+            // transform: 'skewX(-30deg) scaleX(2)',
           }}
         >
           Faster.
