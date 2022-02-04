@@ -9,6 +9,7 @@ export interface SatoriOptions {
   width: number
   height: number
   fonts: FontOptions[]
+  embedFont?: boolean
   debug?: boolean
 }
 
@@ -41,6 +42,7 @@ export default function satori(
     },
     parent: root,
     font,
+    embedFont: options.embedFont,
     debug: options.debug,
   })
 

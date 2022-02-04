@@ -166,6 +166,29 @@ export default class FontLoader {
       .getPath(content, left, top, fontSize, {
         letterSpacing: letterSpacing / fontSize,
       })
-      .toPathData(3)
+      .toPathData(2)
+  }
+
+  public getAscent({
+    fontFamily,
+    fontSize,
+    fontWeight = 400,
+    fontStyle = 'normal',
+  }: {
+    fontFamily: string
+    fontSize: number
+    fontWeight?: Weight | WeigthName
+    fontStyle?: Style
+    top: number
+    left: number
+    letterSpacing: number
+  }) {
+    const font = this.get({
+      name: fontFamily,
+      weight: fontWeight,
+      style: fontStyle,
+    })
+
+    return (font.ascender / font.unitsPerEm) * fontSize
   }
 }

@@ -21,6 +21,8 @@ satori(
       },
       ...
     ],
+    embedFont: true, // Embed the font in SVG as path data
+    debug: false,    // Show/hide the bounding box
   }
 )
 ```
@@ -118,6 +120,10 @@ To start the playground locally, run:
 cd playground
 pnpm dev
 ```
+
+And visit localhost:3000/test.
+
+To start the development mode, run `pnpm dev` in the root directory (can be used together with the playground to view it in live).
 
 To start and live-watch the tests, run:
 

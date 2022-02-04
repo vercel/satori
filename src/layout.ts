@@ -20,6 +20,7 @@ export interface LayoutContext {
   isInheritingTransform?: boolean
   parent: YogaNode
   font: FontLoader
+  embedFont: boolean
   debug?: boolean
 }
 
@@ -27,7 +28,7 @@ export default function* layout(
   element: ReactNode,
   context: LayoutContext
 ): Generator<undefined, string, [number, number]> {
-  const { id, inheritedStyle, parent, font, debug } = context
+  const { id, inheritedStyle, parent, font, debug, embedFont = true } = context
 
   // 1. Pre-process the node.
   if (element === null || typeof element === 'undefined') {
@@ -94,6 +95,7 @@ export default function* layout(
       isInheritingTransform: true,
       parent: node,
       font,
+      embedFont,
       debug,
     })
     iter.next()

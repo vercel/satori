@@ -10,8 +10,15 @@ import type { LayoutContext } from './layout'
 import text from './builder/text'
 
 export default function* buildTextNodes(content, context: LayoutContext) {
-  const { parentStyle, parent, font, id, isInheritingTransform, debug } =
-    context
+  const {
+    parentStyle,
+    parent,
+    font,
+    id,
+    isInheritingTransform,
+    debug,
+    embedFont,
+  } = context
 
   const breaker = LineBreaker(content, {
     lineBreak: 'strict',
@@ -71,15 +78,25 @@ export default function* buildTextNodes(content, context: LayoutContext) {
     left += x
     top += y
 
-    const path = font.getSVG(word, {
-      ...parentStyle,
-      top,
-      left,
-      letterSpacing: parentStyle.letterSpacing,
-    } as any)
+    let path: string | null = null
+
+    if (embedFont) {
+      path = font.getSVG(word, {
+        ...parentStyle,
+        top,
+        left,
+        letterSpacing: parentStyle.letterSpacing,
+      } as any)
+    } else {
+      // We need manually add the font ascender height to ensure it starts
+      // at the baseline because <text>'s alignment baseline is set to `hanging`
+      // by default and supported to change in SVG 1.1.
+      top += font.getAscent(parentStyle as any)
+    }
 
     result += text(
       {
+        content: word,
         id,
         left,
         top,

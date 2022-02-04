@@ -147,7 +147,7 @@ const example_github = (
           The React Framework
         </p>
       </div>
-      <div style={{ flexBasis: 148, flexGrow: 1, flexShrink: 1 }}>
+      <div>
         <img
           width={148}
           height={148}
@@ -226,7 +226,8 @@ export default function Playground() {
         width,
         height,
         fonts,
-        // debug: true,
+        embedFont: false,
+        debug: true,
       })
 
       setSvg(result)
