@@ -192,12 +192,14 @@ export default function handler(
   node.setPadding(Yoga.EDGE_RIGHT, style.paddingRight || 0)
 
   node.setPositionType(
-    (style.position,
-    {
-      absolute: Yoga.POSITION_TYPE_ABSOLUTE,
-      relative: Yoga.POSITION_TYPE_RELATIVE,
-    },
-    Yoga.POSITION_TYPE_RELATIVE)
+    v(
+      style.position,
+      {
+        absolute: Yoga.POSITION_TYPE_ABSOLUTE,
+        relative: Yoga.POSITION_TYPE_RELATIVE,
+      },
+      Yoga.POSITION_TYPE_RELATIVE
+    )
   )
 
   if (typeof style.top !== 'undefined') {
