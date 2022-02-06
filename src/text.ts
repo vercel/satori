@@ -8,6 +8,7 @@ import { LineBreaker } from 'css-line-break'
 
 import type { LayoutContext } from './layout'
 import text from './builder/text'
+import { v } from './utils'
 
 export default function* buildTextNodes(content, context: LayoutContext) {
   const {
@@ -22,7 +23,16 @@ export default function* buildTextNodes(content, context: LayoutContext) {
 
   const breaker = LineBreaker(content, {
     lineBreak: 'strict',
-    wordBreak: 'normal',
+    wordBreak: v(
+      parentStyle.wordBreak,
+      {
+        normal: 'normal',
+        'break-all': 'break-all',
+        'break-word': 'break-word',
+        'keep-all': 'keep-all',
+      },
+      'normal'
+    ),
   })
 
   const words = []

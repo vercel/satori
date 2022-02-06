@@ -28,3 +28,12 @@ export function multiply(m1: number[], m2: number[]) {
     m1[1] * m2[4] + m1[3] * m2[5] + m1[5],
   ]
 }
+
+export function v(
+  field: string | number,
+  map: Record<string, any>,
+  fallback: any
+) {
+  const value = map[field]
+  return typeof value === 'undefined' ? fallback : value
+}
