@@ -106,59 +106,57 @@ export default class FontLoader {
     return fonts[0][0]
   }
 
-  public measure(
-    content: string,
-    {
-      fontFamily,
-      fontSize,
-      fontWeight = 400,
-      fontStyle = 'normal',
-    }: {
-      fontFamily: string
-      fontSize: number
-      fontWeight?: Weight | WeigthName
-      fontStyle?: Style
-    }
-  ) {
-    const font = this.get({
+  public getFont({
+    fontFamily,
+    fontWeight = 400,
+    fontStyle = 'normal',
+  }: {
+    fontFamily: string
+    fontWeight?: Weight | WeigthName
+    fontStyle?: Style
+  }) {
+    return this.get({
       name: fontFamily,
       weight: fontWeight,
       style: fontStyle,
     })
+  }
 
+  public measure(
+    font: opentype.Font,
+    content: string,
+    {
+      fontSize,
+      letterSpacing = 0,
+    }: {
+      fontSize: number
+      letterSpacing: number
+    }
+  ) {
     return {
-      width: font.getAdvanceWidth(content, fontSize),
+      width: font.getAdvanceWidth(content, fontSize, {
+        letterSpacing: letterSpacing / fontSize,
+      }),
       ascent: (font.ascender / font.unitsPerEm) * fontSize,
       descent: -(font.descender / font.unitsPerEm) * fontSize,
     }
   }
 
   public getSVG(
+    font: opentype.Font,
     content: string,
     {
-      fontFamily,
       fontSize,
-      fontWeight = 400,
-      fontStyle = 'normal',
       top,
       left,
       letterSpacing = 0,
     }: {
-      fontFamily: string
       fontSize: number
-      fontWeight?: Weight | WeigthName
-      fontStyle?: Style
       top: number
       left: number
       letterSpacing: number
     }
   ) {
-    const font = this.get({
-      name: fontFamily,
-      weight: fontWeight,
-      style: fontStyle,
-    })
-
     // Since we need to pass the baseline position, add the ascender to the top.
     top += (font.ascender / font.unitsPerEm) * fontSize
 
@@ -169,26 +167,14 @@ export default class FontLoader {
       .toPathData(2)
   }
 
-  public getAscent({
-    fontFamily,
-    fontSize,
-    fontWeight = 400,
-    fontStyle = 'normal',
-  }: {
-    fontFamily: string
-    fontSize: number
-    fontWeight?: Weight | WeigthName
-    fontStyle?: Style
-    top: number
-    left: number
-    letterSpacing: number
-  }) {
-    const font = this.get({
-      name: fontFamily,
-      weight: fontWeight,
-      style: fontStyle,
-    })
-
+  public getAscent(
+    font: opentype.Font,
+    {
+      fontSize,
+    }: {
+      fontSize: number
+    }
+  ) {
     return (font.ascender / font.unitsPerEm) * fontSize
   }
 }

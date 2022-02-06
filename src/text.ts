@@ -2,11 +2,10 @@
  * This module calculates the layout of a text string. Currently the only
  * supported inline node is text. All other nodes are using block layout.
  */
+import type { LayoutContext } from './layout'
 
 import getYoga from './yoga'
 import { LineBreaker } from 'css-line-break'
-
-import type { LayoutContext } from './layout'
 import text from './builder/text'
 import { v } from './utils'
 
@@ -55,17 +54,15 @@ export default function* buildTextNodes(content, context: LayoutContext) {
     parent.setJustifyContent(Yoga.JUSTIFY_SPACE_BETWEEN)
   }
 
+  const resolvedFont = font.getFont(parentStyle as any)
+
   for (const word of words) {
     const node = Yoga.Node.create()
     parent.insertChild(node, parent.getChildCount())
 
-    const measured = font.measure(word, parentStyle as any)
+    const measured = font.measure(resolvedFont, word, parentStyle as any)
 
-    // @TODO: Use grapheme-splitter to get the correct character number.
-    const letterSpacing =
-      ((parentStyle.letterSpacing as number) || 0) * word.length
-
-    node.setWidth(measured.width + letterSpacing)
+    node.setWidth(measured.width)
     node.setHeight(measured.ascent * 1.2)
     node.setMargin(Yoga.EDGE_BOTTOM, measured.descent * 1.2)
 
@@ -92,7 +89,7 @@ export default function* buildTextNodes(content, context: LayoutContext) {
     let path: string | null = null
 
     if (embedFont) {
-      path = font.getSVG(word, {
+      path = font.getSVG(resolvedFont, word, {
         ...parentStyle,
         top,
         left,
@@ -102,7 +99,7 @@ export default function* buildTextNodes(content, context: LayoutContext) {
       // We need manually add the font ascender height to ensure it starts
       // at the baseline because <text>'s alignment baseline is set to `hanging`
       // by default and supported to change in SVG 1.1.
-      top += font.getAscent(parentStyle as any)
+      top += font.getAscent(resolvedFont, parentStyle as any)
     }
 
     result += text(
