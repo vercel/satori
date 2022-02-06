@@ -4,9 +4,9 @@
  * also returns the inherited style for children of the element.
  */
 
-import type { YogaNode } from 'yoga-layout-prebuilt'
+import type { YogaNode } from 'yoga-layout'
 
-import Yoga from 'yoga-layout-prebuilt'
+import getYoga from '../yoga'
 import presets from './presets'
 import inheritable from './inheritable'
 import expand from './expand'
@@ -21,6 +21,8 @@ export default function handler(
   definedStyle: Record<string, string | number>,
   props: Record<string, any>
 ): [Record<string, string | number>, Record<string, string | number>] {
+  const Yoga = getYoga()
+
   // Extend the default style with defined and inherited styles.
   const style = {
     ...inheritedStyle,
@@ -142,9 +144,11 @@ export default function handler(
     // @TODO: We need a fork to add this API.
     node.setFlexBasis(style.flexBasis)
   }
-  node.setFlexGrow(typeof style.flexGrow === 'undefined' ? 0 : style.flexGrow)
+  node.setFlexGrow(
+    typeof style.flexGrow === 'undefined' ? 0 : (style.flexGrow as number)
+  )
   node.setFlexShrink(
-    typeof style.flexShrink === 'undefined' ? 1 : style.flexShrink
+    typeof style.flexShrink === 'undefined' ? 1 : (style.flexShrink as number)
   )
 
   if (typeof style.maxHeight !== 'undefined') {

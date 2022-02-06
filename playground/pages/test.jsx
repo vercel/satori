@@ -226,7 +226,7 @@ export default function Playground() {
         width,
         height,
         fonts,
-        embedFont: false,
+        // embedFont: false,
         debug: true,
       })
 

@@ -1,4 +1,4 @@
-import gradient from 'gradient-parser'
+import gradient from '../../deps/gradient-parser'
 
 interface Background {
   attachment: string

@@ -3,7 +3,7 @@
  * supported inline node is text. All other nodes are using block layout.
  */
 
-import Yoga from 'yoga-layout-prebuilt'
+import getYoga from './yoga'
 import { LineBreaker } from 'css-line-break'
 
 import type { LayoutContext } from './layout'
@@ -11,6 +11,7 @@ import text from './builder/text'
 import { v } from './utils'
 
 export default function* buildTextNodes(content, context: LayoutContext) {
+  const Yoga = getYoga()
   const {
     parentStyle,
     parent,
