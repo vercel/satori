@@ -11,6 +11,7 @@ export interface SatoriOptions {
   fonts: FontOptions[]
   embedFont?: boolean
   debug?: boolean
+  graphemeImages?: Record<string, string>
 }
 
 export { init }
@@ -49,6 +50,7 @@ export default function satori(
     font,
     embedFont: options.embedFont,
     debug: options.debug,
+    graphemeImages: options.graphemeImages,
   })
 
   handler.next()

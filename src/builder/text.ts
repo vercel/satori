@@ -11,6 +11,7 @@ export default function text(
     height,
     isInheritingTransform,
     path,
+    image,
     debug,
   }: {
     content: string
@@ -22,6 +23,7 @@ export default function text(
     height: number
     isInheritingTransform: boolean
     path: string | null
+    image: string | null
     debug?: boolean
   },
   style: Record<string, number | string>
@@ -48,6 +50,17 @@ export default function text(
     }" fill="transparent" stroke="#575eff" stroke-width="1" ${
       matrix ? `transform="${matrix}"` : ''
     }></rect>`
+  }
+
+  // This grapheme should be rendered as an image.
+  if (image) {
+    return `${
+      filter ? `${filter}<g filter="url(#satori_s-${id})">` : ''
+    }<image href="${image}" x="${left}" y="${top}" width="${width}" height="${height}" ${
+      matrix ? `transform="${matrix}"` : ''
+    } ${opacity !== 1 ? `opacity="${opacity}"` : ''}></image>${
+      filter ? '</g>' : ''
+    }${extra}`
   }
 
   // Do not embed the font, use <text> with the raw content instead.

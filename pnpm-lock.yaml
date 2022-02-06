@@ -9,7 +9,6 @@ importers:
       '@types/react': ^17.0.38
       '@types/yoga-layout': ^1.9.4
       css-background-parser: ^0.1.0
-      css-line-break: ^2.1.0
       css-to-react-native: ^3.0.0
       gradient-parser: ^1.0.2
       opentype.js: ^1.3.4
@@ -21,7 +20,6 @@ importers:
       yoga-layout-prebuilt: ^1.10.0
     dependencies:
       css-background-parser: 0.1.0
-      css-line-break: 2.1.0
       css-to-react-native: 3.0.0
       gradient-parser: 1.0.2
       opentype.js: 1.3.4
@@ -508,11 +506,6 @@ packages:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
     dev: true
 
-  /base64-arraybuffer/1.0.2:
-    resolution: {integrity: sha512-I3yl4r9QB5ZRY3XuJVEPfc2XhZO6YweFPI+UovAzn+8/hb3oJ6lnysaFcjVpkCPfVWFUDvoZ8kmVDP7WyRtYtQ==}
-    engines: {node: '>= 0.6.0'}
-    dev: false
-
   /binary-extensions/2.2.0:
     resolution: {integrity: sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA==}
     engines: {node: '>=8'}
@@ -659,12 +652,6 @@ packages:
 
   /css-length-units/1.0.0:
     resolution: {integrity: sha1-R3Pdx5LEACDzzIYl/j2GkMS8M6c=}
-    dev: false
-
-  /css-line-break/2.1.0:
-    resolution: {integrity: sha512-FHcKFCZcAha3LwfVBhCQbW2nCNbkZXn7KVUJcsT5/P8YmfsVja0FMPJr0B903j/E69HUphKiV9iQArX8SDYA4w==}
-    dependencies:
-      utrie: 1.0.2
     dev: false
 
   /css-resolution-units/1.0.1:
@@ -1832,12 +1819,6 @@ packages:
     dependencies:
       object-assign: 4.1.1
       react: 17.0.2
-    dev: false
-
-  /utrie/1.0.2:
-    resolution: {integrity: sha512-1MLa5ouZiOmQzUbjbu9VmjLzn1QLXBhwpUa7kdLUQK+KQ5KA9I1vk5U4YHe/X2Ch7PYnJfWuWT+VbuxbGwljhw==}
-    dependencies:
-      base64-arraybuffer: 1.0.2
     dev: false
 
   /vite/2.7.13:
