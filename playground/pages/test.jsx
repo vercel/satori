@@ -144,7 +144,7 @@ const example_github = (
             color: '#666',
           }}
         >
-          The React Framework That is great to use wow it
+          The React Framework
         </p>
       </div>
       <div>
