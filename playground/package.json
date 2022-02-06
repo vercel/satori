@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "dev": "next"
+    "dev": "next",
+    "build": "next build",
+    "start": "next start"
   },
   "dependencies": {
     "@codesandbox/sandpack-react": "^0.13.8",
