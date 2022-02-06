@@ -1,5 +1,5 @@
 import radius from './border-radius'
-import shadow from './box-shadow'
+import shadow from './shadow'
 
 export default function image(
   {

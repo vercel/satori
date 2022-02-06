@@ -2,7 +2,9 @@ import transform from './transform'
 
 export default function text(
   {
+    id,
     content,
+    filter,
     left,
     top,
     width,
@@ -12,6 +14,7 @@ export default function text(
     debug,
   }: {
     content: string
+    filter: string
     id: number
     left: number
     top: number
@@ -49,7 +52,9 @@ export default function text(
 
   // Do not embed the font, use <text> with the raw content instead.
   if (path === null) {
-    return `<text x="${left}" y="${top}" width="${width}" height="${height}" fill="${
+    return `${
+      filter ? `${filter}<g filter="url(#satori_s-${id})">` : ''
+    }<text x="${left}" y="${top}" width="${width}" height="${height}" fill="${
       style.color
     }" font-weight="${style.fontWeight}" font-style="${
       style.fontStyle
@@ -57,10 +62,12 @@ export default function text(
       style.letterSpacing ? `letter-spacing="${style.letterSpacing}"` : ''
     } ${matrix ? `transform="${matrix}"` : ''} ${
       opacity !== 1 ? `opacity="${opacity}"` : ''
-    }>${content}</text>${extra}`
+    }>${content}</text>${filter ? '</g>' : ''}${extra}`
   }
 
-  return `<path fill="${style.color}" ${
-    matrix ? `transform="${matrix}"` : ''
-  } ${opacity !== 1 ? `opacity="${opacity}"` : ''} d="${path}"></path>${extra}`
+  return `${
+    filter ? `${filter}<g filter="url(#satori_s-${id})">` : ''
+  }<path fill="${style.color}" ${matrix ? `transform="${matrix}"` : ''} ${
+    opacity !== 1 ? `opacity="${opacity}"` : ''
+  } d="${path}"></path>${filter ? '</g>' : ''}${extra}`
 }

@@ -1,6 +1,6 @@
 import backgroundImage from './background-image'
 import radius from './border-radius'
-import shadow from './box-shadow'
+import shadow from './shadow'
 import transform from './transform'
 
 export default function rect(

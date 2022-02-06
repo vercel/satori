@@ -158,7 +158,13 @@ const example_github = (
         ></img>
       </div>
     </div>
-    <div style={{ display: 'flex', width: '100%', height: 53 }}>
+    <div
+      style={{
+        display: 'flex',
+        width: '100%',
+        height: 53,
+      }}
+    >
       <Item title='2k' subtitle='Contributors' icon='&#xE7FB;' />
       <Item title='18k' subtitle='Used by' icon='&#xe0df;' />
       <Item title='9k' subtitle='Discussions' icon='&#xe0bf;' />
@@ -227,7 +233,7 @@ export default function Playground() {
         height,
         fonts,
         // embedFont: false,
-        debug: true,
+        // debug: true,
       })
 
       setSvg(result)
