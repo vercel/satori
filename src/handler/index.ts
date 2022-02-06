@@ -10,13 +10,9 @@ import Yoga from 'yoga-layout-prebuilt'
 import presets from './presets'
 import inheritable from './inheritable'
 import expand from './expand'
+import { v } from '../utils'
 
 type SatoriElement = keyof typeof presets
-
-function v(field: string | number, map: Record<string, any>, fallback: any) {
-  const value = map[field]
-  return typeof value === 'undefined' ? fallback : value
-}
 
 export default function handler(
   node: YogaNode,

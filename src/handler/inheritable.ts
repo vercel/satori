@@ -11,6 +11,7 @@ const list = new Set([
   'whiteSpace',
   'letterSpacing',
   'transform',
+  'wordBreak',
 
   // Special case: SVG doesn't apply opacity to children elements so we need to
   // make it inheritable here.
