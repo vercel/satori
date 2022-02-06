@@ -22,6 +22,7 @@ export interface LayoutContext {
   font: FontLoader
   embedFont: boolean
   debug?: boolean
+  graphemeImages?: Record<string, string>
 }
 
 export default function* layout(
@@ -29,7 +30,15 @@ export default function* layout(
   context: LayoutContext
 ): Generator<undefined, string, [number, number]> {
   const Yoga = getYoga()
-  const { id, inheritedStyle, parent, font, debug, embedFont = true } = context
+  const {
+    id,
+    inheritedStyle,
+    parent,
+    font,
+    debug,
+    embedFont = true,
+    graphemeImages,
+  } = context
 
   // 1. Pre-process the node.
   if (element === null || typeof element === 'undefined') {
@@ -98,6 +107,7 @@ export default function* layout(
       font,
       embedFont,
       debug,
+      graphemeImages,
     })
     iter.next()
     iterators.push(iter)

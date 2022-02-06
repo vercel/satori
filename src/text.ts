@@ -5,7 +5,6 @@
 import type { LayoutContext } from './layout'
 
 import getYoga from './yoga'
-import { LineBreaker } from 'css-line-break'
 import { v } from './utils'
 import text from './builder/text'
 import shadow from './builder/shadow'
@@ -20,26 +19,23 @@ export default function* buildTextNodes(content, context: LayoutContext) {
     isInheritingTransform,
     debug,
     embedFont,
+    graphemeImages,
   } = context
 
-  const breaker = LineBreaker(content, {
-    lineBreak: 'strict',
-    wordBreak: v(
-      parentStyle.wordBreak,
-      {
-        normal: 'normal',
-        'break-all': 'break-all',
-        'break-word': 'break-word',
-        'keep-all': 'keep-all',
-      },
-      'normal'
-    ),
-  })
+  const granularity = v(
+    parentStyle.wordBreak,
+    {
+      normal: 'word',
+      'break-all': 'grapheme',
+      'break-word': 'grapheme',
+      'keep-all': 'word',
+    },
+    'word'
+  )
 
-  const words = []
-  for (let br; !(br = breaker.next()).done; ) {
-    words.push(br.value.slice())
-  }
+  // @ts-ignore
+  const segmenter = new Intl.Segmenter('en', { granularity })
+  const words = [...segmenter.segment(content)].map((seg) => seg.segment)
 
   const nodes = []
 
@@ -61,7 +57,20 @@ export default function* buildTextNodes(content, context: LayoutContext) {
     const node = Yoga.Node.create()
     parent.insertChild(node, parent.getChildCount())
 
-    const measured = font.measure(resolvedFont, word, parentStyle as any)
+    let measured
+    if (graphemeImages && graphemeImages[word]) {
+      measured = {
+        width: parentStyle.fontSize as number,
+        ascent:
+          (resolvedFont.ascender / resolvedFont.unitsPerEm) *
+          (parentStyle.fontSize as number),
+        descent:
+          -(resolvedFont.descender / resolvedFont.unitsPerEm) *
+          (parentStyle.fontSize as number),
+      }
+    } else {
+      measured = font.measure(resolvedFont, word, parentStyle as any)
+    }
 
     node.setWidth(measured.width)
     node.setHeight(measured.ascent * 1.2)
@@ -88,8 +97,11 @@ export default function* buildTextNodes(content, context: LayoutContext) {
     top += y
 
     let path: string | null = null
+    let image: string | null = null
 
-    if (embedFont) {
+    if (graphemeImages && graphemeImages[word]) {
+      image = graphemeImages[word]
+    } else if (embedFont) {
       path = font.getSVG(resolvedFont, word, {
         ...parentStyle,
         top,
@@ -126,6 +138,7 @@ export default function* buildTextNodes(content, context: LayoutContext) {
         height,
         isInheritingTransform,
         path,
+        image,
         debug,
       },
       parentStyle

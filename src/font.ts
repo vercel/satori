@@ -133,6 +133,8 @@ export default class FontLoader {
       letterSpacing: number
     }
   ) {
+    // console.log(font.charToGlyphIndex('✅') !== 0)
+
     return {
       width: font.getAdvanceWidth(content, fontSize, {
         letterSpacing: letterSpacing / fontSize,
