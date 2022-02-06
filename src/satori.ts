@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import Yoga from 'yoga-layout-prebuilt'
+import getYoga, { init } from './yoga'
 import layout from './layout'
 import FontLoader, { FontOptions } from './font'
 import svg from './builder/svg'
@@ -13,10 +13,15 @@ export interface SatoriOptions {
   debug?: boolean
 }
 
+export { init }
+
 export default function satori(
   element: ReactNode,
   options: SatoriOptions
 ): string {
+  const Yoga = getYoga()
+  if (!Yoga) throw new Error('Satori is not initialized.')
+
   const font = new FontLoader(options.fonts)
 
   const root = Yoga.Node.create()

@@ -7,6 +7,7 @@ importers:
       '@types/node': ^17.0.13
       '@types/opentype.js': ^1.3.3
       '@types/react': ^17.0.38
+      '@types/yoga-layout': ^1.9.4
       css-background-parser: ^0.1.0
       css-line-break: ^2.1.0
       css-to-react-native: ^3.0.0
@@ -30,6 +31,7 @@ importers:
       '@types/node': 17.0.13
       '@types/opentype.js': 1.3.3
       '@types/react': 17.0.38
+      '@types/yoga-layout': 1.9.4
       react: 17.0.2
       tsup: 5.11.13_typescript@4.5.5
       typescript: 4.5.5
@@ -476,6 +478,10 @@ packages:
   /@types/yoga-layout/1.9.2:
     resolution: {integrity: sha512-S9q47ByT2pPvD65IvrWp7qppVMpk9WGMbVq9wbWZOHg6tnXSD4vyhao6nOSBwwfDdV2p3Kx9evA9vI+XWTfDvw==}
     dev: false
+
+  /@types/yoga-layout/1.9.4:
+    resolution: {integrity: sha512-RRHc1+8Hc5mf/2lZKnom6kCnqcNS07s8keahniWTOva0KELF6RgDJmaEcvGEKUUJgN4UgessmEsWuidaOycIOw==}
+    dev: true
 
   /any-promise/1.3.0:
     resolution: {integrity: sha1-q8av7tzqUugJzcA3au0845Y10X8=}

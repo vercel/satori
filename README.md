@@ -2,11 +2,13 @@
   Satori
 </h1>
 
-## Quick Start
+## API
 
 `satori` is a function that takes a JSX element and returns a SVG string:
 
 ```jsx
+import satori from 'satori'
+
 satori(
   <div style={{ color: 'black' }}>hello, world</div>,
   {

@@ -3,7 +3,7 @@
  * cleaning up some properties.
  */
 
-import transform, { getPropertyName } from 'css-to-react-native'
+import { getPropertyName, getStylesForProperty } from 'css-to-react-native'
 import CssDimension from 'parse-css-dimension'
 import { parseElementStyle } from 'css-background-parser'
 import { multiply } from '../utils'
@@ -74,7 +74,11 @@ export default function expand(
     const name = getPropertyName(prop)
     rules.push([name, purify(name, style[prop])])
   }
-  const transformedStyle = transform(rules)
+  const transformedStyle = rules.reduce((accum, rule) => {
+    const propertyName = getPropertyName(rule[0])
+    const value = rule[1]
+    return Object.assign(accum, getStylesForProperty(propertyName, value, true))
+  }, {})
 
   // Parse background images.
   if (transformedStyle.backgroundImage) {

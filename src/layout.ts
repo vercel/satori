@@ -3,9 +3,9 @@
  */
 
 import type { ReactNode } from 'react'
-import type { YogaNode } from 'yoga-layout-prebuilt'
+import type { YogaNode } from 'yoga-layout'
 
-import Yoga from 'yoga-layout-prebuilt'
+import getYoga from './yoga'
 import { isReactElement, isClass } from './utils'
 import handler from './handler'
 import FontLoader from './font'
@@ -28,6 +28,7 @@ export default function* layout(
   element: ReactNode,
   context: LayoutContext
 ): Generator<undefined, string, [number, number]> {
+  const Yoga = getYoga()
   const { id, inheritedStyle, parent, font, debug, embedFont = true } = context
 
   // 1. Pre-process the node.

@@ -37,5 +37,5 @@ export default function transform(
     matrix.splice(0, 6, ...result)
   }
 
-  return `matrix(${result.join(',')})`
+  return `matrix(${result.map((v) => v.toFixed(2)).join(',')})`
 }

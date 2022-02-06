@@ -144,7 +144,7 @@ const example_github = (
             color: '#666',
           }}
         >
-          The React Framework
+          The React Framework That is great to use wow it
         </p>
       </div>
       <div>
@@ -226,7 +226,7 @@ export default function Playground() {
         width,
         height,
         fonts,
-        embedFont: false,
+        // embedFont: false,
         debug: true,
       })
 
