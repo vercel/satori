@@ -5,7 +5,12 @@ if (WASM) {
   // For WASM build, we don't include the prebuilt version of Yoga but let the
   // user specify the module manually.
 } else {
-  Yoga = require('./yoga-prebuilt').default
+  const mod = require('./yoga-prebuilt') as any
+  if (mod.default) {
+    Yoga = mod.default
+  } else {
+    Yoga = mod
+  }
 }
 
 export function init(yoga: typeof Yoga) {

@@ -1,6 +1,6 @@
 {
   "name": "satori",
-  "version": "0.0.8-beta.3",
+  "version": "0.0.10",
   "description": "A lightweight library to convert HTML JSX to SVG string.",
   "module": "./dist/esm/index.js",
   "types": "./dist/index.d.ts",

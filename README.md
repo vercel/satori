@@ -45,15 +45,17 @@ https://satori-playground.vercel.app
 
 ### JSX
 
-(TBD: Only pure and stateless function components, only inlined styles.)
+Satori only accepts JSX elements that are pure and stateless. You can use a subset of HTML
+elements (see section below), or custom React components, but React APIs such as `useState` and
+`useEffect` are not supported.
 
 ### HTML Elements
 
 Satori supports a limited subset of HTML and CSS features, due to its special use cases. In general, only these static and visible elements and properties that are implemented. 
 
-For example, the `<input>` HTML element, the `cursor` CSS property are not in consideration.
+For example, the `<input>` HTML element, the `cursor` CSS property are not in consideration. And you can't use `<style>` tags or external resources via `<link>` or `<script>`.
 
-(TBD)
+Also, Satori does not guarantee that the SVG will 100% match the browser-rendered HTML output since Satori implements its own rendering engine based on the [SVG 1.1 spec](https://www.w3.org/TR/SVG11).
 
 ### CSS Properties
 
@@ -71,7 +73,7 @@ For example, the `<input>` HTML element, the `cursor` CSS property are not in co
 | `flex-wrap` | Supported |
 | `flex-grow` | Supported |
 | `flex-shrink` | Supported |
-| `flex-basis` | Supported |
+| `flex-basis` | Supported except for `auto` |
 | `align-items` | Supported |
 | `align-content` | Supported |
 | `align-self` | Supported |
