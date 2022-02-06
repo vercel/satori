@@ -6,8 +6,9 @@ import type { LayoutContext } from './layout'
 
 import getYoga from './yoga'
 import { LineBreaker } from 'css-line-break'
-import text from './builder/text'
 import { v } from './utils'
+import text from './builder/text'
+import shadow from './builder/shadow'
 
 export default function* buildTextNodes(content, context: LayoutContext) {
   const Yoga = getYoga()
@@ -102,9 +103,22 @@ export default function* buildTextNodes(content, context: LayoutContext) {
       top += font.getAscent(resolvedFont, parentStyle as any)
     }
 
+    let filter = ''
+    if (parentStyle.textShadowOffset) {
+      filter = shadow(
+        { width, height, id },
+        {
+          shadowColor: parentStyle.textShadowColor,
+          shadowOffset: parentStyle.textShadowOffset,
+          shadowRadius: parentStyle.textShadowRadius,
+        }
+      )
+    }
+
     result += text(
       {
         content: word,
+        filter,
         id,
         left,
         top,

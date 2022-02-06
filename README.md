@@ -84,7 +84,7 @@ Also, Satori does not guarantee that the SVG will 100% match the browser-rendere
 | `font-style` | Supported |
 | `text-align` | Supported |
 | `letter-spacing` | Supported |
-| `box-shadow` | All supported except spread-radius (works like `drop-shadow`) |
+| `box-shadow` | All supported except `spread-radius` and `inset` (works like `drop-shadow`) |
 | `border-radius` | Supported |
 | `overflow` | `visible`, `hidden` |
 | `color` | Supported |
@@ -94,13 +94,13 @@ Also, Satori does not guarantee that the SVG will 100% match the browser-rendere
 | `background-color` | Supported |
 | `background-image` | Support `linear-gradient`, `url` |
 | `word-break` | Supported |
+| `text-shadow` | Supported |
 | `background-clip` | TBD |
 | `background-size` | TBD |
 | `background-position` | TBD |
 | `background-repeat` | TBD |
 | `background-origin` | TBD |
 | `text-decoration` | TBD |
-| `text-shadow` | TBD |
 | `text-transform` | TBD |
 | `transform-origin` | TBD |
 

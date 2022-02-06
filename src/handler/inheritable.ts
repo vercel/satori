@@ -12,6 +12,9 @@ const list = new Set([
   'letterSpacing',
   'transform',
   'wordBreak',
+  'textShadowOffset',
+  'textShadowColor',
+  'textShadowRadius',
 
   // Special case: SVG doesn't apply opacity to children elements so we need to
   // make it inheritable here.
