@@ -10,7 +10,6 @@ importers:
       '@types/yoga-layout': ^1.9.4
       css-background-parser: ^0.1.0
       css-to-react-native: ^3.0.0
-      gradient-parser: ^1.0.2
       opentype.js: ^1.3.4
       parse-css-dimension: ^1.1.0
       react: ^17.0.2
@@ -21,7 +20,6 @@ importers:
     dependencies:
       css-background-parser: 0.1.0
       css-to-react-native: 3.0.0
-      gradient-parser: 1.0.2
       opentype.js: 1.3.4
       parse-css-dimension: 1.1.0
       yoga-layout-prebuilt: 1.10.0
@@ -1197,11 +1195,6 @@ packages:
       merge2: 1.4.1
       slash: 3.0.0
     dev: true
-
-  /gradient-parser/1.0.2:
-    resolution: {integrity: sha512-gR6nY33xC9yJoH4wGLQtZQMXDi6RI3H37ERu7kQCVUzlXjNedpZM7xcA489Opwbq0BSGohtWGsWsntupmxelMg==}
-    engines: {node: '>=0.10.0'}
-    dev: false
 
   /has/1.0.3:
     resolution: {integrity: sha512-f2dvO0VU6Oej7RkWJGrehjbzMAjFp5/VKPp5tTpWIV4JHHZK1/BxbFRtf/siA2SWTe09caDmVtYYzWEIbBS4zw==}

@@ -25,7 +25,7 @@ satori(
     ],
     embedFont: true, // Embed the font in SVG as path data
     debug: false,    // Show/hide the bounding box
-  }
+  },
 )
 ```
 
@@ -49,13 +49,43 @@ Satori only accepts JSX elements that are pure and stateless. You can use a subs
 elements (see section below), or custom React components, but React APIs such as `useState` and
 `useEffect` are not supported.
 
+#### Use without JSX
+
+If you don't have JSX transpiler enabled, you can simply pass objects that have `type`,
+`props.children` and `props.style` (and other properties too) directly:
+
+```js
+satori({
+  type: 'div',
+  props: {
+    children: 'hello, world',
+    style: { color: 'black' },
+  },
+}, options)
+```
+
 ### HTML Elements
 
 Satori supports a limited subset of HTML and CSS features, due to its special use cases. In general, only these static and visible elements and properties that are implemented. 
 
 For example, the `<input>` HTML element, the `cursor` CSS property are not in consideration. And you can't use `<style>` tags or external resources via `<link>` or `<script>`.
 
-Also, Satori does not guarantee that the SVG will 100% match the browser-rendered HTML output since Satori implements its own rendering engine based on the [SVG 1.1 spec](https://www.w3.org/TR/SVG11).
+Also, Satori does not guarantee that the SVG will 100% match the browser-rendered HTML output since Satori implements its own layout engine based on the [SVG 1.1 spec](https://www.w3.org/TR/SVG11).
+
+You can find the list of supported HTML elements and their preset styles [here](https://github.com/vercel/satori/blob/main/src/handler/presets.ts).
+
+#### Images
+
+You can use `<img>` to embed images but `src`, `width`, and `height` attributes are all required.
+
+```jsx
+satori(
+  <img src="https://picsum.photos/200/300" width={200} height={300} />,
+  options
+)
+```
+
+If you want to render the generated SVG to another image format such as PNG, it would be better to use base64 encoded image data directly as `props.src` so no extra I/O is needed.
 
 ### CSS Properties
 
