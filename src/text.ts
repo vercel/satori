@@ -9,8 +9,21 @@ import { v } from './utils'
 import text from './builder/text'
 import shadow from './builder/shadow'
 
-export default function* buildTextNodes(content, context: LayoutContext) {
+export default function* buildTextNodes(
+  content: string,
+  context: LayoutContext
+) {
   const Yoga = getYoga()
+  // @TODO: Support "lang" attribute to modify the locale
+  const locale = 'en'
+
+  // @ts-ignore
+  const wordSegmenter = new Intl.Segmenter(locale, { granularity: 'word' })
+  // @ts-ignore
+  const graphemeSegmenter = new Intl.Segmenter(locale, {
+    granularity: 'grapheme',
+  })
+
   const {
     parentStyle,
     parent,
@@ -22,19 +35,38 @@ export default function* buildTextNodes(content, context: LayoutContext) {
     graphemeImages,
   } = context
 
-  const granularity = v(
+  if (parentStyle.textTransform === 'uppercase') {
+    content = content.toLocaleUpperCase(locale)
+  } else if (parentStyle.textTransform === 'lowercase') {
+    content = content.toLocaleLowerCase(locale)
+  } else if (parentStyle.textTransform === 'capitalize') {
+    content = [...wordSegmenter.segment(content)]
+      // For each word...
+      .map((seg) => {
+        // ...split into graphemes...
+        return [...graphemeSegmenter.segment(seg.segment)]
+          .map((grapheme, index) => {
+            // ...and make the first grapheme uppercase
+            return index === 0
+              ? grapheme.segment.toLocaleUpperCase(locale)
+              : grapheme.segment
+          })
+          .join('')
+      })
+      .join('')
+  }
+
+  const segmenter = v(
     parentStyle.wordBreak,
     {
-      normal: 'word',
-      'break-all': 'grapheme',
-      'break-word': 'grapheme',
-      'keep-all': 'word',
+      normal: wordSegmenter,
+      'break-all': graphemeSegmenter,
+      'break-word': graphemeSegmenter,
+      'keep-all': wordSegmenter,
     },
-    'word'
+    wordSegmenter
   )
 
-  // @ts-ignore
-  const segmenter = new Intl.Segmenter('en', { granularity })
   const words = [...segmenter.segment(content)].map((seg) => seg.segment)
 
   const nodes = []
