@@ -95,13 +95,13 @@ Also, Satori does not guarantee that the SVG will 100% match the browser-rendere
 | `background-image` | Support `linear-gradient`, `url` |
 | `word-break` | Supported |
 | `text-shadow` | Supported |
+| `text-transform` | Support `lowercase`, `uppercase`, `capitalize` |
 | `background-clip` | TBD |
 | `background-size` | TBD |
 | `background-position` | TBD |
 | `background-repeat` | TBD |
 | `background-origin` | TBD |
 | `text-decoration` | TBD |
-| `text-transform` | TBD |
 | `transform-origin` | TBD |
 
 Note:
