@@ -90,6 +90,7 @@ function Item({ title, subtitle, icon }) {
         flexDirection: 'row',
         color: '#333',
         flexGrow: 1,
+        textTransform: 'uppercase',
       }}
     >
       <span
@@ -165,7 +166,7 @@ export default function Playground() {
   let { repo, subtitle } = useRouter().query
 
   repo = repo || 'next.js 🤯'
-  subtitle = subtitle || 'The React Framework ✨🥰'
+  subtitle = subtitle || 'the react framework ✨🥰'
 
   const element = (
     <div
@@ -203,6 +204,7 @@ export default function Playground() {
             style={{
               fontSize: 24,
               color: '#666',
+              textTransform: 'capitalize',
             }}
           >
             {subtitle}
