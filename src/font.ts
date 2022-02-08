@@ -135,13 +135,9 @@ export default class FontLoader {
   ) {
     // console.log(font.charToGlyphIndex('✅') !== 0)
 
-    return {
-      width: font.getAdvanceWidth(content, fontSize, {
-        letterSpacing: letterSpacing / fontSize,
-      }),
-      ascent: (font.ascender / font.unitsPerEm) * fontSize,
-      descent: -(font.descender / font.unitsPerEm) * fontSize,
-    }
+    return font.getAdvanceWidth(content, fontSize, {
+      letterSpacing: letterSpacing / fontSize,
+    })
   }
 
   public getSVG(
@@ -167,16 +163,5 @@ export default class FontLoader {
         letterSpacing: letterSpacing / fontSize,
       })
       .toPathData(2)
-  }
-
-  public getAscent(
-    font: opentype.Font,
-    {
-      fontSize,
-    }: {
-      fontSize: number
-    }
-  ) {
-    return (font.ascender / font.unitsPerEm) * fontSize
   }
 }

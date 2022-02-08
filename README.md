@@ -154,6 +154,8 @@ The image will be resized to the current font-size (both width and height), so i
 | `background-origin` | TBD |
 | `text-decoration` | TBD |
 | `transform-origin` | TBD |
+| `line-height` | TBD |
+| `white-space` | TBD |
 
 Note:
 
