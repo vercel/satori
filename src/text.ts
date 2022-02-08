@@ -148,7 +148,14 @@ export default function* buildTextNodes(
           remainingSpaceWidth = 0
         }
 
-        if (currentWidth + remainingSpaceWidth + w > width) {
+        const allowedToPutAtBeginning =
+          remainingSpaceWidth || ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
+        const allowedToJustify = !currentWidth || !!remainingSpaceWidth
+
+        if (
+          allowedToPutAtBeginning &&
+          currentWidth + remainingSpaceWidth + w > width
+        ) {
           // Start a new line, spaces can be ignored.
           lineWidth.push(currentWidth)
           lines.push(currentLine)
@@ -160,12 +167,17 @@ export default function* buildTextNodes(
           // It fits into the current line.
           currentLine += remainingSpace + word
           currentWidth += remainingSpaceWidth + w
-          lineSegmentNumber[lineSegmentNumber.length - 1]++
+          if (allowedToJustify) {
+            lineSegmentNumber[lineSegmentNumber.length - 1]++
+          }
         }
 
         remainingSpace = ''
         remainingSpaceWidth = 0
-        lineIndex++
+
+        if (allowedToJustify) {
+          lineIndex++
+        }
 
         maxWidth = Math.max(maxWidth, currentWidth)
         wordsInLayout[i] = {
