@@ -91,6 +91,7 @@ const example_text_layout = (
       display: 'flex',
       height: '100%',
       width: '100%',
+      padding: 20,
       alignItems: 'center',
       justifyContent: 'center',
       flexDirection: 'row',
@@ -231,7 +232,7 @@ export default function Playground() {
   repo = repo || 'next.js 🤯'
   subtitle = subtitle || 'the react framework ✨🥰'
 
-  const element = (
+  let element = (
     <div
       style={{
         fontFamily: 'Inter',
@@ -299,6 +300,8 @@ export default function Playground() {
       </div>
     </div>
   )
+
+  // element = example_text_layout
 
   useEffect(() => {
     ;(async () => {
