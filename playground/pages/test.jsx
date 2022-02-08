@@ -47,6 +47,9 @@ const example_rauchg = (
     </div>
     <div
       style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
         padding: '20px 40px',
         letterSpacing: -2,
         fontSize: 40,
@@ -66,17 +69,77 @@ const example_rauchg = (
           'rotate(-10deg) translate(0, -10px) skewX(-10deg) scale(1.2, 1.2)',
       }}
     >
-      7 Principles of{' '}
+      7 Principles of
       <span
         style={{
+          margin: '0 10px',
           color: 'gold',
-          display: 'inline-block',
+          display: 'block',
           transform: 'rotate(10deg) scale(1, 2)',
         }}
       >
         Rich
-      </span>{' '}
+      </span>
       Web Applications
+    </div>
+  </div>
+)
+
+const example_text_layout = (
+  <div
+    style={{
+      display: 'flex',
+      height: '100%',
+      width: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
+      flexWrap: 'nowrap',
+    }}
+  >
+    <div
+      style={{
+        padding: 10,
+        textAlign: 'left',
+      }}
+    >
+      text-align: left. Lorem ipsum dolor sit amet consectetur adipisicing elit.
+      Animi natus doloribus unde eaque facere suscipit eum! Error, quidem
+      commodi suscipit eos expedita repellendus fuga. Officia, ut! Esse pariatur
+      saepe praesentium.
+    </div>
+    <div
+      style={{
+        padding: 10,
+        textAlign: 'center',
+      }}
+    >
+      text-align: center. Lorem ipsum dolor sit amet consectetur adipisicing
+      elit. Animi natus doloribus unde eaque facere suscipit eum! Error, quidem
+      commodi suscipit eos expedita repellendus fuga. Officia, ut! Esse pariatur
+      saepe praesentium.
+    </div>
+    <div
+      style={{
+        padding: 10,
+        textAlign: 'justify',
+      }}
+    >
+      text-align: jusitfy. Lorem ipsum dolor sit amet consectetur adipisicing
+      elit. Animi natus doloribus unde eaque facere suscipit eum! Error, quidem
+      commodi suscipit eos expedita repellendus fuga. Officia, ut! Esse pariatur
+      saepe praesentium.
+    </div>
+    <div
+      style={{
+        padding: 10,
+        textAlign: 'right',
+      }}
+    >
+      text-align: right. Lorem ipsum dolor sit amet consectetur adipisicing
+      elit. Animi natus doloribus unde eaque facere suscipit eum! Error, quidem
+      commodi suscipit eos expedita repellendus fuga. Officia, ut! Esse pariatur
+      saepe praesentium.
     </div>
   </div>
 )
@@ -259,7 +322,7 @@ export default function Playground() {
         fonts,
         graphemeImages,
         // embedFont: false,
-        // debug: true,
+        debug: true,
       })
 
       setSvg(result)
@@ -278,6 +341,8 @@ export default function Playground() {
           width,
           height,
           overflow: 'hidden',
+          letterSpacing: 0,
+          fontSize: 16,
         }}
       >
         {element}

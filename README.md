@@ -4,7 +4,7 @@
 
 ## API
 
-`satori` is a function that takes a JSX element and returns a SVG string:
+Satori translates the layout and styles of HTML & CSS based elements into an SVG image.
 
 ```jsx
 import satori from 'satori'
@@ -23,8 +23,9 @@ satori(
       },
       ...
     ],
-    embedFont: true, // Embed the font in SVG as path data
-    debug: false,    // Show/hide the bounding box
+    embedFont: true,   // Embed the font in SVG as path data. Optional, default: true.
+    debug: false,      // Show the bounding box for debugging. Optional, default: false.
+    graphemeImages: {} // Custom grapheme images. Optional, default: empty.
   },
 )
 ```
@@ -35,7 +36,7 @@ Which yields:
 '<svg ...><path d="..." fill="black"></path></svg>'
 ```
 
-Text will be embedded in the SVG as path.
+Text (with font data) will be embedded in the SVG as paths.
 
 ## Playground
 
@@ -51,17 +52,19 @@ elements (see section below), or custom React components, but React APIs such as
 
 #### Use without JSX
 
-If you don't have JSX transpiler enabled, you can simply pass objects that have `type`,
-`props.children` and `props.style` (and other properties too) directly:
+If you don't have JSX transpiler enabled, you can simply pass [React-elements-like objects](https://reactjs.org/docs/introducing-jsx.html) that have `type`, `props.children` and `props.style` (and other properties too) directly:
 
 ```js
-satori({
-  type: 'div',
-  props: {
-    children: 'hello, world',
-    style: { color: 'black' },
+satori(
+  {
+    type: 'div',
+    props: {
+      children: 'hello, world',
+      style: { color: 'black' },
+    },
   },
-}, options)
+  options
+)
 ```
 
 ### HTML Elements
@@ -86,6 +89,24 @@ satori(
 ```
 
 If you want to render the generated SVG to another image format such as PNG, it would be better to use base64 encoded image data directly as `props.src` so no extra I/O is needed.
+
+#### Emojis
+
+To render custom images for specific graphemes, you can use `graphemeImages` option to map the grapheme to an image source:
+
+```jsx
+satori(
+  <div>Next.js is 🤯!</div>,
+  {
+    ...,
+    graphemeImages: {
+      '🤯': 'https://twemoji.maxcdn.com/v/13.1.0/svg/1f92f.svg',
+    },
+  }
+)
+```
+
+The image will be resized to the current font-size (both width and height), so it must be a square.
 
 ### CSS Properties
 
@@ -133,6 +154,8 @@ If you want to render the generated SVG to another image format such as PNG, it 
 | `background-origin` | TBD |
 | `text-decoration` | TBD |
 | `transform-origin` | TBD |
+| `line-height` | TBD |
+| `white-space` | TBD |
 
 Note:
 
