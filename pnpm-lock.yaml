@@ -36,12 +36,14 @@ importers:
   playground:
     specifiers:
       '@codesandbox/sandpack-react': ^0.13.8
+      '@resvg/resvg-js': ^1.4.0
       next: ^12.0.9
       react: ^17.0.2
       react-dom: ^17.0.2
       satori: workspace:*
     dependencies:
       '@codesandbox/sandpack-react': 0.13.8_react-dom@17.0.2+react@17.0.2
+      '@resvg/resvg-js': 1.4.0
       next: 12.0.9_react-dom@17.0.2+react@17.0.2
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
@@ -435,6 +437,132 @@ packages:
       react: '>=16.8'
     dependencies:
       react: 17.0.2
+    dev: false
+
+  /@resvg/resvg-js-android-arm-eabi/1.4.0:
+    resolution: {integrity: sha512-8C7P2dYNeL5mghCgJ+2IqNwv5V50d5pZQYIvGYlbP7d3OB/T8uVEcmuflYgWq+/vEn1gZE+Q2A0tFJOHqIvH9A==}
+    engines: {node: '>= 10'}
+    cpu: [arm]
+    os: [android]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-android-arm64/1.4.0:
+    resolution: {integrity: sha512-BQp3zo+/8Ns9u2NCh7YeII2KflsiXfJDrwahXk21PuDp0l1KcMjdQ2o4dTWTskF5Dba/rcuDa94T5GD9Pgap7g==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [android]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-darwin-arm64/1.4.0:
+    resolution: {integrity: sha512-IuvUOIpdxk5fEqr8EXgdCfugRWS88HlXwSeHPDVNCh/9kQ7exRoVi5CDOipkngUPYKxbKTekJWTxQHRUtf8oNQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-darwin-x64/1.4.0:
+    resolution: {integrity: sha512-XFao3tkBBPHubVvXDX/ViYf2509tgqcfUc6bDtVYHCUOecK10ppbtdMRRnXjesi3towPQj2peiRUEavTIBbfGg==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-linux-arm-gnueabihf/1.4.0:
+    resolution: {integrity: sha512-RAjGdBJKGO5tSE1PsTl2WpG/TkgJGqsHIFtaQAUWNG4/LQ+0MNAptBOGrvNZvmRu+hVIk1t8m9rKme2RMdmlLQ==}
+    engines: {node: '>= 10'}
+    cpu: [arm]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-linux-arm64-gnu/1.4.0:
+    resolution: {integrity: sha512-mT0UWGyzSaTu48sJGQno9zaZqk7j9ZjZppNu/TkLqObYu0xSeTnxnU73/Xy+byZh9RvLY/994bEaOP50jpDW/g==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-linux-arm64-musl/1.4.0:
+    resolution: {integrity: sha512-wfl0dk9pNExJeFxRoAO0P0ywVkqW80FqsCH6KCtTbB1f2P2NY0paAKPho1LJ2z1YSzq3ngganyAKPl2PoBqn4g==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-linux-x64-gnu/1.4.0:
+    resolution: {integrity: sha512-XDebImgHmQMIjxISZ4UsV9iHcO2IJnkKrT9/F5SWF3MgqRLro2pIY1JsgW70sEjkHlcyF7dbTa/M7TAgSz0uvg==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-linux-x64-musl/1.4.0:
+    resolution: {integrity: sha512-cvq7pPQECLyP5SoI5ECZL0RhKcgz7sQTjYWQdZjFdF6riN40uWSo1Le31+oLLCwSoSOo8Z60xmU95ChbZjSY5Q==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-win32-arm64-msvc/1.4.0:
+    resolution: {integrity: sha512-4waye03doDRsQmtibxiTQ7alAmvT2D7gt5n3gmIMsAP8fF+szRQ+cD/ClPZdBIMonhAUbe3nLMduocOe2Jp59Q==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-win32-ia32-msvc/1.4.0:
+    resolution: {integrity: sha512-9Ld/Hv8nXslvodPv9wL3wec8Tf9kFAO4t9632Y66aAcGZBNW/xAwzbgDOSv32N763tsLphleu1DhJ7nXKZIz9A==}
+    engines: {node: '>= 10'}
+    cpu: [ia32]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-win32-x64-msvc/1.4.0:
+    resolution: {integrity: sha512-sMGQdOIop6a/s+cmFodnQNNykvr/MavgBXCzVt9jp1Rq4PXWtn8uwSsUupsn3SHPJCZ83kee6m4JCnak6Rec9A==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js/1.4.0:
+    resolution: {integrity: sha512-AcsRqAPFMIOxlMZCHxSxTG5vZTbW95xFDrQDTmsX/VEwc3tgLL9E4Be2nIJjWrdvIQxsTlaWYJsn2pxkki9Ltg==}
+    engines: {node: '>= 10'}
+    optionalDependencies:
+      '@resvg/resvg-js-android-arm-eabi': 1.4.0
+      '@resvg/resvg-js-android-arm64': 1.4.0
+      '@resvg/resvg-js-darwin-arm64': 1.4.0
+      '@resvg/resvg-js-darwin-x64': 1.4.0
+      '@resvg/resvg-js-linux-arm-gnueabihf': 1.4.0
+      '@resvg/resvg-js-linux-arm64-gnu': 1.4.0
+      '@resvg/resvg-js-linux-arm64-musl': 1.4.0
+      '@resvg/resvg-js-linux-x64-gnu': 1.4.0
+      '@resvg/resvg-js-linux-x64-musl': 1.4.0
+      '@resvg/resvg-js-win32-arm64-msvc': 1.4.0
+      '@resvg/resvg-js-win32-ia32-msvc': 1.4.0
+      '@resvg/resvg-js-win32-x64-msvc': 1.4.0
     dev: false
 
   /@types/chai-subset/1.3.3:
