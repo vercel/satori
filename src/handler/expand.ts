@@ -104,7 +104,9 @@ export default function expand(
       baseFontSize = 16
     }
   }
-  transformedStyle.fontSize = baseFontSize
+  if (typeof transformedStyle.fontSize !== 'undefined') {
+    transformedStyle.fontSize = baseFontSize
+  }
 
   for (const prop in transformedStyle) {
     let value = transformedStyle[prop]
