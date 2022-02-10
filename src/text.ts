@@ -297,6 +297,24 @@ export default function* buildTextNodes(
     parentStyle
   )
 
+  let filter = ''
+  if (parentStyle.textShadowOffset) {
+    filter = shadow(
+      {
+        width: containerWidth,
+        height: containerHeight,
+        id,
+      },
+      {
+        shadowColor: parentStyle.textShadowColor,
+        shadowOffset: parentStyle.textShadowOffset,
+        shadowRadius: parentStyle.textShadowRadius,
+      }
+    )
+  }
+
+  let mergedPath = ''
+
   for (let i = 0; i < words.length; i++) {
     // Skip whitespace.
     if (!wordsInLayout[i]) continue
@@ -343,35 +361,44 @@ export default function* buildTextNodes(
       topOffset += ascent
     }
 
-    let filter = ''
-    if (parentStyle.textShadowOffset) {
-      filter = shadow(
-        { width, height, id },
+    if (path) {
+      mergedPath += path + ' '
+    } else {
+      result += text(
         {
-          shadowColor: parentStyle.textShadowColor,
-          shadowOffset: parentStyle.textShadowOffset,
-          shadowRadius: parentStyle.textShadowRadius,
-        }
+          content: word,
+          filter,
+          id,
+          left: left + leftOffset,
+          top: top + topOffset,
+          width,
+          height,
+          matrix,
+          opacity,
+          image,
+          debug,
+        },
+        parentStyle
       )
     }
+  }
 
-    result += text(
-      {
-        content: word,
-        filter,
-        id,
-        left: left + leftOffset,
-        top: top + topOffset,
-        width,
-        height,
-        matrix,
-        opacity,
-        path,
-        image,
-        debug,
-      },
-      parentStyle
-    )
+  // Embed the font as path.
+  if (mergedPath) {
+    let extra = ''
+    if (debug) {
+      extra = `<rect x="${containerLeft}" y="${containerTop}" width="${containerWidth}" height="${containerHeight}" fill="transparent" stroke="#575eff" stroke-width="1" ${
+        matrix ? `transform="${matrix}"` : ''
+      }></rect>`
+    }
+
+    result += `${
+      filter ? `${filter}<g filter="url(#satori_s-${id})">` : ''
+    }<path fill="${parentStyle.color}" ${
+      matrix ? `transform="${matrix}"` : ''
+    } ${opacity !== 1 ? `opacity="${opacity}"` : ''} d="${mergedPath}"></path>${
+      filter ? '</g>' : ''
+    }${extra}`
   }
 
   return result

@@ -49,7 +49,12 @@ export default function rect(
 
   if (style.transform) {
     matrix = transform(
-      { left, top, width, height },
+      {
+        left,
+        top,
+        width,
+        height,
+      },
       style.transform as unknown as number[],
       isInheritingTransform
     )

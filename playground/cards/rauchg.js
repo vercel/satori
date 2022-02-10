@@ -58,6 +58,7 @@ export default (
         borderBottomRightRadius: 100,
         borderBottomLeftRadius: 20,
         border: '8px solid gold',
+        textShadow: '10px 10px 5px black',
         transform:
           'rotate(-10deg) translate(0, -10px) skewX(-10deg) scale(1.2, 1.2)',
       }}

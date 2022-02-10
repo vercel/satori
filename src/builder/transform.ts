@@ -6,7 +6,12 @@ export default function transform(
     top,
     width,
     height,
-  }: { left: number; top: number; width: number; height: number },
+  }: {
+    left: number
+    top: number
+    width: number
+    height: number
+  },
   matrix: number[],
   isInheritingTransform: boolean
 ) {

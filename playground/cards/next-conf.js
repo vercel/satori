@@ -41,7 +41,7 @@ export default (
           width: 260,
           textAlign: 'center',
           transform: 'rotate(90deg)',
-          transformOrigin: 'top left',
+          // transformOrigin: 'top left',
           whiteSpace: 'nowrap',
         }}
       >
