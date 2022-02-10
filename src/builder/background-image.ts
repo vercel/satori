@@ -28,13 +28,23 @@ function toAbsoluteValue(v: string | number, base: number) {
   return +v
 }
 
-export default function backgroundImage(
-  { id, width, height }: { id: string; width: number; height: number },
-  { image, size }: Background
+function parseLengthPairs(
+  str: string,
+  {
+    x,
+    y,
+    defaultX,
+    defaultY,
+  }: {
+    x: number
+    y: number
+    defaultX: number | string
+    defaultY: number | string
+  }
 ) {
-  const dimensions = (
-    size
-      ? size
+  return (
+    str
+      ? str
           .split(' ')
           .map((value) => {
             try {
@@ -46,9 +56,27 @@ export default function backgroundImage(
               return null
             }
           })
-          .filter(Boolean)
-      : ['100%', '100%']
-  ).map((v, index) => toAbsoluteValue(v, [width, height][index]))
+          .filter((v) => v !== null)
+      : [defaultX, defaultY]
+  ).map((v, index) => toAbsoluteValue(v, [x, y][index]))
+}
+
+export default function backgroundImage(
+  { id, width, height }: { id: string; width: number; height: number },
+  { image, size, position }: Background
+) {
+  const dimensions = parseLengthPairs(size, {
+    x: width,
+    y: height,
+    defaultX: width,
+    defaultY: height,
+  })
+  const offsets = parseLengthPairs(position, {
+    x: width,
+    y: height,
+    defaultX: 0,
+    defaultY: 0,
+  })
 
   if (image.startsWith('linear-gradient(')) {
     const parsed = gradient.parse(image)[0]
@@ -166,7 +194,7 @@ export default function backgroundImage(
     const src = image.slice(4, -1)
     return [
       `satori_bi${id}`,
-      `<pattern id="satori_bi${id}" patternContentUnits="userSpaceOnUse" patternUnits="userSpaceOnUse" width="${dimensions[0]}" height="${dimensions[1]}"><image href="${src}" x="0" y="0" width="${dimensions[0]}" height="${dimensions[1]}"/></pattern>`,
+      `<pattern id="satori_bi${id}" patternContentUnits="userSpaceOnUse" patternUnits="userSpaceOnUse" x="${offsets[0]}" y="${offsets[1]}" width="${dimensions[0]}" height="${dimensions[1]}"><image href="${src}" x="0" y="0" width="${dimensions[0]}" height="${dimensions[1]}"/></pattern>`,
     ]
   }
 }
