@@ -30,18 +30,26 @@ const loadingCustomFonts = (async () => {
 })()
 
 export default async (req, res) => {
+  const t1 = performance.now()
+
   if (!customFontsLoaded) {
     await loadingCustomFonts
   }
 
   const { width = 800, height = 510, debug } = req.query
 
-  const svg = satori(rauchgCard, {
+  const t2 = performance.now()
+
+  let svg
+
+  svg = satori(rauchgCard, {
     width,
     height,
     fonts,
     debug: !!debug,
   })
+
+  const t3 = performance.now()
 
   const data = await renderAsync(svg, {
     fitTo: {
@@ -55,4 +63,12 @@ export default async (req, res) => {
 
   res.setHeader('content-type', 'image/png')
   res.send(data)
+
+  const t4 = performance.now()
+
+  console.table({
+    loadFonts: t2 - t1,
+    Satori: t3 - t2,
+    png: t4 - t3,
+  })
 }

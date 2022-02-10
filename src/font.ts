@@ -162,6 +162,6 @@ export default class FontLoader {
       .getPath(content, left, top, fontSize, {
         letterSpacing: letterSpacing / fontSize,
       })
-      .toPathData(2)
+      .toPathData(1)
   }
 }

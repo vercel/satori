@@ -9,7 +9,7 @@ import { splitGraphemes } from 'text-segmentation'
 
 import getYoga from './yoga'
 import { v } from './utils'
-import text from './builder/text'
+import text, { container } from './builder/text'
 import shadow from './builder/shadow'
 
 // @TODO: Support "lang" attribute to modify the locale
@@ -171,7 +171,7 @@ export default function* buildTextNodes(
     lineIndex: number
   })[] = []
 
-  textContainer.setMeasureFunc((width, _widthMode, _height, _heightMode) => {
+  textContainer.setMeasureFunc((width) => {
     let lines = []
     let remainingSpace = ''
     let remainingSpaceWidth = 0
@@ -279,11 +279,23 @@ export default function* buildTextNodes(
     left: containerLeft,
     top: containerTop,
     width: containerWidth,
+    height: containerHeight,
   } = textContainer.getComputedLayout()
 
   // Attach offset to the current node.
   const left = x + containerLeft
   const top = y + containerTop
+
+  const { matrix, opacity } = container(
+    {
+      left: containerLeft,
+      top: containerTop,
+      width: containerWidth,
+      height: containerHeight,
+      isInheritingTransform,
+    },
+    parentStyle
+  )
 
   for (let i = 0; i < words.length; i++) {
     // Skip whitespace.
@@ -352,7 +364,8 @@ export default function* buildTextNodes(
         top: top + topOffset,
         width,
         height,
-        isInheritingTransform,
+        matrix,
+        opacity,
         path,
         image,
         debug,

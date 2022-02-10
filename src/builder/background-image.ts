@@ -1,3 +1,5 @@
+import CssDimension from 'parse-css-dimension'
+
 import gradient from '../../deps/gradient-parser'
 
 interface Background {
@@ -19,10 +21,35 @@ function resolveColorFromStop(stop) {
   return 'transparent'
 }
 
+function toAbsoluteValue(v: string | number, base: number) {
+  if (typeof v === 'string' && v.endsWith('%')) {
+    return (base * parseFloat(v)) / 100
+  }
+  return +v
+}
+
 export default function backgroundImage(
-  { id, width }: { id: string; width: number; height: number },
-  { image }: Background
+  { id, width, height }: { id: string; width: number; height: number },
+  { image, size }: Background
 ) {
+  const dimensions = (
+    size
+      ? size
+          .split(' ')
+          .map((value) => {
+            try {
+              const parsed = new CssDimension(value)
+              return parsed.type === 'length'
+                ? parsed.value
+                : parsed.value + parsed.unit
+            } catch (e) {
+              return null
+            }
+          })
+          .filter(Boolean)
+      : ['100%', '100%']
+  ).map((v, index) => toAbsoluteValue(v, [width, height][index]))
+
   if (image.startsWith('linear-gradient(')) {
     const parsed = gradient.parse(image)[0]
 
@@ -139,7 +166,7 @@ export default function backgroundImage(
     const src = image.slice(4, -1)
     return [
       `satori_bi${id}`,
-      `<pattern id="satori_bi${id}" patternContentUnits="objectBoundingBox" width="1" height="1"><image href="${src}" x="0" y="0" width="1" height="1"/></pattern>`,
+      `<pattern id="satori_bi${id}" patternContentUnits="userSpaceOnUse" patternUnits="userSpaceOnUse" width="${dimensions[0]}" height="${dimensions[1]}"><image href="${src}" x="0" y="0" width="${dimensions[0]}" height="${dimensions[1]}"/></pattern>`,
     ]
   }
 }

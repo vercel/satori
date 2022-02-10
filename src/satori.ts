@@ -5,6 +5,9 @@ import layout from './layout'
 import FontLoader, { FontOptions } from './font'
 import svg from './builder/svg'
 
+// We don't need to initialize the opentype instances every time.
+const fontCache = new WeakMap()
+
 export interface SatoriOptions {
   width: number
   height: number
@@ -23,7 +26,12 @@ export default function satori(
   const Yoga = getYoga()
   if (!Yoga) throw new Error('Satori is not initialized.')
 
-  const font = new FontLoader(options.fonts)
+  let font
+  if (fontCache.has(options.fonts)) {
+    font = fontCache.get(options.fonts)
+  } else {
+    fontCache.set(options.fonts, (font = new FontLoader(options.fonts)))
+  }
 
   const root = Yoga.Node.create()
   root.setWidth(options.width)

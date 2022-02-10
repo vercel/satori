@@ -1,30 +1,18 @@
 import transform from './transform'
 
-export default function text(
+export function container(
   {
-    id,
-    content,
-    filter,
     left,
     top,
     width,
     height,
     isInheritingTransform,
-    path,
-    image,
-    debug,
   }: {
-    content: string
-    filter: string
-    id: number
     left: number
     top: number
     width: number
     height: number
     isInheritingTransform: boolean
-    path: string | null
-    image: string | null
-    debug?: boolean
   },
   style: Record<string, number | string>
 ) {
@@ -44,6 +32,40 @@ export default function text(
     opacity = +style.opacity
   }
 
+  return { matrix, opacity }
+}
+
+export default function text(
+  {
+    id,
+    content,
+    filter,
+    left,
+    top,
+    width,
+    height,
+    matrix,
+    opacity,
+    path,
+    image,
+    debug,
+  }: {
+    content: string
+    filter: string
+    id: number
+    left: number
+    top: number
+    width: number
+    height: number
+    matrix: string
+    opacity: number
+    path: string | null
+    image: string | null
+    debug?: boolean
+  },
+  style: Record<string, number | string>
+) {
+  let extra = ''
   if (debug) {
     extra = `<rect x="${left}" y="${top}" width="${width}" height="${
       path === null ? 0.5 : height

@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useEffect } from 'react'
 import satori from 'satori'
 
-// import nextConfCard from '../cards/next-conf'
-import githubCard from '../cards/github'
+import nextConfCard from '../cards/next-conf'
+// import githubCard from '../cards/github'
 import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
 
-const card = githubCard
+const card = nextConfCard
 
 async function init() {
   if (typeof window === 'undefined') return []
