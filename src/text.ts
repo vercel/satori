@@ -4,26 +4,90 @@
  */
 import type { LayoutContext } from './layout'
 
+import { LineBreaker } from 'css-line-break'
+import { splitGraphemes } from 'text-segmentation'
+
 import getYoga from './yoga'
 import { v } from './utils'
 import text from './builder/text'
 import shadow from './builder/shadow'
+
+// @TODO: Support "lang" attribute to modify the locale
+const locale = 'en'
+
+const INTL_SEGMENTER_SUPPORTED =
+  typeof Intl !== 'undefined' && 'Segmenter' in Intl
+
+const wordSegmenter = INTL_SEGMENTER_SUPPORTED
+  ? new (Intl as any).Segmenter(locale, { granularity: 'word' })
+  : null
+const graphemeSegmenter = INTL_SEGMENTER_SUPPORTED
+  ? new (Intl as any).Segmenter(locale, {
+      granularity: 'grapheme',
+    })
+  : null
+
+// Implementation modified from
+// https://github.com/niklasvh/html2canvas/blob/6521a487d78172f7179f7c973c1a3af40eb92009/src/css/layout/text.ts
+// https://drafts.csswg.org/css-text/#word-separator
+const wordSeparators = [
+  0x0020, 0x00a0, 0x1361, 0x10100, 0x10101, 0x1039, 0x1091,
+]
+
+const breakWords = (str: string): string[] => {
+  const breaker = LineBreaker(str, {
+    lineBreak: 'strict',
+    wordBreak: 'normal',
+  })
+
+  const words = []
+  let bk
+
+  while (!(bk = breaker.next()).done) {
+    if (bk.value) {
+      const value = bk.value.slice()
+      const codePoints = [].map.call(value, (char) => char.codePointAt(0))
+      let word = ''
+      codePoints.forEach((codePoint) => {
+        if (!wordSeparators.includes(codePoint)) {
+          word += String.fromCodePoint(codePoint)
+        } else {
+          if (word.length) {
+            words.push(word)
+          }
+          words.push(String.fromCodePoint(codePoint))
+          word = ''
+        }
+      })
+
+      if (word.length) {
+        words.push(word)
+      }
+    }
+  }
+
+  return words
+}
+
+function split(content: string, granularity: 'word' | 'grapheme') {
+  if (INTL_SEGMENTER_SUPPORTED) {
+    return granularity === 'word'
+      ? [...wordSegmenter.segment(content)].map((seg) => seg.segment)
+      : [...graphemeSegmenter.segment(content)].map((seg) => seg.segment)
+  }
+
+  if (granularity === 'word') {
+    return breakWords(content)
+  } else {
+    return splitGraphemes(content)
+  }
+}
 
 export default function* buildTextNodes(
   content: string,
   context: LayoutContext
 ) {
   const Yoga = getYoga()
-
-  // @TODO: Support "lang" attribute to modify the locale
-  const locale = 'en'
-
-  // @ts-ignore
-  const wordSegmenter = new Intl.Segmenter(locale, { granularity: 'word' })
-  // @ts-ignore
-  const graphemeSegmenter = new Intl.Segmenter(locale, {
-    granularity: 'grapheme',
-  })
 
   const {
     parentStyle,
@@ -41,16 +105,14 @@ export default function* buildTextNodes(
   } else if (parentStyle.textTransform === 'lowercase') {
     content = content.toLocaleLowerCase(locale)
   } else if (parentStyle.textTransform === 'capitalize') {
-    content = [...wordSegmenter.segment(content)]
+    content = split(content, 'word')
       // For each word...
-      .map((seg) => {
+      .map((word) => {
         // ...split into graphemes...
-        return [...graphemeSegmenter.segment(seg.segment)]
+        return split(word, 'grapheme')
           .map((grapheme, index) => {
             // ...and make the first grapheme uppercase
-            return index === 0
-              ? grapheme.segment.toLocaleUpperCase(locale)
-              : grapheme.segment
+            return index === 0 ? grapheme.toLocaleUpperCase(locale) : grapheme
           })
           .join('')
       })
@@ -60,15 +122,15 @@ export default function* buildTextNodes(
   const segmenter = v(
     parentStyle.wordBreak,
     {
-      normal: wordSegmenter,
-      'break-all': graphemeSegmenter,
-      'break-word': graphemeSegmenter,
-      'keep-all': wordSegmenter,
+      normal: 'word',
+      'break-all': 'grapheme',
+      'break-word': 'grapheme',
+      'keep-all': 'word',
     },
-    wordSegmenter
+    'word'
   )
 
-  const words = [...segmenter.segment(content)].map((seg) => seg.segment)
+  const words = split(content, segmenter)
 
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
