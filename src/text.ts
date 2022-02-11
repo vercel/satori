@@ -387,7 +387,7 @@ export default function* buildTextNodes(
   if (mergedPath) {
     let extra = ''
     if (debug) {
-      extra = `<rect x="${containerLeft}" y="${containerTop}" width="${containerWidth}" height="${containerHeight}" fill="transparent" stroke="#575eff" stroke-width="1" ${
+      extra = `<rect x="${left}" y="${top}" width="${containerWidth}" height="${containerHeight}" fill="transparent" stroke="#575eff" stroke-width="1" ${
         matrix ? `transform="${matrix}"` : ''
       }></rect>`
     }
