@@ -149,9 +149,9 @@ The image will be resized to the current font-size (both width and height), so i
 | `word-break` | Supported |
 | `text-shadow` | Supported |
 | `text-transform` | Support `lowercase`, `uppercase`, `capitalize` |
+| `background-position` | Supported |
+| `background-size` | Support two-value size string such as `10px 20%` |
 | `background-clip` | TBD |
-| `background-size` | TBD |
-| `background-position` | TBD |
 | `background-repeat` | TBD |
 | `background-origin` | TBD |
 | `text-decoration` | TBD |
