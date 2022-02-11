@@ -16,7 +16,8 @@
   },
   "scripts": {
     "dev": "tsup src/index.ts --watch --format esm --legacy-output --ignore-watch playground",
-    "build": "pnpm run build:asmjs && pnpm run build:wasm",
+    "types": "tsc --noEmit",
+    "build": "pnpm run types && pnpm run build:asmjs && pnpm run build:wasm",
     "build:asmjs": "tsup",
     "build:wasm": "WASM=1 tsup",
     "test": "vitest run",
