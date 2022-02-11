@@ -69,9 +69,7 @@ export default function text(
 ) {
   let extra = ''
   if (debug) {
-    extra = `<rect x="${left}" y="${top}" width="${width}" height="${
-      path === null ? 0.5 : height
-    }" fill="transparent" stroke="#575eff" stroke-width="1" ${
+    extra = `<rect x="${left}" y="${top}" width="${width}" height="0.5" fill="transparent" stroke="#575eff" stroke-width="1" ${
       matrix ? `transform="${matrix}"` : ''
     }></rect>`
   }
