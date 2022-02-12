@@ -13,7 +13,7 @@ import text, { container } from './builder/text'
 import shadow from './builder/shadow'
 
 // @TODO: Support "lang" attribute to modify the locale
-const locale = 'en'
+const locale = undefined
 
 const INTL_SEGMENTER_SUPPORTED =
   typeof Intl !== 'undefined' && 'Segmenter' in Intl
