@@ -1,7 +1,6 @@
 /**
  * This class handles everything related to fonts.
  */
-
 import opentype from '@shuding/opentype.js'
 
 type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
