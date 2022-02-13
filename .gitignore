@@ -4,3 +4,5 @@ node_modules
 .vscode
 .next
 dist
+
+playground/public/yoga.wasm

@@ -4,6 +4,7 @@ import { promises as fs } from 'fs'
 import { join } from 'path'
 
 import rauchgCard from '../../cards/rauchg'
+import textCard from '../../cards/text-align'
 
 let customFontsLoaded = false
 let fonts = []
@@ -46,7 +47,7 @@ export default async (req, res) => {
 
   let svg
 
-  svg = satori(rauchgCard, {
+  svg = satori(textCard, {
     width,
     height,
     fonts,
