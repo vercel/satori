@@ -21,8 +21,7 @@
     "build:asmjs": "tsup",
     "build:wasm": "WASM=1 tsup",
     "test": "vitest run",
-    "dev:test": "vitest",
-    "postinstall": "pnpm run build"
+    "dev:test": "vitest"
   },
   "repository": {
     "type": "git",
