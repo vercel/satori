@@ -7,6 +7,7 @@ import { getPropertyName, getStylesForProperty } from 'css-to-react-native'
 import CssDimension from 'parse-css-dimension'
 import { parseElementStyle } from 'css-background-parser'
 import { multiply } from '../utils'
+import parseTransformOrigin from '../transform-origin'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
@@ -106,6 +107,13 @@ export default function expand(
   }
   if (typeof transformedStyle.fontSize !== 'undefined') {
     transformedStyle.fontSize = baseFontSize
+  }
+
+  if (transformedStyle.transformOrigin) {
+    transformedStyle.transformOrigin = parseTransformOrigin(
+      transformedStyle.transformOrigin,
+      baseFontSize
+    )
   }
 
   for (const prop in transformedStyle) {

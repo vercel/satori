@@ -2,6 +2,7 @@ import backgroundImage from './background-image'
 import radius from './border-radius'
 import shadow from './shadow'
 import transform from './transform'
+import type { ParsedTransformOrigin } from '../transform-origin'
 
 export default function rect(
   {
@@ -56,7 +57,8 @@ export default function rect(
         height,
       },
       style.transform as unknown as number[],
-      isInheritingTransform
+      isInheritingTransform,
+      style.transformOrigin as ParsedTransformOrigin | undefined
     )
   }
 

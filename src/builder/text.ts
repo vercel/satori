@@ -1,4 +1,5 @@
 import transform from './transform'
+import type { ParsedTransformOrigin } from '../transform-origin'
 
 export function container(
   {
@@ -28,7 +29,8 @@ export function container(
         height,
       },
       style.transform as unknown as number[],
-      isInheritingTransform
+      isInheritingTransform,
+      style.transformOrigin as ParsedTransformOrigin | undefined
     )
   }
 

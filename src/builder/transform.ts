@@ -1,4 +1,5 @@
 import { multiply } from '../utils'
+import type { ParsedTransformOrigin } from '../transform-origin'
 
 export default function transform(
   {
@@ -13,7 +14,8 @@ export default function transform(
     height: number
   },
   matrix: number[],
-  isInheritingTransform: boolean
+  isInheritingTransform: boolean,
+  transformOrigin?: ParsedTransformOrigin
 ) {
   let result: number[]
 
@@ -21,10 +23,17 @@ export default function transform(
   if (isInheritingTransform) {
     result = matrix
   } else {
+    const xOrigin =
+      transformOrigin?.xAbsolute ??
+      ((transformOrigin?.xRelative ?? 50) * width) / 100
+    const yOrigin =
+      transformOrigin?.yAbsolute ??
+      ((transformOrigin?.yRelative ?? 50) * height) / 100
+
     // If this element is the transform target, we attach the origin coordinates
     // to this matrix.
-    const x = left + width / 2
-    const y = top + height / 2
+    const x = left + xOrigin
+    const y = top + yOrigin
 
     // Due to the different coordinate systems, we need to move the shape to the
     // origin first, then apply the matrix, then move it back.

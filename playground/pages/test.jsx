@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useEffect } from 'react'
 import satori from 'satori'
 
+import transformOrigin from '../cards/transform-origin'
 import nextConfCard from '../cards/next-conf'
 import githubCard from '../cards/github'
 import getTwemojiMap, { loadEmoji } from '../utils/twemoji'

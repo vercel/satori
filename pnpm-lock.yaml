@@ -13,6 +13,7 @@ importers:
       css-line-break: ^2.1.0
       css-to-react-native: ^3.0.0
       parse-css-dimension: ^1.1.0
+      postcss-value-parser: ^4.2.0
       react: ^17.0.2
       text-segmentation: ^1.0.3
       tsup: ^5.11.13
@@ -25,6 +26,7 @@ importers:
       css-line-break: 2.1.0
       css-to-react-native: 3.0.0
       parse-css-dimension: 1.1.0
+      postcss-value-parser: 4.2.0
       text-segmentation: 1.0.3
       yoga-layout-prebuilt: 1.10.0
     devDependencies:
