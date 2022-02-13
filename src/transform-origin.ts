@@ -80,9 +80,15 @@ export default function parseTranformOrigin(
   if (typeof value === 'number') {
     return { xAbsolute: value }
   }
-  const words = valueParser(value)
-    .nodes.filter((node) => node.type === 'word')
-    .map((node) => node.value)
+  let words: string[]
+  try {
+    words = valueParser(value)
+      .nodes.filter((node) => node.type === 'word')
+      .map((node) => node.value)
+  } catch (e) {
+    return {}
+  }
+
   if (words.length === 1) {
     // If it's a single value and a number, then it's horizontal, so
     // pass `true` to `unitIsHorizontal`
