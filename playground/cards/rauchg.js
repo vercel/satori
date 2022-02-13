@@ -5,6 +5,7 @@ export default (
       height: '100%',
       width: '100%',
       alignItems: 'center',
+      alignContent: 'center',
       justifyContent: 'center',
       flexDirection: 'column',
       fontFamily: 'Inter',

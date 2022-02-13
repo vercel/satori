@@ -5,6 +5,8 @@ import satori from 'satori'
 import transformOrigin from '../cards/transform-origin'
 import nextConfCard from '../cards/next-conf'
 import githubCard from '../cards/github'
+import textAlignCard from '../cards/text-align'
+import rauchgCard from '../cards/rauchg'
 import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
 
 const card = githubCard
@@ -81,7 +83,7 @@ export default function Playground() {
         fonts,
         graphemeImages,
         // embedFont: false,
-        // debug: true,
+        debug: true,
       })
 
       setSvg(result)

@@ -4,84 +4,13 @@
  */
 import type { LayoutContext } from './layout'
 
-import { LineBreaker } from 'css-line-break'
-import { splitGraphemes } from 'text-segmentation'
-
 import getYoga from './yoga'
-import { v } from './utils'
+import { v, segment } from './utils'
 import text, { container } from './builder/text'
 import shadow from './builder/shadow'
 
 // @TODO: Support "lang" attribute to modify the locale
 const locale = undefined
-
-const INTL_SEGMENTER_SUPPORTED =
-  typeof Intl !== 'undefined' && 'Segmenter' in Intl
-
-const wordSegmenter = INTL_SEGMENTER_SUPPORTED
-  ? new (Intl as any).Segmenter(locale, { granularity: 'word' })
-  : null
-const graphemeSegmenter = INTL_SEGMENTER_SUPPORTED
-  ? new (Intl as any).Segmenter(locale, {
-      granularity: 'grapheme',
-    })
-  : null
-
-// Implementation modified from
-// https://github.com/niklasvh/html2canvas/blob/6521a487d78172f7179f7c973c1a3af40eb92009/src/css/layout/text.ts
-// https://drafts.csswg.org/css-text/#word-separator
-const wordSeparators = [
-  0x0020, 0x00a0, 0x1361, 0x10100, 0x10101, 0x1039, 0x1091,
-]
-
-const breakWords = (str: string): string[] => {
-  const breaker = LineBreaker(str, {
-    lineBreak: 'strict',
-    wordBreak: 'normal',
-  })
-
-  const words = []
-  let bk
-
-  while (!(bk = breaker.next()).done) {
-    if (bk.value) {
-      const value = bk.value.slice()
-      const codePoints = [].map.call(value, (char) => char.codePointAt(0))
-      let word = ''
-      codePoints.forEach((codePoint) => {
-        if (!wordSeparators.includes(codePoint)) {
-          word += String.fromCodePoint(codePoint)
-        } else {
-          if (word.length) {
-            words.push(word)
-          }
-          words.push(String.fromCodePoint(codePoint))
-          word = ''
-        }
-      })
-
-      if (word.length) {
-        words.push(word)
-      }
-    }
-  }
-
-  return words
-}
-
-function split(content: string, granularity: 'word' | 'grapheme') {
-  if (INTL_SEGMENTER_SUPPORTED) {
-    return granularity === 'word'
-      ? [...wordSegmenter.segment(content)].map((seg) => seg.segment)
-      : [...graphemeSegmenter.segment(content)].map((seg) => seg.segment)
-  }
-
-  if (granularity === 'word') {
-    return breakWords(content)
-  } else {
-    return splitGraphemes(content)
-  }
-}
 
 export default function* buildTextNodes(
   content: string,
@@ -105,11 +34,11 @@ export default function* buildTextNodes(
   } else if (parentStyle.textTransform === 'lowercase') {
     content = content.toLocaleLowerCase(locale)
   } else if (parentStyle.textTransform === 'capitalize') {
-    content = split(content, 'word')
+    content = segment(content, 'word')
       // For each word...
       .map((word) => {
         // ...split into graphemes...
-        return split(word, 'grapheme')
+        return segment(word, 'grapheme')
           .map((grapheme, index) => {
             // ...and make the first grapheme uppercase
             return index === 0 ? grapheme.toLocaleUpperCase(locale) : grapheme
@@ -130,7 +59,7 @@ export default function* buildTextNodes(
     'word'
   )
 
-  const words = split(content, segmenter)
+  const words = segment(content, segmenter)
 
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
@@ -149,14 +78,15 @@ export default function* buildTextNodes(
   // Get the correct font according to the container style.
   // @TODO: Support font family fallback based on the glyphs of the font.
   const resolvedFont = font.getFont(parentStyle as any)
-  const ascent =
+  const ascender =
     (resolvedFont.ascender / resolvedFont.unitsPerEm) *
     (parentStyle.fontSize as number)
-  const descent =
+  const descender =
     -(resolvedFont.descender / resolvedFont.unitsPerEm) *
     (parentStyle.fontSize as number)
-  const glyphHeight = ascent + descent
+  const glyphHeight = ascender + descender
   const lineHeight = glyphHeight * 1.2
+  const deltaHeight = ((parentStyle.fontSize as number) - glyphHeight) / 2
 
   const { textAlign } = parentStyle
 
@@ -170,6 +100,18 @@ export default function* buildTextNodes(
     line: number
     lineIndex: number
   })[] = []
+
+  // We can cache the measured width of each word as the measure function will be
+  // called multiple times.
+  const wordWidthCache = new Map<string, number>()
+  const measureWithCache = (str: string) => {
+    if (wordWidthCache.has(str)) {
+      return wordWidthCache.get(str)
+    }
+    const width = font.measure(resolvedFont, str, parentStyle as any)
+    wordWidthCache.set(str, width)
+    return width
+  }
 
   textContainer.setMeasureFunc((width) => {
     let lines = []
@@ -191,18 +133,14 @@ export default function* buildTextNodes(
       const word = words[i]
       if ([' ', '\n', '\t', '　'].includes(word)) {
         remainingSpace += word
-        remainingSpaceWidth = font.measure(
-          resolvedFont,
-          remainingSpace,
-          parentStyle as any
-        )
+        remainingSpaceWidth = measureWithCache(remainingSpace)
 
         wordsInLayout[i] = null
       } else {
         const w =
           graphemeImages && graphemeImages[word]
             ? (parentStyle.fontSize as number)
-            : font.measure(resolvedFont, word, parentStyle as any)
+            : measureWithCache(word)
 
         // This is the start of the line, we can ignore all spaces here.
         if (!currentWidth) {
@@ -243,16 +181,13 @@ export default function* buildTextNodes(
 
         maxWidth = Math.max(maxWidth, currentWidth)
         wordsInLayout[i] = {
-          y: lines.length * lineHeight,
+          y: lines.length * lineHeight - deltaHeight,
           x: currentWidth - w,
           width: w,
           line: lines.length,
           lineIndex,
         }
       }
-
-      // node.setHeight(measured.ascent * 1.2)
-      // node.setMargin(Yoga.EDGE_BOTTOM, measured.descent * 1.2)
     }
     if (currentWidth) {
       lines.push(currentLine)
@@ -272,9 +207,6 @@ export default function* buildTextNodes(
 
   let result = ''
 
-  if (parentStyle.position === 'absolute') {
-    textContainer.calculateLayout()
-  }
   const {
     left: containerLeft,
     top: containerTop,
@@ -329,19 +261,22 @@ export default function* buildTextNodes(
     const width = wordsInLayout[i].width
     const height = lineHeight
 
-    // Calculate alignment.
-    const remainingWidth = containerWidth - lineWidth[wordsInLayout[i].line]
-    if (textAlign === 'right' || textAlign === 'end') {
-      leftOffset += remainingWidth
-    } else if (textAlign === 'center') {
-      leftOffset += remainingWidth / 2
-    } else if (textAlign === 'justify') {
-      const line = wordsInLayout[i].line
-      // Don't justify the last line.
-      if (line < lineWidth.length - 1) {
-        const segments = lineSegmentNumber[line]
-        const gutter = segments > 1 ? remainingWidth / (segments - 1) : 0
-        leftOffset += gutter * wordsInLayout[i].lineIndex
+    if (lineWidth.length > 1) {
+      // Calculate alignment. Note that for flexbox, there is only text
+      // alignment when the container is multi-line.
+      const remainingWidth = containerWidth - lineWidth[wordsInLayout[i].line]
+      if (textAlign === 'right' || textAlign === 'end') {
+        leftOffset += remainingWidth
+      } else if (textAlign === 'center') {
+        leftOffset += remainingWidth / 2
+      } else if (textAlign === 'justify') {
+        const line = wordsInLayout[i].line
+        // Don't justify the last line.
+        if (line < lineWidth.length - 1) {
+          const segments = lineSegmentNumber[line]
+          const gutter = segments > 1 ? remainingWidth / (segments - 1) : 0
+          leftOffset += gutter * wordsInLayout[i].lineIndex
+        }
       }
     }
 
@@ -351,14 +286,15 @@ export default function* buildTextNodes(
       path = font.getSVG(resolvedFont, word, {
         ...parentStyle,
         left: left + leftOffset,
-        top: top + topOffset,
+        // Since we need to pass the baseline position, add the ascender to the top.
+        top: top + topOffset + ascender,
         letterSpacing: parentStyle.letterSpacing,
       } as any)
     } else {
       // We need manually add the font ascender height to ensure it starts
       // at the baseline because <text>'s alignment baseline is set to `hanging`
       // by default and supported to change in SVG 1.1.
-      topOffset += ascent
+      topOffset += ascender
     }
 
     if (path) {

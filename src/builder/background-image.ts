@@ -49,7 +49,7 @@ function parseLengthPairs(
           .map((value) => {
             try {
               const parsed = new CssDimension(value)
-              return parsed.type === 'length'
+              return parsed.type === 'length' || parsed.type === 'number'
                 ? parsed.value
                 : parsed.value + parsed.unit
             } catch (e) {
