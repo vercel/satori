@@ -142,6 +142,7 @@ The image will be resized to the current font-size (both width and height), so i
 | `overflow` | `visible`, `hidden` |
 | `color` | Supported |
 | `transform` | Support absolute values |
+| `transform-origin` | Support one-value and two-value syntax (both relative and absolute values) |
 | `object-fit` | `contain`, `cover`, `none` |
 | `opacity` | Supported |
 | `background-color` | Supported |
@@ -155,7 +156,6 @@ The image will be resized to the current font-size (both width and height), so i
 | `background-repeat` | TBD |
 | `background-origin` | TBD |
 | `text-decoration` | TBD |
-| `transform-origin` | TBD |
 | `line-height` | TBD |
 | `white-space` | TBD |
 
