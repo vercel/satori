@@ -9,6 +9,7 @@ export default (
       justifyContent: 'center',
       flexDirection: 'row',
       flexWrap: 'nowrap',
+      backgroundColor: 'white',
     }}
   >
     <div

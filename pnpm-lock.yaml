@@ -47,6 +47,7 @@ importers:
       react: ^17.0.2
       react-dom: ^17.0.2
       satori: workspace:*
+      yoga-wasm-web: 0.0.7
     dependencies:
       '@codesandbox/sandpack-react': 0.13.8_react-dom@17.0.2+react@17.0.2
       '@resvg/resvg-js': 1.4.0
@@ -54,6 +55,7 @@ importers:
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
       satori: link:..
+      yoga-wasm-web: 0.0.7
 
 packages:
 
@@ -2053,4 +2055,8 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       '@types/yoga-layout': 1.9.2
+    dev: false
+
+  /yoga-wasm-web/0.0.7:
+    resolution: {integrity: sha512-ni0ZXLTyQZe6MGtMlVXRU3WJpmG7qohdwxUXH/lkm7aWB+eyM7N2erRYST2ZnalrFdmIRenkAC61FrYRqy1daA==}
     dev: false
