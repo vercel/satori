@@ -7,7 +7,7 @@ import nextConfCard from '../cards/next-conf'
 import githubCard from '../cards/github'
 import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
 
-const card = transformOrigin
+const card = githubCard
 
 async function init() {
   if (typeof window === 'undefined') return []
