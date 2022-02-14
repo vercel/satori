@@ -26,12 +26,16 @@ export default function satori(
   const Yoga = getYoga()
   if (!Yoga) throw new Error('Satori is not initialized.')
 
+  console.time('Satori - FontLoader')
+
   let font
   if (fontCache.has(options.fonts)) {
     font = fontCache.get(options.fonts)
   } else {
     fontCache.set(options.fonts, (font = new FontLoader(options.fonts)))
   }
+
+  console.timeEnd('Satori - FontLoader')
 
   const root = Yoga.Node.create()
   root.setWidth(options.width)
@@ -41,6 +45,8 @@ export default function satori(
   root.setAlignContent(Yoga.ALIGN_AUTO)
   root.setAlignItems(Yoga.ALIGN_FLEX_START)
   root.setJustifyContent(Yoga.JUSTIFY_FLEX_START)
+
+  console.time('Satori - BuildLayout')
 
   const handler = layout(element, {
     id: 1,
@@ -60,10 +66,17 @@ export default function satori(
     debug: options.debug,
     graphemeImages: options.graphemeImages,
   })
-
   handler.next()
-  root.calculateLayout(options.width, options.height, Yoga.DIRECTION_LTR)
 
+  console.timeEnd('Satori - BuildLayout')
+
+  console.time('Satori - CalcLayout')
+  root.calculateLayout(options.width, options.height, Yoga.DIRECTION_LTR)
+  console.timeEnd('Satori - CalcLayout')
+
+  console.time('Satori - BuildSVG')
   const content = handler.next([0, 0]).value
+  console.timeEnd('Satori - BuildSVG')
+
   return svg({ width: options.width, height: options.height, content })
 }
