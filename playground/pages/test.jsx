@@ -9,7 +9,7 @@ import textAlignCard from '../cards/text-align'
 import rauchgCard from '../cards/rauchg'
 import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
 
-const card = githubCard
+const card = textAlignCard
 
 async function init() {
   if (typeof window === 'undefined') return []
@@ -63,6 +63,7 @@ export default function Playground() {
 
   useEffect(() => {
     ;(async () => {
+      const fonts = await waitForResource
       const emojiCodes = getTwemojiMap('')
       const emojis = await Promise.all(
         Object.values(emojiCodes)
@@ -76,7 +77,6 @@ export default function Playground() {
         ])
       )
 
-      const fonts = await waitForResource
       const result = satori(card, {
         width,
         height,

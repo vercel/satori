@@ -7,7 +7,7 @@ import rauchgCard from '../../cards/rauchg'
 import textCard from '../../cards/text-align'
 import githubCard from '../../cards/github'
 
-const card = rauchgCard
+const card = githubCard
 
 let customFontsLoaded = false
 let fonts = []

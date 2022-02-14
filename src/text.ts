@@ -5,7 +5,7 @@
 import type { LayoutContext } from './layout'
 
 import getYoga from './yoga'
-import { v, segment } from './utils'
+import { v, segment, wordSeparators } from './utils'
 import text, { container } from './builder/text'
 import shadow from './builder/shadow'
 
@@ -114,10 +114,9 @@ export default function* buildTextNodes(
   }
 
   textContainer.setMeasureFunc((width) => {
-    let lines = []
+    let lines = 0
     let remainingSpace = ''
     let remainingSpaceWidth = 0
-    let currentLine = ''
     let currentWidth = 0
     let maxWidth = 0
     let lineIndex = -1
@@ -131,7 +130,7 @@ export default function* buildTextNodes(
     // @TODO: Support RTL languages.
     for (let i = 0; i < words.length; i++) {
       const word = words[i]
-      if ([' ', '\n', '\t', '　'].includes(word)) {
+      if (wordSeparators.includes(word)) {
         remainingSpace += word
         remainingSpaceWidth = measureWithCache(remainingSpace)
 
@@ -158,14 +157,12 @@ export default function* buildTextNodes(
         ) {
           // Start a new line, spaces can be ignored.
           lineWidth.push(currentWidth)
-          lines.push(currentLine)
-          currentLine = word
+          lines++
           currentWidth = w
           lineSegmentNumber.push(1)
           lineIndex = -1
         } else {
           // It fits into the current line.
-          currentLine += remainingSpace + word
           currentWidth += remainingSpaceWidth + w
           if (allowedToJustify) {
             lineSegmentNumber[lineSegmentNumber.length - 1]++
@@ -181,26 +178,26 @@ export default function* buildTextNodes(
 
         maxWidth = Math.max(maxWidth, currentWidth)
         wordsInLayout[i] = {
-          y: lines.length * lineHeight - deltaHeight,
+          y: lines * lineHeight - deltaHeight,
           x: currentWidth - w,
           width: w,
-          line: lines.length,
+          line: lines,
           lineIndex,
         }
       }
     }
     if (currentWidth) {
-      lines.push(currentLine)
+      lines++
       lineWidth.push(currentWidth)
     }
 
     // If there are multiple lines, we need to stretch it to fit the container.
-    if (lines.length > 1) {
+    if (lines > 1) {
       maxWidth = width
     }
 
     // @TODO: Support `line-height`.
-    return { width: maxWidth, height: lines.length * lineHeight }
+    return { width: maxWidth, height: lines * lineHeight }
   })
 
   const [x, y] = yield
@@ -259,18 +256,17 @@ export default function* buildTextNodes(
     let topOffset = wordsInLayout[i].y
     let leftOffset = wordsInLayout[i].x
     const width = wordsInLayout[i].width
-    const height = lineHeight
+    const line = wordsInLayout[i].line
 
     if (lineWidth.length > 1) {
       // Calculate alignment. Note that for flexbox, there is only text
       // alignment when the container is multi-line.
-      const remainingWidth = containerWidth - lineWidth[wordsInLayout[i].line]
+      const remainingWidth = containerWidth - lineWidth[line]
       if (textAlign === 'right' || textAlign === 'end') {
         leftOffset += remainingWidth
       } else if (textAlign === 'center') {
         leftOffset += remainingWidth / 2
       } else if (textAlign === 'justify') {
-        const line = wordsInLayout[i].line
         // Don't justify the last line.
         if (line < lineWidth.length - 1) {
           const segments = lineSegmentNumber[line]
@@ -308,7 +304,7 @@ export default function* buildTextNodes(
           left: left + leftOffset,
           top: top + topOffset,
           width,
-          height,
+          height: lineHeight,
           matrix,
           opacity,
           image,

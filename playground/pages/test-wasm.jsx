@@ -8,7 +8,7 @@ import githubCard from '../cards/github'
 import rauchgCard from '../cards/rauchg'
 import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
 
-const card = rauchgCard
+const card = githubCard
 
 async function init() {
   if (typeof window === 'undefined') return []

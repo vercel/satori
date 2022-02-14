@@ -59,9 +59,9 @@ const graphemeSegmenter = INTL_SEGMENTER_SUPPORTED
 // Implementation modified from
 // https://github.com/niklasvh/html2canvas/blob/6521a487d78172f7179f7c973c1a3af40eb92009/src/css/layout/text.ts
 // https://drafts.csswg.org/css-text/#word-separator
-const wordSeparators = [
+export const wordSeparators = [
   0x0020, 0x00a0, 0x1361, 0x10100, 0x10101, 0x1039, 0x1091,
-]
+].map((point) => String.fromCodePoint(point))
 
 const breakWords = (str: string): string[] => {
   const breaker = LineBreaker(str, {
@@ -75,19 +75,19 @@ const breakWords = (str: string): string[] => {
   while (!(bk = breaker.next()).done) {
     if (bk.value) {
       const value = bk.value.slice()
-      const codePoints = [].map.call(value, (char) => char.codePointAt(0))
       let word = ''
-      codePoints.forEach((codePoint) => {
-        if (!wordSeparators.includes(codePoint)) {
-          word += String.fromCodePoint(codePoint)
+      for (let i = 0; i < value.length; i++) {
+        const char = value[i]
+        if (!wordSeparators.includes(char)) {
+          word += char
         } else {
           if (word.length) {
             words.push(word)
           }
-          words.push(String.fromCodePoint(codePoint))
+          words.push(char)
           word = ''
         }
-      })
+      }
 
       if (word.length) {
         words.push(word)
