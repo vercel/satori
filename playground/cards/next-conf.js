@@ -35,13 +35,14 @@ export default (
       </div>
       <h1
         style={{
+          display: 'flex',
           position: 'absolute',
           top: 50,
           left: 640,
           width: 260,
-          textAlign: 'center',
+          justifyContent: 'center',
           transform: 'rotate(90deg)',
-          // transformOrigin: 'top left',
+          transformOrigin: 'top left',
           whiteSpace: 'nowrap',
         }}
       >

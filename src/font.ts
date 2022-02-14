@@ -154,9 +154,6 @@ export default class FontLoader {
       letterSpacing: number
     }
   ) {
-    // Since we need to pass the baseline position, add the ascender to the top.
-    top += (font.ascender / font.unitsPerEm) * fontSize
-
     return font
       .getPath(content, left, top, fontSize, {
         letterSpacing: letterSpacing / fontSize,

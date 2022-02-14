@@ -50,7 +50,6 @@ export default function handler(
     )
   )
 
-  // if (style.alignContent) {
   node.setAlignContent(
     v(
       style.alignContent,
@@ -67,7 +66,6 @@ export default function handler(
       Yoga.ALIGN_AUTO
     )
   )
-  // }
 
   node.setAlignItems(
     v(

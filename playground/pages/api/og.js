@@ -5,6 +5,9 @@ import { join } from 'path'
 
 import rauchgCard from '../../cards/rauchg'
 import textCard from '../../cards/text-align'
+import githubCard from '../../cards/github'
+
+const card = githubCard
 
 let customFontsLoaded = false
 let fonts = []
@@ -47,7 +50,7 @@ export default async (req, res) => {
 
   let svg
 
-  svg = satori(textCard, {
+  svg = satori(card, {
     width,
     height,
     fonts,
