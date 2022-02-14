@@ -1,5 +1,5 @@
 import { renderAsync } from '@resvg/resvg-js'
-import satori from 'satori'
+import satori, { initFontManager } from 'satori'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 
@@ -10,7 +10,7 @@ import githubCard from '../../cards/github'
 const card = githubCard
 
 let customFontsLoaded = false
-let fonts = []
+let fontManager
 const loadingCustomFonts = (async () => {
   const [FONT_ROBOTO, FONT_ROBOTO_BOLD] = await Promise.all([
     fs.readFile(
@@ -20,7 +20,7 @@ const loadingCustomFonts = (async () => {
       join(process.cwd(), 'assets', 'inter-latin-ext-700-normal.woff')
     ),
   ])
-  fonts = [
+  const fonts = [
     {
       name: 'Inter',
       data: FONT_ROBOTO,
@@ -34,6 +34,7 @@ const loadingCustomFonts = (async () => {
       style: 'normal',
     },
   ]
+  fontManager = initFontManager(fonts)
   customFontsLoaded = true
 })()
 
@@ -53,7 +54,8 @@ export default async (req, res) => {
   svg = satori(card, {
     width,
     height,
-    fonts,
+    fonts: [],
+    fontManager,
     debug: !!debug,
   })
 
@@ -75,8 +77,9 @@ export default async (req, res) => {
   const t4 = Date.now()
 
   console.table({
-    loadFonts: t2 - t1,
-    Satori: t3 - t2,
-    png: t4 - t3,
+    Fonts: t2 - t1 + 'ms',
+    Satori: t3 - t2 + 'ms',
+    PNG: t4 - t3 + 'ms',
+    Total: t4 - t1 + 'ms',
   })
 }

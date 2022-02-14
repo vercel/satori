@@ -6,7 +6,7 @@ import FontLoader, { FontOptions } from './font'
 import svg from './builder/svg'
 
 // We don't need to initialize the opentype instances every time.
-const fontCache = new WeakMap()
+const fontCache = new WeakMap<FontOptions[], FontLoader>()
 
 export interface SatoriOptions {
   width: number
@@ -15,9 +15,20 @@ export interface SatoriOptions {
   embedFont?: boolean
   debug?: boolean
   graphemeImages?: Record<string, string>
+  fontManager?: FontLoader
 }
 
 export { init }
+
+export function initFontManager(fonts: FontOptions[]) {
+  let font: FontLoader
+  if (fontCache.has(fonts)) {
+    font = fontCache.get(fonts)
+  } else {
+    fontCache.set(fonts, (font = new FontLoader(fonts)))
+  }
+  return font
+}
 
 export default function satori(
   element: ReactNode,
@@ -28,14 +39,11 @@ export default function satori(
 
   console.time('Satori - FontLoader')
 
-  let font
-  if (fontCache.has(options.fonts)) {
-    font = fontCache.get(options.fonts)
-  } else {
-    fontCache.set(options.fonts, (font = new FontLoader(options.fonts)))
-  }
+  const font = options.fontManager || initFontManager(options.fonts)
 
   console.timeEnd('Satori - FontLoader')
+
+  console.time('Satori - BuildLayout')
 
   const root = Yoga.Node.create()
   root.setWidth(options.width)
@@ -45,8 +53,6 @@ export default function satori(
   root.setAlignContent(Yoga.ALIGN_AUTO)
   root.setAlignItems(Yoga.ALIGN_FLEX_START)
   root.setJustifyContent(Yoga.JUSTIFY_FLEX_START)
-
-  console.time('Satori - BuildLayout')
 
   const handler = layout(element, {
     id: 1,
