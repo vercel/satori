@@ -70,16 +70,14 @@ export default function expand(
   style: Record<string, string | number>,
   inheritedStyle: Record<string, string | number>
 ): Record<string, string | number> {
-  const rules = []
+  const transformedStyle = {} as any
   for (const prop in style) {
     const name = getPropertyName(prop)
-    rules.push([name, purify(name, style[prop])])
+    Object.assign(
+      transformedStyle,
+      getStylesForProperty(name, purify(name, style[prop]), true)
+    )
   }
-  const transformedStyle = rules.reduce((accum, rule) => {
-    const propertyName = getPropertyName(rule[0])
-    const value = rule[1]
-    return Object.assign(accum, getStylesForProperty(propertyName, value, true))
-  }, {})
 
   // Parse background images.
   if (transformedStyle.backgroundImage) {
