@@ -51,6 +51,7 @@
     "vitest": "^0.2.5"
   },
   "dependencies": {
+    "@fredli74/typr": "^0.3.4",
     "@shuding/opentype.js": "^1.3.4",
     "css-background-parser": "^0.1.0",
     "css-line-break": "^2.1.0",

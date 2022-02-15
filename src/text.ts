@@ -79,11 +79,14 @@ export default function* buildTextNodes(
   // @TODO: Support font family fallback based on the glyphs of the font.
   const resolvedFont = font.getFont(parentStyle as any)
   const ascender =
-    (resolvedFont.ascender / resolvedFont.unitsPerEm) *
+    ((resolvedFont as any).hhea.ascender /
+      (resolvedFont as any).head.unitsPerEm) *
     (parentStyle.fontSize as number)
   const descender =
-    -(resolvedFont.descender / resolvedFont.unitsPerEm) *
-    (parentStyle.fontSize as number)
+    -(
+      (resolvedFont as any).hhea.descender /
+      (resolvedFont as any).head.unitsPerEm
+    ) * (parentStyle.fontSize as number)
   const glyphHeight = ascender + descender
   const lineHeight = glyphHeight * 1.2
   const deltaHeight = ((parentStyle.fontSize as number) - glyphHeight) / 2

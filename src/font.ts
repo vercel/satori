@@ -2,6 +2,7 @@
  * This class handles everything related to fonts.
  */
 import opentype from '@shuding/opentype.js'
+import * as typr from '@fredli74/typr'
 
 type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
 type WeigthName = 'normal' | 'bold'
@@ -14,13 +15,58 @@ export interface FontOptions {
   style?: Style
 }
 
+function measure(font: typr.Font, str) {
+  const kern = font['kern']
+  const aWidth = font['hmtx'].aWidth
+
+  var getGlyphPosition = function (gls, i1) {
+    var g1 = gls[i1],
+      g2 = gls[i1 + 1]
+    if (kern) {
+      var ind1 = kern.glyph1.indexOf(g1)
+      if (ind1 != -1) {
+        var ind2 = kern.rval[ind1].glyph2.indexOf(g2)
+        if (ind2 != -1) return kern.rval[ind1].vals[ind2]
+      }
+    }
+    //console.log("no kern");
+    return 0
+  }
+
+  var gls = []
+  for (var i = 0; i < str.length; i++) {
+    var cc = str.codePointAt(i)
+    if (cc > 0xffff) i++
+    gls.push(font.codeToGlyph(cc))
+  }
+
+  var x = 0
+  for (var i = 0; i < gls.length; i++) {
+    var gid = gls[i]
+    var ax = aWidth[gid] + (kern ? getGlyphPosition(gls, i) : 0)
+    x += ax
+  }
+  return x
+}
+
 export default class FontLoader {
   defaultFont: opentype.Font
   fonts = new Map<string, [opentype.Font, Weight?, Style?][]>()
   constructor(fontOptions: FontOptions[]) {
     for (const fontOption of fontOptions) {
       const data = fontOption.data
-      const font = opentype.parse(
+      // const font = opentype.parse(
+      //   // Buffer to ArrayBuffer.
+      //   'buffer' in data
+      //     ? data.buffer.slice(
+      //         data.byteOffset,
+      //         data.byteOffset + data.byteLength
+      //       )
+      //     : data,
+      //   // @ts-ignore
+      //   { lowMemory: true }
+      // )
+      const font = new typr.Font(
         // Buffer to ArrayBuffer.
         'buffer' in data
           ? data.buffer.slice(
@@ -30,7 +76,7 @@ export default class FontLoader {
           : data,
         // @ts-ignore
         { lowMemory: true }
-      )
+      ) as any
 
       // We use the first font as the default font fallback.
       if (!this.defaultFont) this.defaultFont = font
@@ -134,6 +180,11 @@ export default class FontLoader {
     }
   ) {
     // console.log(font.charToGlyphIndex('✅') !== 0)
+    return (
+      (measure(font as any, content) /
+        (font as unknown as typr.Font).head.unitsPerEm) *
+      fontSize
+    )
 
     return font.getAdvanceWidth(content, fontSize, {
       letterSpacing: letterSpacing / fontSize,
@@ -155,6 +206,14 @@ export default class FontLoader {
       letterSpacing: number
     }
   ) {
+    const f = font as unknown as typr.Font
+    const p = f.glyphsToPath(f.stringToGlyphs(content))
+    const r = fontSize / f.head.unitsPerEm
+    p.crds = p.crds.map(
+      (v, i) => v * r * (i & 1 ? -1 : 1) + (i & 1 ? top : left)
+    )
+    return f.pathToSVG(p)
+
     return font
       .getPath(content, left, top, fontSize, {
         letterSpacing: letterSpacing / fontSize,
