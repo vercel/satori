@@ -20,17 +20,17 @@ export default class FontLoader {
   constructor(fontOptions: FontOptions[]) {
     for (const fontOption of fontOptions) {
       const data = fontOption.data
-      const font =
+      const font = opentype.parse(
+        // Buffer to ArrayBuffer.
         'buffer' in data
-          ? opentype.parse(
-              // Buffer to ArrayBuffer.
-              data.buffer.slice(
-                data.byteOffset,
-                data.byteOffset + data.byteLength
-              ),
-              { lowMemory: true }
+          ? data.buffer.slice(
+              data.byteOffset,
+              data.byteOffset + data.byteLength
             )
-          : opentype.parse(data, { lowMemory: true })
+          : data,
+        // @ts-ignore
+        { lowMemory: true }
+      )
 
       // We use the first font as the default font fallback.
       if (!this.defaultFont) this.defaultFont = font
