@@ -13,12 +13,8 @@ let customFontsLoaded = false
 let fonts = []
 const loadingCustomFonts = (async () => {
   const [FONT_ROBOTO, FONT_ROBOTO_BOLD] = await Promise.all([
-    fs.readFile(
-      join(process.cwd(), 'assets', 'inter-latin-ext-400-normal.woff')
-    ),
-    fs.readFile(
-      join(process.cwd(), 'assets', 'inter-latin-ext-700-normal.woff')
-    ),
+    fs.readFile(join(process.cwd(), 'assets', 'Roboto-Regular.ttf')),
+    fs.readFile(join(process.cwd(), 'assets', 'Roboto-Bold.ttf')),
   ])
   fonts = [
     {
@@ -30,7 +26,7 @@ const loadingCustomFonts = (async () => {
     {
       name: 'Inter',
       data: FONT_ROBOTO_BOLD,
-      weight: 400,
+      weight: 700,
       style: 'normal',
     },
   ]

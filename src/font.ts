@@ -27,9 +27,10 @@ export default class FontLoader {
               data.buffer.slice(
                 data.byteOffset,
                 data.byteOffset + data.byteLength
-              )
+              ),
+              { lowMemory: true }
             )
-          : opentype.parse(data)
+          : opentype.parse(data, { lowMemory: true })
 
       // We use the first font as the default font fallback.
       if (!this.defaultFont) this.defaultFont = font
