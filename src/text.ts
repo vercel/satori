@@ -278,6 +278,8 @@ export default function* buildTextNodes(
 
     if (graphemeImages && graphemeImages[word]) {
       image = graphemeImages[word]
+      // For images, we remove the baseline offset.
+      topOffset += deltaHeight
     } else if (embedFont) {
       path = font.getSVG(resolvedFont, word, {
         ...parentStyle,
