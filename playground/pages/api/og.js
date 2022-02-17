@@ -65,14 +65,22 @@ export default async (req, res) => {
     },
   })
 
-  res.setHeader('content-type', 'image/png')
-  res.send(data)
-
   const t4 = Date.now()
+
+  res.setHeader('content-type', 'image/png')
+
+  await new Promise(resolve => {
+    res.end(data, resolve)
+  })
+
+  const t5 = Date.now()
 
   console.table({
     loadFonts: t2 - t1,
     Satori: t3 - t2,
     png: t4 - t3,
+    response: t5 - t4,
+    '-------': '--',
+    TOTAL: t5 - t1,
   })
 }
