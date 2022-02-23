@@ -1,7 +1,8 @@
 const arbitraryValueRegex = new RegExp('^\\[.+\\]$')
 const arbitraryNumericOnlyValueRegex = new RegExp('^\\[\\d+\\]$')
 const arbitraryColorRegex = new RegExp(
-  '^\\[((#[0-9a-f]{3,4})|(#[0-9a-f]{6})|(#[0-9a-f]{8})|(((rgba?)|(hsla?))\\(.+\\)))\\]$'
+  '^\\[((#[0-9a-f]{3,4})|(#[0-9a-f]{6})|(#[0-9a-f]{8})|(((rgba?)|(hsla?))\\(.+\\)))\\]$',
+  'i'
 )
 const arbitraryLengthValueRegex = new RegExp('^\\[(\\d+|length:).+\\]$')
 const arbitraryShadowValueRegex = new RegExp(
