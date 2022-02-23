@@ -5,7 +5,7 @@ import { createSatoriTailwind } from '../utils/satori-tailwind'
 import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
 
 const card = (
-  <div className='flex w-full h-full items-center justify-center'>
+  <div className='flex w-full h-full items-center justify-center bg-[#f00]/50'>
     <div className='p-24 rounded-xl bg-gradient-to-r from-cyan-100 to-blue-100'>
       <div className='skew-y-12 rotate-12 text-9xl text-geist-success'>
         Tailwind!
