@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode, ReactElement, CSSProperties } from 'react'
 
 import getYoga, { init } from './yoga'
 import layout from './layout'
@@ -15,6 +15,7 @@ export interface SatoriOptions {
   embedFont?: boolean
   debug?: boolean
   graphemeImages?: Record<string, string>
+  styleInliner?: (e: ReactElement) => CSSProperties
 }
 
 export { init }
@@ -59,6 +60,7 @@ export default function satori(
     embedFont: options.embedFont,
     debug: options.debug,
     graphemeImages: options.graphemeImages,
+    styleInliner: options.styleInliner,
   })
 
   handler.next()

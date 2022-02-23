@@ -2,7 +2,7 @@
  * This module is used to calculate the layout of the current sub-tree.
  */
 
-import type { ReactNode } from 'react'
+import type { ReactNode, CSSProperties } from 'react'
 import type { YogaNode } from 'yoga-layout'
 
 import getYoga from './yoga'
@@ -23,6 +23,7 @@ export interface LayoutContext {
   embedFont: boolean
   debug?: boolean
   graphemeImages?: Record<string, string>
+  styleInliner?: (type: string, props: any) => CSSProperties
 }
 
 export default function* layout(
@@ -38,6 +39,7 @@ export default function* layout(
     debug,
     embedFont = true,
     graphemeImages,
+    styleInliner,
   } = context
 
   // 1. Pre-process the node.
@@ -71,7 +73,10 @@ export default function* layout(
 
   // Process as element.
   const { type, props } = element
-  const { style, children } = props
+  const { children } = props
+  const style = styleInliner
+    ? { ...styleInliner(type, props), ...(props.style || {}) }
+    : props.style
 
   const node = Yoga.Node.create()
   parent.insertChild(node, parent.getChildCount())
