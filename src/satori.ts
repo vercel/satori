@@ -15,7 +15,7 @@ export interface SatoriOptions {
   embedFont?: boolean
   debug?: boolean
   graphemeImages?: Record<string, string>
-  styleInliner?: (e: ReactElement) => CSSProperties
+  styleInliner?: (type: string, props: any) => CSSProperties
 }
 
 export { init }

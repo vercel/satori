@@ -113,6 +113,7 @@ export default function* layout(
       embedFont,
       debug,
       graphemeImages,
+      styleInliner,
     })
     iter.next()
     iterators.push(iter)
