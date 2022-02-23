@@ -46,6 +46,7 @@ importers:
       '@types/jest': ^27.4.1
       '@types/node': ^17.0.13
       '@types/react': ^17.0.38
+      '@types/react-dom': ^17.0.11
       '@types/tailwindcss': ^3.0.9
       jest: ^27.5.1
       next: ^12.1.0
@@ -68,6 +69,7 @@ importers:
       '@types/jest': 27.4.1
       '@types/node': 17.0.13
       '@types/react': 17.0.38
+      '@types/react-dom': 17.0.11
       '@types/tailwindcss': 3.0.9
       jest: 27.5.1
       typescript: 4.5.5
@@ -1247,6 +1249,12 @@ packages:
 
   /@types/prop-types/15.7.4:
     resolution: {integrity: sha512-rZ5drC/jWjrArrS8BR6SIr4cWpW09RNTYt9AMZo3Jwwif+iacXAqgVjm0B0Bv/S1jhDXKHqRVNCbACkJ89RAnQ==}
+    dev: true
+
+  /@types/react-dom/17.0.11:
+    resolution: {integrity: sha512-f96K3k+24RaLGVu/Y2Ng3e1EbZ8/cVJvypZWd7cy0ofCBaf2lcM46xNhycMZ2xGwbBjRql7hOlZ+e2WlJ5MH3Q==}
+    dependencies:
+      '@types/react': 17.0.38
     dev: true
 
   /@types/react/17.0.38:
