@@ -97,7 +97,6 @@ export default function Playground() {
         fonts,
         graphemeImages,
         styleInliner: (type, props) => {
-          console.log(type, props)
           return {
             ...preflight(type),
             ...processClassName(props.className),
