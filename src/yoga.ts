@@ -1,11 +1,11 @@
 let Yoga: typeof import('yoga-layout')
 
 // @ts-ignore
-if (WASM) {
+if (typeof WASM !== 'undefined') {
   // For WASM build, we don't include the prebuilt version of Yoga but let the
   // user specify the module manually.
 } else {
-  const mod = require('./yoga-prebuilt') as any
+  const mod = require('yoga-layout-prebuilt') as any
   if (mod.default) {
     Yoga = mod.default
   } else {

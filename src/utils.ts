@@ -111,3 +111,18 @@ export function segment(content: string, granularity: 'word' | 'grapheme') {
     return splitGraphemes(content)
   }
 }
+
+export function buildXMLString(
+  type: string,
+  attrs: Record<string, any>,
+  children?: string
+) {
+  const attrString = Object.entries(attrs)
+    .map(([k, v]) => (v === undefined ? '' : k + '="' + v + '"'))
+    .join(' ')
+
+  if (children) {
+    return `<${type} ${attrString}>${children}</${type}>`
+  }
+  return `<${type} ${attrString}/>`
+}

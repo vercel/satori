@@ -1,8 +1,10 @@
+import type { ParsedTransformOrigin } from '../transform-origin'
+
 import backgroundImage from './background-image'
 import radius from './border-radius'
 import shadow from './shadow'
 import transform from './transform'
-import type { ParsedTransformOrigin } from '../transform-origin'
+import { buildXMLString } from '../utils'
 
 export default function rect(
   {
@@ -84,31 +86,47 @@ export default function rect(
 
   const filter = shadow({ width, height, id }, style)
 
-  if (!fills.length) fills.push('transparent')
-
   if (debug) {
     extra = `<rect x="${left}" y="${top}" width="${width}" height="${height}" fill="transparent" stroke="#ff5757" stroke-width="1" ${
       matrix ? `transform="${matrix}"` : ''
     }></rect>`
   }
 
-  return `${defs ? `<defs>${defs}</defs>` : ''}${
-    filter ? `${filter}<g filter="url(#satori_s-${id})">` : ''
-  }${opacity !== 1 ? `<g opacity="${opacity}">` : ''}${
-    // Each background generates a new rectangle.
-    fills
-      .map((fill, i) => {
-        if (fill === 'transparent' && !(i === fills.length - 1 && strokeWidth))
-          return ''
+  // Each background generates a new rectangle.
+  // @TODO: Not sure if this is the best way to do it, maybe <pattern> with
+  // multiple <image>s is better.
+  const shape = !fills.length
+    ? ''
+    : fills
+        .map((fill, i) => {
+          if (
+            fill === 'transparent' &&
+            !(i === fills.length - 1 && strokeWidth)
+          )
+            return ''
 
-        return `<${type} x="${left}" y="${top}" width="${width}" height="${height}" fill="${fill}" ${
-          i === fills.length - 1 && strokeWidth
-            ? `stroke="${stroke}" stroke-width="${strokeWidth}"`
-            : ''
-        } ${path ? `d="${path}"` : ''} ${
-          matrix ? `transform="${matrix}"` : ''
-        }></${type}>`
-      })
-      .join('')
-  }${opacity !== 1 ? `</g>` : ''}${filter ? '</g>' : ''}${extra}`
+          const hasStroke = i === fills.length - 1 && strokeWidth
+          return buildXMLString(type, {
+            x: left,
+            y: top,
+            width,
+            height,
+            fill,
+            stroke: hasStroke ? stroke : undefined,
+            'stroke-width': hasStroke ? strokeWidth : undefined,
+            d: path ? path : undefined,
+            transform: matrix ? matrix : undefined,
+          })
+        })
+        .join('')
+
+  return (
+    (defs ? `<defs>${defs}</defs>` : '') +
+    (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
+    (opacity !== 1 ? `<g opacity="${opacity}">` : '') +
+    shape +
+    (opacity !== 1 ? `</g>` : '') +
+    (filter ? '</g>' : '') +
+    extra
+  )
 }
