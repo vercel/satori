@@ -5,7 +5,7 @@
 import type { LayoutContext } from './layout'
 
 import getYoga from './yoga'
-import { v, segment, wordSeparators } from './utils'
+import { v, segment, wordSeparators, buildXMLString } from './utils'
 import text, { container } from './builder/text'
 import shadow from './builder/shadow'
 
@@ -321,18 +321,28 @@ export default function* buildTextNodes(
   if (mergedPath) {
     let extra = ''
     if (debug) {
-      extra = `<rect x="${left}" y="${top}" width="${containerWidth}" height="${containerHeight}" fill="transparent" stroke="#575eff" stroke-width="1" ${
-        matrix ? `transform="${matrix}"` : ''
-      }></rect>`
+      extra = buildXMLString('rect', {
+        x: left,
+        y: top,
+        width: containerWidth,
+        height: containerHeight,
+        fill: 'transparent',
+        stroke: '#575eff',
+        'stroke-width': 1,
+        transform: matrix ? matrix : undefined,
+      })
     }
 
-    result += `${
-      filter ? `${filter}<g filter="url(#satori_s-${id})">` : ''
-    }<path fill="${parentStyle.color}" ${
-      matrix ? `transform="${matrix}"` : ''
-    } ${opacity !== 1 ? `opacity="${opacity}"` : ''} d="${mergedPath}"></path>${
-      filter ? '</g>' : ''
-    }${extra}`
+    result +=
+      (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
+      buildXMLString('path', {
+        fill: parentStyle.color,
+        d: mergedPath,
+        transform: matrix ? matrix : undefined,
+        opacity: opacity !== 1 ? opacity : undefined,
+      }) +
+      (filter ? '</g>' : '') +
+      extra
   }
 
   return result

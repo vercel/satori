@@ -15,13 +15,12 @@
     "./wasm": "./dist/esm/index.wasm.js"
   },
   "scripts": {
-    "types": "tsc --noEmit",
     "dev": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
-    "build": "NODE_ENV=production pnpm run types && pnpm run build:asmjs && pnpm run build:wasm",
-    "build:asmjs": "tsup",
+    "build": "NODE_ENV=production pnpm run test && pnpm run build:default && pnpm run build:wasm",
+    "build:default": "tsup",
     "build:wasm": "WASM=1 tsup",
     "test": "vitest run",
-    "dev:test": "vitest"
+    "dev:test": "vitest --update"
   },
   "repository": {
     "type": "git",
@@ -45,10 +44,11 @@
     "@types/opentype.js": "^1.3.3",
     "@types/react": "^17.0.38",
     "@types/yoga-layout": "^1.9.4",
+    "@vitest/ui": "^0.5.5",
     "react": "^17.0.2",
     "tsup": "^5.11.13",
     "typescript": "^4.5.5",
-    "vitest": "^0.2.5"
+    "vitest": "0.5.4"
   },
   "dependencies": {
     "@shuding/opentype.js": "^1.3.4",
