@@ -15,10 +15,9 @@
     "./wasm": "./dist/esm/index.wasm.js"
   },
   "scripts": {
-    "types": "tsc --noEmit",
     "dev": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
-    "build": "NODE_ENV=production pnpm run types && pnpm run build:asmjs && pnpm run build:wasm",
-    "build:asmjs": "tsup",
+    "build": "NODE_ENV=production pnpm run test && pnpm run build:default && pnpm run build:wasm",
+    "build:default": "tsup",
     "build:wasm": "WASM=1 tsup",
     "test": "vitest run",
     "dev:test": "vitest --update"

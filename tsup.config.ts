@@ -19,8 +19,6 @@ export default defineConfig({
         '.js': '.wasm.js',
       }
     }
-    options.define = {
-      WASM: '' + !!process.env.WASM,
-    }
+    options.tsconfig = process.env.WASM ? 'tsconfig.wasm.json' : 'tsconfig.json'
   },
 })
