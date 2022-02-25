@@ -117,12 +117,16 @@ export function buildXMLString(
   attrs: Record<string, any>,
   children?: string
 ) {
-  const attrString = Object.entries(attrs)
-    .map(([k, v]) => (v === undefined ? '' : k + '="' + v + '"'))
-    .join(' ')
+  let attrString = ''
+
+  for (const [k, v] of Object.entries(attrs)) {
+    if (typeof v !== 'undefined') {
+      attrString += ` ${k}="${v}"`
+    }
+  }
 
   if (children) {
-    return `<${type} ${attrString}>${children}</${type}>`
+    return `<${type}${attrString}>${children}</${type}>`
   }
-  return `<${type} ${attrString}/>`
+  return `<${type}${attrString}/>`
 }
