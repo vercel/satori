@@ -1,4 +1,5 @@
 import { renderAsync } from '@resvg/resvg-js'
+import { renderToStaticMarkup } from 'react-dom/server'
 import satori from 'satori'
 import { promises as fs } from 'fs'
 import { join } from 'path'
@@ -40,13 +41,11 @@ export default async (req, res) => {
     await loadingCustomFonts
   }
 
-  const { width = 800, height = 510, debug } = req.query
+  const { width = 800, height = 510, debug = false, type = 'png' } = req.query
 
   const t2 = Date.now()
 
-  let svg
-
-  svg = satori(card, {
+  const svg = satori(card, {
     width,
     height,
     fonts,
@@ -54,6 +53,16 @@ export default async (req, res) => {
   })
 
   const t3 = Date.now()
+
+  if (type === 'svg') {
+    res.setHeader('Content-Type', 'image/svg+xml')
+    res.end(svg)
+    return;
+  } else if (type === 'html') {
+    res.setHeader('Content-Type', 'text/html')
+    res.end(renderToStaticMarkup(card))
+    return;
+  }
 
   const data = await renderAsync(svg, {
     fitTo: {
