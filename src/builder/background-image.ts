@@ -190,6 +190,24 @@ export default function backgroundImage(
     ]
   }
 
+
+  if (image.startsWith('radial-gradient(')) {
+    const parsed = gradient.parse(image)[0]
+    // TODO: handle radial-gradient here
+    console.log(parsed)
+    let x1, y1, x2, y2
+    let stops = []
+    return [
+      `satori_bi${id}`,
+      `<radialGradient id="satori_bi${id}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${stops
+        .map(
+          (stop) =>
+            `<stop offset="${stop.offset * 100}%" stop-color="${stop.color}"/>`
+        )
+        .join('')}</radialGradient>`,
+    ]
+  }
+
   if (image.startsWith('url(')) {
     const src = image.slice(4, -1)
     return [

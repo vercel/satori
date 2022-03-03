@@ -7,8 +7,9 @@ import { join } from 'path'
 import rauchgCard from '../../cards/rauchg'
 import textCard from '../../cards/text-align'
 import githubCard from '../../cards/github'
+import vercelCard from '../../cards/vercel'
 
-const card = githubCard
+const card = vercelCard
 
 let customFontsLoaded = false
 let fonts = []
