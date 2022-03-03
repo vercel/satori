@@ -53,6 +53,9 @@ export default function satori(
       lineHeight: 1.2,
       color: 'black',
       opacity: 1,
+      // Special style properties:
+      _viewportWidth: options.width,
+      _viewportHeight: options.height,
     },
     parent: root,
     font,

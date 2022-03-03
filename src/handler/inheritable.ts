@@ -19,6 +19,10 @@ const list = new Set([
   // Special case: SVG doesn't apply opacity to children elements so we need to
   // make it inheritable here.
   'opacity',
+
+  // Special properties of Satori:
+  '_viewportWidth',
+  '_viewportHeight',
 ])
 
 export default function inheritable(style: Record<string, any>) {
