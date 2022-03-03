@@ -203,5 +203,26 @@ describe('Basic', () => {
         '"<svg width=\\"120\\" height=\\"120\\" viewBox=\\"0 0 120 120\\" xmlns=\\"http://www.w3.org/2000/svg\\"><rect x=\\"0\\" y=\\"0\\" width=\\"12\\" height=\\"96\\" fill=\\"red\\"/></svg>"'
       )
     })
+
+    it('should support rem', async () => {
+      const svg = satori(
+        <div
+          style={{
+            width: '2rem',
+            height: '3rem',
+            background: 'red',
+            fontSize: 12,
+          }}
+        ></div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(svg).toMatchInlineSnapshot(
+        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><rect x=\\"0\\" y=\\"0\\" width=\\"32\\" height=\\"48\\" fill=\\"red\\"/></svg>"'
+      )
+    })
   })
 })
