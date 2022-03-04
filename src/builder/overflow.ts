@@ -2,7 +2,7 @@
  * Generate clip path for the given element.
  */
 
-import { buildXMLString } from 'src/utils'
+import { buildXMLString } from '../utils'
 
 export default function overflow(
   {
