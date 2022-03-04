@@ -53,6 +53,8 @@ export default function satori(
       lineHeight: 1.2,
       color: 'black',
       opacity: 1,
+      whiteSpace: 'normal',
+
       // Special style properties:
       _viewportWidth: options.width,
       _viewportHeight: options.height,
@@ -68,5 +70,8 @@ export default function satori(
   root.calculateLayout(options.width, options.height, Yoga.DIRECTION_LTR)
 
   const content = handler.next([0, 0]).value
+
+  root.freeRecursive()
+
   return svg({ width: options.width, height: options.height, content })
 }

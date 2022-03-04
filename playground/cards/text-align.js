@@ -12,6 +12,7 @@ export default (
       backgroundColor: 'white',
     }}
   >
+    <div>Hello, world!!!!</div>
     <div
       style={{
         padding: 10,
