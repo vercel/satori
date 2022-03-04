@@ -152,18 +152,19 @@ The image will be resized to the current font-size (both width and height), so i
 | `text-transform` | Support `lowercase`, `uppercase`, `capitalize` |
 | `background-position` | Supported |
 | `background-size` | Support two-value size string such as `10px 20%` |
+| `white-space` | Support `normal` and `nowrap` |
 | `background-clip` | TBD |
 | `background-repeat` | TBD |
 | `background-origin` | TBD |
 | `text-decoration` | TBD |
 | `line-height` | TBD |
-| `white-space` | TBD |
 
 Note:
 
 1. Three-dimensional transforms are not supported.
 2. There is no `z-index` support in SVG. Elements that come later in the document will be painted on top.
 3. `box-sizing` is set to `border-box` for all elements.
+4. `calc` isn't supported.
 
 ## Contribute
 

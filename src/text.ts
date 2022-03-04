@@ -73,6 +73,7 @@ export default function* buildTextNodes(
   } else if (parentStyle.textAlign === 'justify') {
     textContainer.setJustifyContent(Yoga.JUSTIFY_SPACE_BETWEEN)
   }
+
   parent.insertChild(textContainer, parent.getChildCount())
 
   // Get the correct font according to the container style.
@@ -88,9 +89,10 @@ export default function* buildTextNodes(
   const lineHeight = glyphHeight * 1.2
   const deltaHeight = ((parentStyle.fontSize as number) - glyphHeight) / 2
 
-  const { textAlign } = parentStyle
+  const { textAlign, whiteSpace } = parentStyle
 
   // Compute the layout.
+  // @TODO: Use segments instead of words to properly support kerning.
   let lineWidth = []
   let lineSegmentNumber = []
   let wordsInLayout: (null | {
@@ -111,6 +113,53 @@ export default function* buildTextNodes(
     const width = font.measure(resolvedFont, str, parentStyle as any)
     wordWidthCache.set(str, width)
     return width
+  }
+
+  // Calculate the minimal possible width of the parent container so it don't
+  // shrink below the content.
+  let minWidth = 0
+  let remainingSegment = ''
+  let extraWidth = 0
+  for (const word of words) {
+    let breakSegment = false
+    const isImage = graphemeImages && graphemeImages[word]
+    if (isImage || (whiteSpace !== 'nowrap' && wordSeparators.includes(word))) {
+      breakSegment = true
+    }
+
+    if (!breakSegment) {
+      remainingSegment += word
+    } else {
+      if (whiteSpace === 'nowrap') {
+        extraWidth +=
+          measureWithCache(remainingSegment) + (parentStyle.fontSize as number)
+      } else {
+        minWidth = Math.max(minWidth, measureWithCache(remainingSegment))
+        if (isImage) {
+          minWidth = Math.max(minWidth, parentStyle.fontSize as number)
+        }
+      }
+      remainingSegment = ''
+    }
+  }
+  minWidth = Math.max(minWidth, measureWithCache(remainingSegment) + extraWidth)
+  const currentMinWidth = parent.getMinWidth()
+  const currentMaxWidth = parent.getMaxWidth()
+  const currentWidth = parent.getWidth()
+  if (
+    isNaN(currentWidth.value) &&
+    (isNaN(currentMinWidth.value) ||
+      (currentMinWidth.unit === 1 && currentMinWidth.value > minWidth))
+  ) {
+    // minWidth cannot be larger than maxWidth
+    if (!isNaN(currentMaxWidth.value)) {
+      if (currentMaxWidth.unit === 1) {
+        minWidth = Math.min(minWidth, currentMaxWidth.value)
+      } else {
+        // @TODO: Support percentage units.
+      }
+    }
+    parent.setMinWidth(minWidth)
   }
 
   textContainer.setMeasureFunc((width) => {
@@ -152,8 +201,10 @@ export default function* buildTextNodes(
         const allowedToJustify = !currentWidth || !!remainingSpaceWidth
 
         if (
+          i &&
           allowedToPutAtBeginning &&
-          currentWidth + remainingSpaceWidth + w > width
+          currentWidth + remainingSpaceWidth + w > width &&
+          whiteSpace !== 'nowrap'
         ) {
           // Start a new line, spaces can be ignored.
           lineWidth.push(currentWidth)
@@ -193,7 +244,7 @@ export default function* buildTextNodes(
 
     // If there are multiple lines, we need to stretch it to fit the container.
     if (lines > 1) {
-      maxWidth = width
+      maxWidth = Math.max(maxWidth, width)
     }
 
     // @TODO: Support `line-height`.
