@@ -4,6 +4,7 @@ import backgroundImage from './background-image'
 import radius from './border-radius'
 import shadow from './shadow'
 import transform from './transform'
+import overflow from './overflow'
 import { buildXMLString } from '../utils'
 
 export default function rect(
@@ -16,7 +17,7 @@ export default function rect(
     isInheritingTransform,
     debug,
   }: {
-    id: number
+    id: string
     left: number
     top: number
     width: number
@@ -84,12 +85,26 @@ export default function rect(
     type = 'path'
   }
 
+  const clip = overflow(
+    { left, top, width, height, path, id },
+    style as Record<string, number>
+  )
+  const clipPathId = style._inheritedClipPathId as number | undefined
+
   const filter = shadow({ width, height, id }, style)
 
   if (debug) {
-    extra = `<rect x="${left}" y="${top}" width="${width}" height="${height}" fill="transparent" stroke="#ff5757" stroke-width="1" ${
-      matrix ? `transform="${matrix}"` : ''
-    }></rect>`
+    extra = buildXMLString('rect', {
+      x: left,
+      y: top,
+      width,
+      height,
+      fill: 'transparent',
+      stroke: '#ff5757',
+      'stroke-width': 1,
+      transform: matrix || undefined,
+      'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+    })
   }
 
   if (!fills.length) fills.push('transparent')
@@ -114,12 +129,14 @@ export default function rect(
         'stroke-width': hasStroke ? strokeWidth : undefined,
         d: path ? path : undefined,
         transform: matrix ? matrix : undefined,
+        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
       })
     })
     .join('')
 
   return (
     (defs ? `<defs>${defs}</defs>` : '') +
+    clip +
     (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
     (opacity !== 1 ? `<g opacity="${opacity}">` : '') +
     shape +

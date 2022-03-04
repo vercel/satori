@@ -1,5 +1,9 @@
+import type { ParsedTransformOrigin } from '../transform-origin'
+
+import { buildXMLString } from '../utils'
 import radius from './border-radius'
 import shadow from './shadow'
+import transform from './transform'
 
 export default function image(
   {
@@ -10,8 +14,9 @@ export default function image(
     height,
     src,
     debug,
+    isInheritingTransform,
   }: {
-    id: number
+    id: string
     left: number
     top: number
     width: number
@@ -26,6 +31,7 @@ export default function image(
 
   let clip = ''
   let opacity = 1
+  let matrix = ''
 
   const preserveAspectRatio =
     style.objectFit === 'contain'
@@ -39,8 +45,22 @@ export default function image(
     style as Record<string, number>
   )
 
+  const clipPathId = style._inheritedClipPathId as number | undefined
   if (path) {
-    clip = `<clipPath id="satori_c-${id}"><path x="${left}" y="${top}" width="${width}" height="${height}" d="${path}"></path></clipPath>`
+    clip = buildXMLString(
+      'clipPath',
+      {
+        id: `satori_c-${id}`,
+        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+      },
+      buildXMLString('path', {
+        x: left,
+        y: top,
+        width,
+        height,
+        d: path,
+      })
+    )
   }
 
   if (style.opacity) {
@@ -49,11 +69,38 @@ export default function image(
 
   const filter = shadow({ width, height, id }, style)
 
-  return `${filter}${
-    filter ? `<g filter="url(#satori_s-${id})">` : ''
-  }${clip}<image href="${src}" x="${left}" y="${top}" width="${width}" height="${height}" preserveAspectRatio="${preserveAspectRatio}" ${
-    clip ? `clip-path="url(#satori_c-${id})"` : ''
-  } ${opacity !== 1 ? `opacity="${opacity}"` : ''}></image>${
-    filter ? '</g>' : ''
-  }`
+  if (style.transform) {
+    matrix = transform(
+      {
+        left,
+        top,
+        width,
+        height,
+      },
+      style.transform as unknown as number[],
+      isInheritingTransform,
+      style.transformOrigin as ParsedTransformOrigin | undefined
+    )
+  }
+
+  return (
+    filter +
+    (filter ? `<g filter="url(#satori_s-${id})">` : '') +
+    clip +
+    buildXMLString('image', {
+      x: left,
+      y: top,
+      width,
+      height,
+      href: src,
+      preserveAspectRatio,
+      transform: matrix ? matrix : undefined,
+      'clip-path': clip
+        ? `url(#satori_c-${id})`
+        : clipPathId
+        ? `url(#${clipPathId})`
+        : undefined,
+    }) +
+    (filter ? `</g>` : '')
+  )
 }

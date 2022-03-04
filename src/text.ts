@@ -20,6 +20,7 @@ export default function* buildTextNodes(
 
   const {
     parentStyle,
+    inheritedStyle,
     parent,
     font,
     id,
@@ -161,6 +162,9 @@ export default function* buildTextNodes(
     }
     parent.setMinWidth(minWidth)
   }
+  if (typeof parentStyle.flexShrink === 'undefined') {
+    parent.setFlexShrink(1)
+  }
 
   textContainer.setMeasureFunc((width) => {
     let lines = 0
@@ -255,6 +259,7 @@ export default function* buildTextNodes(
 
   let result = ''
 
+  const clipPathId = inheritedStyle._inheritedClipPathId as number | undefined
   const {
     left: containerLeft,
     top: containerTop,
@@ -361,6 +366,7 @@ export default function* buildTextNodes(
           matrix,
           opacity,
           image,
+          clipPathId,
           debug,
         },
         parentStyle
@@ -381,6 +387,7 @@ export default function* buildTextNodes(
         stroke: '#575eff',
         'stroke-width': 1,
         transform: matrix ? matrix : undefined,
+        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
       })
     }
 
@@ -391,6 +398,7 @@ export default function* buildTextNodes(
         d: mergedPath,
         transform: matrix ? matrix : undefined,
         opacity: opacity !== 1 ? opacity : undefined,
+        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
       }) +
       (filter ? '</g>' : '') +
       extra

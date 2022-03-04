@@ -54,11 +54,12 @@ export default function text(
     matrix,
     opacity,
     image,
+    clipPathId,
     debug,
   }: {
     content: string
     filter: string
-    id: number
+    id: string
     left: number
     top: number
     width: number
@@ -66,6 +67,7 @@ export default function text(
     matrix: string
     opacity: number
     image: string | null
+    clipPathId?: number
     debug?: boolean
   },
   style: Record<string, number | string>
@@ -81,6 +83,7 @@ export default function text(
       stroke: '#575eff',
       'stroke-width': 1,
       transform: matrix || undefined,
+      'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
     })
   }
 
@@ -96,6 +99,7 @@ export default function text(
         height,
         transform: matrix || undefined,
         opacity: opacity !== 1 ? opacity : undefined,
+        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
       }) +
       (filter ? '</g>' : '') +
       extra
@@ -120,6 +124,7 @@ export default function text(
         'letter-spacing': style.letterSpacing || undefined,
         transform: matrix || undefined,
         opacity: opacity !== 1 ? opacity : undefined,
+        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
       },
       content
     ) +

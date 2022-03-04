@@ -7,6 +7,7 @@ import { join } from 'path'
 import rauchgCard from '../../cards/rauchg'
 import textCard from '../../cards/text-align'
 import githubCard from '../../cards/github'
+import overflowCard from '../../cards/overflow'
 
 const card = githubCard
 
@@ -57,11 +58,11 @@ export default async (req, res) => {
   if (type === 'svg') {
     res.setHeader('Content-Type', 'image/svg+xml')
     res.end(svg)
-    return;
+    return
   } else if (type === 'html') {
     res.setHeader('Content-Type', 'text/html')
     res.end(renderToStaticMarkup(card))
-    return;
+    return
   }
 
   const data = await renderAsync(svg, {
@@ -78,7 +79,7 @@ export default async (req, res) => {
 
   res.setHeader('content-type', 'image/png')
 
-  await new Promise(resolve => {
+  await new Promise((resolve) => {
     res.end(data, resolve)
   })
 

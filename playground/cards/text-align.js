@@ -49,6 +49,18 @@ export default (
       >
         Hello, world!!!!
       </div>
+      <div style={{ width: 60 }} />
+      <div
+        style={{
+          padding: 5,
+          maxWidth: 60,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          border: '1px solid',
+        }}
+      >
+        Hello, world!!!!
+      </div>
     </div>
     <div
       style={{

@@ -23,6 +23,7 @@ const list = new Set([
   // Special properties of Satori:
   '_viewportWidth',
   '_viewportHeight',
+  '_inheritedClipPathId',
 ])
 
 export default function inheritable(style: Record<string, any>) {
