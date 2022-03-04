@@ -43,7 +43,7 @@ export default function satori(
   root.setJustifyContent(Yoga.JUSTIFY_FLEX_START)
 
   const handler = layout(element, {
-    id: 1,
+    id: 'id',
     parentStyle: {},
     inheritedStyle: {
       fontSize: 16,

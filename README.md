@@ -165,6 +165,7 @@ Note:
 2. There is no `z-index` support in SVG. Elements that come later in the document will be painted on top.
 3. `box-sizing` is set to `border-box` for all elements.
 4. `calc` isn't supported.
+5. `overflow: hidden` and `transform` can't be used together.
 
 ## Contribute
 

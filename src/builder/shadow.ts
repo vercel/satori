@@ -3,7 +3,7 @@
 // https://drafts.fxtf.org/filter-effects/#feGaussianBlurElement
 
 export default function shadow(
-  { id, width, height }: { id: number; width: number; height: number },
+  { id, width, height }: { id: string; width: number; height: number },
   style: Record<string, any>
 ) {
   if (
