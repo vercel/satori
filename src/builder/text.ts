@@ -1,5 +1,6 @@
-import transform from './transform'
 import type { ParsedTransformOrigin } from '../transform-origin'
+import transform from './transform'
+import { buildXMLString } from '../utils'
 
 export function container(
   {
@@ -71,32 +72,58 @@ export default function text(
 ) {
   let extra = ''
   if (debug) {
-    extra = `<rect x="${left}" y="${top}" width="${width}" height="0.5" fill="transparent" stroke="#575eff" stroke-width="1" ${
-      matrix ? `transform="${matrix}"` : ''
-    }></rect>`
+    extra = buildXMLString('rect', {
+      x: left,
+      y: top,
+      width,
+      height: 0.5,
+      fill: 'transparent',
+      stroke: '#575eff',
+      'stroke-width': 1,
+      transform: matrix || undefined,
+    })
   }
 
   // This grapheme should be rendered as an image.
   if (image) {
-    return `${
-      filter ? `${filter}<g filter="url(#satori_s-${id})">` : ''
-    }<image href="${image}" x="${left}" y="${top}" width="${width}" height="${height}" ${
-      matrix ? `transform="${matrix}"` : ''
-    } ${opacity !== 1 ? `opacity="${opacity}"` : ''}></image>${
-      filter ? '</g>' : ''
-    }${extra}`
+    return (
+      (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
+      buildXMLString('image', {
+        href: image,
+        x: left,
+        y: top,
+        width,
+        height,
+        transform: matrix || undefined,
+        opacity: opacity !== 1 ? opacity : undefined,
+      }) +
+      (filter ? '</g>' : '') +
+      extra
+    )
   }
 
   // Do not embed the font, use <text> with the raw content instead.
-  return `${
-    filter ? `${filter}<g filter="url(#satori_s-${id})">` : ''
-  }<text x="${left}" y="${top}" width="${width}" height="${height}" fill="${
-    style.color
-  }" font-weight="${style.fontWeight}" font-style="${
-    style.fontStyle
-  }" font-size="${style.fontSize}" font-family="${style.fontFamily}" ${
-    style.letterSpacing ? `letter-spacing="${style.letterSpacing}"` : ''
-  } ${matrix ? `transform="${matrix}"` : ''} ${
-    opacity !== 1 ? `opacity="${opacity}"` : ''
-  }>${content}</text>${filter ? '</g>' : ''}${extra}`
+  return (
+    (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
+    buildXMLString(
+      'text',
+      {
+        x: left,
+        y: top,
+        width,
+        height,
+        fill: style.color,
+        'font-weight': style.fontWeight,
+        'font-style': style.fontStyle,
+        'font-size': style.fontSize,
+        'font-family': style.fontFamily,
+        'letter-spacing': style.letterSpacing || undefined,
+        transform: matrix || undefined,
+        opacity: opacity !== 1 ? opacity : undefined,
+      },
+      content
+    ) +
+    (filter ? '</g>' : '') +
+    extra
+  )
 }

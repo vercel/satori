@@ -1,27 +1,14 @@
 import React from 'react'
-import { it, describe, expect, beforeAll } from 'vitest'
-import fs from 'fs/promises'
-import { join } from 'path'
+import { it, describe, expect } from 'vitest'
 
+import { initFonts } from './utils'
 import satori from '../src'
 
 describe('Basic', () => {
   let fonts
+  initFonts((f) => (fonts = f))
 
-  beforeAll(async () => {
-    const fontPath = join(process.cwd(), 'test', 'assets', 'Roboto-Regular.ttf')
-    const fontData = await fs.readFile(fontPath)
-    fonts = [
-      {
-        name: 'Roboto',
-        data: fontData,
-        weight: 400,
-        style: 'normal',
-      },
-    ]
-  })
-
-  it('should render basic div', async () => {
+  it('should render empty div', async () => {
     const svg = satori(<div></div>, { width: 100, height: 100, fonts })
     expect(svg).toMatchInlineSnapshot(
       '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"/>"'
@@ -36,7 +23,7 @@ describe('Basic', () => {
       embedFont: false,
     })
     expect(svg).toMatchInlineSnapshot(
-      '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"36.7734375\\" height=\\"22.5\\" fill=\\"black\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\"   >Hello</text></svg>"'
+      '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"36.7734375\\" height=\\"22.5\\" fill=\\"black\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\">Hello</text></svg>"'
     )
   })
 
@@ -69,7 +56,7 @@ describe('Basic', () => {
       }
     )
     expect(svg).toMatchInlineSnapshot(
-      '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><rect x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\" fill=\\"red\\"/><text x=\\"0\\" y=\\"16.21875\\" width=\\"36.7734375\\" height=\\"22.5\\" fill=\\"black\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\"   >Hello</text></svg>"'
+      '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><rect x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\" fill=\\"red\\"/><text x=\\"0\\" y=\\"16.21875\\" width=\\"36.7734375\\" height=\\"22.5\\" fill=\\"black\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\">Hello</text></svg>"'
     )
   })
 
@@ -138,7 +125,7 @@ describe('Basic', () => {
       }
     )
     expect(svg).toMatchInlineSnapshot(
-      '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"/>"'
+      '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><rect x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\" fill=\\"transparent\\" stroke=\\"black\\" stroke-width=\\"1\\"/></svg>"'
     )
   })
 })
