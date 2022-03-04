@@ -53,7 +53,7 @@ function lengthToNumber(
           return parsed.value * 16
         case 'vw':
           return ~~(
-            (parsed.value * (inheritedStyle._viewportHeight as number)) /
+            (parsed.value * (inheritedStyle._viewportWidth as number)) /
             100
           )
         case 'vh':
