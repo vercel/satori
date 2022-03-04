@@ -83,6 +83,7 @@ export default function* layout(
     style,
     props
   )
+
   // If the element is inheriting the parent `transform`, or applying its own.
   // This affects the coordinate system.
   const isInheritingTransform =

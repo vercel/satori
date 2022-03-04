@@ -147,15 +147,17 @@ export default function* buildTextNodes(
   const currentMaxWidth = parent.getMaxWidth()
   const currentWidth = parent.getWidth()
   if (
-    isNaN(currentMinWidth.value) ||
-    (currentMinWidth.unit === 1 && currentMinWidth.value > minWidth)
+    isNaN(currentWidth.value) &&
+    (isNaN(currentMinWidth.value) ||
+      (currentMinWidth.unit === 1 && currentMinWidth.value > minWidth))
   ) {
-    // minWidth cannot be larger than maxWidth and width
-    if (!isNaN(currentMaxWidth.value) && currentMaxWidth.unit === 1) {
-      minWidth = Math.min(minWidth, currentMaxWidth.value)
-    }
-    if (!isNaN(currentWidth.value) && currentWidth.unit === 1) {
-      minWidth = Math.min(minWidth, currentWidth.value)
+    // minWidth cannot be larger than maxWidth
+    if (!isNaN(currentMaxWidth.value)) {
+      if (currentMaxWidth.unit === 1) {
+        minWidth = Math.min(minWidth, currentMaxWidth.value)
+      } else {
+        // @TODO: Support percentage units.
+      }
     }
     parent.setMinWidth(minWidth)
   }
