@@ -119,26 +119,44 @@ export default function* buildTextNodes(
   // shrink below the content.
   let minWidth = 0
   let remainingSegment = ''
+  let extraWidth = 0
   for (const word of words) {
     let breakSegment = false
     const isImage = graphemeImages && graphemeImages[word]
-    if (isImage || wordSeparators.includes(word)) {
+    if (isImage || (whiteSpace !== 'nowrap' && wordSeparators.includes(word))) {
       breakSegment = true
     }
 
     if (!breakSegment) {
       remainingSegment += word
     } else {
-      minWidth = Math.max(minWidth, measureWithCache(remainingSegment))
-      if (isImage) {
-        minWidth = Math.max(minWidth, parentStyle.fontSize as number)
+      if (whiteSpace === 'nowrap') {
+        extraWidth +=
+          measureWithCache(remainingSegment) + (parentStyle.fontSize as number)
+      } else {
+        minWidth = Math.max(minWidth, measureWithCache(remainingSegment))
+        if (isImage) {
+          minWidth = Math.max(minWidth, parentStyle.fontSize as number)
+        }
       }
       remainingSegment = ''
     }
   }
-  minWidth = Math.max(minWidth, measureWithCache(remainingSegment))
-  const currentMinWidth = parent.getMinWidth().value
-  if (isNaN(currentMinWidth) || currentMinWidth > minWidth) {
+  minWidth = Math.max(minWidth, measureWithCache(remainingSegment) + extraWidth)
+  const currentMinWidth = parent.getMinWidth()
+  const currentMaxWidth = parent.getMaxWidth()
+  const currentWidth = parent.getWidth()
+  if (
+    isNaN(currentMinWidth.value) ||
+    (currentMinWidth.unit === 1 && currentMinWidth.value > minWidth)
+  ) {
+    // minWidth cannot be larger than maxWidth and width
+    if (!isNaN(currentMaxWidth.value) && currentMaxWidth.unit === 1) {
+      minWidth = Math.min(minWidth, currentMaxWidth.value)
+    }
+    if (!isNaN(currentWidth.value) && currentWidth.unit === 1) {
+      minWidth = Math.min(minWidth, currentWidth.value)
+    }
     parent.setMinWidth(minWidth)
   }
 

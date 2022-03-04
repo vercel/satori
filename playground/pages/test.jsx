@@ -104,6 +104,7 @@ export default function Playground() {
           overflow: 'hidden',
           letterSpacing: 0,
           fontSize: 16,
+          border: '1px solid black',
         }}
       >
         {card}
