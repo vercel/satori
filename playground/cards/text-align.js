@@ -23,9 +23,33 @@ export default (
           width: 60,
           padding: 5,
           border: '1px solid',
+          marginRight: 20,
         }}
       >
-        Hello, world!!!!
+        Hello, world!!!! Satori is a library.
+      </div>
+      <div
+        style={{
+          width: 60,
+          padding: 5,
+          border: '1px solid',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          marginRight: 20,
+        }}
+      >
+        Hello, world!!!! Satori is a library.
+      </div>
+      <div
+        style={{
+          width: 40,
+          padding: 5,
+          border: '1px solid',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        Hello, world!!!! Satori is a library.
       </div>
       <div style={{ width: 20 }} />
       <div
@@ -60,6 +84,19 @@ export default (
         }}
       >
         Hello, world!!!!
+      </div>
+      <div style={{ width: 20 }} />
+      <div
+        style={{
+          padding: 5,
+          maxWidth: 60,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          border: '1px solid',
+        }}
+      >
+        Hey, Satori.
       </div>
     </div>
     <div
