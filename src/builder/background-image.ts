@@ -291,13 +291,11 @@ export default function backgroundImage(
       const [xDelta, yDelta] = dimensions
       const tag = element.tag
       let props = { ...element.props }
-      console.log({ props, width})
       for (let cx = Number(props.cx); cx <= width; cx += xDelta) {
         props.cx = cx;
         shapes.add(buildXMLString(tag, props))
       }
       props = { ...element.props }
-      console.log({ props, height})
       for (let cy = Number(props.cy); cy <= height; cy += yDelta) {
         props.cy = cy;
         shapes.add(buildXMLString(tag, props))
@@ -311,7 +309,6 @@ export default function backgroundImage(
         .join('')}</radialGradient>`,
         Array.from(shapes).join('')
     ]
-    console.log(result)
     return result;
   }
 
