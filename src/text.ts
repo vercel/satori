@@ -90,7 +90,7 @@ export default function* buildTextNodes(
   const lineHeight = glyphHeight * 1.2
   const deltaHeight = ((parentStyle.fontSize as number) - glyphHeight) / 2
 
-  const { textAlign, textOverflow, whiteSpace } = parentStyle
+  const { textAlign, textOverflow, whiteSpace, backgroundClip } = parentStyle
 
   // Compute the layout.
   // @TODO: Use segments instead of words to properly support kerning.
@@ -258,6 +258,7 @@ export default function* buildTextNodes(
   const [x, y] = yield
 
   let result = ''
+  let backgroundClipDef = ''
 
   const clipPathId = inheritedStyle._inheritedClipPathId as number | undefined
   const {
@@ -393,7 +394,7 @@ export default function* buildTextNodes(
     if (path) {
       mergedPath += path + ' '
     } else {
-      result += text(
+      const [t, shape] = text(
         {
           content: word,
           filter,
@@ -407,9 +408,12 @@ export default function* buildTextNodes(
           image,
           clipPathId,
           debug,
+          shape: backgroundClip === 'text',
         },
         parentStyle
       )
+      result += t
+      backgroundClipDef += shape
     }
   }
 
@@ -430,18 +434,38 @@ export default function* buildTextNodes(
       })
     }
 
-    result +=
-      (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
-      buildXMLString('path', {
-        fill: parentStyle.color,
+    const p = buildXMLString('path', {
+      fill: parentStyle.color,
+      d: mergedPath,
+      transform: matrix ? matrix : undefined,
+      opacity: opacity !== 1 ? opacity : undefined,
+      'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+    })
+
+    if (backgroundClip === 'text') {
+      backgroundClipDef = buildXMLString('path', {
         d: mergedPath,
         transform: matrix ? matrix : undefined,
-        opacity: opacity !== 1 ? opacity : undefined,
-        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-      }) +
+      })
+    }
+
+    result +=
+      (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
+      p +
       (filter ? '</g>' : '') +
       extra
   }
 
-  return result
+  return (
+    (backgroundClipDef
+      ? buildXMLString(
+          'clipPath',
+          {
+            id: `satori_bct-${id}`,
+            'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+          },
+          backgroundClipDef
+        )
+      : '') + result
+  )
 }

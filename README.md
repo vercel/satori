@@ -154,7 +154,7 @@ The image will be resized to the current font-size (both width and height), so i
 | `background-size` | Support two-value size string such as `10px 20%` |
 | `white-space` | Support `normal` and `nowrap` |
 | `text-overflow` | Support `clip` and `ellipsis` |
-| `background-clip` | TBD |
+| `background-clip` | Support `border-box` and `text` |
 | `background-repeat` | TBD |
 | `background-origin` | TBD |
 | `text-decoration` | TBD |
