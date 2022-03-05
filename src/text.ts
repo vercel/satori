@@ -90,7 +90,7 @@ export default function* buildTextNodes(
   const lineHeight = glyphHeight * 1.2
   const deltaHeight = ((parentStyle.fontSize as number) - glyphHeight) / 2
 
-  const { textAlign, whiteSpace } = parentStyle
+  const { textAlign, textOverflow, whiteSpace } = parentStyle
 
   // Compute the layout.
   // @TODO: Use segments instead of words to properly support kerning.
@@ -266,6 +266,12 @@ export default function* buildTextNodes(
     width: containerWidth,
     height: containerHeight,
   } = textContainer.getComputedLayout()
+  const parentContainerInnerWidth =
+    parent.getComputedWidth() -
+    parent.getComputedPadding(Yoga.EDGE_LEFT) -
+    parent.getComputedPadding(Yoga.EDGE_RIGHT) -
+    parent.getComputedBorder(Yoga.EDGE_LEFT) -
+    parent.getComputedBorder(Yoga.EDGE_RIGHT)
 
   // Attach offset to the current node.
   const left = x + containerLeft
@@ -299,20 +305,26 @@ export default function* buildTextNodes(
   }
 
   let mergedPath = ''
+  let skippedLine = -1
+  let ellipsisWidth = textOverflow === 'ellipsis' ? measureWithCache('…') : 0
+  let spaceWidth = textOverflow === 'ellipsis' ? measureWithCache(' ') : 0
 
   for (let i = 0; i < words.length; i++) {
     // Skip whitespace.
     if (!wordsInLayout[i]) continue
+    const layout = wordsInLayout[i]
 
-    const word = words[i]
-
+    let word = words[i]
     let path: string | null = null
-    let image: string | null = null
 
-    let topOffset = wordsInLayout[i].y
-    let leftOffset = wordsInLayout[i].x
-    const width = wordsInLayout[i].width
-    const line = wordsInLayout[i].line
+    const image = graphemeImages ? graphemeImages[word] : null
+
+    let topOffset = layout.y
+    let leftOffset = layout.x
+    const width = layout.width
+    const line = layout.line
+
+    if (line === skippedLine) continue
 
     if (lineWidth.length > 1) {
       // Calculate alignment. Note that for flexbox, there is only text
@@ -327,13 +339,40 @@ export default function* buildTextNodes(
         if (line < lineWidth.length - 1) {
           const segments = lineSegmentNumber[line]
           const gutter = segments > 1 ? remainingWidth / (segments - 1) : 0
-          leftOffset += gutter * wordsInLayout[i].lineIndex
+          leftOffset += gutter * layout.lineIndex
         }
       }
     }
 
-    if (graphemeImages && graphemeImages[word]) {
-      image = graphemeImages[word]
+    if (textOverflow === 'ellipsis') {
+      if (lineWidth[line] > parentContainerInnerWidth) {
+        if (
+          layout.x + width + ellipsisWidth + spaceWidth >
+          parentContainerInnerWidth
+        ) {
+          const chars = segment(word, 'grapheme')
+          let subset = ''
+          for (const char of chars) {
+            if (
+              // Keep at least one character:
+              // > The first character or atomic inline-level element on a line
+              // must be clipped rather than ellipsed.
+              // https://drafts.csswg.org/css-overflow/#text-overflow
+              subset &&
+              layout.x + measureWithCache(subset + char) + ellipsisWidth >
+                parentContainerInnerWidth
+            ) {
+              break
+            }
+            subset += char
+          }
+          word = subset + '…'
+          skippedLine = line
+        }
+      }
+    }
+
+    if (image) {
       // For images, we remove the baseline offset.
       topOffset += deltaHeight
     } else if (embedFont) {

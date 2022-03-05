@@ -10,7 +10,7 @@ import rauchgCard from '../cards/rauchg'
 import overflowCard from '../cards/overflow'
 import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
 
-const card = overflowCard
+const card = textAlignCard
 
 async function init() {
   if (typeof window === 'undefined') return []
@@ -92,7 +92,7 @@ export default function Playground() {
   }, [])
 
   return (
-    <div id='container'>
+    <div id='container' style={{ padding: 10 }}>
       <div id='svg' dangerouslySetInnerHTML={{ __html: svg }}></div>
       <div
         style={{
