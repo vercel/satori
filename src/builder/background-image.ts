@@ -1,4 +1,5 @@
 import CssDimension from 'parse-css-dimension'
+import { buildXMLString } from '../utils'
 
 import gradient from '../../deps/gradient-parser'
 
@@ -64,7 +65,7 @@ function parseLengthPairs(
 export default function backgroundImage(
   { id, width, height }: { id: string; width: number; height: number },
   { image, size, position }: Background
-) {
+): string[] {
   const dimensions = parseLengthPairs(size, {
     x: width,
     y: height,
@@ -192,20 +193,126 @@ export default function backgroundImage(
 
 
   if (image.startsWith('radial-gradient(')) {
+    const gradientId = `satori_radial${id}`
     const parsed = gradient.parse(image)[0]
-    // TODO: handle radial-gradient here
-    console.log(parsed)
-    let x1, y1, x2, y2
-    let stops = []
-    return [
-      `satori_bi${id}`,
-      `<radialGradient id="satori_bi${id}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${stops
-        .map(
-          (stop) =>
-            `<stop offset="${stop.offset * 100}%" stop-color="${stop.color}"/>`
-        )
+    const orientation = parsed.orientation[0]
+    let element: {
+      tag: string
+      props: Record<string, string | number>
+    } | null = null
+    if (orientation.type === 'shape') {
+      if (orientation.at.type === 'position') {
+        element = {
+          tag: orientation.value,
+          props: {
+            cx: orientation.at.value.x.value,
+            cy: orientation.at.value.y.value,
+            fill: `url('#${gradientId}')`,
+            r: 100, // TODO: what value should we use for "r"?
+          }
+        }
+      } else {
+        throw new Error('orientation.at.type not implemented: ' + orientation.at.type)
+      }
+    } else {
+      throw new Error('orientation.type not implemented: ' + orientation.type)
+    }
+    // @TODO
+    const totalLength = width
+    // Resolve the color stops based on the spec:
+    // https://drafts.csswg.org/css-images/#color-stop-syntax
+    const stops = []
+    for (const stop of parsed.colorStops) {
+      const color = resolveColorFromStop(stop)
+      if (!stops.length) {
+        // First stop, ensure it's at the start.
+        stops.push({
+          offset: 0,
+          color,
+        })
+
+        if (typeof stop.length === 'undefined') continue
+        if (stop.length.value === '0') continue
+      }
+
+      // All offsets are relative values (0-1) in SVG.
+      const offset =
+        typeof stop.length === 'undefined'
+          ? undefined
+          : stop.length.type === '%'
+          ? stop.length.value / 100
+          : stop.length.value / totalLength
+
+      stops.push({
+        offset,
+        color,
+      })
+    }
+    if (!stops.length) {
+      stops.push({
+        offset: 0,
+        color: 'transparent',
+      })
+    }
+    // Last stop, ensure it's at the end.
+    const lastStop = stops[stops.length - 1]
+    if (lastStop.offset !== 1) {
+      if (typeof lastStop.offset === 'undefined') {
+        lastStop.offset = 1
+      } else {
+        stops.push({
+          offset: 1,
+          color: lastStop.color,
+        })
+      }
+    }
+
+    let previousStop = 0
+    let nextStop = 1
+    // Evenly distribute the missing stop offsets.
+    for (let i = 0; i < stops.length; i++) {
+      if (typeof stops[i].offset === 'undefined') {
+        // Find the next stop that has an offset.
+        if (nextStop < i) nextStop = i
+        while (typeof stops[nextStop].offset === 'undefined') nextStop++
+
+        stops[i].offset =
+          ((stops[nextStop].offset - stops[previousStop].offset) /
+            (nextStop - previousStop)) *
+            (i - previousStop) +
+          stops[previousStop].offset
+      } else {
+        previousStop = i
+      }
+    }
+
+    let shapes = new Set<string>()
+    if (element) {
+      const [xDelta, yDelta] = dimensions
+      const tag = element.tag
+      let props = { ...element.props }
+      console.log({ props, width})
+      for (let cx = Number(props.cx); cx <= width; cx += xDelta) {
+        props.cx = cx;
+        shapes.add(buildXMLString(tag, props))
+      }
+      props = { ...element.props }
+      console.log({ props, height})
+      for (let cy = Number(props.cy); cy <= height; cy += yDelta) {
+        props.cy = cy;
+        shapes.add(buildXMLString(tag, props))
+      }
+    }
+
+    const result = [
+      gradientId,
+      `<radialGradient id="${gradientId}">${stops
+        .map(stop => `<stop offset="${stop.offset * 100}%" stop-color="${stop.color}"/>`)
         .join('')}</radialGradient>`,
+        Array.from(shapes).join('')
     ]
+    console.log(result)
+    return result;
   }
 
   if (image.startsWith('url(')) {
