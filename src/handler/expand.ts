@@ -37,7 +37,8 @@ function purify(name: string, value?: string | number) {
 
 function lengthToNumber(
   length: string | number,
-  baseFontSize: number
+  baseFontSize: number,
+  inheritedStyle: Record<string, string | number>
 ): number | undefined {
   if (typeof length === 'number') return length
 
@@ -50,6 +51,16 @@ function lengthToNumber(
           return parsed.value * baseFontSize
         case 'rem':
           return parsed.value * 16
+        case 'vw':
+          return ~~(
+            (parsed.value * (inheritedStyle._viewportWidth as number)) /
+            100
+          )
+        case 'vh':
+          return ~~(
+            (parsed.value * (inheritedStyle._viewportHeight as number)) /
+            100
+          )
         default:
           return parsed.value
       }
@@ -119,7 +130,7 @@ export default function expand(
 
     // Convert em and rem values to px (number).
     if (typeof value === 'string') {
-      const len = lengthToNumber(value, baseFontSize)
+      const len = lengthToNumber(value, baseFontSize, inheritedStyle)
       if (typeof len !== 'undefined') transformedStyle[prop] = len
       value = transformedStyle[prop]
     }
@@ -143,7 +154,10 @@ export default function expand(
       for (const transform of transforms) {
         const type = Object.keys(transform)[0]
         const v = transform[type]
-        const len = typeof v === 'string' ? lengthToNumber(v, baseFontSize) : v
+        const len =
+          typeof v === 'string'
+            ? lengthToNumber(v, baseFontSize, inheritedStyle)
+            : v
 
         const transformMatrix = [...baseMatrix]
         switch (type) {

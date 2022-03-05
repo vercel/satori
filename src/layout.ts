@@ -14,7 +14,7 @@ import rect from './builder/rect'
 import image from './builder/image'
 
 export interface LayoutContext {
-  id: number
+  id: string
   parentStyle: Record<string, number | string>
   inheritedStyle: Record<string, number | string>
   isInheritingTransform?: boolean
@@ -83,12 +83,19 @@ export default function* layout(
     style,
     props
   )
+
   // If the element is inheriting the parent `transform`, or applying its own.
   // This affects the coordinate system.
   const isInheritingTransform =
     computedStyle.transform === inheritedStyle.transform
   if (!isInheritingTransform) {
     ;(computedStyle.transform as any).__parent = inheritedStyle.transform
+  }
+
+  // If the element has `overflow` set to `hidden`, we need to create a clip
+  // path and use it in all its children.
+  if (computedStyle.overflow === 'hidden') {
+    newInheritableStyle._inheritedClipPathId = `satori_cp-${id}`
   }
 
   // 2. Do layout recursively for its children.
@@ -99,7 +106,7 @@ export default function* layout(
   let i = 0
   for (const child of normalizedChildren) {
     const iter = layout(child, {
-      id: id * normalizedChildren.length + ++i,
+      id: id + '-' + i++,
       parentStyle: computedStyle,
       inheritedStyle: newInheritableStyle,
       isInheritingTransform: true,

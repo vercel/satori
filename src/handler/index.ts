@@ -146,7 +146,7 @@ export default function handler(
     typeof style.flexGrow === 'undefined' ? 0 : (style.flexGrow as number)
   )
   node.setFlexShrink(
-    typeof style.flexShrink === 'undefined' ? 1 : (style.flexShrink as number)
+    typeof style.flexShrink === 'undefined' ? 0 : (style.flexShrink as number)
   )
 
   if (typeof style.maxHeight !== 'undefined') {

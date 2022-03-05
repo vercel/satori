@@ -7,9 +7,10 @@ import nextConfCard from '../cards/next-conf'
 import githubCard from '../cards/github'
 import textAlignCard from '../cards/text-align'
 import rauchgCard from '../cards/rauchg'
+import overflowCard from '../cards/overflow'
 import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
 
-const card = textAlignCard
+const card = overflowCard
 
 async function init() {
   if (typeof window === 'undefined') return []
@@ -83,7 +84,7 @@ export default function Playground() {
         fonts,
         graphemeImages,
         // embedFont: false,
-        debug: true,
+        // debug: true,
       })
 
       setSvg(result)
@@ -104,6 +105,7 @@ export default function Playground() {
           overflow: 'hidden',
           letterSpacing: 0,
           fontSize: 16,
+          border: '1px solid black',
         }}
       >
         {card}
