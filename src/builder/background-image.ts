@@ -289,16 +289,12 @@ export default function backgroundImage(
     let shapes = new Set<string>()
     if (element) {
       const [xDelta, yDelta] = dimensions
-      const tag = element.tag
-      let props = { ...element.props }
+      const { tag, props } = element
+      // TODO: check for repeat-x/repeat-y
       for (let cx = Number(props.cx); cx <= width; cx += xDelta) {
-        props.cx = cx;
-        shapes.add(buildXMLString(tag, props))
-      }
-      props = { ...element.props }
-      for (let cy = Number(props.cy); cy <= height; cy += yDelta) {
-        props.cy = cy;
-        shapes.add(buildXMLString(tag, props))
+        for (let cy = Number(props.cy); cy <= height; cy += yDelta) {
+          shapes.add(buildXMLString(tag, {...props, cx, cy}))
+        }
       }
     }
 
