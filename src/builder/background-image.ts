@@ -293,7 +293,7 @@ export default function backgroundImage(
       const [xDelta, yDelta] = dimensions
       const { tag, props } = element
       // TODO: check for repeat-x/repeat-y
-      pattern = buildXMLString('pattern', { id: patternId, x: 0, y: 0, width, height, userSpaceOnUsepatternUnits: 'objectBoundingBox', patternContentUnits: 'objectBoundingBox' }, buildXMLString(tag, props))
+      pattern = buildXMLString('pattern', { id: patternId, x: 0, y: 0, width: xDelta, height: yDelta, patternUnits: 'userSpaceOnUse' }, buildXMLString(tag, props))
     }
 
     const result = [
