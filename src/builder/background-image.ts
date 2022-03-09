@@ -193,7 +193,9 @@ export default function backgroundImage(
 
 
   if (image.startsWith('radial-gradient(')) {
-    const gradientId = `satori_radial${id}`
+    const rand = Math.random().toString(36).substring(7)
+    const gradientId = `satori_radial${id}${rand}`
+    const patternId = `satori_pattern${id}`
     const parsed = gradient.parse(image)[0]
     const orientation = parsed.orientation[0]
     let element: {
@@ -286,24 +288,19 @@ export default function backgroundImage(
       }
     }
 
-    let shapes = new Set<string>()
+    let pattern = ''
     if (element) {
       const [xDelta, yDelta] = dimensions
       const { tag, props } = element
       // TODO: check for repeat-x/repeat-y
-      for (let cx = Number(props.cx); cx <= width; cx += xDelta) {
-        for (let cy = Number(props.cy); cy <= height; cy += yDelta) {
-          shapes.add(buildXMLString(tag, {...props, cx, cy}))
-        }
-      }
+      pattern = buildXMLString('pattern', { id: patternId, x: 0, y: 0, width, height, userSpaceOnUsepatternUnits: 'objectBoundingBox', patternContentUnits: 'objectBoundingBox' }, buildXMLString(tag, props))
     }
 
     const result = [
-      gradientId,
+      patternId,
       `<radialGradient id="${gradientId}">${stops
         .map(stop => `<stop offset="${stop.offset * 100}%" stop-color="${stop.color}"/>`)
-        .join('')}</radialGradient>`,
-        Array.from(shapes).join('')
+        .join('')}</radialGradient>` + pattern
     ]
     return result;
   }
