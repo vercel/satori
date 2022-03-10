@@ -191,34 +191,27 @@ export default function backgroundImage(
     ]
   }
 
-
   if (image.startsWith('radial-gradient(')) {
-    const rand = Math.random().toString(36).substring(7)
-    const gradientId = `satori_radial${id}${rand}`
-    const patternId = `satori_pattern${id}`
     const parsed = gradient.parse(image)[0]
     const orientation = parsed.orientation[0]
-    let element: {
-      tag: string
-      props: Record<string, string | number>
-    } | null = null
+    const [xDelta, yDelta] = dimensions
+
+    let cx: number = xDelta / 2
+    let cy: number = yDelta / 2
+
     if (orientation.type === 'shape') {
       if (orientation.at.type === 'position') {
-        element = {
-          tag: orientation.value,
-          props: {
-            cx: orientation.at.value.x.value,
-            cy: orientation.at.value.y.value,
-            fill: `url('#${gradientId}')`,
-            r: 100, // TODO: what value should we use for "r"?
-          }
-        }
+        cx = orientation.at.value.x.value
+        cy = orientation.at.value.y.value
       } else {
-        throw new Error('orientation.at.type not implemented: ' + orientation.at.type)
+        throw new Error(
+          'orientation.at.type not implemented: ' + orientation.at.type
+        )
       }
     } else {
       throw new Error('orientation.type not implemented: ' + orientation.type)
     }
+
     // @TODO
     const totalLength = width
     // Resolve the color stops based on the spec:
@@ -288,21 +281,49 @@ export default function backgroundImage(
       }
     }
 
-    let pattern = ''
-    if (element) {
-      const [xDelta, yDelta] = dimensions
-      const { tag, props } = element
-      // TODO: check for repeat-x/repeat-y
-      pattern = buildXMLString('pattern', { id: patternId, x: 0, y: 0, width: xDelta, height: yDelta, patternUnits: 'userSpaceOnUse' }, buildXMLString(tag, props))
-    }
+    const gradientId = `satori_radial_${id}`
+    const patternId = `satori_pattern_${id}`
 
-    const result = [
-      patternId,
-      `<radialGradient id="${gradientId}">${stops
-        .map(stop => `<stop offset="${stop.offset * 100}%" stop-color="${stop.color}"/>`)
-        .join('')}</radialGradient>` + pattern
-    ]
-    return result;
+    // TODO: check for repeat-x/repeat-y
+    const defs = buildXMLString(
+      'pattern',
+      {
+        id: patternId,
+        x: 0,
+        y: 0,
+        width: xDelta,
+        height: yDelta,
+        patternUnits: 'userSpaceOnUse',
+      },
+      buildXMLString(
+        'radialGradient',
+        {
+          id: gradientId,
+        },
+        stops
+          .map((stop) =>
+            buildXMLString('stop', {
+              offset: stop.offset,
+              'stop-color': stop.color,
+            })
+          )
+          .join('')
+      ) +
+        buildXMLString('circle', {
+          cx: cx,
+          cy: cy,
+          width: xDelta,
+          height: yDelta,
+          // @TODO: This r size needs to be `size` option here
+          // https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/radial-gradient()#values
+          // And we need to put another rect background behind it just in case.
+          r: xDelta,
+          fill: `url(#${gradientId})`,
+        })
+    )
+
+    const result = [patternId, defs]
+    return result
   }
 
   if (image.startsWith('url(')) {

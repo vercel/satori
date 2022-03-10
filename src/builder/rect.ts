@@ -65,7 +65,7 @@ export default function rect(
     )
   }
 
-  let backgroundShapes = '';
+  let backgroundShapes = ''
   if (style.backgroundImage) {
     const backgrounds: string[] = (style.backgroundImage as any)
       .map((background, index) =>
