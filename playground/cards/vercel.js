@@ -18,46 +18,44 @@ export default (
       backgroundImage:
         'radial-gradient(circle at 25px 25px, lightgray 2%, transparent 0%), radial-gradient(circle at 75px 75px, lightgray 2%, transparent 0%)',
       backgroundSize: '100px 100px',
-      height: '100vh',
+      height: '100%',
+      width: '100%',
       display: 'flex',
       textAlign: 'center',
       alignItems: 'center',
       justifyContent: 'center',
+      flexDirection: 'column',
+      flexWrap: 'nowrap',
     }}
   >
-    <div>
-      <Spacer />
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          alignContent: 'center',
-          justifyContent: 'center',
-          justifyItems: 'center',
-        }}
-      >
-        <img
-          style={{ margin: '0 75px' }}
-          alt='logo'
-          src={VercelLogo}
-          width='255'
-          height='225'
-        />
-      </div>
-      <Spacer />
-      <div
-        style={{
-          fontFamily: 'Inter',
-          fontSize: '100px',
-          fontStyle: 'normal',
-          color: 'black',
-          lineHeight: 1.8,
-        }}
-      >
-        <p>
-          <strong>Hello</strong> World
-        </p>
-      </div>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        alignContent: 'center',
+        justifyContent: 'center',
+        justifyItems: 'center',
+      }}
+    >
+      <img
+        style={{ margin: '0 75px' }}
+        alt='logo'
+        src={VercelLogo}
+        width={255 * 0.6}
+        height={225 * 0.6}
+      />
+    </div>
+    <div
+      style={{
+        fontFamily: 'Inter',
+        fontSize: '60px',
+        fontStyle: 'normal',
+        color: 'black',
+        lineHeight: 1.8,
+        marginTop: 40,
+      }}
+    >
+      <strong>Hello</strong> World
     </div>
   </div>
 )
