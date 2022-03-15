@@ -26,7 +26,7 @@ export default (
         color: 'transparent',
       }}
     >
-      Develop
+      Develop <strong>It</strong>
     </div>
     <div
       style={{
