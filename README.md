@@ -152,7 +152,7 @@ The image will be resized to the current font-size (both width and height), so i
 | `text-transform` | Support `lowercase`, `uppercase`, `capitalize` |
 | `background-position` | Supported |
 | `background-size` | Support two-value size string such as `10px 20%` |
-| `white-space` | Support `normal` and `nowrap` |
+| `white-space` | Support `normal`, `pre`, `pre-wrap` and `nowrap` |
 | `text-overflow` | Support `clip` and `ellipsis` |
 | `background-clip` | Support `border-box` and `text` |
 | `background-repeat` | TBD |

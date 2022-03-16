@@ -10,9 +10,10 @@ import rauchgCard from '../cards/rauchg'
 import overflowCard from '../cards/overflow'
 import vercelCard from '../cards/vercel'
 import dpsCard from '../cards/dps'
+import whiteSpaceCard from '../cards/white-space'
 import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
 
-const card = dpsCard
+const card = whiteSpaceCard
 
 async function init() {
   if (typeof window === 'undefined') return []

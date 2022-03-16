@@ -17,6 +17,7 @@ export default (
   >
     <div
       style={{
+        display: 'flex',
         padding: '5px 40px',
         width: 'auto',
         textAlign: 'center',
@@ -26,7 +27,7 @@ export default (
         color: 'transparent',
       }}
     >
-      Develop <strong>It</strong>
+      Develop
     </div>
     <div
       style={{
