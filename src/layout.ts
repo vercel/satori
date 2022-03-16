@@ -84,6 +84,8 @@ export default function* layout(
     props
   )
 
+  // Post-process styles to attach inheritable properties for Satori.
+
   // If the element is inheriting the parent `transform`, or applying its own.
   // This affects the coordinate system.
   const isInheritingTransform =
@@ -96,6 +98,14 @@ export default function* layout(
   // path and use it in all its children.
   if (computedStyle.overflow === 'hidden') {
     newInheritableStyle._inheritedClipPathId = `satori_cp-${id}`
+  }
+
+  // If the element has `background-clip: text` set, we need to create a clip
+  // path and use it in all its children.
+  if (computedStyle.backgroundClip === 'text') {
+    const mutateRefValue = { value: '' } as any
+    newInheritableStyle._inheritedBackgroundClipTextPath = mutateRefValue
+    computedStyle._inheritedBackgroundClipTextPath = mutateRefValue
   }
 
   // 2. Do layout recursively for its children.
@@ -133,10 +143,16 @@ export default function* layout(
   left += x
   top += y
 
-  let result = ''
+  let childrenRenderResult = ''
+  let baseRenderResult = ''
+
+  // Must render children first.
+  for (const iter of iterators) {
+    childrenRenderResult += iter.next([left, top]).value
+  }
 
   if (type === 'img') {
-    result = image(
+    baseRenderResult = image(
       {
         id,
         left,
@@ -150,15 +166,11 @@ export default function* layout(
       computedStyle
     )
   } else {
-    result = rect(
+    baseRenderResult = rect(
       { id, left, top, width, height, isInheritingTransform, debug },
       computedStyle
     )
   }
 
-  for (const iter of iterators) {
-    result += iter.next([left, top]).value
-  }
-
-  return result
+  return baseRenderResult + childrenRenderResult
 }

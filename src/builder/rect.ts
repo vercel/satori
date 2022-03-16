@@ -113,16 +113,30 @@ export default function rect(
 
   if (!fills.length) fills.push('transparent')
 
+  const { backgroundClip } = style
+
+  if (backgroundClip === 'text') {
+    defs += buildXMLString(
+      'clipPath',
+      {
+        id: `satori_bct-${id}`,
+        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+      },
+      (style._inheritedBackgroundClipTextPath as any).value
+    )
+  }
+
   // Each background generates a new rectangle.
   // @TODO: Not sure if this is the best way to do it, maybe <pattern> with
   // multiple <image>s is better.
-  const shape = fills
+  let shape = fills
     .map((fill, i) => {
       if (fill === 'transparent' && !(i === fills.length - 1 && strokeWidth)) {
         return ''
       }
 
-      const hasStroke = i === fills.length - 1 && strokeWidth
+      const hasStroke =
+        i === fills.length - 1 && strokeWidth && backgroundClip !== 'text'
       return buildXMLString(type, {
         x: left,
         y: top,
@@ -133,10 +147,32 @@ export default function rect(
         'stroke-width': hasStroke ? strokeWidth : undefined,
         d: path ? path : undefined,
         transform: matrix ? matrix : undefined,
-        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+        'clip-path':
+          backgroundClip === 'text'
+            ? `url(#satori_bct-${id})`
+            : clipPathId
+            ? `url(#${clipPathId})`
+            : undefined,
       })
     })
     .join('')
+
+  // When using `background-clip: text`, we need to draw the extra border.
+  if (backgroundClip === 'text' && strokeWidth) {
+    shape =
+      buildXMLString(type, {
+        x: left,
+        y: top,
+        width,
+        height,
+        fill: 'transparent',
+        stroke,
+        'stroke-width': strokeWidth,
+        d: path ? path : undefined,
+        transform: matrix ? matrix : undefined,
+        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+      }) + shape
+  }
 
   return (
     (defs ? `<defs>${defs}</defs>` : '') +

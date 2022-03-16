@@ -56,6 +56,7 @@ export default function text(
     image,
     clipPathId,
     debug,
+    shape,
   }: {
     content: string
     filter: string
@@ -69,6 +70,7 @@ export default function text(
     image: string | null
     clipPathId?: number
     debug?: boolean
+    shape?: boolean
   },
   style: Record<string, number | string>
 ) {
@@ -89,46 +91,55 @@ export default function text(
 
   // This grapheme should be rendered as an image.
   if (image) {
-    return (
+    const shapeProps = {
+      href: image,
+      x: left,
+      y: top,
+      width,
+      height,
+      transform: matrix || undefined,
+      'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+    }
+    return [
       (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
-      buildXMLString('image', {
-        href: image,
-        x: left,
-        y: top,
-        width,
-        height,
-        transform: matrix || undefined,
-        opacity: opacity !== 1 ? opacity : undefined,
-        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-      }) +
-      (filter ? '</g>' : '') +
-      extra
-    )
+        buildXMLString('image', {
+          ...shapeProps,
+          opacity: opacity !== 1 ? opacity : undefined,
+        }) +
+        (filter ? '</g>' : '') +
+        extra,
+      // SVG doesn't support `<image>` as the shape.
+      '',
+    ]
   }
 
   // Do not embed the font, use <text> with the raw content instead.
-  return (
+  const shapeProps = {
+    x: left,
+    y: top,
+    width,
+    height,
+    'font-weight': style.fontWeight,
+    'font-style': style.fontStyle,
+    'font-size': style.fontSize,
+    'font-family': style.fontFamily,
+    'letter-spacing': style.letterSpacing || undefined,
+    transform: matrix || undefined,
+    'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+  }
+  return [
     (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
-    buildXMLString(
-      'text',
-      {
-        x: left,
-        y: top,
-        width,
-        height,
-        fill: style.color,
-        'font-weight': style.fontWeight,
-        'font-style': style.fontStyle,
-        'font-size': style.fontSize,
-        'font-family': style.fontFamily,
-        'letter-spacing': style.letterSpacing || undefined,
-        transform: matrix || undefined,
-        opacity: opacity !== 1 ? opacity : undefined,
-        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-      },
-      content
-    ) +
-    (filter ? '</g>' : '') +
-    extra
-  )
+      buildXMLString(
+        'text',
+        {
+          ...shapeProps,
+          fill: style.color,
+          opacity: opacity !== 1 ? opacity : undefined,
+        },
+        content
+      ) +
+      (filter ? '</g>' : '') +
+      extra,
+    shape ? buildXMLString('text', shapeProps, content) : '',
+  ]
 }
