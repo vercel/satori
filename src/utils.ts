@@ -60,7 +60,7 @@ const graphemeSegmenter = INTL_SEGMENTER_SUPPORTED
 // https://github.com/niklasvh/html2canvas/blob/6521a487d78172f7179f7c973c1a3af40eb92009/src/css/layout/text.ts
 // https://drafts.csswg.org/css-text/#word-separator
 export const wordSeparators = [
-  0x0020, 0x00a0, 0x1361, 0x10100, 0x10101, 0x1039, 0x1091,
+  0x0020, 0x00a0, 0x1361, 0x10100, 0x10101, 0x1039, 0x1091, 0xa,
 ].map((point) => String.fromCodePoint(point))
 
 const breakWords = (str: string): string[] => {

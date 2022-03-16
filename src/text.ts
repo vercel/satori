@@ -129,12 +129,22 @@ export default function* buildTextNodes(
   for (const word of words) {
     let breakSegment = false
     const isImage = graphemeImages && graphemeImages[word]
-    if (isImage || (whiteSpace !== 'nowrap' && wordSeparators.includes(word))) {
-      breakSegment = true
+
+    if (whiteSpace === 'pre') {
+      // For `pre`, only break the line for `\n`.
+      breakSegment = word[0] === '\n'
+    } else if (whiteSpace !== 'nowrap') {
+      // For `normal`, `pre-wrap`, we can wrap with any word separators or
+      // images.
+      if (isImage || wordSeparators.includes(word[0])) {
+        breakSegment = true
+      }
     }
 
     if (!breakSegment) {
-      remainingSegment += word
+      if (!wordSeparators.includes(word[0]) || !remainingSegment) {
+        remainingSegment += word === '\n' ? ' ' : word
+      }
     } else {
       if (whiteSpace === 'nowrap') {
         extraWidth +=
@@ -171,6 +181,10 @@ export default function* buildTextNodes(
     parent.setFlexShrink(1)
   }
 
+  const shouldAlwaysBreakLine = ['pre-wrap', 'pre'].includes(
+    whiteSpace as string
+  )
+
   textContainer.setMeasureFunc((width) => {
     let lines = 0
     let remainingSpace = ''
@@ -183,21 +197,34 @@ export default function* buildTextNodes(
     lineSegmentNumber = [0]
 
     // We naively implement the width calculation without proper kerning.
-    // @TODO: Support cases like `white-space: pre` and `pre-wrap`.
     // @TODO: Support different writing modes.
     // @TODO: Support RTL languages.
     for (let i = 0; i < words.length; i++) {
       const word = words[i]
-      if (wordSeparators.includes(word)) {
-        remainingSpace += word
-        remainingSpaceWidth = measureWithCache(remainingSpace)
 
+      // A character is a word separator if `white-space` is not `pre`.
+      if (
+        !shouldAlwaysBreakLine &&
+        wordSeparators.includes(
+          // It's possible that the segment contains multiple separate words such
+          // as `  `. We can just use the first character to detect.
+          word[0]
+        )
+      ) {
+        // Since `white-space` is not `pre`, multiple whitespaces are considered
+        // as one.
+        if (!remainingSpace) {
+          remainingSpace = ' '
+        }
+        remainingSpaceWidth = measureWithCache(remainingSpace)
         wordsInLayout[i] = null
       } else {
-        const w =
-          graphemeImages && graphemeImages[word]
-            ? (parentStyle.fontSize as number)
-            : measureWithCache(word)
+        const forceBreak = shouldAlwaysBreakLine && word === '\n'
+        const w = forceBreak
+          ? 0
+          : graphemeImages && graphemeImages[word]
+          ? (parentStyle.fontSize as number)
+          : measureWithCache(word)
 
         // This is the start of the line, we can ignore all spaces here.
         if (!currentWidth) {
@@ -210,10 +237,12 @@ export default function* buildTextNodes(
         const allowedToJustify = !currentWidth || !!remainingSpaceWidth
 
         if (
-          i &&
-          allowedToPutAtBeginning &&
-          currentWidth + remainingSpaceWidth + w > width &&
-          whiteSpace !== 'nowrap'
+          forceBreak ||
+          (i &&
+            allowedToPutAtBeginning &&
+            currentWidth + remainingSpaceWidth + w > width &&
+            whiteSpace !== 'nowrap' &&
+            whiteSpace !== 'pre')
         ) {
           // Start a new line, spaces can be ignored.
           lineWidth.push(currentWidth)
@@ -221,6 +250,13 @@ export default function* buildTextNodes(
           currentWidth = w
           lineSegmentNumber.push(1)
           lineIndex = -1
+
+          // If it's neturally breaked, we update the max width.
+          // Since if there are multiple lines, the width should fit the
+          // container.
+          if (!forceBreak) {
+            maxWidth = Math.max(maxWidth, width)
+          }
         } else {
           // It fits into the current line.
           currentWidth += remainingSpaceWidth + w
@@ -249,11 +285,6 @@ export default function* buildTextNodes(
     if (currentWidth) {
       lines++
       lineWidth.push(currentWidth)
-    }
-
-    // If there are multiple lines, we need to stretch it to fit the container.
-    if (lines > 1) {
-      maxWidth = Math.max(maxWidth, width)
     }
 
     // @TODO: Support `line-height`.
