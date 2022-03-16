@@ -8,9 +8,10 @@ import githubCard from '../cards/github'
 import textAlignCard from '../cards/text-align'
 import rauchgCard from '../cards/rauchg'
 import overflowCard from '../cards/overflow'
+import vercelCard from '../cards/vercel'
 import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
 
-const card = overflowCard
+const card = githubCard
 
 async function init() {
   if (typeof window === 'undefined') return []

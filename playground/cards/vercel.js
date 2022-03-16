@@ -11,6 +11,7 @@ const Strong = (props) => (
 const Spacer = (props) => (
   <div style={{ margin: props.margin || '150px' }}>{props.children}</div>
 )
+
 export default (
   <div
     style={{
@@ -55,7 +56,7 @@ export default (
         marginTop: 40,
       }}
     >
-      <strong>Hello</strong> World
+      <Strong>Hello</Strong> World
     </div>
   </div>
 )
