@@ -16,7 +16,7 @@ describe('white-space', () => {
             whiteSpace: 'normal',
           }}
         >
-          {'  hello '}
+          {' hello '}
         </div>,
         {
           width: 200,
@@ -37,7 +37,7 @@ describe('white-space', () => {
             whiteSpace: 'normal',
           }}
         >
-          {'  hello \n  world'}
+          {' hello \n world'}
         </div>,
         {
           width: 200,
@@ -81,7 +81,7 @@ describe('white-space', () => {
             whiteSpace: 'pre',
           }}
         >
-          {'  hello '}
+          {' hello '}
         </div>,
         {
           width: 200,
@@ -91,7 +91,7 @@ describe('white-space', () => {
         }
       )
       expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"7.921875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">  </text><text x=\\"7.921875\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"42.1015625\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text></svg>"'
+        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text></svg>"'
       )
     })
 
@@ -102,7 +102,7 @@ describe('white-space', () => {
             whiteSpace: 'pre',
           }}
         >
-          {'  hello \n  world'}
+          {' hello \n world'}
         </div>,
         {
           width: 200,
@@ -113,9 +113,9 @@ describe('white-space', () => {
       )
       expect(svg).toMatchInlineSnapshot(
         `
-      "<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"7.921875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">  </text><text x=\\"7.921875\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"42.1015625\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"0\\" y=\\"38.71875\\" width=\\"0\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">
-      </text><text x=\\"0\\" y=\\"38.71875\\" width=\\"7.921875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">  </text><text x=\\"7.921875\\" y=\\"38.71875\\" width=\\"39.46875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"
-    `
+        "<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"0\\" y=\\"38.71875\\" width=\\"0\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">
+        </text><text x=\\"0\\" y=\\"38.71875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"38.71875\\" width=\\"39.46875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"
+      `
       )
     })
 
@@ -149,7 +149,7 @@ describe('white-space', () => {
             whiteSpace: 'pre-wrap',
           }}
         >
-          {'  hello '}
+          {' hello '}
         </div>,
         {
           width: 200,
@@ -159,7 +159,7 @@ describe('white-space', () => {
         }
       )
       expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"7.921875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">  </text><text x=\\"7.921875\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"42.1015625\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text></svg>"'
+        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text></svg>"'
       )
     })
 
@@ -170,7 +170,7 @@ describe('white-space', () => {
             whiteSpace: 'pre-wrap',
           }}
         >
-          {'  hello \n  world'}
+          {' hello \n world'}
         </div>,
         {
           width: 200,
@@ -181,9 +181,9 @@ describe('white-space', () => {
       )
       expect(svg).toMatchInlineSnapshot(
         `
-      "<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"7.921875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">  </text><text x=\\"7.921875\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"42.1015625\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"0\\" y=\\"38.71875\\" width=\\"0\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">
-      </text><text x=\\"0\\" y=\\"38.71875\\" width=\\"7.921875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">  </text><text x=\\"7.921875\\" y=\\"38.71875\\" width=\\"39.46875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"
-    `
+        "<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"0\\" y=\\"38.71875\\" width=\\"0\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">
+        </text><text x=\\"0\\" y=\\"38.71875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"38.71875\\" width=\\"39.46875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"
+      `
       )
     })
 
@@ -217,7 +217,7 @@ describe('white-space', () => {
             whiteSpace: 'nowrap',
           }}
         >
-          {`  hello, world `}
+          {` hello, world `}
         </div>,
         {
           width: 20,
