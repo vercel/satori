@@ -8,8 +8,9 @@ import rauchgCard from '../../cards/rauchg'
 import textCard from '../../cards/text-align'
 import githubCard from '../../cards/github'
 import overflowCard from '../../cards/overflow'
+import vercelCard from '../../cards/vercel'
 
-const card = githubCard
+const card = vercelCard
 
 let customFontsLoaded = false
 let fonts = []

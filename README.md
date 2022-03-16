@@ -146,7 +146,7 @@ The image will be resized to the current font-size (both width and height), so i
 | `object-fit` | `contain`, `cover`, `none` |
 | `opacity` | Supported |
 | `background-color` | Supported |
-| `background-image` | Support `linear-gradient`, `url` |
+| `background-image` | Support `linear-gradient`, `radial-gradient`, `url` |
 | `word-break` | Supported |
 | `text-shadow` | Supported |
 | `text-transform` | Support `lowercase`, `uppercase`, `capitalize` |

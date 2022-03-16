@@ -65,15 +65,19 @@ export default function rect(
     )
   }
 
+  let backgroundShapes = ''
   if (style.backgroundImage) {
-    const backgrounds = (style.backgroundImage as any)
+    const backgrounds: string[] = (style.backgroundImage as any)
       .map((background, index) =>
         backgroundImage({ id: id + '_' + index, width, height }, background)
       )
       .filter(Boolean)
     for (const background of backgrounds) {
-      defs += background[1]
       fills.push(`url(#${background[0]})`)
+      defs += background[1]
+      if (background[2]) {
+        backgroundShapes += background[2]
+      }
     }
   }
 
@@ -175,7 +179,7 @@ export default function rect(
     clip +
     (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
     (opacity !== 1 ? `<g opacity="${opacity}">` : '') +
-    shape +
+    (backgroundShapes || shape) +
     (opacity !== 1 ? `</g>` : '') +
     (filter ? '</g>' : '') +
     extra

@@ -1,4 +1,5 @@
 import CssDimension from 'parse-css-dimension'
+import { buildXMLString } from '../utils'
 
 import gradient from '../../deps/gradient-parser'
 
@@ -61,10 +62,81 @@ function parseLengthPairs(
   ).map((v, index) => toAbsoluteValue(v, [x, y][index]))
 }
 
+function normalizeStops(totalLength: number, colorStops: any[]) {
+  // Resolve the color stops based on the spec:
+  // https://drafts.csswg.org/css-images/#color-stop-syntax
+  const stops = []
+  for (const stop of colorStops) {
+    const color = resolveColorFromStop(stop)
+    if (!stops.length) {
+      // First stop, ensure it's at the start.
+      stops.push({
+        offset: 0,
+        color,
+      })
+
+      if (typeof stop.length === 'undefined') continue
+      if (stop.length.value === '0') continue
+    }
+
+    // All offsets are relative values (0-1) in SVG.
+    const offset =
+      typeof stop.length === 'undefined'
+        ? undefined
+        : stop.length.type === '%'
+        ? stop.length.value / 100
+        : stop.length.value / totalLength
+
+    stops.push({
+      offset,
+      color,
+    })
+  }
+  if (!stops.length) {
+    stops.push({
+      offset: 0,
+      color: 'transparent',
+    })
+  }
+  // Last stop, ensure it's at the end.
+  const lastStop = stops[stops.length - 1]
+  if (lastStop.offset !== 1) {
+    if (typeof lastStop.offset === 'undefined') {
+      lastStop.offset = 1
+    } else {
+      stops.push({
+        offset: 1,
+        color: lastStop.color,
+      })
+    }
+  }
+
+  let previousStop = 0
+  let nextStop = 1
+  // Evenly distribute the missing stop offsets.
+  for (let i = 0; i < stops.length; i++) {
+    if (typeof stops[i].offset === 'undefined') {
+      // Find the next stop that has an offset.
+      if (nextStop < i) nextStop = i
+      while (typeof stops[nextStop].offset === 'undefined') nextStop++
+
+      stops[i].offset =
+        ((stops[nextStop].offset - stops[previousStop].offset) /
+          (nextStop - previousStop)) *
+          (i - previousStop) +
+        stops[previousStop].offset
+    } else {
+      previousStop = i
+    }
+  }
+
+  return stops
+}
+
 export default function backgroundImage(
   { id, width, height }: { id: string; width: number; height: number },
   { image, size, position }: Background
-) {
+): string[] {
   const dimensions = parseLengthPairs(size, {
     x: width,
     y: height,
@@ -109,75 +181,7 @@ export default function backgroundImage(
       }
     }
 
-    // @TODO
-    const totalLength = width
-
-    // Resolve the color stops based on the spec:
-    // https://drafts.csswg.org/css-images/#color-stop-syntax
-    const stops = []
-    for (const stop of parsed.colorStops) {
-      const color = resolveColorFromStop(stop)
-      if (!stops.length) {
-        // First stop, ensure it's at the start.
-        stops.push({
-          offset: 0,
-          color,
-        })
-
-        if (typeof stop.length === 'undefined') continue
-        if (stop.length.value === '0') continue
-      }
-
-      // All offsets are relative values (0-1) in SVG.
-      const offset =
-        typeof stop.length === 'undefined'
-          ? undefined
-          : stop.length.type === '%'
-          ? stop.length.value / 100
-          : stop.length.value / totalLength
-
-      stops.push({
-        offset,
-        color,
-      })
-    }
-    if (!stops.length) {
-      stops.push({
-        offset: 0,
-        color: 'transparent',
-      })
-    }
-    // Last stop, ensure it's at the end.
-    const lastStop = stops[stops.length - 1]
-    if (lastStop.offset !== 1) {
-      if (typeof lastStop.offset === 'undefined') {
-        lastStop.offset = 1
-      } else {
-        stops.push({
-          offset: 1,
-          color: lastStop.color,
-        })
-      }
-    }
-
-    let previousStop = 0
-    let nextStop = 1
-    // Evenly distribute the missing stop offsets.
-    for (let i = 0; i < stops.length; i++) {
-      if (typeof stops[i].offset === 'undefined') {
-        // Find the next stop that has an offset.
-        if (nextStop < i) nextStop = i
-        while (typeof stops[nextStop].offset === 'undefined') nextStop++
-
-        stops[i].offset =
-          ((stops[nextStop].offset - stops[previousStop].offset) /
-            (nextStop - previousStop)) *
-            (i - previousStop) +
-          stops[previousStop].offset
-      } else {
-        previousStop = i
-      }
-    }
+    const stops = normalizeStops(width, parsed.colorStops)
 
     return [
       `satori_bi${id}`,
@@ -188,6 +192,97 @@ export default function backgroundImage(
         )
         .join('')}</linearGradient>`,
     ]
+  }
+
+  if (image.startsWith('radial-gradient(')) {
+    const parsed = gradient.parse(image)[0]
+    const orientation = parsed.orientation[0]
+    const [xDelta, yDelta] = dimensions
+
+    let shape = 'circle'
+    let cx: number = xDelta / 2
+    let cy: number = yDelta / 2
+
+    if (orientation.type === 'shape') {
+      shape = orientation.value
+      if (!orientation.at) {
+        // Defaults to center.
+      } else if (orientation.at.type === 'position') {
+        cx = orientation.at.value.x.value
+        cy = orientation.at.value.y.value
+      } else {
+        throw new Error(
+          'orientation.at.type not implemented: ' + orientation.at.type
+        )
+      }
+    } else {
+      throw new Error('orientation.type not implemented: ' + orientation.type)
+    }
+
+    const stops = normalizeStops(width, parsed.colorStops)
+
+    const gradientId = `satori_radial_${id}`
+    const patternId = `satori_pattern_${id}`
+
+    // We currently only support `farthest-corner`:
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/radial-gradient()#values
+    const spread: Record<string, number> = {}
+
+    // Farest corner.
+    const fx = Math.max(Math.abs(xDelta - cx), Math.abs(cx))
+    const fy = Math.max(Math.abs(yDelta - cy), Math.abs(cy))
+    if (shape === 'circle') {
+      spread.r = Math.sqrt(fx * fx + fy * fy)
+    } else if (shape === 'ellipse') {
+      // Spec: https://drafts.csswg.org/css-images/#typedef-size
+      // Get the aspect ratio of the closest-side size.
+      const ratio = fy !== 0 ? fx / fy : 1
+
+      // fx^2/a^2 + fy^2/b^2 = 1
+      // fx^2/(b*ratio)^2 + fy^2/b^2 = 1
+      // (fx^2+fy^2*ratio^2) = (b*ratio)^2
+      // b = sqrt(fx^2+fy^2*ratio^2)/ratio
+      spread.ry = Math.sqrt(fx * fx + fy * fy * ratio * ratio) / ratio
+      spread.rx = spread.ry * ratio
+    }
+
+    // TODO: check for repeat-x/repeat-y
+    const defs = buildXMLString(
+      'pattern',
+      {
+        id: patternId,
+        x: 0,
+        y: 0,
+        width: xDelta,
+        height: yDelta,
+        patternUnits: 'userSpaceOnUse',
+      },
+      buildXMLString(
+        'radialGradient',
+        {
+          id: gradientId,
+        },
+        stops
+          .map((stop) =>
+            buildXMLString('stop', {
+              offset: stop.offset,
+              'stop-color': stop.color,
+            })
+          )
+          .join('')
+      ) +
+        buildXMLString(shape, {
+          cx: cx,
+          cy: cy,
+          width: xDelta,
+          height: yDelta,
+          ...spread,
+          fill: `url(#${gradientId})`,
+        })
+    )
+
+    const result = [patternId, defs]
+    return result
   }
 
   if (image.startsWith('url(')) {
