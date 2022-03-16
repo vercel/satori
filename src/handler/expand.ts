@@ -83,6 +83,12 @@ export default function expand(
 ): Record<string, string | number> {
   const transformedStyle = {} as any
   for (const prop in style) {
+    // Internal properties.
+    if (prop.startsWith('_')) {
+      transformedStyle[prop] = style[prop]
+      continue
+    }
+
     const name = getPropertyName(prop)
     Object.assign(
       transformedStyle,

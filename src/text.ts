@@ -90,7 +90,12 @@ export default function* buildTextNodes(
   const lineHeight = glyphHeight * 1.2
   const deltaHeight = ((parentStyle.fontSize as number) - glyphHeight) / 2
 
-  const { textAlign, textOverflow, whiteSpace, backgroundClip } = parentStyle
+  const {
+    textAlign,
+    textOverflow,
+    whiteSpace,
+    _inheritedBackgroundClipTextPath,
+  } = parentStyle
 
   // Compute the layout.
   // @TODO: Use segments instead of words to properly support kerning.
@@ -408,7 +413,7 @@ export default function* buildTextNodes(
           image,
           clipPathId,
           debug,
-          shape: backgroundClip === 'text',
+          shape: !!_inheritedBackgroundClipTextPath,
         },
         parentStyle
       )
@@ -434,15 +439,18 @@ export default function* buildTextNodes(
       })
     }
 
-    const p = buildXMLString('path', {
-      fill: parentStyle.color,
-      d: mergedPath,
-      transform: matrix ? matrix : undefined,
-      opacity: opacity !== 1 ? opacity : undefined,
-      'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-    })
+    const p =
+      parentStyle.color !== 'transparent' && opacity !== 0
+        ? buildXMLString('path', {
+            fill: parentStyle.color,
+            d: mergedPath,
+            transform: matrix ? matrix : undefined,
+            opacity: opacity !== 1 ? opacity : undefined,
+            'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+          })
+        : ''
 
-    if (backgroundClip === 'text') {
+    if (!!_inheritedBackgroundClipTextPath) {
       backgroundClipDef = buildXMLString('path', {
         d: mergedPath,
         transform: matrix ? matrix : undefined,
@@ -456,16 +464,11 @@ export default function* buildTextNodes(
       extra
   }
 
-  return (
-    (backgroundClipDef
-      ? buildXMLString(
-          'clipPath',
-          {
-            id: `satori_bct-${id}`,
-            'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-          },
-          backgroundClipDef
-        )
-      : '') + result
-  )
+  // Attach information to the parent node.
+  if (backgroundClipDef) {
+    ;(parentStyle._inheritedBackgroundClipTextPath as any).value +=
+      backgroundClipDef
+  }
+
+  return result
 }
