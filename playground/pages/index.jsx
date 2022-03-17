@@ -66,7 +66,7 @@ a {
   '/App.js': `
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import ReactDOM from 'react-dom'
-import satori from 'satori'
+import { toSvg } from 'satori'
 
 import './style.css'
 import Card from './card'
@@ -147,7 +147,7 @@ export default function App() {
     useEffect(() => {
       try {
         const t = Date.now()
-        const result = satori(element, {
+        const result = toSvg(element, {
           width,
           height,
           fonts: globalThis.__fonts

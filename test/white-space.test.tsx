@@ -2,7 +2,7 @@ import React from 'react'
 import { it, describe, expect } from 'vitest'
 
 import { initFonts } from './utils'
-import satori from '../src'
+import { toSvg } from '../src'
 
 describe('white-space', () => {
   let fonts
@@ -10,7 +10,7 @@ describe('white-space', () => {
 
   describe('normal', () => {
     it('should not render extra spaces with `white-space: normal`', async () => {
-      const svg = satori(
+      const svg = toSvg(
         <div
           style={{
             whiteSpace: 'normal',
@@ -31,7 +31,7 @@ describe('white-space', () => {
     })
 
     it('should not render extra line breaks with `white-space: normal`', async () => {
-      const svg = satori(
+      const svg = toSvg(
         <div
           style={{
             whiteSpace: 'normal',
@@ -54,7 +54,7 @@ describe('white-space', () => {
     it.todo(
       'should wrap automatically with `white-space: normal`',
       async () => {
-        const svg = satori(
+        const svg = toSvg(
           <div
             style={{
               whiteSpace: 'normal',
@@ -78,7 +78,7 @@ describe('white-space', () => {
 
   describe('pre', () => {
     it('should always preserve extra spaces with `white-space: pre`', async () => {
-      const svg = satori(
+      const svg = toSvg(
         <div
           style={{
             whiteSpace: 'pre',
@@ -99,7 +99,7 @@ describe('white-space', () => {
     })
 
     it('should always preserve extra line breaks with `white-space: pre`', async () => {
-      const svg = satori(
+      const svg = toSvg(
         <div
           style={{
             whiteSpace: 'pre',
@@ -123,7 +123,7 @@ describe('white-space', () => {
     })
 
     it.todo('should not wrap with `white-space: pre`', async () => {
-      const svg = satori(
+      const svg = toSvg(
         <div
           style={{
             whiteSpace: 'pre',
@@ -146,7 +146,7 @@ describe('white-space', () => {
 
   describe('with `white-space: pre-wrap`', () => {
     it('should always preserve extra spaces with `white-space: pre-wrap`', async () => {
-      const svg = satori(
+      const svg = toSvg(
         <div
           style={{
             whiteSpace: 'pre-wrap',
@@ -167,7 +167,7 @@ describe('white-space', () => {
     })
 
     it('should always preserve extra line breaks with `white-space: pre-wrap`', async () => {
-      const svg = satori(
+      const svg = toSvg(
         <div
           style={{
             whiteSpace: 'pre-wrap',
@@ -193,7 +193,7 @@ describe('white-space', () => {
     it.todo(
       'should automatically wrap with `white-space: pre-wrap`',
       async () => {
-        const svg = satori(
+        const svg = toSvg(
           <div
             style={{
               whiteSpace: 'pre-wrap',
@@ -219,7 +219,7 @@ describe('white-space', () => {
     it.todo(
       'should not wrap with `white-space: nowrap` and swallow extra spaces',
       async () => {
-        const svg = satori(
+        const svg = toSvg(
           <div
             style={{
               whiteSpace: 'nowrap',

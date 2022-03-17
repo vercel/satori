@@ -7,7 +7,8 @@
     "lib": ["esnext", "dom"],
     "baseUrl": ".",
     "paths": {
-      "@yoga": ["src/yoga/yoga-prebuilt.wasm.ts"]
+      "@yoga": ["src/yoga/yoga-prebuilt.wasm.ts"],
+      "@resvgplaceholder": ["src/resvg/resvg-prebuilt.wasm.ts"],
     }
   }
 }

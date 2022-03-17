@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useEffect } from 'react'
-import satori from 'satori'
+import { toSvg } from 'satori'
 
 import transformOrigin from '../cards/transform-origin'
 import nextConfCard from '../cards/next-conf'
@@ -81,7 +81,7 @@ export default function Playground() {
         ])
       )
 
-      const result = satori(card, {
+      const result = toSvg(card, {
         width,
         height,
         fonts,

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useEffect } from 'react'
-import satori, { init as initSatori } from 'satori/wasm'
+import { init as initSatori, toSvg } from 'satori/wasm'
 import initYoga from 'yoga-wasm-web'
+import { initWasm as initResvg } from '@resvg/resvg-wasm'
 
 import nextConfCard from '../cards/next-conf'
 import githubCard from '../cards/github'
@@ -14,7 +15,7 @@ async function init() {
   if (typeof window === 'undefined') return []
   if (window.__initialized) return window.__initialized
 
-  const [font, fontBold, fontIcon, Yoga] = await Promise.all(
+  const [font, fontBold, fontIcon, yoga, resvg] = await Promise.all(
     [
       fetch(
         'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'
@@ -28,9 +29,10 @@ async function init() {
     ]
       .map((f) => f.then((res) => res.arrayBuffer()))
       .concat(WebAssembly.compileStreaming(fetch('/yoga.wasm')).then(initYoga))
+      .concat(WebAssembly.compileStreaming(fetch('/resvg.wasm')).then(initResvg))
   )
 
-  initSatori(Yoga)
+  initSatori({ yoga, resvg })
 
   return (window.__initialized = [
     {
@@ -78,7 +80,7 @@ export default function Playground() {
       )
 
       const fonts = await waitForResource
-      const result = satori(card, {
+      const result = toSvg(card, {
         width,
         height,
         fonts,

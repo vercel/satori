@@ -8,6 +8,10 @@ export default defineConfig({
         find: '@yoga',
         replacement: path.resolve(__dirname, 'src', 'yoga', 'yoga-prebuilt.ts'),
       },
+      {
+        find: '@resvgplaceholder',
+        replacement: path.resolve(__dirname, 'src', 'resvg', 'resvg-prebuilt.ts'),
+      },
     ],
   },
 })

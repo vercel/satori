@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
-import getYoga, { init } from './yoga'
+import getYoga, { init as initYoga } from './yoga'
+import { render as renderPng, init as initResvg } from './resvg'
 import layout from './layout'
 import FontLoader, { FontOptions } from './font'
 import svg from './builder/svg'
@@ -17,9 +18,12 @@ export interface SatoriOptions {
   graphemeImages?: Record<string, string>
 }
 
-export { init }
+export function init({ yoga, resvg }: any) {
+  initYoga(yoga)
+  initResvg(resvg)
+}
 
-export default function satori(
+export function toSvg(
   element: ReactNode,
   options: SatoriOptions
 ): string {
@@ -74,4 +78,21 @@ export default function satori(
   root.freeRecursive()
 
   return svg({ width: options.width, height: options.height, content })
+}
+
+export async function toPng(
+  element: ReactNode,
+  options: SatoriOptions
+): Promise<Buffer> {
+  const svg = toSvg(element, options)
+  const data = await renderPng(svg, {
+    fitTo: {
+      mode: 'width',
+      value: options.width,
+    },
+    font: {
+      loadSystemFonts: false,
+    },
+  })
+  return data
 }

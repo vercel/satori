@@ -1,6 +1,5 @@
-import { renderAsync } from '@resvg/resvg-js'
 import { renderToStaticMarkup } from 'react-dom/server'
-import satori from 'satori'
+import { toSvg, toPng } from 'satori'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 
@@ -47,7 +46,9 @@ export default async (req, res) => {
 
   const t2 = Date.now()
 
-  const svg = satori(card, {
+  const render = type === 'png' ? toPng : toSvg
+
+  const out = await render(card, {
     width,
     height,
     fonts,
@@ -58,39 +59,25 @@ export default async (req, res) => {
 
   if (type === 'svg') {
     res.setHeader('Content-Type', 'image/svg+xml')
-    res.end(svg)
+    res.end(out)
     return
   } else if (type === 'html') {
     res.setHeader('Content-Type', 'text/html')
     res.end(renderToStaticMarkup(card))
     return
+  } else if (type === 'png') {
+    res.setHeader('Content-Type', 'image/png')
+    res.end(out)
+  } else {
+    res.status(400).end(`Unknown type ${type}`)
   }
-
-  const data = await renderAsync(svg, {
-    fitTo: {
-      mode: 'width',
-      value: width,
-    },
-    font: {
-      loadSystemFonts: false,
-    },
-  })
-
-  const t4 = Date.now()
-
-  res.setHeader('content-type', 'image/png')
-
-  await new Promise((resolve) => {
-    res.end(data, resolve)
-  })
 
   const t5 = Date.now()
 
   console.table({
     loadFonts: t2 - t1,
     Satori: t3 - t2,
-    png: t4 - t3,
-    response: t5 - t4,
+    response: t5 - t3,
     '-------': '--',
     TOTAL: t5 - t1,
   })

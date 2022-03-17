@@ -6,3 +6,4 @@ node_modules
 dist
 
 playground/public/yoga.wasm
+playground/public/resvg.wasm
