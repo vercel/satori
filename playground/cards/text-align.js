@@ -116,6 +116,7 @@ export default (
         style={{
           padding: 10,
           textAlign: 'left',
+          lineHeight: '1em',
         }}
       >
         text-align: left. Lorem ipsum dolor sit amet consectetur adipisicing
@@ -127,6 +128,7 @@ export default (
         style={{
           padding: 10,
           textAlign: 'center',
+          lineHeight: '19px',
         }}
       >
         text-align: center. Lorem ipsum dolor sit amet consectetur adipisicing
@@ -138,6 +140,7 @@ export default (
         style={{
           padding: 10,
           textAlign: 'justify',
+          lineHeight: 1.4,
         }}
       >
         text-align: jusitfy. Lorem ipsum dolor sit amet consectetur adipisicing
@@ -149,6 +152,7 @@ export default (
         style={{
           padding: 10,
           textAlign: 'right',
+          lineHeight: '160%',
         }}
       >
         text-align: right. Lorem ipsum dolor sit amet consectetur adipisicing

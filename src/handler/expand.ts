@@ -22,12 +22,14 @@ const optOutPx = new Set([
   'scaleX',
   'scaleY',
 ])
+const keepNumber = new Set(['lineHeight'])
 
 const baseMatrix = [1, 0, 0, 1, 0, 0]
 
 function purify(name: string, value?: string | number) {
   if (typeof value === 'number') {
     if (!optOutPx.has(name)) return value + 'px'
+    if (keepNumber.has(name)) return value
     return String(value)
   }
   // @TODO: For `transform`, we need to convert relative values to absolute
@@ -38,7 +40,8 @@ function purify(name: string, value?: string | number) {
 function lengthToNumber(
   length: string | number,
   baseFontSize: number,
-  inheritedStyle: Record<string, string | number>
+  inheritedStyle: Record<string, string | number>,
+  { percentage }: { percentage: boolean } = { percentage: false }
 ): number | undefined {
   if (typeof length === 'number') return length
 
@@ -73,6 +76,10 @@ function lengthToNumber(
         default:
           return parsed.value
       }
+    } else if (parsed.type === 'percentage') {
+      if (percentage) {
+        return (parsed.value / 100) * baseFontSize
+      }
     }
   } catch (err) {}
 }
@@ -92,7 +99,9 @@ export default function expand(
     const name = getPropertyName(prop)
     Object.assign(
       transformedStyle,
-      getStylesForProperty(name, purify(name, style[prop]), true)
+      name === 'lineHeight'
+        ? { lineHeight: purify(name, style[prop]) }
+        : getStylesForProperty(name, purify(name, style[prop]), true)
     )
   }
 
@@ -134,11 +143,21 @@ export default function expand(
   for (const prop in transformedStyle) {
     let value = transformedStyle[prop]
 
-    // Convert em and rem values to px (number).
-    if (typeof value === 'string') {
-      const len = lengthToNumber(value, baseFontSize, inheritedStyle)
-      if (typeof len !== 'undefined') transformedStyle[prop] = len
-      value = transformedStyle[prop]
+    // Line height needs to be relative.
+    if (prop === 'lineHeight') {
+      if (typeof value === 'string') {
+        value = transformedStyle[prop] =
+          lengthToNumber(value, baseFontSize, inheritedStyle, {
+            percentage: true,
+          }) / baseFontSize
+      }
+    } else {
+      // Convert em and rem values to px (number).
+      if (typeof value === 'string') {
+        const len = lengthToNumber(value, baseFontSize, inheritedStyle)
+        if (typeof len !== 'undefined') transformedStyle[prop] = len
+        value = transformedStyle[prop]
+      }
     }
 
     // Inherit the opacity.
