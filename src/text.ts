@@ -4,6 +4,8 @@
  */
 import type { LayoutContext } from './layout'
 
+import CssDimension from 'parse-css-dimension'
+
 import getYoga from './yoga'
 import { v, segment, wordSeparators, buildXMLString } from './utils'
 import text, { container } from './builder/text'
@@ -11,6 +13,16 @@ import shadow from './builder/shadow'
 
 // @TODO: Support "lang" attribute to modify the locale
 const locale = undefined
+
+function parseLineHeight(value: number | string) {
+  if (typeof value === 'number') return value
+  try {
+    const parsed = new CssDimension(value)
+    console.log(parsed)
+  } catch (e) {
+    return 1.2
+  }
+}
 
 export default function* buildTextNodes(
   content: string,
@@ -77,25 +89,26 @@ export default function* buildTextNodes(
 
   parent.insertChild(textContainer, parent.getChildCount())
 
-  // Get the correct font according to the container style.
-  // @TODO: Support font family fallback based on the glyphs of the font.
-  const resolvedFont = font.getFont(parentStyle as any)
-  const ascender =
-    (resolvedFont.ascender / resolvedFont.unitsPerEm) *
-    (parentStyle.fontSize as number)
-  const descender =
-    -(resolvedFont.descender / resolvedFont.unitsPerEm) *
-    (parentStyle.fontSize as number)
-  const glyphHeight = ascender + descender
-  const lineHeight = glyphHeight * 1.2
-  const deltaHeight = ((parentStyle.fontSize as number) - glyphHeight) / 2
-
   const {
     textAlign,
     textOverflow,
     whiteSpace,
+    lineHeight,
     _inheritedBackgroundClipTextPath,
   } = parentStyle
+
+  // Get the correct font according to the container style.
+  // @TODO: Support font family fallback based on the glyphs of the font.
+  const resolvedFont = font.getFont(parentStyle as any)
+  const baseFontSize = parentStyle.fontSize as number
+  const ascender =
+    (resolvedFont.ascender / resolvedFont.unitsPerEm) * baseFontSize
+
+  const descender =
+    -(resolvedFont.descender / resolvedFont.unitsPerEm) * baseFontSize
+  const glyphHeight = ascender + descender
+  const lineHeightPx = (glyphHeight * (lineHeight as number)) / 1.2
+  const deltaHeight = ((parentStyle.fontSize as number) - glyphHeight) / 2
 
   // Compute the layout.
   // @TODO: Use segments instead of words to properly support kerning.
@@ -274,7 +287,7 @@ export default function* buildTextNodes(
 
         maxWidth = Math.max(maxWidth, currentWidth)
         wordsInLayout[i] = {
-          y: lines * lineHeight - deltaHeight,
+          y: lines * lineHeightPx - deltaHeight,
           x: currentWidth - w,
           width: w,
           line: lines,
@@ -288,7 +301,7 @@ export default function* buildTextNodes(
     }
 
     // @TODO: Support `line-height`.
-    return { width: maxWidth, height: lines * lineHeight }
+    return { width: maxWidth, height: lines * lineHeightPx }
   })
 
   const [x, y] = yield
@@ -438,7 +451,7 @@ export default function* buildTextNodes(
           left: left + leftOffset,
           top: top + topOffset,
           width,
-          height: lineHeight,
+          height: lineHeightPx,
           matrix,
           opacity,
           image,
