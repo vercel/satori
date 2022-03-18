@@ -157,8 +157,7 @@ The image will be resized to the current font-size (both width and height), so i
 | `text-decoration` | Support line types `underline` and `line-through`, and styles `dotted`, `dashed`, `solid` |
 | `line-height` | Supported |
 | `background-clip` | Support `border-box` and `text` |
-| `background-repeat` | TBD |
-| `background-origin` | TBD |
+| `background-repeat` | Supported |
 
 Note:
 
