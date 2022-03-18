@@ -154,11 +154,11 @@ The image will be resized to the current font-size (both width and height), so i
 | `background-size` | Support two-value size string such as `10px 20%` |
 | `white-space` | Support `normal`, `pre`, `pre-wrap` and `nowrap` |
 | `text-overflow` | Support `clip` and `ellipsis` |
+| `text-decoration` | Support line types `underline` and `line-through`, and styles `dotted`, `dashed`, `solid` |
 | `line-height` | Supported |
 | `background-clip` | Support `border-box` and `text` |
 | `background-repeat` | TBD |
 | `background-origin` | TBD |
-| `text-decoration` | TBD |
 
 Note:
 

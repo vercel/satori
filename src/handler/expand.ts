@@ -26,6 +26,28 @@ const keepNumber = new Set(['lineHeight'])
 
 const baseMatrix = [1, 0, 0, 1, 0, 0]
 
+/**
+ * A trick to fix `border: 1px solid` to not use `black` but the inherited
+ * `color` value. This is necessary because css-to-react-native automatically
+ * fallbacks to default color values.
+ */
+function handleFallbackColor(
+  prop: string,
+  parsed: Record<string, string>,
+  rawInput: string,
+  color: string
+) {
+  if (prop === 'border' && !rawInput.includes(parsed.borderColor)) {
+    parsed.borderColor = color
+  } else if (
+    prop === 'textDecoration' &&
+    !rawInput.includes(parsed.textDecorationColor)
+  ) {
+    parsed.textDecorationColor = color
+  }
+  return parsed
+}
+
 function purify(name: string, value?: string | number) {
   if (typeof value === 'number') {
     if (!optOutPx.has(name)) return value + 'px'
@@ -101,7 +123,12 @@ export default function expand(
       transformedStyle,
       name === 'lineHeight'
         ? { lineHeight: purify(name, style[prop]) }
-        : getStylesForProperty(name, purify(name, style[prop]), true)
+        : handleFallbackColor(
+            name,
+            getStylesForProperty(name, purify(name, style[prop]), true),
+            style[prop] as string,
+            (style.color || inheritedStyle.color) as string
+          )
     )
   }
 
