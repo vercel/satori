@@ -13,7 +13,7 @@ import dpsCard from '../cards/dps'
 import whiteSpaceCard from '../cards/white-space'
 import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
 
-const card = textAlignCard
+const card = nextConfCard
 
 async function init() {
   if (typeof window === 'undefined') return []

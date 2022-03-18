@@ -135,8 +135,11 @@ function normalizeStops(totalLength: number, colorStops: any[]) {
 
 export default function backgroundImage(
   { id, width, height }: { id: string; width: number; height: number },
-  { image, size, position }: Background
+  { image, size, position, repeat }: Background
 ): string[] {
+  const repeatX = repeat === 'repeat-x' || repeat === 'repeat'
+  const repeatY = repeat === 'repeat-y' || repeat === 'repeat'
+
   const dimensions = parseLengthPairs(size, {
     x: width,
     y: height,
@@ -251,10 +254,10 @@ export default function backgroundImage(
       'pattern',
       {
         id: patternId,
-        x: 0,
-        y: 0,
-        width: xDelta,
-        height: yDelta,
+        x: offsets[0],
+        y: offsets[1],
+        width: repeatX ? xDelta : '100%',
+        height: repeatY ? yDelta : '100%',
         patternUnits: 'userSpaceOnUse',
       },
       buildXMLString(
@@ -289,7 +292,25 @@ export default function backgroundImage(
     const src = image.slice(4, -1)
     return [
       `satori_bi${id}`,
-      `<pattern id="satori_bi${id}" patternContentUnits="userSpaceOnUse" patternUnits="userSpaceOnUse" x="${offsets[0]}" y="${offsets[1]}" width="${dimensions[0]}" height="${dimensions[1]}"><image href="${src}" x="0" y="0" width="${dimensions[0]}" height="${dimensions[1]}"/></pattern>`,
+      buildXMLString(
+        'pattern',
+        {
+          id: `satori_bi${id}`,
+          patternContentUnits: 'userSpaceOnUse',
+          patternUnits: 'userSpaceOnUse',
+          x: offsets[0],
+          y: offsets[1],
+          width: repeatX ? dimensions[0] : '100%',
+          height: repeatY ? dimensions[1] : '100%',
+        },
+        buildXMLString('image', {
+          x: 0,
+          y: 0,
+          width: dimensions[0],
+          height: dimensions[1],
+          href: src,
+        })
+      ),
     ]
   }
 }
