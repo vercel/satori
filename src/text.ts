@@ -4,25 +4,14 @@
  */
 import type { LayoutContext } from './layout'
 
-import CssDimension from 'parse-css-dimension'
-
 import getYoga from './yoga'
 import { v, segment, wordSeparators, buildXMLString } from './utils'
 import text, { container } from './builder/text'
 import shadow from './builder/shadow'
+import decoration from './builder/text-decoration'
 
 // @TODO: Support "lang" attribute to modify the locale
 const locale = undefined
-
-function parseLineHeight(value: number | string) {
-  if (typeof value === 'number') return value
-  try {
-    const parsed = new CssDimension(value)
-    console.log(parsed)
-  } catch (e) {
-    return 1.2
-  }
-}
 
 export default function* buildTextNodes(
   content: string,
@@ -309,7 +298,7 @@ export default function* buildTextNodes(
   let result = ''
   let backgroundClipDef = ''
 
-  const clipPathId = inheritedStyle._inheritedClipPathId as number | undefined
+  const clipPathId = inheritedStyle._inheritedClipPathId as string | undefined
   const {
     left: containerLeft,
     top: containerTop,
@@ -354,10 +343,13 @@ export default function* buildTextNodes(
     )
   }
 
+  let decorationShape = ''
   let mergedPath = ''
   let skippedLine = -1
   let ellipsisWidth = textOverflow === 'ellipsis' ? measureWithCache('…') : 0
   let spaceWidth = textOverflow === 'ellipsis' ? measureWithCache(' ') : 0
+
+  let decorationLines: Record<number, null | number[]> = {}
 
   for (let i = 0; i < words.length; i++) {
     // Skip whitespace.
@@ -374,7 +366,13 @@ export default function* buildTextNodes(
     const width = layout.width
     const line = layout.line
 
-    if (line === skippedLine) continue
+    if (line === skippedLine) {
+      decorationLines[line] = null
+      continue
+    }
+
+    // When `text-align` is `justify`, the width of the line will be adjusted.
+    let extendedWidth = false
 
     if (lineWidth.length > 1) {
       // Calculate alignment. Note that for flexbox, there is only text
@@ -390,8 +388,16 @@ export default function* buildTextNodes(
           const segments = lineSegmentNumber[line]
           const gutter = segments > 1 ? remainingWidth / (segments - 1) : 0
           leftOffset += gutter * layout.lineIndex
+          extendedWidth = true
         }
       }
+    }
+
+    if (!decorationLines[line]) {
+      decorationLines[line] = [
+        leftOffset,
+        extendedWidth ? containerWidth : lineWidth[line],
+      ]
     }
 
     if (textOverflow === 'ellipsis') {
@@ -402,22 +408,25 @@ export default function* buildTextNodes(
         ) {
           const chars = segment(word, 'grapheme')
           let subset = ''
+          let resolvedWidth = 0
           for (const char of chars) {
+            const w = layout.x + measureWithCache(subset + char)
             if (
               // Keep at least one character:
               // > The first character or atomic inline-level element on a line
               // must be clipped rather than ellipsed.
               // https://drafts.csswg.org/css-overflow/#text-overflow
               subset &&
-              layout.x + measureWithCache(subset + char) + ellipsisWidth >
-                parentContainerInnerWidth
+              w + ellipsisWidth > parentContainerInnerWidth
             ) {
               break
             }
             subset += char
+            resolvedWidth = w
           }
           word = subset + '…'
           skippedLine = line
+          decorationLines[line][1] = resolvedWidth
         }
       }
     }
@@ -466,6 +475,22 @@ export default function* buildTextNodes(
     }
   }
 
+  if (parentStyle.textDecorationLine) {
+    for (const i in decorationLines) {
+      if (!decorationLines[i]) continue
+      decorationShape += decoration(
+        {
+          left: left + decorationLines[i][0],
+          top: top + lineHeightPx * +i,
+          width: decorationLines[i][1],
+          ascender,
+          clipPathId,
+        },
+        parentStyle
+      )
+    }
+  }
+
   // Embed the font as path.
   if (mergedPath) {
     let extra = ''
@@ -504,6 +529,7 @@ export default function* buildTextNodes(
     result +=
       (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
       p +
+      decorationShape +
       (filter ? '</g>' : '') +
       extra
   }

@@ -68,7 +68,7 @@ export default function text(
     matrix: string
     opacity: number
     image: string | null
-    clipPathId?: number
+    clipPathId?: string
     debug?: boolean
     shape?: boolean
   },

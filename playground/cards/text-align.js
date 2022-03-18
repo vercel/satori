@@ -16,6 +16,8 @@ export default (
         flexDirection: 'row',
         flexWrap: 'nowrap',
         backgroundColor: 'white',
+        textDecoration: 'underline',
+        color: 'crimson',
       }}
     >
       <div
@@ -117,6 +119,7 @@ export default (
           padding: 10,
           textAlign: 'left',
           lineHeight: '1em',
+          textDecoration: 'line-through yellow',
         }}
       >
         text-align: left. Lorem ipsum dolor sit amet consectetur adipisicing
@@ -129,6 +132,7 @@ export default (
           padding: 10,
           textAlign: 'center',
           lineHeight: '19px',
+          textDecoration: 'underline dashed crimson',
         }}
       >
         text-align: center. Lorem ipsum dolor sit amet consectetur adipisicing
@@ -141,6 +145,7 @@ export default (
           padding: 10,
           textAlign: 'justify',
           lineHeight: 1.4,
+          textDecoration: 'underline dotted blue',
         }}
       >
         text-align: jusitfy. Lorem ipsum dolor sit amet consectetur adipisicing
@@ -153,6 +158,7 @@ export default (
           padding: 10,
           textAlign: 'right',
           lineHeight: '160%',
+          textDecoration: 'underline solid black',
         }}
       >
         text-align: right. Lorem ipsum dolor sit amet consectetur adipisicing
