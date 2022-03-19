@@ -9,7 +9,7 @@ importers:
       '@types/opentype.js': ^1.3.3
       '@types/react': ^17.0.38
       '@types/yoga-layout': ^1.9.4
-      '@vitest/ui': ^0.5.5
+      '@vitest/ui': ^0.7.6
       css-background-parser: ^0.1.0
       css-line-break: ^2.1.0
       css-to-react-native: ^3.0.0
@@ -19,7 +19,7 @@ importers:
       text-segmentation: ^1.0.3
       tsup: ^5.11.13
       typescript: ^4.5.5
-      vitest: 0.5.4
+      vitest: 0.7.6
       yoga-layout-prebuilt: ^1.10.0
     dependencies:
       '@shuding/opentype.js': 1.3.4
@@ -35,11 +35,11 @@ importers:
       '@types/opentype.js': 1.3.3
       '@types/react': 17.0.38
       '@types/yoga-layout': 1.9.4
-      '@vitest/ui': 0.5.5
+      '@vitest/ui': 0.7.6
       react: 17.0.2
       tsup: 5.11.13_typescript@4.5.5
       typescript: 4.5.5
-      vitest: 0.5.4_@vitest+ui@0.5.5
+      vitest: 0.7.6_@vitest+ui@0.7.6
 
   playground:
     specifiers:
@@ -630,8 +630,8 @@ packages:
     resolution: {integrity: sha512-RRHc1+8Hc5mf/2lZKnom6kCnqcNS07s8keahniWTOva0KELF6RgDJmaEcvGEKUUJgN4UgessmEsWuidaOycIOw==}
     dev: true
 
-  /@vitest/ui/0.5.5:
-    resolution: {integrity: sha512-zPM+a9EHPR+nSXYJ8KaG8LGe5wwpq1cGZ3LcALFD5Q043rgK7xoTyqXnjgnw7rRbg2IixMyExpQ2X6WkBYxi0A==}
+  /@vitest/ui/0.7.6:
+    resolution: {integrity: sha512-UX99oH1XM9XXi6Py26CbzlqLhG8kOXVB2n7nneoj1uU+C9mKCaVKX8eN4reRU49ntby9FAMAVq4uIkVcAMHIAA==}
     dependencies:
       sirv: 2.0.2
     dev: true
@@ -2028,8 +2028,8 @@ packages:
       fsevents: 2.3.2
     dev: true
 
-  /vitest/0.5.4_@vitest+ui@0.5.5:
-    resolution: {integrity: sha512-mQ6Wj5vczFybtb/kZ419gLqQRroLgqRdkVkNyC4Dz6XWDGBhBNEVP/KryLGgovEGvs9nlJBacaFXWt+6Cgdstg==}
+  /vitest/0.7.6_@vitest+ui@0.7.6:
+    resolution: {integrity: sha512-fqk0cn0I2BUpzwLfeZ725JeXJ7WGwDtVcVBksQ6SdyjrBi6aex8t3w70TWgyLOXgylS7FJ8C9DRap4MMgpkqYw==}
     engines: {node: '>=14.14.0'}
     hasBin: true
     peerDependencies:
@@ -2049,7 +2049,7 @@ packages:
     dependencies:
       '@types/chai': 4.3.0
       '@types/chai-subset': 1.3.3
-      '@vitest/ui': 0.5.5
+      '@vitest/ui': 0.7.6
       chai: 4.3.6
       local-pkg: 0.4.1
       tinypool: 0.1.2
