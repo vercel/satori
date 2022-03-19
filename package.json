@@ -19,8 +19,8 @@
     "build": "NODE_ENV=production pnpm run test && pnpm run build:default && pnpm run build:wasm",
     "build:default": "tsup",
     "build:wasm": "WASM=1 tsup",
-    "test": "vitest run",
-    "dev:test": "vitest --update"
+    "test": "vitest run --outputTruncateLength=9999999",
+    "dev:test": "vitest --update --outputTruncateLength=9999999"
   },
   "repository": {
     "type": "git",
@@ -44,11 +44,11 @@
     "@types/opentype.js": "^1.3.3",
     "@types/react": "^17.0.38",
     "@types/yoga-layout": "^1.9.4",
-    "@vitest/ui": "^0.5.5",
+    "@vitest/ui": "^0.7.6",
     "react": "^17.0.2",
     "tsup": "^5.11.13",
     "typescript": "^4.5.5",
-    "vitest": "0.5.4"
+    "vitest": "0.7.6"
   },
   "dependencies": {
     "@shuding/opentype.js": "^1.3.4",

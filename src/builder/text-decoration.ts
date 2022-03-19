@@ -1,4 +1,4 @@
-import { buildXMLString } from 'src/utils'
+import { buildXMLString } from '../utils'
 
 export default function decoration(
   {
