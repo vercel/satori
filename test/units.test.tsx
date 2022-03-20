@@ -111,22 +111,23 @@ describe('Units', () => {
     )
   })
 
-  it('should support radial-gradient', async () => {
+  it.todo('should support radial-gradient', async () => {
     const svg = satori(
       <div
-      style={{
-        backgroundColor: 'white',
-        backgroundImage: 'radial-gradient(circle at 25px 25px, lightgray 2%, transparent 0%), radial-gradient(circle at 75px 75px, lightgray 2%, transparent 0%)',
-        backgroundSize: '100px 100px',
-        height: '100%',
-        width: '100%',
-        display: 'flex',
-        textAlign: 'center',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        flexWrap: 'nowrap',
-      }}
+        style={{
+          backgroundColor: 'white',
+          backgroundImage:
+            'radial-gradient(circle at 25px 25px, lightgray 2%, transparent 0%), radial-gradient(circle at 75px 75px, lightgray 2%, transparent 0%)',
+          backgroundSize: '100px 100px',
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          textAlign: 'center',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          flexWrap: 'nowrap',
+        }}
       ></div>,
       {
         width: 100,

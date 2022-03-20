@@ -1,95 +1,33 @@
-import {
-  SandpackCodeEditor,
-  SandpackLayout,
-  SandpackPreview,
-  SandpackProvider,
-} from '@codesandbox/sandpack-react'
-
-const files = {
-  '/style.css': `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700');
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-  Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji,
-  Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
-  -webkit-font-smoothing: antialiased;
-  font-variant: common-ligatures contextual;
-  letter-spacing: -0.015em;
-  margin: 0;
-  padding: 20px;
-  max-width: 100%;
-  line-height: 1.5;
-  box-sizing: border-box;
-}
-code, button {
-  font-size: 14px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
-}
-main {
-  margin: 10px 0;
-}
-.svg {
-  display: flex;
-}
-svg, img {
-  border: 1px solid;
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-}
-button {
-  padding: 5px 20px;
-  appearance: none;
-  border: none;
-  border-radius: 3px;
-  background: #efefef;
-}
-button:hover {
-  background: #e1e1e1;
-}
-button + button {
-  margin-left: 10px;
-}
-button.active {
-  color: white;
-  background: #2196f3;
-}
-a {
-  color: black;
-}
-`,
-  '/App.js': `
-import React, { useEffect, useState, useRef, useCallback } from 'react'
-import ReactDOM from 'react-dom'
 import satori from 'satori'
+import { LiveProvider, LiveEditor, withLive } from 'react-live'
+import { useEffect, useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import Head from 'next/head'
+import packageJson from 'satori/package.json'
 
-import './style.css'
-import Card from './card'
-
-globalThis.React = React
-globalThis.__fonts
+import cards from '../cards/data'
 
 async function init() {
-  if (typeof window === 'undefined') return
-  if (globalThis.__fonts) return
+  if (typeof window === 'undefined') return []
+  if (window.__initialized) return window.__initialized
 
-  const [req1, req2, req3] = await Promise.all([
-    fetch('https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'),
-    fetch('https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-700-normal.woff'),
-    fetch('https://unpkg.com/@fontsource/material-icons@4.5.2/files/material-icons-base-400-normal.woff')
-  ])
-  const [font, fontBold, fontIcon] = await Promise.all([
-    req1.arrayBuffer(),
-    req2.arrayBuffer(),
-    req3.arrayBuffer()
-  ])
+  const [font, fontBold, fontIcon] = await Promise.all(
+    (
+      await Promise.all([
+        fetch(
+          'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'
+        ),
+        fetch(
+          'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-700-normal.woff'
+        ),
+        fetch(
+          'https://unpkg.com/@fontsource/material-icons@4.5.2/files/material-icons-base-400-normal.woff'
+        ),
+      ])
+    ).map((res) => res.arrayBuffer())
+  )
 
-  globalThis.__fonts = [
+  return (window.__initialized = [
     {
       name: 'Inter',
       data: font,
@@ -108,213 +46,410 @@ async function init() {
       weight: 400,
       style: 'normal',
     },
-  ]
+  ])
 }
 
-const promise = init()
+const waitForResource = init()
 
-let width = 400 * 2
-let height = 255 * 2
+function Tabs({ options, onChange, children }) {
+  const [active, setActive] = useState(options[0])
 
-ReactDOM.render(<App />, document.getElementById('root'))
-
-export default function App() {
-  const [svg, setSvg] = useState('')
-  const [time, setTime] = useState(0)
-  const rerender = useState({})[1]
-
-  useEffect(() => {
-    promise.then(() => { rerender({}) })
-
-    const onResize = () => {
-      width = window.innerWidth - 40
-      height = ~~(width * 0.6375)
-      rerender({})
-    }
-    window.addEventListener('resize', onResize)
-    onResize()
-
-    return () => {
-      window.removeEventListener('resize', onResize)
-    }
-  }, [])
-
-  const [tab, setTab] = useState('svg')
-
-  const withSatori = element => {
-    if (!globalThis.__fonts) return element
-
-    useEffect(() => {
-      try {
-        const t = Date.now()
-        const result = satori(element, {
-          width,
-          height,
-          fonts: globalThis.__fonts
-        })
-        setTime(Date.now() - t)
-        setSvg(result)
-      } catch (err) {
-        console.error(err)
-      }
-    }, [])
-
-    return element
-  }
-
-  return <div>
-    <div>
-      <button onClick={() => setTab('svg')} className={tab === 'svg' ? 'active' : ''}>SVG (Rendered via Satori)</button>
-      <button onClick={() => setTab('html')} className={tab === 'html' ? 'active' : ''}>HTML (Native)</button>
-    </div>
-    <main>
-      {svg && tab === 'svg' ? <div className="svg" dangerouslySetInnerHTML={{ __html: svg }}></div> : null}
-      <div style={{
-        width,
-        height,
-        overflow: 'hidden',
-        clear: 'both',
-        display: tab === 'html' ? 'block' : 'none',
-        position: 'relative',
-        border: '1px solid'
-      }}>
-        <Card withSatori={withSatori} />
-      </div> 
-    </main>
-    <code>Canvas size: {width}×{~~height}. SVG generated in {time}ms.</code>
-    <p>
-      <code>Satori project: <a href="https://github.com/vercel/satori" target="_blank">github.com/vercel/satori</a></code>
-    </p>
-  </div>
-}
-`,
-  '/card.js': {
-    code: `export default function Card({ withSatori }) {
-  return withSatori(
-    <div
-      style={{
-        display: 'flex',
-        height: '100%',
-        width: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        fontFamily: 'Inter',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          padding: '20px 40px',
-          letterSpacing: -1,
-          fontSize: 44,
-          fontWeight: 700,
-          maxWidth: '75%',
-          textAlign: 'center',
-          color: 'white',
-          backgroundColor: '#000',
-          // border: '8px solid #008cff',
-          // borderTopLeftRadius: 100,
-          // borderTopRightRadius: 20,
-          // borderBottomRightRadius: 100,
-          // borderBottomLeftRadius: 20,
-          // backgroundImage: 'linear-gradient(to bottom, black)',
-          // transform: 'rotate(-10deg) translate(0, 10px)',
-        }}
-      >
-        <span>
-          Making the Web.
-        </span>
-        <span
-          style={{
-            // color: 'gold',
-            // transform: 'skewX(-30deg) scaleX(2)',
-          }}
-        >
-          Faster.
-        </span>
+  return (
+    <div className='tabs'>
+      <div className='tabs-container'>
+        {options.map((option) => (
+          <div
+            className={'tab' + (active === option ? ' active' : '')}
+            key={option}
+            onClick={() => {
+              setActive(option)
+              onChange(option)
+            }}
+          >
+            {option}
+          </div>
+        ))}
       </div>
-      <div
-        style={{
-          left: 42,
-          top: 42,
-          position: 'absolute',
-          display: 'flex',
-          alignItems: 'center',
-        }}
-      >
-        <span
-          style={{
-            width: 24,
-            height: 24,
-            background: 'black',
-          }}
-        />
-        <span
-          style={{
-            marginLeft: 8,
-            letterSpacing: -0.2,
-            fontSize: 15,
-            fontWeight: 700,
-          }}
-        >
-          rauchg.com
-        </span>
-      </div>
+      {children}
     </div>
   )
-}`,
-    active: true,
-  },
 }
 
-export default function Playground() {
+const LiveSatori = withLive(function ({ live }) {
+  const [options, setOptions] = useState(null)
+  const [debug, setDebug] = useState(false)
+  const [fontEmbed, setFontEmbed] = useState(true)
+  const [native, setNative] = useState(false)
+  const [width, setWidth] = useState(400 * 2)
+  const [height, setHeight] = useState(200 * 2)
+  const [iframeNode, setIframeNode] = useState(null)
+  const [scaleRatio, setScaleRatio] = useState(1)
+
+  const sizeRef = useRef([width, height])
+  sizeRef.current = [width, height]
+
+  function updateScaleRatio() {
+    const [w, h] = sizeRef.current
+    const innerWidth = window.innerWidth
+    const containerWidth =
+      innerWidth < 600 ? innerWidth - 20 : innerWidth / 2 - 15
+    const containerHeight = (containerWidth * 9) / 16
+    setScaleRatio(
+      Math.min(1, Math.min(containerWidth / w, containerHeight / h))
+    )
+  }
+
+  useEffect(() => {
+    ;(async () => {
+      const fonts = await waitForResource
+      setOptions({
+        fonts,
+      })
+    })()
+  }, [])
+
+  useEffect(() => {
+    let timeout
+    const onResize = () => {
+      clearTimeout(timeout)
+      timeout = setTimeout(() => {
+        updateScaleRatio()
+      }, 50)
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  useEffect(() => {
+    updateScaleRatio()
+  }, [width, height])
+
+  let result = ''
+  let renderedTimeSpent
+  if (live.element && options) {
+    const start = (
+      typeof performance !== 'undefined' ? performance : Date
+    ).now()
+    if (!native) {
+      try {
+        result = satori(live.element.prototype.render(), {
+          ...options,
+          embedFont: fontEmbed,
+          width,
+          height,
+          debug,
+        })
+      } catch (e) {
+        return null
+      }
+    }
+    renderedTimeSpent =
+      (typeof performance !== 'undefined' ? performance : Date).now() - start
+  }
+
   return (
-    <div>
-      <SandpackProvider
-        recompileMode='immediate'
-        customSetup={{
-          files,
-          entry: '/App.js',
-          main: '/card.js',
-          dependencies: {
-            react: '17.0.2',
-            'react-dom': '17.0.2',
-            satori: 'latest',
-          },
+    <>
+      <Tabs
+        options={['SVG (Satori)', 'HTML (Native)']}
+        onChange={(type) => {
+          setNative(type.startsWith('HTML'))
         }}
       >
-        <SandpackLayout
+        <div className='preview-card'>
+          {live.error ? (
+            <div className='error'>
+              <pre>{live.error}</pre>
+            </div>
+          ) : null}
+          <div
+            className='svg-container'
+            dangerouslySetInnerHTML={
+              native
+                ? undefined
+                : {
+                    __html: `<div style="position:absolute;width:${width}px;height:${height}px;transform:scale(${scaleRatio});background:white;display:flex;align-items:center;justify-content:center">${result}</div>`,
+                  }
+            }
+          >
+            {native ? (
+              <iframe
+                ref={(node) => {
+                  if (node) {
+                    setIframeNode(node.contentWindow?.document?.body)
+                  }
+                }}
+                width={width}
+                height={height}
+                style={{
+                  transform: `scale(${scaleRatio})`,
+                }}
+              >
+                {iframeNode &&
+                  createPortal(
+                    <>
+                      <style
+                        dangerouslySetInnerHTML={{
+                          __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700');*{box-sizing:border-box}body{display:flex;margin:0;font-family:Inter,sans-serif;align-items:center;justify-content:center;background:white;overflow:hidden}`,
+                        }}
+                      />
+                      {live.element ? <live.element /> : null}
+                    </>,
+                    iframeNode
+                  )}
+              </iframe>
+            ) : null}
+          </div>
+          <footer>
+            <span className='ellipsis'>
+              {native
+                ? `[HTML] Rendered by browser.`
+                : `[SVG] Generated by Satori in `}
+            </span>
+            <span className='data'>
+              {native ? '' : `${~~(renderedTimeSpent * 100) / 100}ms.`}
+            </span>
+            <span>{`[${width}×${height}]`}</span>
+          </footer>
+        </div>
+      </Tabs>
+      <div className='controller'>
+        <h2 className='title'>Configurations</h2>
+        <div className='content'>
+          <div className='control'>
+            <label htmlFor='width'>Container Width</label>
+            <div>
+              <input
+                type='range'
+                value={width}
+                onChange={(e) => setWidth(e.target.value)}
+                min={100}
+                max={1000}
+                step={1}
+              />
+              <input
+                id='width'
+                type='number'
+                value={width}
+                onChange={(e) => setWidth(e.target.value)}
+                min={100}
+                max={1000}
+                step={1}
+              />
+              px
+            </div>
+          </div>
+          <div className='control'>
+            <label htmlFor='height'>Container Height</label>
+            <div>
+              <input
+                type='range'
+                value={height}
+                onChange={(e) => setHeight(e.target.value)}
+                min={100}
+                max={1000}
+                step={1}
+              />
+              <input
+                id='height'
+                type='number'
+                value={height}
+                onChange={(e) => setHeight(e.target.value)}
+                min={100}
+                max={1000}
+                step={1}
+              />
+              px
+            </div>
+          </div>
+          <div className='control'>
+            <label htmlFor='reset'>Reset Size</label>
+            <button
+              id='reset'
+              onClick={() => {
+                setWidth(400 * 2)
+                setHeight(200 * 2)
+              }}
+            >
+              Reset to 2:1
+            </button>
+          </div>
+          <div className='control'>
+            <label htmlFor='debug'>Debug Mode</label>
+            <input
+              id='debug'
+              type='checkbox'
+              checked={debug}
+              onChange={() => setDebug(!debug)}
+            />
+          </div>
+          <div className='control'>
+            <label htmlFor='font'>Embed Font</label>
+            <input
+              id='font'
+              type='checkbox'
+              checked={fontEmbed}
+              onChange={() => setFontEmbed(!fontEmbed)}
+            />
+          </div>
+          <div className='control'>
+            <label htmlFor='export'>Export</label>
+            <a
+              className={!result || native ? 'disabled' : ''}
+              href={
+                result
+                  ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+                      result
+                    )}`
+                  : undefined
+              }
+              target={result ? '_blank' : ''}
+              download={result ? 'satori-playground.svg' : false}
+            >
+              Export SVG
+            </a>
+          </div>
+          <div className='control'>
+            <label>Satori Version</label>
+            <span>{packageJson.version}</span>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+})
+
+const cardNames = Object.keys(cards)
+
+export default function Playground() {
+  const [activeCard, setActiveCard] = useState(cardNames[0])
+
+  return (
+    <>
+      <nav>
+        <h1>🄪 Satori Playground</h1>
+        <ul>
+          <li>
+            <a href='https://nextjs.org/discord'>Discord</a>
+          </li>
+          <li>
+            <a href='https://github.com/vercel/satori'>GitHub</a>
+          </li>
+        </ul>
+      </nav>
+      <div className='container'>
+        <LiveProvider
           theme={{
-            typography: {
-              fontSize: '14px',
-              monoFont:
-                "ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace",
+            plain: {
+              color: '#111',
             },
+            styles: [
+              {
+                types: ['prolog', 'comment', 'doctype', 'cdata'],
+                style: {
+                  color: 'hsl(30, 20%, 50%)',
+                },
+              },
+              {
+                types: [
+                  'property',
+                  'tag',
+                  'boolean',
+                  'number',
+                  'constant',
+                  'symbol',
+                ],
+                style: {
+                  color: '#111',
+                },
+              },
+              {
+                types: ['attr-name', 'string', 'char', 'builtin', 'insterted'],
+                style: {
+                  color: '#0076ff',
+                },
+              },
+              {
+                types: [
+                  'operator',
+                  'entity',
+                  'url',
+                  'string',
+                  'variable',
+                  'language-css',
+                  'number',
+                ],
+                style: {
+                  color: '#028265',
+                },
+              },
+              {
+                types: ['deleted'],
+                style: {
+                  color: 'rgb(255, 85, 85)',
+                },
+              },
+              {
+                types: ['italic'],
+                style: {
+                  fontStyle: 'italic',
+                },
+              },
+              {
+                types: ['important', 'bold'],
+                style: {
+                  fontWeight: 'bold',
+                },
+              },
+              {
+                types: ['regex', 'important'],
+                style: {
+                  color: '#e90',
+                },
+              },
+              {
+                types: ['atrule', 'attr-value', 'keyword'],
+                style: {
+                  color: '#f677e1',
+                },
+              },
+              {
+                types: ['punctuation', 'symbol'],
+                style: {
+                  opacity: '1',
+                },
+              },
+            ],
           }}
+          code={cards[activeCard]}
         >
-          <SandpackCodeEditor
-            showTabs={false}
-            wrapContent
-            showLineNumbers
-            showInlineErrors
-            initMode='immediate'
-            customStyle={{
-              height: '100vh',
+          <Tabs
+            options={cardNames}
+            onChange={(name) => {
+              setActiveCard(name)
             }}
-          />
-          <SandpackPreview
-            showOpenInCodeSandbox={false}
-            showRefreshButton={false}
-            viewportSize='auto'
-            customStyle={{
-              height: '100vh',
-            }}
-          />
-        </SandpackLayout>
-      </SandpackProvider>
-    </div>
+          >
+            <div className='editor'>
+              <LiveEditor key={activeCard} />
+            </div>
+          </Tabs>
+          <div className='preview'>
+            <LiveSatori />
+          </div>
+        </LiveProvider>
+      </div>
+      <Head>
+        <title>Satori Playground</title>
+        <meta
+          name='viewport'
+          content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'
+        />
+        <meta name='description' content='Satori Playground' />
+        <meta name='theme-color' content='#fff' />
+        <link
+          rel='icon'
+          href='data:image/svg+xml;utf8,&lt;svg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 100 100&#x27;&gt;&lt;text x=&#x27;50&#x27; y=&#x27;.9em&#x27; font-size=&#x27;90&#x27; text-anchor=&#x27;middle&#x27;&gt;🄪&lt;/text&gt;&lt;style&gt;text{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";fill:black}@media(prefers-color-scheme:dark){text{fill:white}}&lt;/style&gt;&lt;/svg&gt;'
+        />
+      </Head>
+    </>
   )
 }
