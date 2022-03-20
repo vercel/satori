@@ -111,7 +111,7 @@ describe('Units', () => {
     )
   })
 
-  it.skip('should support radial-gradient', async () => {
+  it.todo('should support radial-gradient', async () => {
     const svg = satori(
       <div
         style={{
