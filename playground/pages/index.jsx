@@ -189,7 +189,7 @@ const LiveSatori = withLive(function ({ live }) {
                     <>
                       <style
                         dangerouslySetInnerHTML={{
-                          __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700');*{box-sizing:border-box}body{display:flex;margin:0;font-family:Inter,sans-serif;align-items:center;justify-content:center;background:white;overflow:hidden}`,
+                          __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700');*{box-sizing:border-box}body{display:flex;height:100%;margin:0;font-family:Inter,sans-serif;align-items:center;justify-content:center;background:white;overflow:hidden}`,
                         }}
                       />
                       {live.element ? <live.element /> : null}
@@ -326,7 +326,7 @@ export default function Playground() {
   return (
     <>
       <nav>
-        <h1>🄪 Satori Playground</h1>
+        <h1>Satori Playground</h1>
         <ul>
           <li>
             <a href='https://nextjs.org/discord'>Discord</a>

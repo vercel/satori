@@ -43,7 +43,7 @@ nav {
   background: white;
   box-shadow: 0 0 24px rgb(0 0 0 / 10%), 0 0 0 1px rgb(0 0 0 / 4%);
   font-size: 0.9rem;
-  z-index: 1;
+  z-index: 2;
 }
 
 h1 {
@@ -235,12 +235,10 @@ textarea.npm__react-simple-code-editor__textarea:active {
   border-radius: 12px;
   background: white;
   box-shadow: 0 4px 24px rgb(0 0 0 / 10%), 0 0 0 1px rgb(0 0 0 / 5%);
-  overflow: auto;
+  overflow: hidden;
 }
 
 .controller h2.title {
-  position: sticky;
-  top: 0;
   font-size: 12px;
   letter-spacing: -0.02em;
   font-weight: 500;
@@ -255,6 +253,8 @@ textarea.npm__react-simple-code-editor__textarea:active {
 .controller .content {
   display: flex;
   padding: 8px 10px;
+  height: calc(100% - 34px);
+  overflow: auto;
   flex-direction: column;
 }
 .controller .control {
@@ -327,18 +327,22 @@ textarea.npm__react-simple-code-editor__textarea:active {
 }
 
 @media screen and (max-width: 599px) {
-  .preview {
-    flex-direction: column;
-  }
-  .preview,
-  .container > .tabs {
-    max-height: calc(50% - 5px);
-  }
   .preview > .tabs,
   .controller {
     width: 100%;
   }
+  .preview {
+    flex-direction: column;
+    max-height: calc((100vw - 20px) * 9 / 16 + 214px - 5px);
+    padding-bottom: 10px;
+  }
+  .container > .tabs {
+    max-height: calc(100% - (100vw - 20px) * 9 / 16 - 214px + 5px);
+  }
   .svg-container {
     height: calc((100vw - 20px) * 9 / 16);
+  }
+  .controller {
+    height: 160px;
   }
 }
