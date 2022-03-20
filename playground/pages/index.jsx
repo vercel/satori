@@ -1,5 +1,5 @@
 import satori from 'satori'
-import { LiveProvider, LiveEditor, LiveError, withLive } from 'react-live'
+import { LiveProvider, LiveEditor, withLive } from 'react-live'
 import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Head from 'next/head'
@@ -75,7 +75,7 @@ function Tabs({ options, onChange, children }) {
   )
 }
 
-const LiveSatori = withLive(function ({ live, children }) {
+const LiveSatori = withLive(function ({ live }) {
   const [options, setOptions] = useState(null)
   const [debug, setDebug] = useState(false)
   const [fontEmbed, setFontEmbed] = useState(true)
@@ -156,7 +156,11 @@ const LiveSatori = withLive(function ({ live, children }) {
         }}
       >
         <div className='preview-card'>
-          {children}
+          {live.error ? (
+            <div className='error'>
+              <pre>{live.error}</pre>
+            </div>
+          ) : null}
           <div
             className='svg-container'
             dangerouslySetInnerHTML={
@@ -429,11 +433,7 @@ export default function Playground() {
             </div>
           </Tabs>
           <div className='preview'>
-            <LiveSatori>
-              <div className='error'>
-                <LiveError />
-              </div>
-            </LiveSatori>
+            <LiveSatori />
           </div>
         </LiveProvider>
       </div>

@@ -158,6 +158,8 @@ code {
   overflow: auto;
   color: #ff3737;
   font-size: 13px;
+  z-index: 1;
+  background: white;
 }
 .error pre {
   margin: 0;
