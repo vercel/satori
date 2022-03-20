@@ -41,6 +41,7 @@ export default function satori(
   root.setAlignContent(Yoga.ALIGN_AUTO)
   root.setAlignItems(Yoga.ALIGN_FLEX_START)
   root.setJustifyContent(Yoga.JUSTIFY_FLEX_START)
+  root.setOverflow(Yoga.OVERFLOW_HIDDEN)
 
   const handler = layout(element, {
     id: 'id',

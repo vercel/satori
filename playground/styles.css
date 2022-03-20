@@ -331,6 +331,9 @@ textarea.npm__react-simple-code-editor__textarea:active {
   .controller {
     width: 100%;
   }
+  .container {
+    gap: 0;
+  }
   .preview {
     flex-direction: column;
     max-height: calc((100vw - 20px) * 9 / 16 + 214px - 5px);

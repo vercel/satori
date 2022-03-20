@@ -142,6 +142,7 @@ export default {
     height: '100%',
     flexDirection: 'column',
     fontFamily: 'Inter',
+    flexWrap: 'nowrap',
   }}
 >
   <div

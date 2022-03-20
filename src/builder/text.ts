@@ -57,6 +57,7 @@ export default function text(
     clipPathId,
     debug,
     shape,
+    decorationShape,
   }: {
     content: string
     filter: string
@@ -71,6 +72,7 @@ export default function text(
     clipPathId?: string
     debug?: boolean
     shape?: boolean
+    decorationShape?: string
   },
   style: Record<string, number | string>
 ) {
@@ -106,6 +108,7 @@ export default function text(
           ...shapeProps,
           opacity: opacity !== 1 ? opacity : undefined,
         }) +
+        (decorationShape || '') +
         (filter ? '</g>' : '') +
         extra,
       // SVG doesn't support `<image>` as the shape.
@@ -138,6 +141,7 @@ export default function text(
         },
         content
       ) +
+      (decorationShape || '') +
       (filter ? '</g>' : '') +
       extra,
     shape ? buildXMLString('text', shapeProps, content) : '',
