@@ -45,7 +45,9 @@ export function v(
 const locale = undefined
 
 const INTL_SEGMENTER_SUPPORTED =
-  typeof Intl !== 'undefined' && 'Segmenter' in Intl
+  typeof Intl !== 'undefined' &&
+  'Segmenter' in Intl &&
+  process.env.NODE_ENV !== 'test'
 
 const wordSegmenter = INTL_SEGMENTER_SUPPORTED
   ? new (Intl as any).Segmenter(locale, { granularity: 'word' })

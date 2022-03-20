@@ -26,7 +26,7 @@ describe('white-space', () => {
         }
       )
       expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text></svg>"'
+        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"14.84375\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text></svg>"'
       )
     })
 
@@ -47,33 +47,30 @@ describe('white-space', () => {
         }
       )
       expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"16.21875\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
+        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"14.84375\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"14.84375\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
       )
     })
 
-    it.todo(
-      'should wrap automatically with `white-space: normal`',
-      async () => {
-        const svg = satori(
-          <div
-            style={{
-              whiteSpace: 'normal',
-            }}
-          >
-            hello, world
-          </div>,
-          {
-            width: 20,
-            height: 200,
-            fonts,
-            embedFont: false,
-          }
-        )
-        expect(svg).toMatchInlineSnapshot(
-          '"<svg width=\\"20\\" height=\\"200\\" viewBox=\\"0 0 20 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"34.1796875\\" y=\\"16.21875\\" width=\\"3.140625\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">,</text><text x=\\"0\\" y=\\"38.71875\\" width=\\"39.46875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
-        )
-      }
-    )
+    it('should wrap automatically with `white-space: normal`', async () => {
+      const svg = satori(
+        <div
+          style={{
+            whiteSpace: 'normal',
+          }}
+        >
+          hello, world
+        </div>,
+        {
+          width: 20,
+          height: 200,
+          fonts,
+          embedFont: false,
+        }
+      )
+      expect(svg).toMatchInlineSnapshot(
+        '"<svg width=\\"20\\" height=\\"200\\" viewBox=\\"0 0 20 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"14.84375\\" width=\\"37.3203125\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello,</text><text x=\\"0\\" y=\\"33.59375\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
+      )
+    })
   })
 
   describe('pre', () => {
@@ -94,7 +91,7 @@ describe('white-space', () => {
         }
       )
       expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text></svg>"'
+        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"14.84375\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"14.84375\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"14.84375\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text></svg>"'
       )
     })
 
@@ -116,13 +113,13 @@ describe('white-space', () => {
       )
       expect(svg).toMatchInlineSnapshot(
         `
-        "<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"0\\" y=\\"34.96875\\" width=\\"0\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">
-        </text><text x=\\"0\\" y=\\"34.96875\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"34.96875\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"
+        "<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"14.84375\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"14.84375\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"14.84375\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"0\\" y=\\"33.59375\\" width=\\"0\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">
+        </text><text x=\\"0\\" y=\\"33.59375\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"33.59375\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"
       `
       )
     })
 
-    it.todo('should not wrap with `white-space: pre`', async () => {
+    it('should not wrap with `white-space: pre`', async () => {
       const svg = satori(
         <div
           style={{
@@ -139,7 +136,7 @@ describe('white-space', () => {
         }
       )
       expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"20\\" height=\\"200\\" viewBox=\\"0 0 20 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"34.1796875\\" y=\\"16.21875\\" width=\\"3.140625\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">,</text><text x=\\"37.3203125\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"41.28125\\" y=\\"16.21875\\" width=\\"39.46875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
+        '"<svg width=\\"20\\" height=\\"200\\" viewBox=\\"0 0 20 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"14.84375\\" width=\\"37.3203125\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello,</text><text x=\\"37.3203125\\" y=\\"14.84375\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"41.28125\\" y=\\"14.84375\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
       )
     })
   })
@@ -162,7 +159,7 @@ describe('white-space', () => {
         }
       )
       expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text></svg>"'
+        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"14.84375\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"14.84375\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"14.84375\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text></svg>"'
       )
     })
 
@@ -184,60 +181,54 @@ describe('white-space', () => {
       )
       expect(svg).toMatchInlineSnapshot(
         `
-        "<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"16.21875\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"0\\" y=\\"34.96875\\" width=\\"0\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">
-        </text><text x=\\"0\\" y=\\"34.96875\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"34.96875\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"
+        "<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"14.84375\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"14.84375\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"14.84375\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"0\\" y=\\"33.59375\\" width=\\"0\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">
+        </text><text x=\\"0\\" y=\\"33.59375\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"33.59375\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"
       `
       )
     })
 
-    it.todo(
-      'should automatically wrap with `white-space: pre-wrap`',
-      async () => {
-        const svg = satori(
-          <div
-            style={{
-              whiteSpace: 'pre-wrap',
-            }}
-          >
-            hello, world
-          </div>,
-          {
-            width: 20,
-            height: 200,
-            fonts,
-            embedFont: false,
-          }
-        )
-        expect(svg).toMatchInlineSnapshot(
-          '"<svg width=\\"20\\" height=\\"200\\" viewBox=\\"0 0 20 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"34.1796875\\" y=\\"16.21875\\" width=\\"3.140625\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">,</text><text x=\\"0\\" y=\\"38.71875\\" width=\\"3.9609375\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"0\\" y=\\"61.21875\\" width=\\"39.46875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
-        )
-      }
-    )
+    it('should automatically wrap with `white-space: pre-wrap`', async () => {
+      const svg = satori(
+        <div
+          style={{
+            whiteSpace: 'pre-wrap',
+          }}
+        >
+          hello, world
+        </div>,
+        {
+          width: 20,
+          height: 200,
+          fonts,
+          embedFont: false,
+        }
+      )
+      expect(svg).toMatchInlineSnapshot(
+        '"<svg width=\\"20\\" height=\\"200\\" viewBox=\\"0 0 20 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"14.84375\\" width=\\"37.3203125\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello,</text><text x=\\"0\\" y=\\"33.59375\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"0\\" y=\\"52.34375\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
+      )
+    })
   })
 
   describe('with `white-space: nowrap`', () => {
-    it.todo(
-      'should not wrap with `white-space: nowrap` and swallow extra spaces',
-      async () => {
-        const svg = satori(
-          <div
-            style={{
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {` hello, world `}
-          </div>,
-          {
-            width: 20,
-            height: 200,
-            fonts,
-            embedFont: false,
-          }
-        )
-        expect(svg).toMatchInlineSnapshot(
-          '"<svg width=\\"20\\" height=\\"200\\" viewBox=\\"0 0 20 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"16.21875\\" width=\\"34.1796875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"34.1796875\\" y=\\"16.21875\\" width=\\"3.140625\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">,</text><text x=\\"41.28125\\" y=\\"16.21875\\" width=\\"39.46875\\" height=\\"22.5\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
-        )
-      }
-    )
+    it('should not wrap with `white-space: nowrap` and swallow extra spaces', async () => {
+      const svg = satori(
+        <div
+          style={{
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {` hello, world `}
+        </div>,
+        {
+          width: 20,
+          height: 200,
+          fonts,
+          embedFont: false,
+        }
+      )
+      expect(svg).toMatchInlineSnapshot(
+        '"<svg width=\\"20\\" height=\\"200\\" viewBox=\\"0 0 20 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"14.84375\\" width=\\"37.3203125\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello,</text><text x=\\"41.28125\\" y=\\"14.84375\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
+      )
+    })
   })
 })

@@ -87,15 +87,17 @@ export default function* buildTextNodes(
   } = parentStyle
 
   // Get the correct font according to the container style.
+  // https://www.w3.org/TR/CSS2/visudet.html
   // @TODO: Support font family fallback based on the glyphs of the font.
   const resolvedFont = font.getFont(parentStyle as any)
   const baseFontSize = parentStyle.fontSize as number
   const ascender =
     (resolvedFont.ascender / resolvedFont.unitsPerEm) * baseFontSize
-
   const descender =
     -(resolvedFont.descender / resolvedFont.unitsPerEm) * baseFontSize
   const glyphHeight = ascender + descender
+  const L = ((lineHeight as number) / 1.2) * baseFontSize - glyphHeight
+
   const lineHeightPx = (glyphHeight * (lineHeight as number)) / 1.2
   const deltaHeight = ((parentStyle.fontSize as number) - glyphHeight) / 2
 
@@ -348,7 +350,6 @@ export default function* buildTextNodes(
   let skippedLine = -1
   let ellipsisWidth = textOverflow === 'ellipsis' ? measureWithCache('…') : 0
   let spaceWidth = textOverflow === 'ellipsis' ? measureWithCache(' ') : 0
-
   let decorationLines: Record<number, null | number[]> = {}
 
   for (let i = 0; i < words.length; i++) {
@@ -367,7 +368,6 @@ export default function* buildTextNodes(
     const line = layout.line
 
     if (line === skippedLine) {
-      decorationLines[line] = null
       continue
     }
 
@@ -439,14 +439,35 @@ export default function* buildTextNodes(
         ...parentStyle,
         left: left + leftOffset,
         // Since we need to pass the baseline position, add the ascender to the top.
-        top: top + topOffset + ascender,
+        top: top + topOffset + ascender + L / 2,
         letterSpacing: parentStyle.letterSpacing,
       } as any)
     } else {
       // We need manually add the font ascender height to ensure it starts
       // at the baseline because <text>'s alignment baseline is set to `hanging`
       // by default and supported to change in SVG 1.1.
-      topOffset += ascender
+      topOffset += ascender + L / 2
+    }
+
+    // Get the decoration shape.
+    if (parentStyle.textDecorationLine) {
+      // If it's the last word in the current line.
+      if (line !== wordsInLayout[i + 1]?.line || skippedLine === line) {
+        const deco = decorationLines[line]
+        if (deco && !deco[2]) {
+          decorationShape += decoration(
+            {
+              left: left + deco[0],
+              top: top + lineHeightPx * +line,
+              width: deco[1],
+              ascender: ascender + L / 2,
+              clipPathId,
+            },
+            parentStyle
+          )
+          deco[2] = 1
+        }
+      }
     }
 
     if (path) {
@@ -467,27 +488,13 @@ export default function* buildTextNodes(
           clipPathId,
           debug,
           shape: !!_inheritedBackgroundClipTextPath,
+          decorationShape,
         },
         parentStyle
       )
       result += t
       backgroundClipDef += shape
-    }
-  }
-
-  if (parentStyle.textDecorationLine) {
-    for (const i in decorationLines) {
-      if (!decorationLines[i]) continue
-      decorationShape += decoration(
-        {
-          left: left + decorationLines[i][0],
-          top: top + lineHeightPx * +i,
-          width: decorationLines[i][1],
-          ascender,
-          clipPathId,
-        },
-        parentStyle
-      )
+      decorationShape = ''
     }
   }
 
