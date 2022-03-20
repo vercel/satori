@@ -13,8 +13,6 @@ import decoration from './builder/text-decoration'
 // @TODO: Support "lang" attribute to modify the locale
 const locale = undefined
 
-const ASCENDER_RATIO = 0.88
-
 export default function* buildTextNodes(
   content: string,
   context: LayoutContext
@@ -89,15 +87,17 @@ export default function* buildTextNodes(
   } = parentStyle
 
   // Get the correct font according to the container style.
+  // https://www.w3.org/TR/CSS2/visudet.html
   // @TODO: Support font family fallback based on the glyphs of the font.
   const resolvedFont = font.getFont(parentStyle as any)
   const baseFontSize = parentStyle.fontSize as number
   const ascender =
     (resolvedFont.ascender / resolvedFont.unitsPerEm) * baseFontSize
-
   const descender =
     -(resolvedFont.descender / resolvedFont.unitsPerEm) * baseFontSize
   const glyphHeight = ascender + descender
+  const L = ((lineHeight as number) / 1.2) * baseFontSize - glyphHeight
+
   const lineHeightPx = (glyphHeight * (lineHeight as number)) / 1.2
   const deltaHeight = ((parentStyle.fontSize as number) - glyphHeight) / 2
 
@@ -439,14 +439,14 @@ export default function* buildTextNodes(
         ...parentStyle,
         left: left + leftOffset,
         // Since we need to pass the baseline position, add the ascender to the top.
-        top: top + topOffset + ascender * ASCENDER_RATIO,
+        top: top + topOffset + ascender + L / 2,
         letterSpacing: parentStyle.letterSpacing,
       } as any)
     } else {
       // We need manually add the font ascender height to ensure it starts
       // at the baseline because <text>'s alignment baseline is set to `hanging`
       // by default and supported to change in SVG 1.1.
-      topOffset += ascender * ASCENDER_RATIO
+      topOffset += ascender + L / 2
     }
 
     // Get the decoration shape.
@@ -460,7 +460,7 @@ export default function* buildTextNodes(
               left: left + deco[0],
               top: top + lineHeightPx * +line,
               width: deco[1],
-              ascender: ascender * ASCENDER_RATIO,
+              ascender: ascender + L / 2,
               clipPathId,
             },
             parentStyle
