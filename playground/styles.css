@@ -43,7 +43,7 @@ nav {
   background: white;
   box-shadow: 0 0 24px rgb(0 0 0 / 10%), 0 0 0 1px rgb(0 0 0 / 4%);
   font-size: 0.9rem;
-  z-index: 1;
+  z-index: 2;
 }
 
 h1 {
@@ -327,18 +327,21 @@ textarea.npm__react-simple-code-editor__textarea:active {
 }
 
 @media screen and (max-width: 599px) {
-  .preview {
-    flex-direction: column;
-  }
-  .preview,
-  .container > .tabs {
-    max-height: calc(50% - 5px);
-  }
   .preview > .tabs,
   .controller {
     width: 100%;
   }
+  .preview {
+    flex-direction: column;
+    max-height: calc((100vw - 20px) * 9 / 16 + 194px - 5px);
+  }
+  .container > .tabs {
+    max-height: calc(100% - (100vw - 20px) * 9 / 16 - 194px - 5px);
+  }
   .svg-container {
     height: calc((100vw - 20px) * 9 / 16);
+  }
+  .controller {
+    height: 140px;
   }
 }
