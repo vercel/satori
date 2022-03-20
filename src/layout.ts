@@ -6,7 +6,7 @@ import type { ReactNode } from 'react'
 import type { YogaNode } from 'yoga-layout'
 
 import getYoga from './yoga'
-import { isReactElement, isClass } from './utils'
+import { isReactElement, isClass, buildXMLString } from './utils'
 import handler from './handler'
 import FontLoader from './font'
 import layoutText from './text'
@@ -145,12 +145,9 @@ export default function* layout(
 
   let childrenRenderResult = ''
   let baseRenderResult = ''
+  let depsRenderResult = ''
 
-  // Must render children first.
-  for (const iter of iterators) {
-    childrenRenderResult += iter.next([left, top]).value
-  }
-
+  // Generate the rendered markup for the current node.
   if (type === 'img') {
     baseRenderResult = image(
       {
@@ -172,5 +169,25 @@ export default function* layout(
     )
   }
 
-  return baseRenderResult + childrenRenderResult
+  // Generate the rendered markup for the children.
+  for (const iter of iterators) {
+    childrenRenderResult += iter.next([left, top]).value
+  }
+
+  // An extra pass to generate the special background-clip shape collected from
+  // children.
+  if (computedStyle._inheritedBackgroundClipTextPath) {
+    depsRenderResult += buildXMLString(
+      'clipPath',
+      {
+        id: `satori_bct-${id}`,
+        'clip-path': computedStyle._inheritedClipPathId
+          ? `url(#${computedStyle._inheritedClipPathId})`
+          : undefined,
+      },
+      (computedStyle._inheritedBackgroundClipTextPath as any).value
+    )
+  }
+
+  return depsRenderResult + baseRenderResult + childrenRenderResult
 }

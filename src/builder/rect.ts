@@ -115,17 +115,6 @@ export default function rect(
 
   const { backgroundClip } = style
 
-  if (backgroundClip === 'text') {
-    defs += buildXMLString(
-      'clipPath',
-      {
-        id: `satori_bct-${id}`,
-        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-      },
-      (style._inheritedBackgroundClipTextPath as any).value
-    )
-  }
-
   // Each background generates a new rectangle.
   // @TODO: Not sure if this is the best way to do it, maybe <pattern> with
   // multiple <image>s is better.
