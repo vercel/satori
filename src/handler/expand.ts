@@ -219,6 +219,10 @@ export default function expand(
           case 'translateY':
             transformMatrix[5] = len
             break
+          case 'scale':
+            transformMatrix[0] = len
+            transformMatrix[3] = len
+            break
           case 'scaleX':
             transformMatrix[0] = len
             break
