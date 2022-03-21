@@ -59,6 +59,20 @@ function purify(name: string, value?: string | number) {
   return value
 }
 
+function handleSpecialCase(name: string, value: string | number) {
+  if (name === 'lineHeight') return { lineHeight: purify(name, value) }
+  if (name === 'fontFamily')
+    return {
+      fontFamily: (value as string).split(',').map((v) => {
+        return v
+          .trim()
+          .replace(/(^['"])|(['"]$)/g, '')
+          .toLocaleLowerCase()
+      }),
+    }
+  return null
+}
+
 function lengthToNumber(
   length: string | number,
   baseFontSize: number,
@@ -121,14 +135,13 @@ export default function expand(
     const name = getPropertyName(prop)
     Object.assign(
       transformedStyle,
-      name === 'lineHeight'
-        ? { lineHeight: purify(name, style[prop]) }
-        : handleFallbackColor(
-            name,
-            getStylesForProperty(name, purify(name, style[prop]), true),
-            style[prop] as string,
-            (style.color || inheritedStyle.color) as string
-          )
+      handleSpecialCase(name, style[prop]) ||
+        handleFallbackColor(
+          name,
+          getStylesForProperty(name, purify(name, style[prop]), true),
+          style[prop] as string,
+          (style.color || inheritedStyle.color) as string
+        )
     )
   }
 
