@@ -9,25 +9,29 @@ import cards from '../cards/data'
 
 async function init() {
   if (typeof window === 'undefined') return []
-  if (window.__initialized) return window.__initialized
 
-  const [font, fontBold, fontIcon] = await Promise.all(
-    (
-      await Promise.all([
-        fetch(
-          'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'
-        ),
-        fetch(
-          'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-700-normal.woff'
-        ),
-        fetch(
-          'https://unpkg.com/@fontsource/material-icons@4.5.2/files/material-icons-base-400-normal.woff'
-        ),
-      ])
-    ).map((res) => res.arrayBuffer())
-  )
+  const [font, fontBold, fontIcon, fontNotoSansSCSubset] =
+    window.__fonts ||
+    (window.__fonts = await Promise.all(
+      (
+        await Promise.all([
+          fetch(
+            'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'
+          ),
+          fetch(
+            'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-700-normal.woff'
+          ),
+          fetch(
+            'https://unpkg.com/@fontsource/material-icons@4.5.2/files/material-icons-base-400-normal.woff'
+          ),
+          fetch(
+            'https://fonts.gstatic.com/l/font?kit=k3kXo84MPvpLmixcA63oeALhL5CLFbJeFwkn&skey=cf0bb10b5602fdc3&v=v24'
+          ),
+        ])
+      ).map((res) => res.arrayBuffer())
+    ))
 
-  return (window.__initialized = [
+  return [
     {
       name: 'Inter',
       data: font,
@@ -46,10 +50,16 @@ async function init() {
       weight: 400,
       style: 'normal',
     },
-  ])
+    {
+      name: 'Noto Sans SC',
+      data: fontNotoSansSCSubset,
+      weight: 400,
+      style: 'normal',
+    },
+  ]
 }
 
-const waitForResource = init()
+const loadFonts = init()
 
 function Tabs({ options, onChange, children }) {
   const [active, setActive] = useState(options[0])
@@ -101,9 +111,8 @@ const LiveSatori = withLive(function ({ live }) {
 
   useEffect(() => {
     ;(async () => {
-      const fonts = await waitForResource
       setOptions({
-        fonts,
+        fonts: await loadFonts,
       })
     })()
   }, [])

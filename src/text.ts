@@ -89,12 +89,11 @@ export default function* buildTextNodes(
   // Get the correct font according to the container style.
   // https://www.w3.org/TR/CSS2/visudet.html
   // @TODO: Support font family fallback based on the glyphs of the font.
-  const resolvedFont = font.getFont(parentStyle as any)
+  const engine = font.getEngine(parentStyle as any)
+
   const baseFontSize = parentStyle.fontSize as number
-  const ascender =
-    (resolvedFont.ascender / resolvedFont.unitsPerEm) * baseFontSize
-  const descender =
-    -(resolvedFont.descender / resolvedFont.unitsPerEm) * baseFontSize
+  const ascender = engine.ascender() * baseFontSize
+  const descender = -engine.descender() * baseFontSize
   const glyphHeight = ascender + descender
   const L = ((lineHeight as number) / 1.2) * baseFontSize - glyphHeight
 
@@ -116,19 +115,24 @@ export default function* buildTextNodes(
   // We can cache the measured width of each word as the measure function will be
   // called multiple times.
   const wordWidthCache = new Map<string, number>()
-  const measureWithCache = (str: string) => {
-    if (wordWidthCache.has(str)) {
-      return wordWidthCache.get(str)
+  const measureWithCache = (segments: string[]) => {
+    let total = 0
+    for (const s of segments) {
+      if (wordWidthCache.has(s)) {
+        total += wordWidthCache.get(s)
+        continue
+      }
+      const width = engine.measure(s, parentStyle as any)
+      wordWidthCache.set(s, width)
+      total += width
     }
-    const width = font.measure(resolvedFont, str, parentStyle as any)
-    wordWidthCache.set(str, width)
-    return width
+    return total
   }
 
   // Calculate the minimal possible width of the parent container so it don't
   // shrink below the content.
   let minWidth = 0
-  let remainingSegment = ''
+  let remainingSegment = []
   let extraWidth = 0
   for (const word of words) {
     let breakSegment = false
@@ -146,8 +150,8 @@ export default function* buildTextNodes(
     }
 
     if (!breakSegment) {
-      if (!wordSeparators.includes(word[0]) || !remainingSegment) {
-        remainingSegment += word === '\n' ? ' ' : word
+      if (!wordSeparators.includes(word[0]) || !remainingSegment.length) {
+        remainingSegment.push(word === '\n' ? ' ' : word)
       }
     } else {
       if (whiteSpace === 'nowrap') {
@@ -159,7 +163,7 @@ export default function* buildTextNodes(
           minWidth = Math.max(minWidth, parentStyle.fontSize as number)
         }
       }
-      remainingSegment = ''
+      remainingSegment = []
     }
   }
   minWidth = Math.max(minWidth, measureWithCache(remainingSegment) + extraWidth)
@@ -196,6 +200,8 @@ export default function* buildTextNodes(
     let currentWidth = 0
     let maxWidth = 0
     let lineIndex = -1
+    let height = 0
+    let maxLineHeight = lineHeightPx
 
     lineWidth = []
     lineSegmentNumber = [0]
@@ -220,7 +226,7 @@ export default function* buildTextNodes(
         if (!remainingSpace) {
           remainingSpace = ' '
         }
-        remainingSpaceWidth = measureWithCache(remainingSpace)
+        remainingSpaceWidth = measureWithCache([remainingSpace])
         wordsInLayout[i] = null
       } else {
         const forceBreak = shouldAlwaysBreakLine && word === '\n'
@@ -228,7 +234,7 @@ export default function* buildTextNodes(
           ? 0
           : graphemeImages && graphemeImages[word]
           ? (parentStyle.fontSize as number)
-          : measureWithCache(word)
+          : measureWithCache([word])
 
         // This is the start of the line, we can ignore all spaces here.
         if (!currentWidth) {
@@ -251,6 +257,7 @@ export default function* buildTextNodes(
           // Start a new line, spaces can be ignored.
           lineWidth.push(currentWidth)
           lines++
+          height += maxLineHeight
           currentWidth = w
           lineSegmentNumber.push(1)
           lineIndex = -1
@@ -289,10 +296,11 @@ export default function* buildTextNodes(
     if (currentWidth) {
       lines++
       lineWidth.push(currentWidth)
+      height += maxLineHeight
     }
 
     // @TODO: Support `line-height`.
-    return { width: maxWidth, height: lines * lineHeightPx }
+    return { width: maxWidth, height }
   })
 
   const [x, y] = yield
@@ -348,8 +356,8 @@ export default function* buildTextNodes(
   let decorationShape = ''
   let mergedPath = ''
   let skippedLine = -1
-  let ellipsisWidth = textOverflow === 'ellipsis' ? measureWithCache('…') : 0
-  let spaceWidth = textOverflow === 'ellipsis' ? measureWithCache(' ') : 0
+  let ellipsisWidth = textOverflow === 'ellipsis' ? measureWithCache(['…']) : 0
+  let spaceWidth = textOverflow === 'ellipsis' ? measureWithCache([' ']) : 0
   let decorationLines: Record<number, null | number[]> = {}
 
   for (let i = 0; i < words.length; i++) {
@@ -410,7 +418,7 @@ export default function* buildTextNodes(
           let subset = ''
           let resolvedWidth = 0
           for (const char of chars) {
-            const w = layout.x + measureWithCache(subset + char)
+            const w = layout.x + measureWithCache([subset + char])
             if (
               // Keep at least one character:
               // > The first character or atomic inline-level element on a line
@@ -435,7 +443,7 @@ export default function* buildTextNodes(
       // For images, we remove the baseline offset.
       topOffset += deltaHeight
     } else if (embedFont) {
-      path = font.getSVG(resolvedFont, word, {
+      path = engine.getSVG(word, {
         ...parentStyle,
         left: left + leftOffset,
         // Since we need to pass the baseline position, add the ascender to the top.
@@ -470,7 +478,7 @@ export default function* buildTextNodes(
       }
     }
 
-    if (path) {
+    if (path !== null) {
       mergedPath += path + ' '
     } else {
       const [t, shape] = text(

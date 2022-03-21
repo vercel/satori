@@ -14,6 +14,46 @@ export interface FontOptions {
   style?: Style
 }
 
+function compareFont(weight, style, [weight1, style1], [weight2, style2]) {
+  if (weight1 !== weight2) {
+    // Put the defined weight first.
+    if (!weight1) return 1
+    if (!weight2) return -1
+
+    // Exact match.
+    if (weight1 === weight) return -1
+    if (weight2 === weight) return 1
+
+    // 400 and 500.
+    if (weight === 400 && weight1 === 500) return -1
+    if (weight === 500 && weight1 === 400) return -1
+    if (weight === 400 && weight2 === 500) return 1
+    if (weight === 500 && weight2 === 400) return 1
+
+    // Less than 400.
+    if (weight < 400) {
+      if (weight1 < weight && weight2 < weight) return weight2 - weight1
+      if (weight1 < weight) return -1
+      if (weight2 < weight) return 1
+      return weight1 - weight2
+    }
+
+    // Greater than 500.
+    if (weight < weight1 && weight < weight2) return weight1 - weight2
+    if (weight < weight1) return -1
+    if (weight < weight2) return 1
+    return weight2 - weight1
+  }
+
+  if (style1 !== style2) {
+    // Exact match.
+    if (style1 === style) return -1
+    if (style2 === style) return 1
+  }
+
+  return -1
+}
+
 export default class FontLoader {
   defaultFont: opentype.Font
   fonts = new Map<string, [opentype.Font, Weight?, Style?][]>()
@@ -35,12 +75,11 @@ export default class FontLoader {
       // We use the first font as the default font fallback.
       if (!this.defaultFont) this.defaultFont = font
 
-      if (!this.fonts.has(fontOption.name)) {
-        this.fonts.set(fontOption.name, [])
+      const name = fontOption.name.toLowerCase()
+      if (!this.fonts.has(name)) {
+        this.fonts.set(name, [])
       }
-      this.fonts
-        .get(fontOption.name)
-        .push([font, fontOption.weight, fontOption.style])
+      this.fonts.get(name).push([font, fontOption.weight, fontOption.style])
     }
   }
 
@@ -61,65 +100,68 @@ export default class FontLoader {
     if (weight === 'normal') weight = 400
     if (weight === 'bold') weight = 700
 
+    const fonts = [...this.fonts.get(name)]
+
+    let matchedFont = fonts[0]
+
     // Fallback to the closest weight and style according to the strategy here:
     // https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight#fallback_weights
-    const fonts = [...this.fonts.get(name)]
-    fonts.sort(([_, weight1, style1], [__, weight2, style2]) => {
-      if (weight1 !== weight2) {
-        // Put the defined weight first.
-        if (!weight1) return 1
-        if (!weight2) return -1
-
-        // Exact match.
-        if (weight1 === weight) return -1
-        if (weight2 === weight) return 1
-
-        // 400 and 500.
-        if (weight === 400 && weight1 === 500) return -1
-        if (weight === 500 && weight1 === 400) return -1
-        if (weight === 400 && weight2 === 500) return 1
-        if (weight === 500 && weight2 === 400) return 1
-
-        // Less than 400.
-        if (weight < 400) {
-          if (weight1 < weight && weight2 < weight) return weight2 - weight1
-          if (weight1 < weight) return -1
-          if (weight2 < weight) return 1
-          return weight1 - weight2
-        }
-
-        // Greater than 500.
-        if (weight < weight1 && weight < weight2) return weight1 - weight2
-        if (weight < weight1) return -1
-        if (weight < weight2) return 1
-        return weight2 - weight1
+    for (let i = 1; i < fonts.length; i++) {
+      const [, weight1, style1] = matchedFont
+      const [, weight2, style2] = fonts[i]
+      if (
+        compareFont(weight, style, [weight1, style1], [weight2, style2]) > 0
+      ) {
+        matchedFont = fonts[i]
       }
+    }
 
-      if (style1 !== style2) {
-        // Exact match.
-        if (style1 === style) return -1
-        if (style2 === style) return 1
-      }
-
-      return -1
-    })
-    return fonts[0][0]
+    return matchedFont[0]
   }
 
-  public getFont({
+  public getEngine({
     fontFamily,
     fontWeight = 400,
     fontStyle = 'normal',
   }: {
-    fontFamily: string
+    fontFamily: string | string[]
     fontWeight?: Weight | WeigthName
     fontStyle?: Style
   }) {
-    return this.get({
-      name: fontFamily,
-      weight: fontWeight,
-      style: fontStyle,
-    })
+    const fonts = (Array.isArray(fontFamily) ? fontFamily : [fontFamily]).map(
+      (face) =>
+        this.get({
+          name: face,
+          weight: fontWeight,
+          style: fontStyle,
+        })
+    )
+
+    const resolveFont = (segment: string) =>
+      fonts.find((font, index) => {
+        return !!font.charToGlyphIndex(segment[0]) || index === fonts.length - 1
+      })
+
+    return {
+      ascender: () => {
+        return fonts[0].ascender / fonts[0].unitsPerEm
+      },
+      descender: () => {
+        return fonts[0].descender / fonts[0].unitsPerEm
+      },
+      glyphHeight: () => {},
+      offset: () => {},
+      measure: (s: string, style: any) => {
+        // Find the first font that supports rendering this segment, or fallback
+        // to use the last one.
+        const resolvedFont = resolveFont(s)
+        return this.measure(resolvedFont, s, style)
+      },
+      getSVG: (s: string, style: any) => {
+        const resolvedFont = resolveFont(s)
+        return this.getSVG(resolvedFont, s, style)
+      },
+    }
   }
 
   public measure(
@@ -133,8 +175,6 @@ export default class FontLoader {
       letterSpacing: number
     }
   ) {
-    // console.log(font.charToGlyphIndex('✅') !== 0)
-
     return font.getAdvanceWidth(content, fontSize, {
       letterSpacing: letterSpacing / fontSize,
     })

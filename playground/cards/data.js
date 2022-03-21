@@ -307,4 +307,18 @@ export default {
     </div>
   </div>
 </div>`,
+  Fonts: `<div
+  style={{
+    display: 'flex',
+    height: '100%',
+    width: '100%',
+    alignItems: 'center',
+    alignContent: 'center',
+    justifyContent: 'center',
+    fontFamily: '"Material Icons", "Noto Sans SC", Inter',
+    fontSize: 60
+  }}
+>
+  Hello 你好! &#xE87C;
+</div>`,
 }
