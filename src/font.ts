@@ -124,16 +124,17 @@ export default class FontLoader {
     fontWeight = 400,
     fontStyle = 'normal',
   }: {
-    fontFamily: string[]
+    fontFamily: string | string[]
     fontWeight?: Weight | WeigthName
     fontStyle?: Style
   }) {
-    const fonts = fontFamily.map((face) =>
-      this.get({
-        name: face,
-        weight: fontWeight,
-        style: fontStyle,
-      })
+    const fonts = (Array.isArray(fontFamily) ? fontFamily : [fontFamily]).map(
+      (face) =>
+        this.get({
+          name: face,
+          weight: fontWeight,
+          style: fontStyle,
+        })
     )
 
     const resolveFont = (segment: string) =>
