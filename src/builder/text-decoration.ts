@@ -30,9 +30,9 @@ export default function decoration(
 
   const y =
     textDecorationLine === 'line-through'
-      ? top + ascender * 0.75
+      ? top + ascender * 0.5
       : textDecorationLine === 'underline'
-      ? top + ascender * 1.25
+      ? top + ascender * 1.1
       : top
 
   const dasharray =

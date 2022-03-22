@@ -119,15 +119,19 @@ export default class FontLoader {
     return matchedFont[0]
   }
 
-  public getEngine({
-    fontFamily,
-    fontWeight = 400,
-    fontStyle = 'normal',
-  }: {
-    fontFamily: string | string[]
-    fontWeight?: Weight | WeigthName
-    fontStyle?: Style
-  }) {
+  public getEngine(
+    fontSize = 16,
+    lineHeight = 1.2,
+    {
+      fontFamily,
+      fontWeight = 400,
+      fontStyle = 'normal',
+    }: {
+      fontFamily: string | string[]
+      fontWeight?: Weight | WeigthName
+      fontStyle?: Style
+    }
+  ) {
     const fonts = (Array.isArray(fontFamily) ? fontFamily : [fontFamily]).map(
       (face) =>
         this.get({
@@ -137,20 +141,62 @@ export default class FontLoader {
         })
     )
 
-    const resolveFont = (segment: string) =>
-      fonts.find((font, index) => {
-        return !!font.charToGlyphIndex(segment[0]) || index === fonts.length - 1
+    const cachedFontResolver = new Map<string, opentype.Font>()
+    const resolveFont = (segment: string) => {
+      const s = segment[0]
+      if (cachedFontResolver.has(s)) {
+        return cachedFontResolver.get(s)
+      }
+      const font = fonts.find((font, index) => {
+        return !!font.charToGlyphIndex(s) || index === fonts.length - 1
       })
+      cachedFontResolver.set(s, font)
+      return font
+    }
 
-    return {
-      ascender: () => {
-        return fonts[0].ascender / fonts[0].unitsPerEm
+    const ascender = (resolvedFont: opentype.Font, useOS2Table = false) => {
+      const ascender =
+        (useOS2Table ? resolvedFont.tables?.os2?.sTypoAscender : 0) ||
+        resolvedFont.ascender
+      return (ascender / resolvedFont.unitsPerEm) * fontSize
+    }
+    const descender = (resolvedFont: opentype.Font, useOS2Table = false) => {
+      const descender =
+        (useOS2Table ? resolvedFont.tables?.os2?.sTypoDescender : 0) ||
+        resolvedFont.descender
+      return (descender / resolvedFont.unitsPerEm) * fontSize
+    }
+
+    const engine = {
+      baseline: (
+        s?: string,
+        resolvedFont = typeof s === 'undefined' ? fonts[0] : resolveFont(s)
+      ) => {
+        // https://www.w3.org/TR/CSS2/visudet.html#leading
+        // Note. It is recommended that implementations that use OpenType or
+        // TrueType fonts use the metrics "sTypoAscender" and "sTypoDescender"
+        // from the font's OS/2 table for A and D (after scaling to the current
+        // element's font size). In the absence of these metrics, the "Ascent"
+        // and "Descent" metrics from the HHEA table should be used.
+        const A = ascender(resolvedFont, true)
+        const D = descender(resolvedFont, true)
+        const sGlyphHeight = A - D
+        const glyphHeight = engine.glyphHeight(s, resolvedFont)
+        const sTypoOffset = (glyphHeight - sGlyphHeight) / 2
+        const { yMax, yMin } = resolvedFont.tables.head
+        const baseline = yMax / (yMax - yMin)
+
+        return sTypoOffset + baseline * glyphHeight
       },
-      descender: () => {
-        return fonts[0].descender / fonts[0].unitsPerEm
+      glyphHeight: (
+        s?: string,
+        resolvedFont = typeof s === 'undefined' ? fonts[0] : resolveFont(s)
+      ) => {
+        return (
+          ((ascender(resolvedFont) - descender(resolvedFont)) * lineHeight) /
+          1.2
+        )
       },
-      glyphHeight: () => {},
-      offset: () => {},
       measure: (s: string, style: any) => {
         // Find the first font that supports rendering this segment, or fallback
         // to use the last one.
@@ -162,6 +208,8 @@ export default class FontLoader {
         return this.getSVG(resolvedFont, s, style)
       },
     }
+
+    return engine
   }
 
   public measure(

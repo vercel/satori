@@ -86,23 +86,21 @@ export default function* buildTextNodes(
     _inheritedBackgroundClipTextPath,
   } = parentStyle
 
+  const baseFontSize = parentStyle.fontSize as number
+
   // Get the correct font according to the container style.
   // https://www.w3.org/TR/CSS2/visudet.html
   // @TODO: Support font family fallback based on the glyphs of the font.
-  const engine = font.getEngine(parentStyle as any)
-
-  const baseFontSize = parentStyle.fontSize as number
-  const ascender = engine.ascender() * baseFontSize
-  const descender = -engine.descender() * baseFontSize
-  const glyphHeight = ascender + descender
-  const L = ((lineHeight as number) / 1.2) * baseFontSize - glyphHeight
-
-  const lineHeightPx = (glyphHeight * (lineHeight as number)) / 1.2
-  const deltaHeight = ((parentStyle.fontSize as number) - glyphHeight) / 2
+  const engine = font.getEngine(
+    baseFontSize,
+    lineHeight as number,
+    parentStyle as any
+  )
 
   // Compute the layout.
   // @TODO: Use segments instead of words to properly support kerning.
-  let lineWidth = []
+  let lineWidths = []
+  let baselines = []
   let lineSegmentNumber = []
   let wordsInLayout: (null | {
     x: number
@@ -201,9 +199,10 @@ export default function* buildTextNodes(
     let maxWidth = 0
     let lineIndex = -1
     let height = 0
-    let maxLineHeight = lineHeightPx
+    let currentLineHeight = 0
+    let currentBaselineOffset = 0
 
-    lineWidth = []
+    lineWidths = []
     lineSegmentNumber = [0]
 
     // We naively implement the width calculation without proper kerning.
@@ -255,10 +254,13 @@ export default function* buildTextNodes(
             whiteSpace !== 'pre')
         ) {
           // Start a new line, spaces can be ignored.
-          lineWidth.push(currentWidth)
+          lineWidths.push(currentWidth)
+          baselines.push(currentBaselineOffset)
           lines++
-          height += maxLineHeight
+          height += currentLineHeight
           currentWidth = w
+          currentLineHeight = w ? engine.glyphHeight(word) : 0
+          currentBaselineOffset = w ? engine.baseline(word) : 0
           lineSegmentNumber.push(1)
           lineIndex = -1
 
@@ -271,6 +273,12 @@ export default function* buildTextNodes(
         } else {
           // It fits into the current line.
           currentWidth += remainingSpaceWidth + w
+          const glyphHeight = engine.glyphHeight(word)
+          if (glyphHeight > currentLineHeight) {
+            // Use the baseline of the heighest segment as the baseline of the line.
+            currentLineHeight = glyphHeight
+            currentBaselineOffset = engine.baseline(word)
+          }
           if (allowedToJustify) {
             lineSegmentNumber[lineSegmentNumber.length - 1]++
           }
@@ -285,7 +293,7 @@ export default function* buildTextNodes(
 
         maxWidth = Math.max(maxWidth, currentWidth)
         wordsInLayout[i] = {
-          y: lines * lineHeightPx - deltaHeight,
+          y: height,
           x: currentWidth - w,
           width: w,
           line: lines,
@@ -295,8 +303,9 @@ export default function* buildTextNodes(
     }
     if (currentWidth) {
       lines++
-      lineWidth.push(currentWidth)
-      height += maxLineHeight
+      lineWidths.push(currentWidth)
+      baselines.push(currentBaselineOffset)
+      height += currentLineHeight
     }
 
     // @TODO: Support `line-height`.
@@ -355,6 +364,7 @@ export default function* buildTextNodes(
 
   let decorationShape = ''
   let mergedPath = ''
+  let extra = ''
   let skippedLine = -1
   let ellipsisWidth = textOverflow === 'ellipsis' ? measureWithCache(['…']) : 0
   let spaceWidth = textOverflow === 'ellipsis' ? measureWithCache([' ']) : 0
@@ -382,17 +392,17 @@ export default function* buildTextNodes(
     // When `text-align` is `justify`, the width of the line will be adjusted.
     let extendedWidth = false
 
-    if (lineWidth.length > 1) {
+    if (lineWidths.length > 1) {
       // Calculate alignment. Note that for flexbox, there is only text
       // alignment when the container is multi-line.
-      const remainingWidth = containerWidth - lineWidth[line]
+      const remainingWidth = containerWidth - lineWidths[line]
       if (textAlign === 'right' || textAlign === 'end') {
         leftOffset += remainingWidth
       } else if (textAlign === 'center') {
         leftOffset += remainingWidth / 2
       } else if (textAlign === 'justify') {
         // Don't justify the last line.
-        if (line < lineWidth.length - 1) {
+        if (line < lineWidths.length - 1) {
           const segments = lineSegmentNumber[line]
           const gutter = segments > 1 ? remainingWidth / (segments - 1) : 0
           leftOffset += gutter * layout.lineIndex
@@ -404,12 +414,12 @@ export default function* buildTextNodes(
     if (!decorationLines[line]) {
       decorationLines[line] = [
         leftOffset,
-        extendedWidth ? containerWidth : lineWidth[line],
+        extendedWidth ? containerWidth : lineWidths[line],
       ]
     }
 
     if (textOverflow === 'ellipsis') {
-      if (lineWidth[line] > parentContainerInnerWidth) {
+      if (lineWidths[line] > parentContainerInnerWidth) {
         if (
           layout.x + width + ellipsisWidth + spaceWidth >
           parentContainerInnerWidth
@@ -439,22 +449,53 @@ export default function* buildTextNodes(
       }
     }
 
+    const baselineOfLine = baselines[line]
+    const baselineOfWord = engine.baseline(word)
+    const heightOfWord = engine.glyphHeight(word)
+    const baselineDelta = baselineOfLine - baselineOfWord
+
     if (image) {
       // For images, we remove the baseline offset.
-      topOffset += deltaHeight
+      topOffset += 0
     } else if (embedFont) {
       path = engine.getSVG(word, {
         ...parentStyle,
         left: left + leftOffset,
         // Since we need to pass the baseline position, add the ascender to the top.
-        top: top + topOffset + ascender + L / 2,
+        top: top + topOffset + baselineOfWord + baselineDelta,
         letterSpacing: parentStyle.letterSpacing,
       } as any)
+
+      if (debug) {
+        extra +=
+          buildXMLString('rect', {
+            x: left + leftOffset,
+            y: top + topOffset + baselineDelta,
+            width: layout.width,
+            height: heightOfWord,
+            fill: 'transparent',
+            stroke: '#575eff',
+            'stroke-width': 1,
+            transform: matrix ? matrix : undefined,
+            'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+          }) +
+          // Baseline
+          buildXMLString('line', {
+            x1: left + leftOffset,
+            x2: left + leftOffset + layout.width,
+            y1: top + topOffset + baselineDelta + baselineOfWord,
+            y2: top + topOffset + baselineDelta + baselineOfWord,
+            stroke: '#14c000',
+            'stroke-width': 1,
+            transform: matrix ? matrix : undefined,
+            'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+          })
+      }
     } else {
       // We need manually add the font ascender height to ensure it starts
       // at the baseline because <text>'s alignment baseline is set to `hanging`
       // by default and supported to change in SVG 1.1.
-      topOffset += ascender + L / 2
+      topOffset += baselineOfWord + baselineDelta
     }
 
     // Get the decoration shape.
@@ -466,9 +507,9 @@ export default function* buildTextNodes(
           decorationShape += decoration(
             {
               left: left + deco[0],
-              top: top + lineHeightPx * +line,
+              top: top + heightOfWord * +line,
               width: deco[1],
-              ascender: ascender + L / 2,
+              ascender: engine.baseline(word),
               clipPathId,
             },
             parentStyle
@@ -489,7 +530,7 @@ export default function* buildTextNodes(
           left: left + leftOffset,
           top: top + topOffset,
           width,
-          height: lineHeightPx,
+          height: heightOfWord,
           matrix,
           opacity,
           image,
@@ -508,21 +549,6 @@ export default function* buildTextNodes(
 
   // Embed the font as path.
   if (mergedPath) {
-    let extra = ''
-    if (debug) {
-      extra = buildXMLString('rect', {
-        x: left,
-        y: top,
-        width: containerWidth,
-        height: containerHeight,
-        fill: 'transparent',
-        stroke: '#575eff',
-        'stroke-width': 1,
-        transform: matrix ? matrix : undefined,
-        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-      })
-    }
-
     const p =
       parentStyle.color !== 'transparent' && opacity !== 0
         ? buildXMLString('path', {
