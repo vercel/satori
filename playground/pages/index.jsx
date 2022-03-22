@@ -10,7 +10,7 @@ import cards from '../cards/data'
 async function init() {
   if (typeof window === 'undefined') return []
 
-  const [font, fontBold, fontIcon, fontNotoSansSCSubset] =
+  const [font, fontBold, fontIcon, fontNotoSansSCSubset, fontNotoSansJPSubset] =
     window.__fonts ||
     (window.__fonts = await Promise.all(
       (
@@ -26,6 +26,9 @@ async function init() {
           ),
           fetch(
             'https://fonts.gstatic.com/l/font?kit=k3kXo84MPvpLmixcA63oeALhL5CLFbJeFwkn&skey=cf0bb10b5602fdc3&v=v24'
+          ),
+          fetch(
+            'https://fonts.gstatic.com/l/font?kit=-F62fjtqLzI2JPCgQBnw7HFowBoFMdb2ZGu091jLLBpdNTas&skey=72472b0eb8793570&v=v40'
           ),
         ])
       ).map((res) => res.arrayBuffer())
@@ -53,6 +56,12 @@ async function init() {
     {
       name: 'Noto Sans SC',
       data: fontNotoSansSCSubset,
+      weight: 400,
+      style: 'normal',
+    },
+    {
+      name: 'Noto Sans JP',
+      data: fontNotoSansJPSubset,
       weight: 400,
       style: 'normal',
     },
@@ -198,7 +207,7 @@ const LiveSatori = withLive(function ({ live }) {
                     <>
                       <style
                         dangerouslySetInnerHTML={{
-                          __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700');*{box-sizing:border-box}body{display:flex;height:100%;margin:0;font-family:Inter,sans-serif;align-items:center;justify-content:center;background:white;overflow:hidden}`,
+                          __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');*{box-sizing:border-box}body{display:flex;height:100%;margin:0;font-family:Inter,sans-serif;align-items:center;justify-content:center;background:white;overflow:hidden}`,
                         }}
                       />
                       {live.element ? <live.element /> : null}

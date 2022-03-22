@@ -80,9 +80,9 @@ export default function text(
   if (debug) {
     extra = buildXMLString('rect', {
       x: left,
-      y: top,
+      y: top - height,
       width,
-      height: 0.5,
+      height,
       fill: 'transparent',
       stroke: '#575eff',
       'stroke-width': 1,

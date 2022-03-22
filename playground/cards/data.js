@@ -312,13 +312,20 @@ export default {
     display: 'flex',
     height: '100%',
     width: '100%',
+    padding: '10px 20px',
     alignItems: 'center',
     alignContent: 'center',
     justifyContent: 'center',
-    fontFamily: '"Material Icons", "Noto Sans SC", Inter',
-    fontSize: 60
+    fontFamily: 'Inter, "Material Icons", "Noto Sans SC", "Noto Sans JP"',
+    fontSize: 50
   }}
 >
-  Hello 你好! &#xE87C;
-</div>`,
+  Hello! 你好! &#xe766; Hi! こんにちは!
+</div>
+
+/**
+* Note that the "Noto Sans SC" and "Noto Sans JP" fonts are subsetted with only
+* the currently used characters in this demo.
+*/
+`,
 }
