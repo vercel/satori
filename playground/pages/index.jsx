@@ -142,28 +142,40 @@ const LiveSatori = withLive(function ({ live }) {
     updateScaleRatio()
   }, [width, height])
 
-  let result = ''
-  let renderedTimeSpent
-  if (live.element && options) {
-    const start = (
-      typeof performance !== 'undefined' ? performance : Date
-    ).now()
-    if (!native) {
-      try {
-        result = satori(live.element.prototype.render(), {
-          ...options,
-          embedFont: fontEmbed,
-          width,
-          height,
-          debug,
-        })
-      } catch (e) {
-        return null
+  const [result, setResult] = useState('')
+  const [renderedTimeSpent, setRenderTime] = useState()
+
+  useEffect(() => {
+    ;(async () => {
+      let _result = ''
+      let _renderedTimeSpent
+
+      if (live.element && options) {
+        const start = (
+          typeof performance !== 'undefined' ? performance : Date
+        ).now()
+        if (!native) {
+          try {
+            _result = await satori(live.element.prototype.render(), {
+              ...options,
+              embedFont: fontEmbed,
+              width,
+              height,
+              debug,
+            })
+          } catch (e) {
+            return null
+          }
+        }
+        _renderedTimeSpent =
+          (typeof performance !== 'undefined' ? performance : Date).now() -
+          start
       }
-    }
-    renderedTimeSpent =
-      (typeof performance !== 'undefined' ? performance : Date).now() - start
-  }
+
+      setResult(_result)
+      setRenderTime(_renderedTimeSpent)
+    })()
+  }, [live.element, options, width, height, debug])
 
   return (
     <>

@@ -9,7 +9,7 @@ Satori translates the layout and styles of HTML & CSS based elements into an SVG
 ```jsx
 import satori from 'satori'
 
-satori(
+const svg = await satori(
   <div style={{ color: 'black' }}>hello, world</div>,
   {
     width: 600,
@@ -55,7 +55,7 @@ elements (see section below), or custom React components, but React APIs such as
 If you don't have JSX transpiler enabled, you can simply pass [React-elements-like objects](https://reactjs.org/docs/introducing-jsx.html) that have `type`, `props.children` and `props.style` (and other properties too) directly:
 
 ```js
-satori(
+await satori(
   {
     type: 'div',
     props: {
@@ -82,7 +82,7 @@ You can find the list of supported HTML elements and their preset styles [here](
 You can use `<img>` to embed images but `src`, `width`, and `height` attributes are all required.
 
 ```jsx
-satori(
+await satori(
   <img src="https://picsum.photos/200/300" width={200} height={300} />,
   options
 )
@@ -97,7 +97,7 @@ If you want to render the generated SVG to another image format such as PNG, it 
 To render custom images for specific graphemes, you can use `graphemeImages` option to map the grapheme to an image source:
 
 ```jsx
-satori(
+await satori(
   <div>Next.js is 🤯!</div>,
   {
     ...,
@@ -166,6 +166,12 @@ Note:
 3. `box-sizing` is set to `border-box` for all elements.
 4. `calc` isn't supported.
 5. `overflow: hidden` and `transform` can't be used together.
+
+### Typography
+
+Advanced typography features such as kerning, ligatures and other OpenType features are not currently supported. 
+
+RTL languages are not supported either.
 
 ## Contribute
 

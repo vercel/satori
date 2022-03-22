@@ -19,10 +19,10 @@ export interface SatoriOptions {
 
 export { init }
 
-export default function satori(
+export default async function satori(
   element: ReactNode,
   options: SatoriOptions
-): string {
+): Promise<string> {
   const Yoga = getYoga()
   if (!Yoga) throw new Error('Satori is not initialized.')
 
