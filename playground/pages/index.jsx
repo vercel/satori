@@ -207,7 +207,7 @@ const LiveSatori = withLive(function ({ live }) {
                     <>
                       <style
                         dangerouslySetInnerHTML={{
-                          __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');*{box-sizing:border-box}body{display:flex;height:100%;margin:0;font-family:Inter,sans-serif;align-items:center;justify-content:center;background:white;overflow:hidden}`,
+                          __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP&text=%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF');@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC&text=%E4%BD%A0%E5%A5%BD');*{box-sizing:border-box}body{display:flex;height:100%;margin:0;font-family:Inter,sans-serif;align-items:center;justify-content:center;background:white;overflow:hidden}`,
                         }}
                       />
                       {live.element ? <live.element /> : null}
