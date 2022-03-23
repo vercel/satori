@@ -20,11 +20,13 @@ async function loadDynamicGoogleFont(
   code: string,
   text: string
 ): Promise<FontOptions> {
-  console.log(code, text)
-
   if (languageFontMap[code]) {
     const data = await (
-      await fetch(`/api/font?font=${languageFontMap[code]}&text=${text}`)
+      await fetch(
+        `/api/font?font=${languageFontMap[code]}&text=${encodeURIComponent(
+          text
+        )}`
+      )
     ).arrayBuffer()
 
     if (data) {
