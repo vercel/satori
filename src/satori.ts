@@ -8,22 +8,33 @@ import FontLoader, { FontOptions } from './font'
 import svg from './builder/svg'
 import { segment } from './utils'
 
-// @TODO: Support font style and weights.
-async function loadDynamicGoogleFont(code: string, text: string) {
+// @TODO: Support font style and weights, and make this option extensible rather
+// than built-in.
+// @TODO: Cover most languages with Noto Sans.
+// @TODO: Fix CJK missing punctuations, maybe inline guessLanguage?
+const languageFontMap = {
+  zh: 'Noto+Sans+SC',
+  ja: 'Noto+Sans+JP',
+}
+async function loadDynamicGoogleFont(
+  code: string,
+  text: string
+): Promise<FontOptions> {
   console.log(code, text)
-  if (code === 'zh') {
-    const css = await (
-      await fetch(
-        `https://fonts.googleapis.com/css2?family=Noto+Sans+SC&text=${text}`,
-        {
-          headers: new Headers({
-            'User-Agent': 'Satori',
-          }),
-        }
-      )
-    ).text()
 
-    console.log(css)
+  if (languageFontMap[code]) {
+    const data = await (
+      await fetch(`/api/font?font=${languageFontMap[code]}&text=${text}`)
+    ).arrayBuffer()
+
+    if (data) {
+      return {
+        name: `satori_${code}_fallback_${text}`,
+        data,
+        weight: 400,
+        style: 'normal',
+      }
+    }
   }
 }
 
@@ -48,7 +59,7 @@ export default async function satori(
   const Yoga = getYoga()
   if (!Yoga) throw new Error('Satori is not initialized.')
 
-  let font
+  let font: FontLoader
   if (fontCache.has(options.fonts)) {
     font = fontCache.get(options.fonts)
   } else {
@@ -64,8 +75,6 @@ export default async function satori(
   root.setAlignItems(Yoga.ALIGN_FLEX_START)
   root.setJustifyContent(Yoga.JUSTIFY_FLEX_START)
   root.setOverflow(Yoga.OVERFLOW_HIDDEN)
-
-  let additionalFonts = []
 
   const handler = layout(element, {
     id: 'id',
@@ -89,14 +98,9 @@ export default async function satori(
     embedFont: options.embedFont,
     debug: options.debug,
     graphemeImages: options.graphemeImages,
-
-    // Internal context.
-    _loadAdditionalFonts: () => {
-      return additionalFonts
-    },
   })
 
-  let segmentsMissingFont = handler.next().value as string[]
+  let segmentsMissingFont = handler.next([1, 1]).value as string[]
   if (segmentsMissingFont.length) {
     // Potentially CJK fonts are missing.
     segmentsMissingFont = [
@@ -111,12 +115,14 @@ export default async function satori(
       })
     )
 
-    additionalFonts = await Promise.all(
-      Object.entries(langaugeCodes)
-        .map(([code, segments]) =>
-          loadDynamicGoogleFont(code, segments.join(''))
+    font.addFonts(
+      (
+        await Promise.all(
+          Object.entries(langaugeCodes).map(([code, segments]) =>
+            loadDynamicGoogleFont(code, segments.join(''))
+          )
         )
-        .filter(Boolean)
+      ).filter(Boolean)
     )
   }
 

@@ -60,6 +60,46 @@ export default class FontLoader {
   defaultFont: opentype.Font
   fonts = new Map<string, [opentype.Font, Weight?, Style?][]>()
   constructor(fontOptions: FontOptions[]) {
+    this.addFonts(fontOptions)
+  }
+
+  // Get font by name and weight.
+  private get({
+    name,
+    weight,
+    style,
+  }: {
+    name: string
+    weight: Weight | WeigthName
+    style: Style
+  }) {
+    if (!this.fonts.has(name)) {
+      return null
+    }
+
+    if (weight === 'normal') weight = 400
+    if (weight === 'bold') weight = 700
+
+    const fonts = [...this.fonts.get(name)]
+
+    let matchedFont = fonts[0]
+
+    // Fallback to the closest weight and style according to the strategy here:
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight#fallback_weights
+    for (let i = 1; i < fonts.length; i++) {
+      const [, weight1, style1] = matchedFont
+      const [, weight2, style2] = fonts[i]
+      if (
+        compareFont(weight, style, [weight1, style1], [weight2, style2]) > 0
+      ) {
+        matchedFont = fonts[i]
+      }
+    }
+
+    return matchedFont[0]
+  }
+
+  public addFonts(fontOptions: FontOptions[]) {
     for (const fontOption of fontOptions) {
       const data = fontOption.data
       const font = opentype.parse(
@@ -85,42 +125,6 @@ export default class FontLoader {
     }
   }
 
-  // Get font by name and weight.
-  private get({
-    name,
-    weight,
-    style,
-  }: {
-    name: string
-    weight: Weight | WeigthName
-    style: Style
-  }) {
-    if (!this.fonts.has(name)) {
-      return this.defaultFont
-    }
-
-    if (weight === 'normal') weight = 400
-    if (weight === 'bold') weight = 700
-
-    const fonts = [...this.fonts.get(name)]
-
-    let matchedFont = fonts[0]
-
-    // Fallback to the closest weight and style according to the strategy here:
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight#fallback_weights
-    for (let i = 1; i < fonts.length; i++) {
-      const [, weight1, style1] = matchedFont
-      const [, weight2, style2] = fonts[i]
-      if (
-        compareFont(weight, style, [weight1, style1], [weight2, style2]) > 0
-      ) {
-        matchedFont = fonts[i]
-      }
-    }
-
-    return matchedFont[0]
-  }
-
   public getEngine(
     fontSize = 16,
     lineHeight = 1.2,
@@ -134,14 +138,28 @@ export default class FontLoader {
       fontStyle?: Style
     }
   ) {
-    const fonts = (Array.isArray(fontFamily) ? fontFamily : [fontFamily]).map(
-      (face) =>
+    fontFamily = Array.isArray(fontFamily) ? fontFamily : [fontFamily]
+    const fonts = fontFamily
+      .map((face) =>
         this.get({
           name: face,
           weight: fontWeight,
           style: fontStyle,
         })
-    )
+      )
+      .filter(Boolean)
+
+    // Add additional fonts as the fallback.
+    for (const name of this.fonts.keys()) {
+      if (fontFamily.includes(name)) continue
+      fonts.push(
+        this.get({
+          name,
+          weight: fontWeight,
+          style: fontStyle,
+        })
+      )
+    }
 
     const cachedFontResolver = new Map<string, opentype.Font | undefined>()
     const resolveFont = (word: string, fallback = true) => {

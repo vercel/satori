@@ -23,7 +23,6 @@ export interface LayoutContext {
   embedFont: boolean
   debug?: boolean
   graphemeImages?: Record<string, string>
-  _loadAdditionalFonts: () => opentype.Font[]
 }
 
 export default function* layout(
@@ -39,11 +38,11 @@ export default function* layout(
     debug,
     embedFont = true,
     graphemeImages,
-    _loadAdditionalFonts,
   } = context
 
   // 1. Pre-process the node.
   if (element === null || typeof element === 'undefined') {
+    yield
     yield
     return ''
   }
@@ -130,13 +129,12 @@ export default function* layout(
       embedFont,
       debug,
       graphemeImages,
-      _loadAdditionalFonts,
     })
     segmentsMissingFont.push(...iter.next().value)
-    iter.next()
     iterators.push(iter)
   }
   yield segmentsMissingFont
+  for (const iter of iterators) iter.next()
 
   // 3. Post-process the node.
   const [x, y] = yield
