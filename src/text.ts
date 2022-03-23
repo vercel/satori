@@ -97,6 +97,9 @@ export default function* buildTextNodes(
     parentStyle as any
   )
 
+  // Yield segments that are missing a font.
+  yield words.filter((word) => !engine.resolve(word))
+
   // Compute the layout.
   // @TODO: Use segments instead of words to properly support kerning.
   let lineWidths = []

@@ -55,6 +55,7 @@
     "css-background-parser": "^0.1.0",
     "css-line-break": "^2.1.0",
     "css-to-react-native": "^3.0.0",
+    "guesslanguage": "^0.2.0",
     "parse-css-dimension": "^1.1.0",
     "postcss-value-parser": "^4.2.0",
     "text-segmentation": "^1.0.3",

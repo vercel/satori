@@ -3,6 +3,8 @@
  */
 import opentype from '@shuding/opentype.js'
 
+import { segment } from './utils'
+
 type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
 type WeigthName = 'normal' | 'bold'
 type Style = 'normal' | 'italic'
@@ -141,16 +143,23 @@ export default class FontLoader {
         })
     )
 
-    const cachedFontResolver = new Map<string, opentype.Font>()
-    const resolveFont = (segment: string) => {
-      const s = segment[0]
-      if (cachedFontResolver.has(s)) {
-        return cachedFontResolver.get(s)
-      }
+    const cachedFontResolver = new Map<string, opentype.Font | undefined>()
+    const resolveFont = (word: string, fallback = true) => {
+      if (cachedFontResolver.has(word)) return cachedFontResolver.get(word)
+
+      const s = segment(word, 'grapheme')[0]
+      if (cachedFontResolver.has(s)) return cachedFontResolver.get(s)
+
       const font = fonts.find((font, index) => {
-        return !!font.charToGlyphIndex(s) || index === fonts.length - 1
+        return (
+          !!font.charToGlyphIndex(s) || (fallback && index === fonts.length - 1)
+        )
       })
-      cachedFontResolver.set(s, font)
+
+      if (font) {
+        cachedFontResolver.set(s, font)
+        cachedFontResolver.set(word, font)
+      }
       return font
     }
 
@@ -168,6 +177,9 @@ export default class FontLoader {
     }
 
     const engine = {
+      resolve: (s: string) => {
+        return resolveFont(s, false)
+      },
       baseline: (
         s?: string,
         resolvedFont = typeof s === 'undefined' ? fonts[0] : resolveFont(s)

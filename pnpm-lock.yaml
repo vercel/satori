@@ -13,6 +13,7 @@ importers:
       css-background-parser: ^0.1.0
       css-line-break: ^2.1.0
       css-to-react-native: ^3.0.0
+      guesslanguage: ^0.2.0
       parse-css-dimension: ^1.1.0
       postcss-value-parser: ^4.2.0
       react: ^17.0.2
@@ -26,6 +27,7 @@ importers:
       css-background-parser: 0.1.0
       css-line-break: 2.1.0
       css-to-react-native: 3.0.0
+      guesslanguage: 0.2.0
       parse-css-dimension: 1.1.0
       postcss-value-parser: 4.2.0
       text-segmentation: 1.0.3
@@ -1092,6 +1094,11 @@ packages:
       merge2: 1.4.1
       slash: 3.0.0
     dev: true
+
+  /guesslanguage/0.2.0:
+    resolution: {integrity: sha1-5eR1ij11G6TdI/SaMx3PIuKQA4w=}
+    engines: {node: '>= 0.4'}
+    dev: false
 
   /has-flag/3.0.0:
     resolution: {integrity: sha1-tdRU3CGZriJWmfNGfloH87lVuv0=}

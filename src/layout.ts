@@ -23,12 +23,13 @@ export interface LayoutContext {
   embedFont: boolean
   debug?: boolean
   graphemeImages?: Record<string, string>
+  _loadAdditionalFonts: () => opentype.Font[]
 }
 
 export default function* layout(
   element: ReactNode,
   context: LayoutContext
-): Generator<undefined, string, [number, number]> {
+): Generator<string[], string, [number, number]> {
   const Yoga = getYoga()
   const {
     id,
@@ -38,6 +39,7 @@ export default function* layout(
     debug,
     embedFont = true,
     graphemeImages,
+    _loadAdditionalFonts,
   } = context
 
   // 1. Pre-process the node.
@@ -53,6 +55,7 @@ export default function* layout(
     if (!isReactElement(element)) {
       // Process as text node.
       iter = layoutText(String(element), context)
+      yield iter.next().value as string[]
     } else {
       if (isClass(element.type as Function)) {
         throw new Error('Class component is not supported.')
@@ -62,11 +65,12 @@ export default function* layout(
       // So we can safely evaluate it to render. Otherwise, an error will be
       // thrown by React.
       iter = layout((element.type as Function)(element.props), context)
+      yield iter.next().value as string[]
     }
 
     iter.next()
     const offset = yield
-    return iter.next(offset).value
+    return iter.next(offset).value as string
   }
 
   // Process as element.
@@ -114,6 +118,7 @@ export default function* layout(
   const iterators: ReturnType<typeof layout>[] = []
 
   let i = 0
+  const segmentsMissingFont: string[] = []
   for (const child of normalizedChildren) {
     const iter = layout(child, {
       id: id + '-' + i++,
@@ -125,10 +130,13 @@ export default function* layout(
       embedFont,
       debug,
       graphemeImages,
+      _loadAdditionalFonts,
     })
+    segmentsMissingFont.push(...iter.next().value)
     iter.next()
     iterators.push(iter)
   }
+  yield segmentsMissingFont
 
   // 3. Post-process the node.
   const [x, y] = yield
