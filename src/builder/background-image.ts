@@ -137,6 +137,9 @@ export default function backgroundImage(
   { id, width, height }: { id: string; width: number; height: number },
   { image, size, position, repeat }: Background
 ): string[] {
+  // Default to `repeat`.
+  repeat = repeat || 'repeat'
+
   const repeatX = repeat === 'repeat-x' || repeat === 'repeat'
   const repeatY = repeat === 'repeat-y' || repeat === 'repeat'
 

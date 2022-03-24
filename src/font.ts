@@ -161,22 +161,20 @@ export default class FontLoader {
       )
     }
 
-    const cachedFontResolver = new Map<string, opentype.Font | undefined>()
+    const cachedFontResolver = new Map<number, opentype.Font | undefined>()
     const resolveFont = (word: string, fallback = true) => {
-      if (cachedFontResolver.has(word)) return cachedFontResolver.get(word)
-
-      const s = segment(word, 'grapheme')[0]
-      if (cachedFontResolver.has(s)) return cachedFontResolver.get(s)
+      const code = word.charCodeAt(0)
+      if (cachedFontResolver.has(code)) return cachedFontResolver.get(code)
 
       const font = fonts.find((font, index) => {
         return (
-          !!font.charToGlyphIndex(s) || (fallback && index === fonts.length - 1)
+          !!font.charToGlyphIndex(word) ||
+          (fallback && index === fonts.length - 1)
         )
       })
 
       if (font) {
-        cachedFontResolver.set(s, font)
-        cachedFontResolver.set(word, font)
+        cachedFontResolver.set(code, font)
       }
       return font
     }

@@ -75,6 +75,7 @@ export default async function satori(
     embedFont: options.embedFont,
     debug: options.debug,
     graphemeImages,
+    canLoadAdditionalAssets: !!options.loadAdditionalAsset,
   })
 
   let segmentsMissingFont = handler.next().value as string[]
