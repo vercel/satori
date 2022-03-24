@@ -23,6 +23,7 @@ export interface LayoutContext {
   embedFont: boolean
   debug?: boolean
   graphemeImages?: Record<string, string>
+  canLoadAdditionalAssets: boolean
 }
 
 export default function* layout(
@@ -38,6 +39,7 @@ export default function* layout(
     debug,
     embedFont = true,
     graphemeImages,
+    canLoadAdditionalAssets,
   } = context
 
   // 1. Pre-process the node.
@@ -129,6 +131,7 @@ export default function* layout(
       embedFont,
       debug,
       graphemeImages,
+      canLoadAdditionalAssets,
     })
     segmentsMissingFont.push(...iter.next().value)
     iterators.push(iter)

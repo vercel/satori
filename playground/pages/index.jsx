@@ -21,7 +21,18 @@ const languageFontMap = {
   unknown: 'Noto+Sans',
 }
 
-async function loadDynamicAsset(code, text) {
+function withCache(fn) {
+  const cache = new Map()
+  return async (...args) => {
+    const key = args.join('|')
+    if (cache.has(key)) return cache.get(key)
+    const result = await fn(...args)
+    cache.set(key, result)
+    return result
+  }
+}
+
+const loadDynamicAsset = withCache(async (code, text) => {
   const emojiCodes = getTwemojiMap(text)
   const emojis = Object.values(emojiCodes)
   if (emojis.length) {
@@ -55,7 +66,7 @@ async function loadDynamicAsset(code, text) {
   } catch (e) {
     console.error('Failed to load dynamic font for', text, '. Error:', e)
   }
-}
+})
 
 async function init() {
   if (typeof window === 'undefined') return []

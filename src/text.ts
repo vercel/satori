@@ -29,6 +29,7 @@ export default function* buildTextNodes(
     debug,
     embedFont,
     graphemeImages,
+    canLoadAdditionalAssets,
   } = context
 
   if (parentStyle.textTransform === 'uppercase') {
@@ -75,7 +76,6 @@ export default function* buildTextNodes(
   } else if (parentStyle.textAlign === 'justify') {
     textContainer.setJustifyContent(Yoga.JUSTIFY_SPACE_BETWEEN)
   }
-
   parent.insertChild(textContainer, parent.getChildCount())
 
   const {
@@ -97,7 +97,9 @@ export default function* buildTextNodes(
   )
 
   // Yield segments that are missing a font.
-  const wordsMissingFont = words.filter((word) => !engine.resolve(word))
+  const wordsMissingFont = canLoadAdditionalAssets
+    ? words.filter((word) => !engine.resolve(word))
+    : []
   yield wordsMissingFont
   if (wordsMissingFont.length) {
     // Reload the engine with additional fonts.
@@ -198,9 +200,8 @@ export default function* buildTextNodes(
     parent.setFlexShrink(1)
   }
 
-  const shouldAlwaysBreakLine = ['pre-wrap', 'pre'].includes(
-    whiteSpace as string
-  )
+  const shouldAlwaysBreakLine =
+    whiteSpace === 'pre-wrap' || whiteSpace === 'pre'
 
   textContainer.setMeasureFunc((width) => {
     let lines = 0
