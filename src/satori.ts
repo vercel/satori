@@ -15,17 +15,22 @@ import { segment } from './utils'
 const languageFontMap = {
   zh: 'Noto+Sans+SC',
   ja: 'Noto+Sans+JP',
+  ko: 'Noto+Sans+KR',
+  th: 'Noto+Sans+Thai',
+  unknown: 'Noto+Sans',
 }
 async function loadDynamicGoogleFont(
   code: string,
   text: string
 ): Promise<FontOptions> {
-  if (languageFontMap[code]) {
+  if (!languageFontMap[code]) code = 'unknown'
+
+  try {
     const data = await (
       await fetch(
-        `/api/font?font=${languageFontMap[code]}&text=${encodeURIComponent(
-          text
-        )}`
+        `/api/font?font=${encodeURIComponent(
+          languageFontMap[code]
+        )}&text=${encodeURIComponent(text)}`
       )
     ).arrayBuffer()
 
@@ -37,6 +42,8 @@ async function loadDynamicGoogleFont(
         style: 'normal',
       }
     }
+  } catch (e) {
+    console.error('Failed to load dynamic font for', text, '. Error:', e)
   }
 }
 
