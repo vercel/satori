@@ -3,6 +3,8 @@
  */
 import opentype from '@shuding/opentype.js'
 
+import { segment } from './utils'
+
 type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
 type WeigthName = 'normal' | 'bold'
 type Style = 'normal' | 'italic'
@@ -58,6 +60,46 @@ export default class FontLoader {
   defaultFont: opentype.Font
   fonts = new Map<string, [opentype.Font, Weight?, Style?][]>()
   constructor(fontOptions: FontOptions[]) {
+    this.addFonts(fontOptions)
+  }
+
+  // Get font by name and weight.
+  private get({
+    name,
+    weight,
+    style,
+  }: {
+    name: string
+    weight: Weight | WeigthName
+    style: Style
+  }) {
+    if (!this.fonts.has(name)) {
+      return null
+    }
+
+    if (weight === 'normal') weight = 400
+    if (weight === 'bold') weight = 700
+
+    const fonts = [...this.fonts.get(name)]
+
+    let matchedFont = fonts[0]
+
+    // Fallback to the closest weight and style according to the strategy here:
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight#fallback_weights
+    for (let i = 1; i < fonts.length; i++) {
+      const [, weight1, style1] = matchedFont
+      const [, weight2, style2] = fonts[i]
+      if (
+        compareFont(weight, style, [weight1, style1], [weight2, style2]) > 0
+      ) {
+        matchedFont = fonts[i]
+      }
+    }
+
+    return matchedFont[0]
+  }
+
+  public addFonts(fontOptions: FontOptions[]) {
     for (const fontOption of fontOptions) {
       const data = fontOption.data
       const font = opentype.parse(
@@ -83,42 +125,6 @@ export default class FontLoader {
     }
   }
 
-  // Get font by name and weight.
-  private get({
-    name,
-    weight,
-    style,
-  }: {
-    name: string
-    weight: Weight | WeigthName
-    style: Style
-  }) {
-    if (!this.fonts.has(name)) {
-      return this.defaultFont
-    }
-
-    if (weight === 'normal') weight = 400
-    if (weight === 'bold') weight = 700
-
-    const fonts = [...this.fonts.get(name)]
-
-    let matchedFont = fonts[0]
-
-    // Fallback to the closest weight and style according to the strategy here:
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight#fallback_weights
-    for (let i = 1; i < fonts.length; i++) {
-      const [, weight1, style1] = matchedFont
-      const [, weight2, style2] = fonts[i]
-      if (
-        compareFont(weight, style, [weight1, style1], [weight2, style2]) > 0
-      ) {
-        matchedFont = fonts[i]
-      }
-    }
-
-    return matchedFont[0]
-  }
-
   public getEngine(
     fontSize = 16,
     lineHeight = 1.2,
@@ -132,25 +138,46 @@ export default class FontLoader {
       fontStyle?: Style
     }
   ) {
-    const fonts = (Array.isArray(fontFamily) ? fontFamily : [fontFamily]).map(
-      (face) =>
+    fontFamily = Array.isArray(fontFamily) ? fontFamily : [fontFamily]
+    const fonts = fontFamily
+      .map((face) =>
         this.get({
           name: face,
           weight: fontWeight,
           style: fontStyle,
         })
-    )
+      )
+      .filter(Boolean)
 
-    const cachedFontResolver = new Map<string, opentype.Font>()
-    const resolveFont = (segment: string) => {
-      const s = segment[0]
-      if (cachedFontResolver.has(s)) {
-        return cachedFontResolver.get(s)
-      }
+    // Add additional fonts as the fallback.
+    for (const name of this.fonts.keys()) {
+      if (fontFamily.includes(name)) continue
+      fonts.push(
+        this.get({
+          name,
+          weight: fontWeight,
+          style: fontStyle,
+        })
+      )
+    }
+
+    const cachedFontResolver = new Map<string, opentype.Font | undefined>()
+    const resolveFont = (word: string, fallback = true) => {
+      if (cachedFontResolver.has(word)) return cachedFontResolver.get(word)
+
+      const s = segment(word, 'grapheme')[0]
+      if (cachedFontResolver.has(s)) return cachedFontResolver.get(s)
+
       const font = fonts.find((font, index) => {
-        return !!font.charToGlyphIndex(s) || index === fonts.length - 1
+        return (
+          !!font.charToGlyphIndex(s) || (fallback && index === fonts.length - 1)
+        )
       })
-      cachedFontResolver.set(s, font)
+
+      if (font) {
+        cachedFontResolver.set(s, font)
+        cachedFontResolver.set(word, font)
+      }
       return font
     }
 
@@ -168,6 +195,9 @@ export default class FontLoader {
     }
 
     const engine = {
+      resolve: (s: string) => {
+        return resolveFont(s, false)
+      },
       baseline: (
         s?: string,
         resolvedFont = typeof s === 'undefined' ? fonts[0] : resolveFont(s)

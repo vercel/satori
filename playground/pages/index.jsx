@@ -5,12 +5,62 @@ import { createPortal } from 'react-dom'
 import Head from 'next/head'
 import packageJson from 'satori/package.json'
 
+import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
+
 import cards from '../cards/data'
+
+// @TODO: Support font style and weights, and make this option extensible rather
+// than built-in.
+// @TODO: Cover most languages with Noto Sans.
+// @TODO: Fix CJK missing punctuations, maybe inline guessLanguage?
+const languageFontMap = {
+  zh: 'Noto+Sans+SC',
+  ja: 'Noto+Sans+JP',
+  ko: 'Noto+Sans+KR',
+  th: 'Noto+Sans+Thai',
+  unknown: 'Noto+Sans',
+}
+
+async function loadDynamicAsset(code, text) {
+  const emojiCodes = getTwemojiMap(text)
+  const emojis = Object.values(emojiCodes)
+  if (emojis.length) {
+    // It's an emoji, load the image.
+    return (
+      `data:image/svg+xml;base64,` +
+      btoa(await (await loadEmoji(emojis[0])).text())
+    )
+  }
+
+  // Try to load from Google Fonts.
+  if (!languageFontMap[code]) code = 'unknown'
+
+  try {
+    const data = await (
+      await fetch(
+        `/api/font?font=${encodeURIComponent(
+          languageFontMap[code]
+        )}&text=${encodeURIComponent(text)}`
+      )
+    ).arrayBuffer()
+
+    if (data) {
+      return {
+        name: `satori_${code}_fallback_${text}`,
+        data,
+        weight: 400,
+        style: 'normal',
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load dynamic font for', text, '. Error:', e)
+  }
+}
 
 async function init() {
   if (typeof window === 'undefined') return []
 
-  const [font, fontBold, fontIcon, fontNotoSansSCSubset, fontNotoSansJPSubset] =
+  const [font, fontBold, fontIcon] =
     window.__fonts ||
     (window.__fonts = await Promise.all(
       (
@@ -23,12 +73,6 @@ async function init() {
           ),
           fetch(
             'https://unpkg.com/@fontsource/material-icons@4.5.2/files/material-icons-base-400-normal.woff'
-          ),
-          fetch(
-            'https://fonts.gstatic.com/l/font?kit=k3kXo84MPvpLmixcA63oeALhL5CLFbJeFwkn&skey=cf0bb10b5602fdc3&v=v24'
-          ),
-          fetch(
-            'https://fonts.gstatic.com/l/font?kit=-F62fjtqLzI2JPCgQBnw7HFowBoFMdb2ZGu091jLLBpdNTas&skey=72472b0eb8793570&v=v40'
           ),
         ])
       ).map((res) => res.arrayBuffer())
@@ -50,18 +94,6 @@ async function init() {
     {
       name: 'Material Icons',
       data: fontIcon,
-      weight: 400,
-      style: 'normal',
-    },
-    {
-      name: 'Noto Sans SC',
-      data: fontNotoSansSCSubset,
-      weight: 400,
-      style: 'normal',
-    },
-    {
-      name: 'Noto Sans JP',
-      data: fontNotoSansJPSubset,
       weight: 400,
       style: 'normal',
     },
@@ -142,28 +174,42 @@ const LiveSatori = withLive(function ({ live }) {
     updateScaleRatio()
   }, [width, height])
 
-  let result = ''
-  let renderedTimeSpent
-  if (live.element && options) {
-    const start = (
-      typeof performance !== 'undefined' ? performance : Date
-    ).now()
-    if (!native) {
-      try {
-        result = satori(live.element.prototype.render(), {
-          ...options,
-          embedFont: fontEmbed,
-          width,
-          height,
-          debug,
-        })
-      } catch (e) {
-        return null
+  const [result, setResult] = useState('')
+  const [renderedTimeSpent, setRenderTime] = useState()
+
+  useEffect(() => {
+    ;(async () => {
+      let _result = ''
+      let _renderedTimeSpent
+
+      if (live.element && options) {
+        const start = (
+          typeof performance !== 'undefined' ? performance : Date
+        ).now()
+        if (!native) {
+          try {
+            _result = await satori(live.element.prototype.render(), {
+              ...options,
+              embedFont: fontEmbed,
+              width,
+              height,
+              debug,
+              loadAdditionalAsset: loadDynamicAsset,
+            })
+          } catch (e) {
+            console.error(e)
+            return null
+          }
+        }
+        _renderedTimeSpent =
+          (typeof performance !== 'undefined' ? performance : Date).now() -
+          start
       }
-    }
-    renderedTimeSpent =
-      (typeof performance !== 'undefined' ? performance : Date).now() - start
-  }
+
+      setResult(_result)
+      setRenderTime(_renderedTimeSpent)
+    })()
+  }, [live.element, options, width, height, debug])
 
   return (
     <>

@@ -9,7 +9,7 @@ Satori translates the layout and styles of HTML & CSS based elements into an SVG
 ```jsx
 import satori from 'satori'
 
-satori(
+const svg = await satori(
   <div style={{ color: 'black' }}>hello, world</div>,
   {
     width: 600,
@@ -55,7 +55,7 @@ elements (see section below), or custom React components, but React APIs such as
 If you don't have JSX transpiler enabled, you can simply pass [React-elements-like objects](https://reactjs.org/docs/introducing-jsx.html) that have `type`, `props.children` and `props.style` (and other properties too) directly:
 
 ```js
-satori(
+await satori(
   {
     type: 'div',
     props: {
@@ -82,7 +82,7 @@ You can find the list of supported HTML elements and their preset styles [here](
 You can use `<img>` to embed images but `src`, `width`, and `height` attributes are all required.
 
 ```jsx
-satori(
+await satori(
   <img src="https://picsum.photos/200/300" width={200} height={300} />,
   options
 )
@@ -91,24 +91,6 @@ satori(
 When using `background-image`, the image will be stretched to fit the element by default if you don't specify the size.
 
 If you want to render the generated SVG to another image format such as PNG, it would be better to use base64 encoded image data directly as `props.src` so no extra I/O is needed.
-
-#### Emojis
-
-To render custom images for specific graphemes, you can use `graphemeImages` option to map the grapheme to an image source:
-
-```jsx
-satori(
-  <div>Next.js is 🤯!</div>,
-  {
-    ...,
-    graphemeImages: {
-      '🤯': 'https://twemoji.maxcdn.com/v/13.1.0/svg/1f92f.svg',
-    },
-  }
-)
-```
-
-The image will be resized to the current font-size (both width and height), so it must be a square.
 
 ### CSS Properties
 
@@ -166,6 +148,51 @@ Note:
 3. `box-sizing` is set to `border-box` for all elements.
 4. `calc` isn't supported.
 5. `overflow: hidden` and `transform` can't be used together.
+
+### Typography
+
+Advanced typography features such as kerning, ligatures and other OpenType features are not currently supported. 
+
+RTL languages are not supported either.
+
+#### Emojis
+
+To render custom images for specific graphemes, you can use `graphemeImages` option to map the grapheme to an image source:
+
+```jsx
+await satori(
+  <div>Next.js is 🤯!</div>,
+  {
+    ...,
+    graphemeImages: {
+      '🤯': 'https://twemoji.maxcdn.com/v/13.1.0/svg/1f92f.svg',
+    },
+  }
+)
+```
+
+The image will be resized to the current font-size (both width and height), so it must be a square.
+
+#### Dynamically Load Emojis and Fonts
+
+Satori supports an option to dynamically load emoji images (grapheme pictures) and fonts when they're used but missing:
+
+```jsx
+await satori(
+  <div>👋 你好</div>,
+  {
+    // `code` will be the detected language code, or `unknwon` if not able to tell.
+    // `segment` will be the content to render.
+    loadAdditionalAsset: async (code: string, segment: string) => {
+      // if segment is an emoji
+      return `data:image/svg+xml;base64,...`
+
+      // if segment is normal text
+      return loadFontFromSystem(code)
+    }
+  }
+)
+```
 
 ## Contribute
 

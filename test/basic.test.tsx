@@ -9,14 +9,14 @@ describe('Basic', () => {
   initFonts((f) => (fonts = f))
 
   it('should render empty div', async () => {
-    const svg = satori(<div></div>, { width: 100, height: 100, fonts })
+    const svg = await satori(<div></div>, { width: 100, height: 100, fonts })
     expect(svg).toMatchInlineSnapshot(
       '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"/>"'
     )
   })
 
   it('should render basic div with text', async () => {
-    const svg = satori(<div>Hello</div>, {
+    const svg = await satori(<div>Hello</div>, {
       width: 100,
       height: 100,
       fonts,
@@ -28,7 +28,7 @@ describe('Basic', () => {
   })
 
   it('should render basic div with background color', async () => {
-    const svg = satori(
+    const svg = await satori(
       <div
         style={{ backgroundColor: 'red', width: '100%', height: '100%' }}
       ></div>,
@@ -44,7 +44,7 @@ describe('Basic', () => {
   })
 
   it('should render basic div with text and background color', async () => {
-    const svg = satori(
+    const svg = await satori(
       <div style={{ backgroundColor: 'red', width: '100%', height: '100%' }}>
         Hello
       </div>,
@@ -61,7 +61,7 @@ describe('Basic', () => {
   })
 
   it('should support embedded fonts', async () => {
-    const svg = satori(<div>Hello</div>, {
+    const svg = await satori(<div>Hello</div>, {
       width: 100,
       height: 100,
       fonts,
@@ -73,7 +73,7 @@ describe('Basic', () => {
   })
 
   it('should support hex colors', async () => {
-    const svg = satori(
+    const svg = await satori(
       <div
         style={{ backgroundColor: '#ff0', width: '100%', height: '100%' }}
       ></div>,
@@ -89,7 +89,7 @@ describe('Basic', () => {
   })
 
   it('should support border radius', async () => {
-    const svg = satori(
+    const svg = await satori(
       <div
         style={{
           borderRadius: '10px',
@@ -110,7 +110,7 @@ describe('Basic', () => {
   })
 
   it('should support border width and color', async () => {
-    const svg = satori(
+    const svg = await satori(
       <div
         style={{
           border: '1px solid',

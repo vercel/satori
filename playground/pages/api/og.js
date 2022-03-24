@@ -47,7 +47,7 @@ export default async (req, res) => {
 
   const t2 = Date.now()
 
-  const svg = satori(card, {
+  const svg = await satori(card, {
     width,
     height,
     fonts,

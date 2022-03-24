@@ -90,12 +90,23 @@ export default function* buildTextNodes(
 
   // Get the correct font according to the container style.
   // https://www.w3.org/TR/CSS2/visudet.html
-  // @TODO: Support font family fallback based on the glyphs of the font.
-  const engine = font.getEngine(
+  let engine = font.getEngine(
     baseFontSize,
     lineHeight as number,
     parentStyle as any
   )
+
+  // Yield segments that are missing a font.
+  const wordsMissingFont = words.filter((word) => !engine.resolve(word))
+  yield wordsMissingFont
+  if (wordsMissingFont.length) {
+    // Reload the engine with additional fonts.
+    engine = font.getEngine(
+      baseFontSize,
+      lineHeight as number,
+      parentStyle as any
+    )
+  }
 
   // Compute the layout.
   // @TODO: Use segments instead of words to properly support kerning.

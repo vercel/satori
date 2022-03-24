@@ -78,7 +78,7 @@ export default function Playground() {
       )
 
       const fonts = await waitForResource
-      const result = satori(card, {
+      const result = await satori(card, {
         width,
         height,
         fonts,

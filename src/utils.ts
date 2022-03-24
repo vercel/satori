@@ -100,7 +100,10 @@ const breakWords = (str: string): string[] => {
   return words
 }
 
-export function segment(content: string, granularity: 'word' | 'grapheme') {
+export function segment(
+  content: string,
+  granularity: 'word' | 'grapheme'
+): string[] {
   if (INTL_SEGMENTER_SUPPORTED) {
     return granularity === 'word'
       ? [...wordSegmenter.segment(content)].map((seg) => seg.segment)

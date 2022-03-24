@@ -316,16 +316,16 @@ export default {
     alignItems: 'center',
     alignContent: 'center',
     justifyContent: 'center',
-    fontFamily: 'Inter, "Material Icons", "Noto Sans SC", "Noto Sans JP"',
-    fontSize: 50
+    fontFamily: 'Inter, "Material Icons"',
+    fontSize: 40
   }}
 >
-  Hello! 你好! &#xe766; Hi! こんにちは!
+  Hello! 你好! &#xe766; 안녕! こんにちは! 👋 Χαίρετε! Hallå!
 </div>
 
 /**
-* Note that the "Noto Sans SC" and "Noto Sans JP" fonts are subsetted with only
-* the currently used characters in this demo.
+* Note that the fallback fonts and Emoji are dynamically loaded from
+* Google Fonts and Twemoji CDN in this demo.
 */
 `,
 }
