@@ -1,22 +1,6 @@
 /* Fonts for the demo */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');
 
-@font-face {
-  font-family: 'Noto Sans SC';
-  font-style: normal;
-  font-weight: 400;
-  src: url(https://fonts.gstatic.com/l/font?kit=k3kXo84MPvpLmixcA63oeALhLIiP-Q_M9Egnu_IjAA&skey=cf0bb10b5602fdc3&v=v24)
-    format('woff2');
-}
-
-@font-face {
-  font-family: 'Noto Sans JP';
-  font-style: normal;
-  font-weight: 400;
-  src: url(https://fonts.gstatic.com/l/font?kit=-F62fjtqLzI2JPCgQBnw7HFowwII2ldXiAmUhzrhbnhzfVe-FyMV8g&skey=72472b0eb8793570&v=v40)
-    format('woff2');
-}
-
 /* UI */
 
 @font-face {

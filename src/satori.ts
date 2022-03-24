@@ -8,45 +8,6 @@ import FontLoader, { FontOptions } from './font'
 import svg from './builder/svg'
 import { segment } from './utils'
 
-// @TODO: Support font style and weights, and make this option extensible rather
-// than built-in.
-// @TODO: Cover most languages with Noto Sans.
-// @TODO: Fix CJK missing punctuations, maybe inline guessLanguage?
-const languageFontMap = {
-  zh: 'Noto+Sans+SC',
-  ja: 'Noto+Sans+JP',
-  ko: 'Noto+Sans+KR',
-  th: 'Noto+Sans+Thai',
-  unknown: 'Noto+Sans',
-}
-async function loadDynamicGoogleFont(
-  code: string,
-  text: string
-): Promise<FontOptions> {
-  if (!languageFontMap[code]) code = 'unknown'
-
-  try {
-    const data = await (
-      await fetch(
-        `/api/font?font=${encodeURIComponent(
-          languageFontMap[code]
-        )}&text=${encodeURIComponent(text)}`
-      )
-    ).arrayBuffer()
-
-    if (data) {
-      return {
-        name: `satori_${code}_fallback_${text}`,
-        data,
-        weight: 400,
-        style: 'normal',
-      }
-    }
-  } catch (e) {
-    console.error('Failed to load dynamic font for', text, '. Error:', e)
-  }
-}
-
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
 
@@ -57,6 +18,11 @@ export interface SatoriOptions {
   embedFont?: boolean
   debug?: boolean
   graphemeImages?: Record<string, string>
+  // Can be used to dynamically load missing fonts or image for a given segment.
+  loadAdditionalAsset?: (
+    code: string,
+    segment: string
+  ) => Promise<FontOptions | string | undefined>
 }
 
 export { init }
@@ -85,6 +51,8 @@ export default async function satori(
   root.setJustifyContent(Yoga.JUSTIFY_FLEX_START)
   root.setOverflow(Yoga.OVERFLOW_HIDDEN)
 
+  const graphemeImages = { ...options.graphemeImages }
+
   const handler = layout(element, {
     id: 'id',
     parentStyle: {},
@@ -106,33 +74,51 @@ export default async function satori(
     font,
     embedFont: options.embedFont,
     debug: options.debug,
-    graphemeImages: options.graphemeImages,
+    graphemeImages,
   })
 
-  let segmentsMissingFont = handler.next([1, 1]).value as string[]
-  if (segmentsMissingFont.length) {
-    // Potentially CJK fonts are missing.
-    segmentsMissingFont = [
-      ...new Set(segment(segmentsMissingFont.join(''), 'grapheme')),
-    ]
+  let segmentsMissingFont = handler.next().value as string[]
 
-    const langaugeCodes: Record<string, string[]> = {}
-    segmentsMissingFont.forEach((seg) =>
-      guessLanguage.detect(seg, (code) => {
-        langaugeCodes[code] = langaugeCodes[code] || []
-        langaugeCodes[code].push(seg)
-      })
-    )
+  if (options.loadAdditionalAsset) {
+    if (segmentsMissingFont.length) {
+      // Potentially CJK fonts are missing.
+      segmentsMissingFont = [
+        ...new Set(segment(segmentsMissingFont.join(''), 'grapheme')),
+      ]
 
-    font.addFonts(
-      (
-        await Promise.all(
-          Object.entries(langaugeCodes).map(([code, segments]) =>
-            loadDynamicGoogleFont(code, segments.join(''))
+      const langaugeCodes: Record<string, string[]> = {}
+      segmentsMissingFont.forEach((seg) =>
+        guessLanguage.detect(seg, (code) => {
+          langaugeCodes[code] = langaugeCodes[code] || []
+          if (code === 'unknown') {
+            langaugeCodes[code].push(seg)
+          } else {
+            langaugeCodes[code][0] = (langaugeCodes[code][0] || '') + seg
+          }
+        })
+      )
+
+      const fonts: FontOptions[] = []
+      const images: Record<string, string> = {}
+
+      await Promise.all(
+        Object.entries(langaugeCodes).flatMap(([code, segments]) =>
+          segments.map((segment) =>
+            options.loadAdditionalAsset(code, segment).then((asset) => {
+              if (typeof asset === 'string') {
+                images[segment] = asset
+              } else if (asset) {
+                fonts.push(asset)
+              }
+            })
           )
         )
-      ).filter(Boolean)
-    )
+      )
+
+      // Directly mutate the font provider and the grapheme map.
+      font.addFonts(fonts)
+      Object.assign(graphemeImages, images)
+    }
   }
 
   handler.next()

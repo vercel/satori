@@ -92,24 +92,6 @@ When using `background-image`, the image will be stretched to fit the element by
 
 If you want to render the generated SVG to another image format such as PNG, it would be better to use base64 encoded image data directly as `props.src` so no extra I/O is needed.
 
-#### Emojis
-
-To render custom images for specific graphemes, you can use `graphemeImages` option to map the grapheme to an image source:
-
-```jsx
-await satori(
-  <div>Next.js is 🤯!</div>,
-  {
-    ...,
-    graphemeImages: {
-      '🤯': 'https://twemoji.maxcdn.com/v/13.1.0/svg/1f92f.svg',
-    },
-  }
-)
-```
-
-The image will be resized to the current font-size (both width and height), so it must be a square.
-
 ### CSS Properties
 
 | Property | Supported Values |
@@ -172,6 +154,45 @@ Note:
 Advanced typography features such as kerning, ligatures and other OpenType features are not currently supported. 
 
 RTL languages are not supported either.
+
+#### Emojis
+
+To render custom images for specific graphemes, you can use `graphemeImages` option to map the grapheme to an image source:
+
+```jsx
+await satori(
+  <div>Next.js is 🤯!</div>,
+  {
+    ...,
+    graphemeImages: {
+      '🤯': 'https://twemoji.maxcdn.com/v/13.1.0/svg/1f92f.svg',
+    },
+  }
+)
+```
+
+The image will be resized to the current font-size (both width and height), so it must be a square.
+
+#### Dynamically Load Emojis and Fonts
+
+Satori supports an option to dynamically load emoji images (grapheme pictures) and fonts when they're used but missing:
+
+```jsx
+await satori(
+  <div>👋 你好</div>,
+  {
+    // `code` will be the detected language code, or `unknwon` if not able to tell.
+    // `segment` will be the content to render.
+    loadAdditionalAsset: async (code: string, segment: string) => {
+      // if segment is an emoji
+      return `data:image/svg+xml;base64,...`
+
+      // if segment is normal text
+      return loadFontFromSystem(code)
+    }
+  }
+)
+```
 
 ## Contribute
 
