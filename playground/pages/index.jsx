@@ -125,6 +125,7 @@ function Tabs({ options, onChange, children }) {
       <div className='tabs-container'>
         {options.map((option) => (
           <div
+            title={option}
             className={'tab' + (active === option ? ' active' : '')}
             key={option}
             onClick={() => {

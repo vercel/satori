@@ -309,6 +309,15 @@ textarea.npm__react-simple-code-editor__textarea:active {
 .controller .copyright {
   flex: 1;
 }
+.tabs-container {
+  white-space: nowrap;
+  max-width: calc(100% - 15px);
+}
+.tab {
+  text-overflow: ellipsis;
+  max-width: 100%;
+  overflow: hidden;
+}
 
 @media screen and (max-width: 999px) {
   .container {
