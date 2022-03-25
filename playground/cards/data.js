@@ -143,6 +143,7 @@ export default {
     flexDirection: 'column',
     fontFamily: 'Inter',
     flexWrap: 'nowrap',
+    backgroundColor: 'white',
   }}
 >
   <div
@@ -154,7 +155,6 @@ export default {
       justifyContent: 'center',
       flexDirection: 'row',
       flexWrap: 'nowrap',
-      backgroundColor: 'white',
       textDecoration: 'underline',
       color: 'crimson',
     }}
@@ -249,7 +249,6 @@ export default {
       justifyContent: 'center',
       flexDirection: 'row',
       flexWrap: 'nowrap',
-      backgroundColor: 'white',
     }}
   >
     <div>Hello, world!!!!</div>
@@ -317,7 +316,8 @@ export default {
     alignContent: 'center',
     justifyContent: 'center',
     fontFamily: 'Inter, "Material Icons"',
-    fontSize: 40
+    fontSize: 40,
+    backgroundColor: 'white',
   }}
 >
   Hello! 你好! &#xe766; 안녕! こんにちは! 👋 Χαίρετε! Hallå!

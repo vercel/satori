@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Head from 'next/head'
 import packageJson from 'satori/package.json'
+import * as resvg from '@resvg/resvg-wasm'
 
 import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
 
@@ -71,10 +72,13 @@ const loadDynamicAsset = withCache(async (code, text) => {
 async function init() {
   if (typeof window === 'undefined') return []
 
-  const [font, fontBold, fontIcon] =
-    window.__fonts ||
-    (window.__fonts = await Promise.all(
-      (
+  const [_, font, fontBold, fontIcon] =
+    window.__resource ||
+    (window.__resource = await Promise.all([
+      fetch(
+        'https://unpkg.com/@resvg/resvg-wasm@2.0.0-alpha.4/index_bg.wasm'
+      ).then((res) => resvg.initWasm(res)),
+      ...(
         await Promise.all([
           fetch(
             'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'
@@ -86,8 +90,8 @@ async function init() {
             'https://unpkg.com/@fontsource/material-icons@4.5.2/files/material-icons-base-400-normal.woff'
           ),
         ])
-      ).map((res) => res.arrayBuffer())
-    ))
+      ).map((res) => res.arrayBuffer()),
+    ]))
 
   return [
     {
@@ -142,6 +146,8 @@ const LiveSatori = withLive(function ({ live }) {
   const [debug, setDebug] = useState(false)
   const [fontEmbed, setFontEmbed] = useState(true)
   const [native, setNative] = useState(false)
+  const [png, setPNG] = useState(false)
+  const [pngUrl, setPNGUrl] = useState(null)
   const [width, setWidth] = useState(400 * 2)
   const [height, setHeight] = useState(200 * 2)
   const [iframeNode, setIframeNode] = useState(null)
@@ -189,7 +195,15 @@ const LiveSatori = withLive(function ({ live }) {
   const [renderedTimeSpent, setRenderTime] = useState()
 
   useEffect(() => {
+    let cancelled = false
+
     ;(async () => {
+      // We leave a small buffer here to debounce if it's PNG.
+      if (png) {
+        await new Promise((resolve) => setTimeout(resolve, 200))
+      }
+      if (cancelled) return
+
       let _result = ''
       let _renderedTimeSpent
 
@@ -207,6 +221,18 @@ const LiveSatori = withLive(function ({ live }) {
               debug,
               loadAdditionalAsset: loadDynamicAsset,
             })
+            if (png) {
+              const renderer = new resvg.Resvg(_result, {
+                fitTo: {
+                  mode: 'width',
+                  value: width,
+                },
+              })
+              const pngData = renderer.render()
+              setPNGUrl(
+                URL.createObjectURL(new Blob([pngData], { type: 'image/png' }))
+              )
+            }
           } catch (e) {
             console.error(e)
             return null
@@ -220,14 +246,19 @@ const LiveSatori = withLive(function ({ live }) {
       setResult(_result)
       setRenderTime(_renderedTimeSpent)
     })()
-  }, [live.element, options, width, height, debug])
+
+    return () => {
+      cancelled = true
+    }
+  }, [live.element, options, width, height, debug, fontEmbed, native, png])
 
   return (
     <>
       <Tabs
-        options={['SVG (Satori)', 'HTML (Native)']}
+        options={['SVG (Satori)', 'PNG (Satori + Resvg-js)', 'HTML (Native)']}
         onChange={(type) => {
           setNative(type.startsWith('HTML'))
+          setPNG(type.startsWith('PNG'))
         }}
       >
         <div className='preview-card'>
@@ -241,8 +272,10 @@ const LiveSatori = withLive(function ({ live }) {
             dangerouslySetInnerHTML={
               native
                 ? undefined
+                : png
+                ? undefined
                 : {
-                    __html: `<div style="position:absolute;width:${width}px;height:${height}px;transform:scale(${scaleRatio});background:white;display:flex;align-items:center;justify-content:center">${result}</div>`,
+                    __html: `<div style="position:absolute;width:${width}px;height:${height}px;transform:scale(${scaleRatio});display:flex;align-items:center;justify-content:center">${result}</div>`,
                   }
             }
           >
@@ -264,7 +297,7 @@ const LiveSatori = withLive(function ({ live }) {
                     <>
                       <style
                         dangerouslySetInnerHTML={{
-                          __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');*{box-sizing:border-box}body{display:flex;height:100%;margin:0;font-family:Inter,sans-serif;align-items:center;justify-content:center;background:white;overflow:hidden}`,
+                          __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');*{box-sizing:border-box}body{display:flex;height:100%;margin:0;font-family:Inter,sans-serif;align-items:center;justify-content:center;overflow:hidden}`,
                         }}
                       />
                       {live.element ? <live.element /> : null}
@@ -272,12 +305,24 @@ const LiveSatori = withLive(function ({ live }) {
                     iframeNode
                   )}
               </iframe>
+            ) : png && pngUrl ? (
+              <img
+                src={pngUrl}
+                width={width}
+                height={height}
+                style={{
+                  transform: `scale(${scaleRatio})`,
+                }}
+                alt='Preview'
+              />
             ) : null}
           </div>
           <footer>
             <span className='ellipsis'>
               {native
                 ? `[HTML] Rendered by browser.`
+                : png
+                ? `[PNG] Generated by Satori and Resvg-js in `
                 : `[SVG] Generated by Satori in `}
             </span>
             <span className='data'>
@@ -445,7 +490,6 @@ export default function Playground() {
               },
               {
                 types: [
-                  'operator',
                   'entity',
                   'url',
                   'string',
@@ -488,9 +532,9 @@ export default function Playground() {
                 },
               },
               {
-                types: ['punctuation', 'symbol'],
+                types: ['punctuation', 'symbol', 'operator'],
                 style: {
-                  opacity: '1',
+                  color: '#898989',
                 },
               },
             ],
