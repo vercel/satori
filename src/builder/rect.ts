@@ -113,7 +113,7 @@ export default function rect(
 
   if (!fills.length) fills.push('transparent')
 
-  const { backgroundClip } = style
+  const { backgroundClip, filter: cssFilter } = style
 
   // Each background generates a new rectangle.
   // @TODO: Not sure if this is the best way to do it, maybe <pattern> with
@@ -142,6 +142,7 @@ export default function rect(
             : clipPathId
             ? `url(#${clipPathId})`
             : undefined,
+        style: cssFilter ? `filter:${cssFilter}` : undefined,
       })
     })
     .join('')

@@ -113,7 +113,7 @@ If you want to render the generated SVG to another image format such as PNG, it 
 | `align-content` | Supported |
 | `align-self` | Supported |
 | `justify-content` | Supported |
-| `font-family` | Support single value |
+| `font-family` | Supported |
 | `font-size` | Supported |
 | `font-weight` | Supported |
 | `font-style` | Supported |
@@ -140,6 +140,7 @@ If you want to render the generated SVG to another image format such as PNG, it 
 | `line-height` | Supported |
 | `background-clip` | Support `border-box` and `text` |
 | `background-repeat` | Supported |
+| `filter` | Supported |
 
 Note:
 
