@@ -328,4 +328,49 @@ export default {
 * Google Fonts and Twemoji CDN in this demo.
 */
 `,
+  'Vercel Docs': `<div
+  style={{
+    backgroundColor: 'white',
+    backgroundImage: 'radial-gradient(circle at 25px 25px, lightgray 2%, transparent 0%), radial-gradient(circle at 75px 75px, lightgray 2%, transparent 0%)',
+    backgroundSize: '100px 100px',
+    height: '100%',
+    width: '100%',
+    display: 'flex',
+    textAlign: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'column',
+    flexWrap: 'nowrap',
+  }}
+>
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      alignContent: 'center',
+      justifyContent: 'center',
+      justifyItems: 'center',
+    }}
+  >
+    <img
+      style={{ margin: '0 75px' }}
+      src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTE2IiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTU3LjUgMEwxMTUgMTAwSDBMNTcuNSAweiIgLz48L3N2Zz4="
+      width={255 * 0.4}
+      height={225 * 0.4}
+    />
+  </div>
+  <div
+    style={{
+      fontFamily: 'Inter',
+      fontSize: 40,
+      fontStyle: 'normal',
+      color: 'black',
+      marginTop: 30,
+      lineHeight: 1.8,
+      whiteSpace: 'pre-wrap',
+    }}
+  >
+    <b>Vercel Edge Network</b>
+  </div>
+</div>`,
 }
