@@ -101,6 +101,7 @@ export default function text(
       height,
       transform: matrix || undefined,
       'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+      style: style.filter ? `filter:${style.filter}` : undefined,
     }
     return [
       (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
@@ -129,6 +130,7 @@ export default function text(
     'letter-spacing': style.letterSpacing || undefined,
     transform: matrix || undefined,
     'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+    style: style.filter ? `filter:${style.filter}` : undefined,
   }
   return [
     (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +

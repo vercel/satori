@@ -19,9 +19,10 @@ const list = new Set([
   'transform',
   'wordBreak',
 
-  // Special case: SVG doesn't apply opacity to children elements so we need to
+  // Special case: SVG doesn't apply these to children elements so we need to
   // make it inheritable here.
   'opacity',
+  'filter',
 
   // Special properties of Satori:
   '_viewportWidth',

@@ -105,6 +105,7 @@ code {
   display: flex;
   flex-direction: column;
   flex: 1 1 50%;
+  max-width: 50%;
 }
 
 .preview {
@@ -184,6 +185,7 @@ code {
 }
 
 textarea.npm__react-simple-code-editor__textarea {
+  word-break: break-all !important;
   padding-left: 45px !important;
   outline: none;
 }
@@ -193,6 +195,10 @@ textarea.npm__react-simple-code-editor__textarea:active {
 
 .editor > div {
   min-height: 100%;
+}
+
+.editor pre {
+  word-break: break-all !important;
 }
 
 .preview {
@@ -316,6 +322,7 @@ textarea.npm__react-simple-code-editor__textarea:active {
     flex-direction: row;
   }
   .container > .tabs {
+    max-width: unset;
     max-height: calc(100% - (50vw - 15px) * 9 / 16 - 54px);
   }
   .preview > .tabs {

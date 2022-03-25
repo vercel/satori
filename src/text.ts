@@ -83,6 +83,7 @@ export default function* buildTextNodes(
     textOverflow,
     whiteSpace,
     lineHeight,
+    filter: cssFilter,
     _inheritedBackgroundClipTextPath,
   } = parentStyle
 
@@ -569,6 +570,8 @@ export default function* buildTextNodes(
             transform: matrix ? matrix : undefined,
             opacity: opacity !== 1 ? opacity : undefined,
             'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+
+            style: cssFilter ? `filter:${cssFilter}` : undefined,
           })
         : ''
 
