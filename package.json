@@ -1,6 +1,6 @@
 {
   "name": "satori",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "Satori converts HTML JSX to SVG string.",
   "module": "./dist/esm/index.js",
   "main": "./dist/esm/index.js",
@@ -34,7 +34,6 @@
     "renderer"
   ],
   "author": "Shu Ding <g@shud.in>",
-  "license": "MIT",
   "bugs": {
     "url": "https://github.com/vercel/satori/issues"
   },
