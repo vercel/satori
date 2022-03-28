@@ -1,5 +1,6 @@
 import valueParser from 'postcss-value-parser'
-import CssDimension from 'parse-css-dimension'
+
+import CssDimension from './vendor/parse-css-dimension'
 
 /**
  * If key for each direction is missing, assume default (50%)

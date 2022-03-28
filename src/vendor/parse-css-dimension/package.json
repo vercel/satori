@@ -1,0 +1,19 @@
+{
+  "name": "parse-css-dimension",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "esbuild src.js --bundle --outfile=index.js --format=esm --minify"
+  },
+  "dependencies": {
+    "css-angle-units": "^1.0.1",
+    "css-frequency-units": "^1.0.1",
+    "css-length-units": "^1.0.0",
+    "css-resolution-units": "^1.0.1",
+    "css-time-units": "^1.0.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.14.28"
+  }
+}
