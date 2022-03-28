@@ -4,10 +4,11 @@
  */
 
 import { getPropertyName, getStylesForProperty } from 'css-to-react-native'
-import CssDimension from 'parse-css-dimension'
 import { parseElementStyle } from 'css-background-parser'
-import { multiply } from '../utils'
+
+import CssDimension from '../vendor/parse-css-dimension'
 import parseTransformOrigin from '../transform-origin'
+import { multiply } from '../utils'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([

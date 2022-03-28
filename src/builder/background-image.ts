@@ -1,7 +1,7 @@
-import CssDimension from 'parse-css-dimension'
+import CssDimension from '../vendor/parse-css-dimension'
 import { buildXMLString } from '../utils'
 
-import gradient from '../../deps/gradient-parser'
+import gradient from '../vendor/gradient-parser'
 
 interface Background {
   attachment: string
