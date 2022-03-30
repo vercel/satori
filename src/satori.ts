@@ -83,9 +83,9 @@ export default async function satori(
   if (options.loadAdditionalAsset) {
     if (segmentsMissingFont.length) {
       // Potentially CJK fonts are missing.
-      segmentsMissingFont = [
-        ...new Set(segment(segmentsMissingFont.join(''), 'grapheme')),
-      ]
+      segmentsMissingFont = Array.from(
+        new Set(segment(segmentsMissingFont.join(''), 'grapheme'))
+      )
 
       const langaugeCodes: Record<string, string[]> = {}
       segmentsMissingFont.forEach((seg) =>
