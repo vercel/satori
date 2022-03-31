@@ -133,7 +133,11 @@ export default function* layout(
       graphemeImages,
       canLoadAdditionalAssets,
     })
-    segmentsMissingFont.push(...(iter.next().value || []))
+    if (canLoadAdditionalAssets) {
+      segmentsMissingFont.push(...((iter.next().value as any) || []))
+    } else {
+      iter.next()
+    }
     iterators.push(iter)
   }
   yield segmentsMissingFont
