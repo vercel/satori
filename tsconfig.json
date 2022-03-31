@@ -3,6 +3,7 @@
     "jsx": "react",
     "moduleResolution": "node",
     "esModuleInterop": true,
+    "module": "esnext",
     "lib": ["esnext", "dom"],
     "baseUrl": ".",
     "paths": {
