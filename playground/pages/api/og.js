@@ -1,6 +1,7 @@
 import { renderAsync } from '@resvg/resvg-js'
+import initYoga from 'yoga-wasm-web'
 import { renderToStaticMarkup } from 'react-dom/server'
-import satori from 'satori'
+import satori, { init as initSatori } from 'satori/wasm'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 
@@ -15,10 +16,14 @@ const card = vercelCard
 let customFontsLoaded = false
 let fonts = []
 const loadingCustomFonts = (async () => {
-  const [FONT_ROBOTO, FONT_ROBOTO_BOLD] = await Promise.all([
+  const [FONT_ROBOTO, FONT_ROBOTO_BOLD, yogaWasm] = await Promise.all([
     fs.readFile(join(process.cwd(), 'assets', 'Roboto-Regular.ttf')),
     fs.readFile(join(process.cwd(), 'assets', 'Roboto-Bold.ttf')),
+    fs.readFile(join(process.cwd(), 'assets', 'yoga.wasm')),
   ])
+
+  initSatori(await initYoga(new WebAssembly.Module(yogaWasm)))
+
   fonts = [
     {
       name: 'Inter',

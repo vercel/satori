@@ -50,7 +50,7 @@ importers:
       react-dom: ^17.0.2
       react-live: ^2.4.1
       satori: workspace:*
-      yoga-wasm-web: ^0.0.8
+      yoga-wasm-web: ^0.0.9
     dependencies:
       '@resvg/resvg-js': 1.4.0
       '@resvg/resvg-wasm': 2.0.0-alpha.4
@@ -59,7 +59,7 @@ importers:
       react-dom: 17.0.2_react@17.0.2
       react-live: 2.4.1_react-dom@17.0.2+react@17.0.2
       satori: link:..
-      yoga-wasm-web: 0.0.8
+      yoga-wasm-web: 0.0.9
 
   src/vendor/parse-css-dimension:
     specifiers:
@@ -2111,6 +2111,6 @@ packages:
       '@types/yoga-layout': 1.9.2
     dev: false
 
-  /yoga-wasm-web/0.0.8:
-    resolution: {integrity: sha512-AFcRBnFk24jhNwjkT+wIc3+RgN3jv5czBjA4lsFd9rrnZ28cnEdevOpHH8Qa8BVPNKbgJPj5gHJdnqUHy+C0KQ==}
+  /yoga-wasm-web/0.0.9:
+    resolution: {integrity: sha512-7SDIrdw17pMK210IPmJBlnEN6wq4GfrKsRMkP+yBhpE4BEUwnr1HaVGLxj2emVL2a7Kr8SugxpjlSanbvcBedA==}
     dev: false

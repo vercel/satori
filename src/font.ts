@@ -150,7 +150,8 @@ export default class FontLoader {
       .filter(Boolean)
 
     // Add additional fonts as the fallback.
-    for (const name of this.fonts.keys()) {
+    const keys = Array.from(this.fonts.keys())
+    for (const name of keys) {
       if (fontFamily.includes(name)) continue
       fonts.push(
         this.get({

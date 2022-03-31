@@ -1,7 +1,5 @@
 import type { ReactNode } from 'react'
 
-import { guessLanguage } from 'guesslanguage'
-
 import getYoga, { init } from './yoga'
 import layout from './layout'
 import FontLoader, { FontOptions } from './font'
@@ -81,6 +79,8 @@ export default async function satori(
   let segmentsMissingFont = handler.next().value as string[]
 
   if (options.loadAdditionalAsset) {
+    const { guessLanguage } = await import('guesslanguage')
+
     if (segmentsMissingFont.length) {
       // Potentially CJK fonts are missing.
       segmentsMissingFont = Array.from(
@@ -126,8 +126,5 @@ export default async function satori(
   root.calculateLayout(options.width, options.height, Yoga.DIRECTION_LTR)
 
   const content = handler.next([0, 0]).value as string
-
-  root.freeRecursive()
-
   return svg({ width: options.width, height: options.height, content })
 }
