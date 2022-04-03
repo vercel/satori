@@ -6,7 +6,7 @@ import Head from 'next/head'
 import packageJson from 'satori/package.json'
 import * as resvg from '@resvg/resvg-wasm'
 
-import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
+import { loadEmoji, getIconCode } from '../utils/twemoji'
 
 import cards from '../cards/data'
 
@@ -34,13 +34,11 @@ function withCache(fn) {
 }
 
 const loadDynamicAsset = withCache(async (code, text) => {
-  const emojiCodes = getTwemojiMap(text)
-  const emojis = Object.values(emojiCodes)
-  if (emojis.length) {
+  if (code === 'emoji') {
     // It's an emoji, load the image.
     return (
       `data:image/svg+xml;base64,` +
-      btoa(await (await loadEmoji(emojis[0])).text())
+      btoa(await (await loadEmoji(getIconCode(text))).text())
     )
   }
 
