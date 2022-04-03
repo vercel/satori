@@ -7,6 +7,7 @@ import layout from './layout'
 import FontLoader, { FontOptions } from './font'
 import svg from './builder/svg'
 import { segment } from './utils'
+import { isEmoji } from './emoji'
 
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
@@ -19,8 +20,9 @@ export interface SatoriOptions {
   debug?: boolean
   graphemeImages?: Record<string, string>
   // Can be used to dynamically load missing fonts or image for a given segment.
+  detectLanguage?: (segment: string) => Promise<string> | string
   loadAdditionalAsset?: (
-    code: string,
+    languageCode: string,
     segment: string
   ) => Promise<FontOptions | string | undefined>
 }
@@ -90,8 +92,10 @@ export default async function satori(
       const langaugeCodes: Record<string, string[]> = {}
       segmentsMissingFont.forEach((seg) =>
         guessLanguage.detect(seg, (code) => {
+          if (code === 'unknown' && isEmoji(seg)) code = 'emoji'
+
           langaugeCodes[code] = langaugeCodes[code] || []
-          if (code === 'unknown') {
+          if (code === 'emoji') {
             langaugeCodes[code].push(seg)
           } else {
             langaugeCodes[code][0] = (langaugeCodes[code][0] || '') + seg

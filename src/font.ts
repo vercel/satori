@@ -114,6 +114,20 @@ export default class FontLoader {
         { lowMemory: true }
       )
 
+      // Modify the `charToGlyphIndex` method, so we can know which char is
+      // being mapped to which glyph.
+      const originalCharToGlyphIndex = font.charToGlyphIndex
+      font.charToGlyphIndex = (char) => {
+        const index = originalCharToGlyphIndex.call(font, char)
+        if (index === 0) {
+          // The current requested char is missing a glyph.
+          if ((font as any)._trackBrokenChars) {
+            ;(font as any)._trackBrokenChars.push(char)
+          }
+        }
+        return index
+      }
+
       // We use the first font as the default font fallback.
       if (!this.defaultFont) this.defaultFont = font
 
@@ -150,7 +164,8 @@ export default class FontLoader {
       .filter(Boolean)
 
     // Add additional fonts as the fallback.
-    for (const name of this.fonts.keys()) {
+    const keys = Array.from(this.fonts.keys())
+    for (const name of keys) {
       if (fontFamily.includes(name)) continue
       fonts.push(
         this.get({
@@ -192,9 +207,19 @@ export default class FontLoader {
       return (descender / resolvedFont.unitsPerEm) * fontSize
     }
 
+    const resolve = (s: string) => {
+      return resolveFont(s, false)
+    }
+
     const engine = {
-      resolve: (s: string) => {
-        return resolveFont(s, false)
+      check: (s: string) => {
+        const font = resolve(s)
+        if (!font) return false
+        ;(font as any)._trackBrokenChars = []
+        font.stringToGlyphs(s)
+        if (!(font as any)._trackBrokenChars.length) return true
+        ;(font as any)._trackBrokenChars = undefined
+        return false
       },
       baseline: (
         s?: string,
@@ -226,22 +251,51 @@ export default class FontLoader {
         )
       },
       measure: (s: string, style: any) => {
-        // Find the first font that supports rendering this segment, or fallback
-        // to use the last one.
-        const resolvedFont = resolveFont(s)
-        return this.measure(resolvedFont, s, style)
+        return this.measure(resolveFont, s, style)
       },
       getSVG: (s: string, style: any) => {
-        const resolvedFont = resolveFont(s)
-        return this.getSVG(resolvedFont, s, style)
+        return this.getSVG(resolveFont, s, style)
       },
     }
 
     return engine
   }
 
-  public measure(
+  private patchFontFallbackResolver(
     font: opentype.Font,
+    resolveFont: (word: string, fallback?: boolean) => opentype.Font
+  ) {
+    const brokenChars = []
+    ;(font as any)._trackBrokenChars = brokenChars
+
+    const originalStringToGlyphs = font.stringToGlyphs
+    font.stringToGlyphs = (s: string, ...args: any) => {
+      const glyphs = originalStringToGlyphs.call(font, s, ...args)
+
+      for (let i = 0; i < glyphs.length; i++) {
+        // Hitting an undefined glyph. We have to try to resolve it from other
+        // fonts.
+        // @TODO: This affects the kerning resolution but should be fine for now.
+        if (glyphs[i].unicode === undefined) {
+          const char = brokenChars.shift()
+          const anotherFont = resolveFont(char)
+          if (anotherFont !== font) {
+            glyphs[i] = anotherFont.charToGlyph(char)
+          }
+        }
+      }
+
+      return glyphs
+    }
+
+    return () => {
+      font.stringToGlyphs = originalStringToGlyphs
+      ;(font as any)._trackBrokenChars = undefined
+    }
+  }
+
+  private measure(
+    resolveFont: (word: string, fallback?: boolean) => opentype.Font,
     content: string,
     {
       fontSize,
@@ -251,13 +305,20 @@ export default class FontLoader {
       letterSpacing: number
     }
   ) {
-    return font.getAdvanceWidth(content, fontSize, {
-      letterSpacing: letterSpacing / fontSize,
-    })
+    const font = resolveFont(content)
+    const unpatch = this.patchFontFallbackResolver(font, resolveFont)
+
+    try {
+      return font.getAdvanceWidth(content, fontSize, {
+        letterSpacing: letterSpacing / fontSize,
+      })
+    } finally {
+      unpatch()
+    }
   }
 
-  public getSVG(
-    font: opentype.Font,
+  private getSVG(
+    resolveFont: (word: string, fallback?: boolean) => opentype.Font,
     content: string,
     {
       fontSize,
@@ -271,10 +332,17 @@ export default class FontLoader {
       letterSpacing: number
     }
   ) {
-    return font
-      .getPath(content, left, top, fontSize, {
-        letterSpacing: letterSpacing / fontSize,
-      })
-      .toPathData(1)
+    const font = resolveFont(content)
+    const unpatch = this.patchFontFallbackResolver(font, resolveFont)
+
+    try {
+      return font
+        .getPath(content, left, top, fontSize, {
+          letterSpacing: letterSpacing / fontSize,
+        })
+        .toPathData(1)
+    } finally {
+      unpatch()
+    }
   }
 }
