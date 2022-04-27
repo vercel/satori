@@ -1,13 +1,11 @@
 import type { ReactNode } from 'react'
 
-import { guessLanguage } from 'guesslanguage'
-
 import getYoga, { init } from './yoga'
 import layout from './layout'
 import FontLoader, { FontOptions } from './font'
 import svg from './builder/svg'
 import { segment } from './utils'
-import { isEmoji } from './emoji'
+import { detectLanguageCode } from './language'
 
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
@@ -90,18 +88,15 @@ export default async function satori(
       )
 
       const langaugeCodes: Record<string, string[]> = {}
-      segmentsMissingFont.forEach((seg) =>
-        guessLanguage.detect(seg, (code) => {
-          if (code === 'unknown' && isEmoji(seg)) code = 'emoji'
-
-          langaugeCodes[code] = langaugeCodes[code] || []
-          if (code === 'emoji') {
-            langaugeCodes[code].push(seg)
-          } else {
-            langaugeCodes[code][0] = (langaugeCodes[code][0] || '') + seg
-          }
-        })
-      )
+      segmentsMissingFont.forEach((seg) => {
+        const code = detectLanguageCode(seg)
+        langaugeCodes[code] = langaugeCodes[code] || []
+        if (code === 'emoji') {
+          langaugeCodes[code].push(seg)
+        } else {
+          langaugeCodes[code][0] = (langaugeCodes[code][0] || '') + seg
+        }
+      })
 
       const fonts: FontOptions[] = []
       const images: Record<string, string> = {}

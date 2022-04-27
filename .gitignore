@@ -4,5 +4,6 @@ node_modules
 .vscode
 .next
 dist
+.pnpm-debug.log
 
 playground/public/yoga.wasm
