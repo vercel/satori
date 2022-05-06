@@ -1,11 +1,9 @@
-let Yoga: typeof import('yoga-layout')
-
-import YogaMod from '@yoga'
+let Yoga: any
 
 // @ts-ignore
 Yoga = YogaMod.default
 
-export function init(yoga: typeof Yoga) {
+export function initYoga(yoga: typeof Yoga) {
   Yoga = yoga
 }
 

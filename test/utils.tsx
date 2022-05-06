@@ -2,7 +2,7 @@ import { beforeAll } from 'vitest'
 import fs from 'fs/promises'
 import { join } from 'path'
 
-import { SatoriOptions } from '../src'
+import { SatoriOptions } from '../core/src'
 
 export function initFonts(callback: (fonts: SatoriOptions['fonts']) => void) {
   beforeAll(async () => {

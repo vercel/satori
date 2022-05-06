@@ -1,9 +1,9 @@
-import satori from 'satori'
+import { toSvg } from '@vercel/satori-core'
 import { LiveProvider, LiveEditor, withLive } from 'react-live'
 import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Head from 'next/head'
-import packageJson from 'satori/package.json'
+import packageJson from '@vercel/satori-core/package.json'
 import * as resvg from '@resvg/resvg-wasm'
 
 import { loadEmoji, getIconCode } from '../utils/twemoji'
@@ -212,7 +212,7 @@ const LiveSatori = withLive(function ({ live }) {
         ).now()
         if (!native) {
           try {
-            _result = await satori(live.element.prototype.render(), {
+            _result = await toSvg(live.element.prototype.render(), {
               ...options,
               embedFont: fontEmbed,
               width,

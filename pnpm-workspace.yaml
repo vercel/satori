@@ -1,2 +1,5 @@
 packages:
   - 'playground'
+  - 'core'
+  - 'png'
+  - 'svg'

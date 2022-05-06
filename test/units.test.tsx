@@ -2,7 +2,7 @@ import React from 'react'
 import { it, describe, expect } from 'vitest'
 
 import { initFonts } from './utils'
-import satori from '../src'
+import satori from '../core/src'
 
 describe('Units', () => {
   let fonts
