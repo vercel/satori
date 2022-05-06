@@ -14,11 +14,11 @@ export default defineConfig({
   legacyOutput: true,
   format: ['esm'],
   esbuildOptions(options) {
-    if (process.env.WASM) {
+    if (process.env.BUILD_TYPE) {
       options.outExtension = {
-        '.js': '.wasm.js',
+        '.js': `.${process.env.BUILD_TYPE}.js`,
       }
     }
-    options.tsconfig = process.env.WASM ? 'tsconfig.wasm.json' : 'tsconfig.json'
+    options.tsconfig = process.env.BUILD_TYPE ? `tsconfig.${process.env.BUILD_TYPE}.json` : 'tsconfig.json'
   },
 })

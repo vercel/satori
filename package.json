@@ -12,13 +12,15 @@
   "exports": {
     "./package.json": "./package.json",
     ".": "./dist/esm/index.js",
-    "./wasm": "./dist/esm/index.wasm.js"
+    "./core": "./dist/esm/index.core.js",
+    "./png": "./dist/esm/index.png.js"
   },
   "scripts": {
     "dev": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
-    "build": "NODE_ENV=production pnpm run test && pnpm run build:default && pnpm run build:wasm",
+    "build": "NODE_ENV=production pnpm run test && pnpm run build:default && pnpm run build:core pnpm run build:png",
     "build:default": "tsup",
-    "build:wasm": "WASM=1 tsup",
+    "build:core": "BUILD_TYPE=core tsup",
+    "build:png": "BUILD_TYPE=png tsup",
     "test": "NODE_ENV=test vitest run --outputTruncateLength=9999999",
     "dev:test": "NODE_ENV=test vitest --update --outputTruncateLength=9999999"
   },
