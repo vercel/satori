@@ -38,6 +38,19 @@ importers:
       typescript: 4.5.5
       vitest: 0.7.6_@vitest+ui@0.7.6
 
+  node:
+    specifiers:
+      '@resvg/resvg-js': ^2.0.0
+      '@vercel/satori-core': workspace:*
+      tsup: ^5.11.13
+      yoga-layout-prebuilt: ^1.10.0
+    dependencies:
+      '@resvg/resvg-js': 2.0.0
+      '@vercel/satori-core': link:../core
+      yoga-layout-prebuilt: 1.10.0
+    devDependencies:
+      tsup: 5.11.13
+
   playground:
     specifiers:
       '@resvg/resvg-js': ^1.4.0
@@ -206,8 +219,26 @@ packages:
     dev: false
     optional: true
 
+  /@resvg/resvg-js-android-arm-eabi/2.0.0:
+    resolution: {integrity: sha512-8TIK8sN0fyQcHWtxPuHuOOLE1avnJZ1BKf9fTmTXdg65xJ/HXS4IgJTJgRoDiXcqA14mNrIffEoeNV8zlq0OfA==}
+    engines: {node: '>= 10'}
+    cpu: [arm]
+    os: [android]
+    requiresBuild: true
+    dev: false
+    optional: true
+
   /@resvg/resvg-js-android-arm64/1.4.0:
     resolution: {integrity: sha512-BQp3zo+/8Ns9u2NCh7YeII2KflsiXfJDrwahXk21PuDp0l1KcMjdQ2o4dTWTskF5Dba/rcuDa94T5GD9Pgap7g==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [android]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-android-arm64/2.0.0:
+    resolution: {integrity: sha512-8lXCb6igCcGO4f2pX9KYSit46aPr3PhcacUj86RANc/ZaahRV35pdeJablXxFEOZTMzJW0dTqIs1p+YICQLyow==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [android]
@@ -224,8 +255,26 @@ packages:
     dev: false
     optional: true
 
+  /@resvg/resvg-js-darwin-arm64/2.0.0:
+    resolution: {integrity: sha512-VconldQZjRPSY6Ca23CoErbSa6Oxga8+4n68vWqfCJq8PgL3p2dyxovPLGFpepl1GFemy3QqI7aqaUfnHhBSFA==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
   /@resvg/resvg-js-darwin-x64/1.4.0:
     resolution: {integrity: sha512-XFao3tkBBPHubVvXDX/ViYf2509tgqcfUc6bDtVYHCUOecK10ppbtdMRRnXjesi3towPQj2peiRUEavTIBbfGg==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-darwin-x64/2.0.0:
+    resolution: {integrity: sha512-AEFeCXYTnHNcZhXcZorXJuca/NCMWhhPa6XPDTtZ9GPSGDjfVtzlXwQ7YaXePehXLvRbZkD/xfjhc3ere+PiqA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
@@ -242,8 +291,26 @@ packages:
     dev: false
     optional: true
 
+  /@resvg/resvg-js-linux-arm-gnueabihf/2.0.0:
+    resolution: {integrity: sha512-em57tCgmGt8fYIqtonHdQPBRCFSoudGiAUiCsNk2QkfXHVufWGU5FugP+TXuHF7+99mnfKlOAOAf7pk60Izcfg==}
+    engines: {node: '>= 10'}
+    cpu: [arm]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
   /@resvg/resvg-js-linux-arm64-gnu/1.4.0:
     resolution: {integrity: sha512-mT0UWGyzSaTu48sJGQno9zaZqk7j9ZjZppNu/TkLqObYu0xSeTnxnU73/Xy+byZh9RvLY/994bEaOP50jpDW/g==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-linux-arm64-gnu/2.0.0:
+    resolution: {integrity: sha512-zCRmZlV099fmj3/opq3V75m+mwlyZUJv44USvSNIemSF/FpzGd0zkXA0JJPo8k7uhXq4R3Qvzo5U4IczTI3qIA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
@@ -260,8 +327,26 @@ packages:
     dev: false
     optional: true
 
+  /@resvg/resvg-js-linux-arm64-musl/2.0.0:
+    resolution: {integrity: sha512-YTFo3ZNTpMvIn94STkXlG3G0lstfDgmd9CRNSPWWMHue583gVNSEChXdKYckeMxXyTuWaOWZp0I+oHvGrhQcrA==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
   /@resvg/resvg-js-linux-x64-gnu/1.4.0:
     resolution: {integrity: sha512-XDebImgHmQMIjxISZ4UsV9iHcO2IJnkKrT9/F5SWF3MgqRLro2pIY1JsgW70sEjkHlcyF7dbTa/M7TAgSz0uvg==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-linux-x64-gnu/2.0.0:
+    resolution: {integrity: sha512-DTTI/U0K43Rqt8X5Wk74Zh2ogkgGOHuQsxdhZ3vnGJdmx5UxPHUsMuM/jQSb6M4CosIfqzHFfXtE4RV/OdvIgA==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
@@ -278,8 +363,26 @@ packages:
     dev: false
     optional: true
 
+  /@resvg/resvg-js-linux-x64-musl/2.0.0:
+    resolution: {integrity: sha512-deY6Pi2KSyg5JolGlNKG7fRErEEsiJzgAR6uVLxOffuPik7ctp/BKJ/FUQ+m1SruUockqmh5/tM4MKBDqbMcWQ==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: false
+    optional: true
+
   /@resvg/resvg-js-win32-arm64-msvc/1.4.0:
     resolution: {integrity: sha512-4waye03doDRsQmtibxiTQ7alAmvT2D7gt5n3gmIMsAP8fF+szRQ+cD/ClPZdBIMonhAUbe3nLMduocOe2Jp59Q==}
+    engines: {node: '>= 10'}
+    cpu: [arm64]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-win32-arm64-msvc/2.0.0:
+    resolution: {integrity: sha512-AL7O7hA/SR/Dgdk+AxpvGyXW9kOqWkx0ppg4dbG5ru8o9tqmBHe2EFCePe7qVs9bz4BTfjRAqVV+rXxVpuFJQA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
@@ -296,8 +399,26 @@ packages:
     dev: false
     optional: true
 
+  /@resvg/resvg-js-win32-ia32-msvc/2.0.0:
+    resolution: {integrity: sha512-+hwkArpTRfL0kmGBcyi+CuKKmFUDW0zPhbx82eozGVGHCWuQkxMdENMBmmelx6QqfQK2eAoQiQ6fHgKTqS15fw==}
+    engines: {node: '>= 10'}
+    cpu: [ia32]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
   /@resvg/resvg-js-win32-x64-msvc/1.4.0:
     resolution: {integrity: sha512-sMGQdOIop6a/s+cmFodnQNNykvr/MavgBXCzVt9jp1Rq4PXWtn8uwSsUupsn3SHPJCZ83kee6m4JCnak6Rec9A==}
+    engines: {node: '>= 10'}
+    cpu: [x64]
+    os: [win32]
+    requiresBuild: true
+    dev: false
+    optional: true
+
+  /@resvg/resvg-js-win32-x64-msvc/2.0.0:
+    resolution: {integrity: sha512-7CeyKpvOOyvMc45ZCc8DB+v8FRPs4oIWlMMWdqiUSQjYfiHRur5iInw4qPErlWCdLWKX8FlEFlQbCJmOpPgHNg==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
@@ -321,6 +442,24 @@ packages:
       '@resvg/resvg-js-win32-arm64-msvc': 1.4.0
       '@resvg/resvg-js-win32-ia32-msvc': 1.4.0
       '@resvg/resvg-js-win32-x64-msvc': 1.4.0
+    dev: false
+
+  /@resvg/resvg-js/2.0.0:
+    resolution: {integrity: sha512-1jDlH6/YPJ/IkTwd5yk7cQqrQSvoL6BVoZB8kVQ+NyCA29iG930gvw2/u4dMxN7swW307e4hQBbbxe603r7qHQ==}
+    engines: {node: '>= 10'}
+    optionalDependencies:
+      '@resvg/resvg-js-android-arm-eabi': 2.0.0
+      '@resvg/resvg-js-android-arm64': 2.0.0
+      '@resvg/resvg-js-darwin-arm64': 2.0.0
+      '@resvg/resvg-js-darwin-x64': 2.0.0
+      '@resvg/resvg-js-linux-arm-gnueabihf': 2.0.0
+      '@resvg/resvg-js-linux-arm64-gnu': 2.0.0
+      '@resvg/resvg-js-linux-arm64-musl': 2.0.0
+      '@resvg/resvg-js-linux-x64-gnu': 2.0.0
+      '@resvg/resvg-js-linux-x64-musl': 2.0.0
+      '@resvg/resvg-js-win32-arm64-msvc': 2.0.0
+      '@resvg/resvg-js-win32-ia32-msvc': 2.0.0
+      '@resvg/resvg-js-win32-x64-msvc': 2.0.0
     dev: false
 
   /@resvg/resvg-wasm/2.0.0-alpha.4:
@@ -376,6 +515,10 @@ packages:
   /@types/scheduler/0.16.2:
     resolution: {integrity: sha512-hppQEBDmlwhFAXKJX2KnWLYu5yMfi91yazPb2l+lbJiwW+wdo1gNeRA+3RgNSO39WYX2euey41KEwnqesU2Jew==}
     dev: true
+
+  /@types/yoga-layout/1.9.2:
+    resolution: {integrity: sha512-S9q47ByT2pPvD65IvrWp7qppVMpk9WGMbVq9wbWZOHg6tnXSD4vyhao6nOSBwwfDdV2p3Kx9evA9vI+XWTfDvw==}
+    dev: false
 
   /@vitest/ui/0.7.6:
     resolution: {integrity: sha512-UX99oH1XM9XXi6Py26CbzlqLhG8kOXVB2n7nneoj1uU+C9mKCaVKX8eN4reRU49ntby9FAMAVq4uIkVcAMHIAA==}
@@ -1685,6 +1828,34 @@ packages:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
     dev: true
 
+  /tsup/5.11.13:
+    resolution: {integrity: sha512-NVMK01gVmojZn7+iZwxRK1CzW2BIabaVMyEjs7Nm9lm4DrSf7IAqs2F3fg0vT7rH72x1cIBsW9U/TlWrCvHVQQ==}
+    hasBin: true
+    peerDependencies:
+      typescript: ^4.1.0
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+    dependencies:
+      bundle-require: 3.0.4_esbuild@0.14.15
+      cac: 6.7.12
+      chokidar: 3.5.3
+      debug: 4.3.3
+      esbuild: 0.14.15
+      execa: 5.1.1
+      globby: 11.1.0
+      joycon: 3.1.1
+      postcss-load-config: 3.1.1
+      resolve-from: 5.0.0
+      rollup: 2.66.1
+      source-map: 0.7.3
+      sucrase: 3.20.3
+      tree-kill: 1.2.2
+    transitivePeerDependencies:
+      - supports-color
+      - ts-node
+    dev: true
+
   /tsup/5.11.13_typescript@4.5.5:
     resolution: {integrity: sha512-NVMK01gVmojZn7+iZwxRK1CzW2BIabaVMyEjs7Nm9lm4DrSf7IAqs2F3fg0vT7rH72x1cIBsW9U/TlWrCvHVQQ==}
     hasBin: true
@@ -1838,6 +2009,13 @@ packages:
     resolution: {integrity: sha512-r3vXyErRCYJ7wg28yvBY5VSoAF8ZvlcW9/BwUzEtUsjvX/DKs24dIkuwjtuprwJJHsbyUbLApepYTR1BN4uHrg==}
     engines: {node: '>= 6'}
     dev: true
+
+  /yoga-layout-prebuilt/1.10.0:
+    resolution: {integrity: sha512-YnOmtSbv4MTf7RGJMK0FvZ+KD8OEe/J5BNnR0GHhD8J/XcG/Qvxgszm0Un6FTHWW4uHlTgP0IztiXQnGyIR45g==}
+    engines: {node: '>=8'}
+    dependencies:
+      '@types/yoga-layout': 1.9.2
+    dev: false
 
   /yoga-wasm-web/0.0.8:
     resolution: {integrity: sha512-AFcRBnFk24jhNwjkT+wIc3+RgN3jv5czBjA4lsFd9rrnZ28cnEdevOpHH8Qa8BVPNKbgJPj5gHJdnqUHy+C0KQ==}
