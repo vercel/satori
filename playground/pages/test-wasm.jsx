@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { useEffect } from 'react'
-import satori, { init as initSatori } from 'satori/wasm'
-import initYoga from 'yoga-wasm-web'
+import { toPng, toSvg, init as initSatori } from '@vercel/satori-core'
 
 import nextConfCard from '../cards/next-conf'
 import githubCard from '../cards/github'
 import rauchgCard from '../cards/rauchg'
-import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
+import { loadAdditionalAsset} from '../utils/load-asset'
 
 const card = githubCard
 
@@ -14,7 +13,8 @@ async function init() {
   if (typeof window === 'undefined') return []
   if (window.__initialized) return window.__initialized
 
-  const [font, fontBold, fontIcon, Yoga] = await Promise.all(
+  
+  const [font, fontBold, fontIcon, Yoga, Resvg] = await Promise.all(
     [
       fetch(
         'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'
@@ -27,10 +27,11 @@ async function init() {
       ),
     ]
       .map((f) => f.then((res) => res.arrayBuffer()))
-      .concat(WebAssembly.compileStreaming(fetch('/yoga.wasm')).then(initYoga))
+      .concat(WebAssembly.compileStreaming(fetch('/yoga.wasm')))
+      .concat(WebAssembly.compileStreaming(fetch('/resvg.wasm')))
   )
 
-  initSatori(Yoga)
+  initSatori({ Yoga, Resvg })
 
   return (window.__initialized = [
     {
@@ -64,25 +65,13 @@ export default function Playground() {
 
   useEffect(() => {
     ;(async () => {
-      const emojiCodes = getTwemojiMap('')
-      const emojis = await Promise.all(
-        Object.values(emojiCodes)
-          .map(loadEmoji)
-          .map((r) => r.then((res) => res.text()))
-      )
-      const graphemeImages = Object.fromEntries(
-        Object.entries(emojiCodes).map(([key], index) => [
-          key,
-          `data:image/svg+xml;base64,` + btoa(emojis[index]),
-        ])
-      )
 
       const fonts = await waitForResource
-      const result = await satori(card, {
+      const result = await toSvg(card, {
         width,
         height,
         fonts,
-        graphemeImages,
+        loadAdditionalAsset,
         // embedFont: false,
         debug: true,
       })

@@ -1,0 +1,28 @@
+{
+  "name": "@vercel/satori-node",
+  "version": "0.0.21",
+  "description": "Satori converts HTML JSX to SVG string.",
+  "module": "./dist/esm/index.js",
+  "main": "./dist/esm/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist/**"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./dist/esm/index.js"
+  },
+  "scripts": {
+    "dev": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
+    "build": "NODE_ENV=production tsup"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.0.1",
+    "@vercel/satori-core": "workspace:*",
+    "yoga-layout-prebuilt": "^1.10.0"
+  },
+  "devDependencies": {
+    "tsup": "^5.11.13"
+  }
+}

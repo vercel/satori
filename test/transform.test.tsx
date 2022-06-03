@@ -2,7 +2,7 @@ import React from 'react'
 import { it, describe, expect } from 'vitest'
 
 import { initFonts } from './utils'
-import satori from '../src'
+import { toSvg } from '@vercel/satori-node'
 
 describe('transform', () => {
   let fonts
@@ -10,7 +10,7 @@ describe('transform', () => {
 
   describe('translate', () => {
     it('should translate shape', async () => {
-      const svg = await satori(
+      const svg = await toSvg(
         <div
           style={{
             width: 10,
@@ -31,7 +31,7 @@ describe('transform', () => {
     })
 
     it('should translate shape in x-axis', async () => {
-      const svg = await satori(
+      const svg = await toSvg(
         <div
           style={{
             width: 10,
@@ -52,7 +52,7 @@ describe('transform', () => {
     })
 
     it('should translate shape in y-axis', async () => {
-      const svg = await satori(
+      const svg = await toSvg(
         <div
           style={{
             width: 10,
@@ -75,7 +75,7 @@ describe('transform', () => {
 
   describe('rotate', () => {
     it('should rotate shape', async () => {
-      const svg = await satori(
+      const svg = await toSvg(
         <div
           style={{
             width: 10,
@@ -98,7 +98,7 @@ describe('transform', () => {
 
   describe('scale', () => {
     it('should scale shape', async () => {
-      const svg = await satori(
+      const svg = await toSvg(
         <div
           style={{
             width: 10,
@@ -119,7 +119,7 @@ describe('transform', () => {
     })
 
     it('should scale shape in two directions', async () => {
-      const svg = await satori(
+      const svg = await toSvg(
         <div
           style={{
             width: 10,

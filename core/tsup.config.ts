@@ -13,12 +13,4 @@ export default defineConfig({
   minify: process.env.NODE_ENV !== 'development',
   legacyOutput: true,
   format: ['esm'],
-  esbuildOptions(options) {
-    if (process.env.WASM) {
-      options.outExtension = {
-        '.js': '.wasm.js',
-      }
-    }
-    options.tsconfig = process.env.WASM ? 'tsconfig.wasm.json' : 'tsconfig.json'
-  },
 })

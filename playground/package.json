@@ -1,19 +1,22 @@
 {
+  "private": true,
+  "name": "@vercel/satori-playground",
   "scripts": {
     "dev": "next",
     "debug": "node --inspect node_modules/next/dist/bin/next",
     "build": "next build",
+    "vercel-build": "pnpm run postinstall && ls -lA public && cd .. && pnpm --filter '*' build",
     "start": "next start",
-    "postinstall": "cp node_modules/yoga-wasm-web/dist/yoga.wasm public/"
+    "postinstall": "cp node_modules/yoga-wasm-web/dist/yoga.wasm public/ && cp node_modules/@resvg/resvg-wasm/index_bg.wasm public/resvg.wasm"
   },
   "dependencies": {
-    "@resvg/resvg-js": "^1.4.0",
-    "@resvg/resvg-wasm": "2.0.0-alpha.4",
-    "next": "^12.0.9",
+    "@resvg/resvg-wasm": "^2.0.1",
+    "@vercel/satori-core": "workspace:*",
+    "@vercel/satori-node": "workspace:*",
+    "next": "^12.1.6",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-live": "^2.4.1",
-    "satori": "workspace:*",
-    "yoga-wasm-web": "^0.0.8"
+    "yoga-wasm-web": "^0.0.9"
   }
 }

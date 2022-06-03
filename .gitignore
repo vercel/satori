@@ -7,3 +7,4 @@ dist
 .pnpm-debug.log
 
 playground/public/yoga.wasm
+playground/public/resvg.wasm
