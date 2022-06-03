@@ -93,7 +93,7 @@ export default async (req, res) => {
     const isUint8Array = data instanceof Uint8Array
     console.log({isBuffer, isUint8Array})
     console.log('data is ', data)
-    res.end(data, resolve)
+    res.end(Buffer.from(data), resolve)
   })
 
   const t4 = Date.now()
