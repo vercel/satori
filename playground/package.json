@@ -5,7 +5,7 @@
     "dev": "next",
     "debug": "node --inspect node_modules/next/dist/bin/next",
     "build": "next build",
-    "vercel-build": "cd .. && pnpm --filter '*' build && ls -lA public",
+    "vercel-build": "cd .. && pnpm --filter '*' build && ls -lA playground/public",
     "start": "next start",
     "postinstall": "cp node_modules/yoga-wasm-web/dist/yoga.wasm public/ && cp node_modules/@resvg/resvg-wasm/index_bg.wasm public/resvg.wasm"
   },
