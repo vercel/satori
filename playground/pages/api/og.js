@@ -89,6 +89,10 @@ export default async (req, res) => {
   res.setHeader('content-type', 'image/png')
 
   await new Promise((resolve) => {
+    const isBuffer = Buffer.isBuffer(data)
+    const isUint8Array = data instanceof Uint8Array
+    console.log({isBuffer, isUint8Array})
+    console.log('data is ', data)
     res.end(data, resolve)
   })
 
