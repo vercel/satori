@@ -27,7 +27,6 @@ export default async (req, res) => {
   const t1 = Date.now()
 
   const [FONT_ROBOTO, FONT_ROBOTO_BOLD, Yoga, Resvg] = await assets
-  console.log('Initializing wasm', Resvg)
   init({Yoga, Resvg})
 
   const fonts = [

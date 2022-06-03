@@ -13,7 +13,7 @@ async function init() {
   if (typeof window === 'undefined') return []
   if (window.__initialized) return window.__initialized
 
-  console.log('fetching assets...')
+  
   const [font, fontBold, fontIcon, Yoga, Resvg] = await Promise.all(
     [
       fetch(
@@ -31,7 +31,6 @@ async function init() {
       .concat(WebAssembly.compileStreaming(fetch('/resvg.wasm')))
   )
 
-  console.log('All assets fetched', { Yoga, Resvg })
   initSatori({ Yoga, Resvg })
 
   return (window.__initialized = [
