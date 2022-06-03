@@ -2,3 +2,4 @@ packages:
   - 'core'
   - 'node'
   - 'playground'
+  - 'test'

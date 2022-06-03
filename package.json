@@ -1,3 +1,15 @@
 {
-    "private": true
+  "private": true,
+  "scripts": {
+    "dev": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
+    "build": "NODE_ENV=production tsup",
+    "test": "NODE_ENV=test vitest run --outputTruncateLength=9999999",
+    "dev:test": "NODE_ENV=test vitest --update --outputTruncateLength=9999999"
+  },
+  "dependencies": {
+    "vitest": "0.7.6"
+  },
+  "devDependencies": {
+    "react": "^17.0.2"
+  }
 }
