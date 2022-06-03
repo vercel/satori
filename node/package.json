@@ -18,7 +18,7 @@
     "build": "NODE_ENV=production tsup"
   },
   "dependencies": {
-    "@resvg/resvg-js": "^2.0.0",
+    "@resvg/resvg-js": "^2.0.1",
     "@vercel/satori-core": "workspace:*",
     "yoga-layout-prebuilt": "^1.10.0"
   },

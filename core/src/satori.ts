@@ -150,6 +150,6 @@ export async function toPng(
       loadSystemFonts: false,
     },
   })
-  const data = await r.render()
-  return data
+  const data = r.render()
+  return data.asPng()
 }
