@@ -20,7 +20,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
     - name: Add pnpm global
-      run: npm i -g pnpm@7
+      run: npm install --global --no-fund --no-audit pnpm@7
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
