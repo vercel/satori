@@ -1,5 +1,5 @@
 {
-  "name": "@vercel/satori-node",
+  "name": "@vercel/satori-wasm",
   "version": "0.0.22",
   "description": "Satori converts HTML JSX to SVG string.",
   "module": "./dist/esm/index.js",
@@ -14,13 +14,12 @@
     ".": "./dist/esm/index.js"
   },
   "scripts": {
-    "dev": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
-    "build": "NODE_ENV=production tsup"
+    "build": "NODE_ENV=production tsup && cp node_modules/yoga-wasm-web/dist/yoga.wasm dist/esm/yoga.wasm && cp node_modules/@resvg/resvg-wasm/index_bg.wasm dist/esm/resvg.wasm"
   },
   "dependencies": {
-    "@resvg/resvg-js": "^2.0.1",
+    "@resvg/resvg-wasm": "^2.0.1",
     "@vercel/satori-core": "workspace:*",
-    "yoga-layout-prebuilt": "^1.10.0"
+    "yoga-wasm-web": "^0.0.9"
   },
   "devDependencies": {
     "@types/node": "^16",
