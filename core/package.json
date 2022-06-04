@@ -36,7 +36,7 @@
   },
   "homepage": "https://github.com/vercel/satori#readme",
   "devDependencies": {
-    "@types/node": "^17.0.13",
+    "@types/node": "^16",
     "@types/opentype.js": "^1.3.3",
     "@types/react": "^17.0.38",
     "@vitest/ui": "^0.7.6",

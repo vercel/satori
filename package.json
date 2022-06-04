@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "dev:test": "NODE_ENV=test vitest --update --outputTruncateLength=9999999"
+    "test": "NODE_ENV=test vitest --outputTruncateLength=9999999"
   },
   "devDependencies": {
     "react": "^17.0.2",
