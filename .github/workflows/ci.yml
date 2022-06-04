@@ -7,11 +7,15 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test:
+    name: Test Node.js ${{ matrix.node }} on ${{ matrix.os }}
+    timeout-minutes: 5
     strategy:
+      fail-fast: false
       matrix:
-        node-version: [14.x, 16.x]
+        os: [ubuntu-latest]
+        node: [14, 16]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}
