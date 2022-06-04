@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Test Node.js ${{ matrix.node }} on ${{ matrix.os }}
+    name: Node.js ${{ matrix.node }} on ${{ matrix.os }}
     timeout-minutes: 5
     strategy:
       fail-fast: false
