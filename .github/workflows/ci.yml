@@ -17,13 +17,15 @@ jobs:
         node: [14, 16]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Add pnpm global
+      run: npm i -g pnpm@7
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
-    - run: npm i -g pnpm@7
     - run: pnpm install
     - run: pnpm -r build
     - run: pnpm test
