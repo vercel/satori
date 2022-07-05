@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
 
 jobs:
   test:
@@ -14,18 +14,18 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        node: [14, 16]
+        node: [16]
     runs-on: ${{ matrix.os }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: Add pnpm global
-      run: npm install --global --no-fund --no-audit pnpm@7
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'pnpm'
-    - run: pnpm install
-    - run: pnpm -r build
-    - run: pnpm test
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Add pnpm global
+        run: npm install --global --no-fund --no-audit pnpm@7
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm build
+      - run: pnpm test

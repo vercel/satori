@@ -4,7 +4,7 @@
 
 ## API
 
-Satori translates the layout and styles of HTML & CSS based elements into an SVG image.
+Satori converts HTML and CSS into SVG.
 
 ```jsx
 import satori from 'satori'
@@ -23,9 +23,10 @@ const svg = await satori(
       },
       ...
     ],
-    embedFont: true,   // Embed the font in SVG as path data. Optional, default: true.
-    debug: false,      // Show the bounding box for debugging. Optional, default: false.
-    graphemeImages: {} // Custom grapheme images. Optional, default: empty.
+    embedFont: true,     // Embed the font in SVG as path data. Optional, default: true.
+    debug: false,        // Show the bounding box for debugging. Optional, default: false.
+    graphemeImages: {},  // Custom grapheme images, see "Emojis". Optional, default: empty.
+    loadAdditionalAsset, // See "Dynamically Load Emojis and Fonts" below. Optional.
   },
 )
 ```
