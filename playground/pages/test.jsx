@@ -1,36 +1,39 @@
 import { useState } from 'react'
 import { useEffect } from 'react'
-import satori, { init as initSatori } from 'satori/wasm'
-import initYoga from 'yoga-wasm-web'
+import satori from 'satori'
 
+import transformOrigin from '../cards/transform-origin'
 import nextConfCard from '../cards/next-conf'
 import githubCard from '../cards/github'
+import textAlignCard from '../cards/text-align'
 import rauchgCard from '../cards/rauchg'
+import overflowCard from '../cards/overflow'
+import vercelCard from '../cards/vercel'
+import dpsCard from '../cards/dps'
+import whiteSpaceCard from '../cards/white-space'
 import getTwemojiMap, { loadEmoji } from '../utils/twemoji'
 
-const card = githubCard
+const card = nextConfCard
 
 async function init() {
   if (typeof window === 'undefined') return []
   if (window.__initialized) return window.__initialized
 
-  const [font, fontBold, fontIcon, Yoga] = await Promise.all(
-    [
-      fetch(
-        'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'
-      ),
-      fetch(
-        'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-700-normal.woff'
-      ),
-      fetch(
-        'https://unpkg.com/@fontsource/material-icons@4.5.2/files/material-icons-base-400-normal.woff'
-      ),
-    ]
-      .map((f) => f.then((res) => res.arrayBuffer()))
-      .concat(WebAssembly.compileStreaming(fetch('/yoga.wasm')).then(initYoga))
+  const [font, fontBold, fontIcon] = await Promise.all(
+    (
+      await Promise.all([
+        fetch(
+          'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'
+        ),
+        fetch(
+          'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-700-normal.woff'
+        ),
+        fetch(
+          'https://unpkg.com/@fontsource/material-icons@4.5.2/files/material-icons-base-400-normal.woff'
+        ),
+      ])
+    ).map((res) => res.arrayBuffer())
   )
-
-  initSatori(Yoga)
 
   return (window.__initialized = [
     {
@@ -64,6 +67,7 @@ export default function Playground() {
 
   useEffect(() => {
     ;(async () => {
+      const fonts = await waitForResource
       const emojiCodes = getTwemojiMap('')
       const emojis = await Promise.all(
         Object.values(emojiCodes)
@@ -77,14 +81,13 @@ export default function Playground() {
         ])
       )
 
-      const fonts = await waitForResource
       const result = await satori(card, {
         width,
         height,
         fonts,
         graphemeImages,
         // embedFont: false,
-        debug: true,
+        // debug: true,
       })
 
       setSvg(result)
@@ -92,7 +95,7 @@ export default function Playground() {
   }, [])
 
   return (
-    <div id='container'>
+    <div id='container' style={{ padding: 10 }}>
       <div id='svg' dangerouslySetInnerHTML={{ __html: svg }}></div>
       <div
         style={{
@@ -105,6 +108,7 @@ export default function Playground() {
           overflow: 'hidden',
           letterSpacing: 0,
           fontSize: 16,
+          border: '1px solid black',
         }}
       >
         {card}

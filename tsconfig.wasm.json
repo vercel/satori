@@ -6,7 +6,7 @@
     "lib": ["esnext", "dom"],
     "baseUrl": ".",
     "paths": {
-      "@yoga": ["src/yoga/yoga-prebuilt.ts"]
+      "@yoga": ["src/yoga/yoga-prebuilt.wasm.ts"]
     }
   }
 }

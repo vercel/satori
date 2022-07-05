@@ -1,6 +1,2 @@
 packages:
-  - 'core'
-  - 'node'
-  - 'wasm'
   - 'playground'
-  - 'test'

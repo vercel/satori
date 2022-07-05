@@ -1,9 +1,0 @@
-{
-  "private": true,
-  "name": "@vercel/satori-test",
-  "dependencies": {
-    "@vercel/satori-core": "workspace:*",
-    "@vercel/satori-node": "workspace:*",
-    "@vercel/satori-wasm": "workspace:*"
-  }
-}
