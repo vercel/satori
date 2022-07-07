@@ -93,7 +93,9 @@ When using `background-image`, the image will be stretched to fit the element by
 
 If you want to render the generated SVG to another image format such as PNG, it would be better to use base64 encoded image data directly as `props.src` so no extra I/O is needed.
 
-### CSS Properties
+### CSS
+
+Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Native, and it’s **not** a complete CSS implementation. However, it supports a subset of the spec that covers most common CSS features:
 
 | Property | Supported Values |
 | --- | --- |
@@ -157,6 +159,36 @@ Advanced typography features such as kerning, ligatures and other OpenType featu
 
 RTL languages are not supported either.
 
+#### Fonts
+
+Satori currently supports three font formats: TTF, OTF and WOFF. Note that WOFF2 is not supported at the moment. You must specify the font if any text is rendered with Satori, and pass the font data as ArrayBuffer (web) or Buffer (Node.js):
+
+```js
+await satori(
+  <div style={{ fontFamily: 'Inter' }}>Hello</div>,
+  {
+    width: 600,
+    height: 400,
+    fonts: [
+      {
+        name: 'Inter',
+        data: inter,
+        weight: 400,
+        style: 'normal',
+      },
+      {
+        name: 'Inter',
+        data: interBold,
+        weight: 700,
+        style: 'normal',
+      },
+    ],
+  }
+)
+```
+
+Multiple fonts can be passed to Satori and used in `fontFamily`.
+
 #### Emojis
 
 To render custom images for specific graphemes, you can use `graphemeImages` option to map the grapheme to an image source:
@@ -177,7 +209,7 @@ The image will be resized to the current font-size (both width and height), so i
 
 #### Dynamically Load Emojis and Fonts
 
-Satori supports an option to dynamically load emoji images (grapheme pictures) and fonts when they're used but missing:
+Satori supports dynamically loading emoji images (grapheme pictures) and fonts. The `loadAdditionalAsset` function will be called when a text segment is rendered but missing the image or font:
 
 ```jsx
 await satori(
@@ -186,14 +218,32 @@ await satori(
     // `code` will be the detected language code, `emoji` if it's an Emoji, or `unknwon` if not able to tell.
     // `segment` will be the content to render.
     loadAdditionalAsset: async (code: string, segment: string) => {
-      // if segment is an emoji
-      return `data:image/svg+xml;base64,...`
+      if (code === 'emoji') {
+        // if segment is an emoji
+        return `data:image/svg+xml;base64,...`
+      }
 
       // if segment is normal text
       return loadFontFromSystem(code)
     }
   }
 )
+```
+
+### Runtime and WASM
+
+Satori can be used in browser, Node.js (>= 16), and Web Workers.
+
+By default, Satori depends on asm.js for the browser runtime, and native module in Node.js. However, you can optionally load WASM instead by importing `satori/wasm` and provide the initialized WASM module instance of Yoga to Satori:
+
+```js
+import satori, { init } from 'satori/wasm'
+import initYoga from 'yoga-wasm-web'
+
+const yoga = initYoga(await fetch('/yoga.wasm').then(res => res.arrayBuffer()))
+init(yoga)
+
+await satori(...)
 ```
 
 ## Contribute
