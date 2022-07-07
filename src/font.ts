@@ -234,20 +234,20 @@ export default class FontLoader {
         const A = ascender(resolvedFont, true)
         const D = descender(resolvedFont, true)
         const sGlyphHeight = A - D
-        const glyphHeight = engine.glyphHeight(s, resolvedFont)
+        const glyphHeight = engine.height(s, resolvedFont)
         const sTypoOffset = (glyphHeight - sGlyphHeight) / 2
         const { yMax, yMin } = resolvedFont.tables.head
         const baseline = yMax / (yMax - yMin)
 
-        return sTypoOffset + baseline * glyphHeight
+        return sTypoOffset + baseline * sGlyphHeight
       },
-      glyphHeight: (
+      height: (
         s?: string,
         resolvedFont = typeof s === 'undefined' ? fonts[0] : resolveFont(s)
       ) => {
         return (
-          ((ascender(resolvedFont) - descender(resolvedFont)) * lineHeight) /
-          1.2
+          (ascender(resolvedFont) - descender(resolvedFont)) *
+          (lineHeight / 1.2)
         )
       },
       measure: (s: string, style: any) => {
