@@ -17,8 +17,6 @@ export interface SatoriOptions {
   embedFont?: boolean
   debug?: boolean
   graphemeImages?: Record<string, string>
-  // Can be used to dynamically load missing fonts or image for a given segment.
-  detectLanguage?: (segment: string) => Promise<string> | string
   loadAdditionalAsset?: (
     languageCode: string,
     segment: string
