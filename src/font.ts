@@ -3,8 +3,6 @@
  */
 import opentype from '@shuding/opentype.js'
 
-import { segment } from './utils'
-
 type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
 type WeigthName = 'normal' | 'bold'
 type Style = 'normal' | 'italic'
