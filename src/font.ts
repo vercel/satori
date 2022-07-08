@@ -223,6 +223,7 @@ export default class FontLoader {
         s?: string,
         resolvedFont = typeof s === 'undefined' ? fonts[0] : resolveFont(s)
       ) => {
+        // https://www.w3.org/TR/css-inline-3/#css-metrics
         // https://www.w3.org/TR/CSS2/visudet.html#leading
         // Note. It is recommended that implementations that use OpenType or
         // TrueType fonts use the metrics "sTypoAscender" and "sTypoDescender"
@@ -233,7 +234,7 @@ export default class FontLoader {
         const D = descender(resolvedFont, true)
         const sGlyphHeight = A - D
         const glyphHeight = engine.height(s, resolvedFont)
-        const sTypoOffset = (glyphHeight - sGlyphHeight) / 2
+        const sTypoOffset = glyphHeight - sGlyphHeight
         const { yMax, yMin } = resolvedFont.tables.head
         const baseline = yMax / (yMax - yMin)
 
