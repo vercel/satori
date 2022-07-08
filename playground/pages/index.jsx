@@ -67,6 +67,36 @@ const loadDynamicAsset = withCache(async (code, text) => {
   }
 })
 
+// https://raw.githubusercontent.com/n3r4zzurr0/svg-spinners/main/svg/90-ring.svg
+const spinner = (
+  <svg
+    width='24'
+    height='24'
+    viewBox='0 0 24 24'
+    xmlns='http://www.w3.org/2000/svg'
+    style={{
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      margin: 'auto',
+      fill: 'white',
+      zIndex: 1,
+    }}
+  >
+    <path d='M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z'>
+      <animateTransform
+        attributeName='transform'
+        type='rotate'
+        dur='0.75s'
+        values='0 12 12;360 12 12'
+        repeatCount='indefinite'
+      />
+    </path>
+  </svg>
+)
+
 async function init() {
   if (typeof window === 'undefined') return []
 
@@ -151,6 +181,7 @@ const LiveSatori = withLive(function ({ live }) {
   const [height, setHeight] = useState(200 * 2)
   const [iframeNode, setIframeNode] = useState(null)
   const [scaleRatio, setScaleRatio] = useState(1)
+  const [loadingResources, setLoadingResources] = useState(true)
 
   const sizeRef = useRef([width, height])
   sizeRef.current = [width, height]
@@ -171,6 +202,7 @@ const LiveSatori = withLive(function ({ live }) {
       setOptions({
         fonts: await loadFonts,
       })
+      setLoadingResources(false)
     })()
   }, [])
 
@@ -266,6 +298,7 @@ const LiveSatori = withLive(function ({ live }) {
               <pre>{live.error}</pre>
             </div>
           ) : null}
+          {loadingResources ? spinner : null}
           <div
             className='svg-container'
             dangerouslySetInnerHTML={
@@ -296,7 +329,7 @@ const LiveSatori = withLive(function ({ live }) {
                     <>
                       <style
                         dangerouslySetInnerHTML={{
-                          __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');*{box-sizing:border-box}body{display:flex;height:100%;margin:0;font-family:Inter,sans-serif;align-items:center;justify-content:center;overflow:hidden}`,
+                          __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');body{display:flex;height:100%;margin:0;font-family:Inter,sans-serif;align-items:center;justify-content:center;overflow:hidden}body>div,body>div *{box-sizing:border-box;display:flex}`,
                         }}
                       />
                       {live.element ? <live.element /> : null}

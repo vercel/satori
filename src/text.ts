@@ -481,6 +481,7 @@ export default function* buildTextNodes(
 
       if (debug) {
         extra +=
+          // Glyph
           buildXMLString('rect', {
             x: left + leftOffset,
             y: top + topOffset + baselineDelta,
