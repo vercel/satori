@@ -597,6 +597,30 @@ export default function Playground() {
         <meta name='description' content='Satori Playground' />
         <meta name='theme-color' content='#fff' />
         <link
+          rel='preload'
+          href='https://unpkg.com/@resvg/resvg-wasm@2.0.0-alpha.4/index_bg.wasm'
+          as='fetch'
+          crossorigin='anonymous'
+        />
+        <link
+          rel='preload'
+          href='https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'
+          as='fetch'
+          crossorigin='anonymous'
+        />
+        <link
+          rel='preload'
+          href='https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-700-normal.woff'
+          as='fetch'
+          crossorigin='anonymous'
+        />
+        <link
+          rel='preload'
+          href='https://unpkg.com/@fontsource/material-icons@4.5.2/files/material-icons-base-400-normal.woff'
+          as='fetch'
+          crossorigin='anonymous'
+        />
+        <link
           rel='icon'
           href='data:image/svg+xml;utf8,&lt;svg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 100 100&#x27;&gt;&lt;text x=&#x27;50&#x27; y=&#x27;.9em&#x27; font-size=&#x27;90&#x27; text-anchor=&#x27;middle&#x27;&gt;🄪&lt;/text&gt;&lt;style&gt;text{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";fill:black}@media(prefers-color-scheme:dark){text{fill:white}}&lt;/style&gt;&lt;/svg&gt;'
         />
