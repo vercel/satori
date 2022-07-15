@@ -584,11 +584,13 @@ export default function* buildTextNodes(
     }
 
     result +=
-      (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
-      p +
-      decorationShape +
-      (filter ? '</g>' : '') +
-      extra
+      (filter
+        ? buildXMLString(
+            'g',
+            { filter: `url(#satori_s-${id})` },
+            p + decorationShape
+          )
+        : p + decorationShape) + extra
   }
 
   // Attach information to the parent node.

@@ -232,13 +232,13 @@ export default class FontLoader {
         // and "Descent" metrics from the HHEA table should be used.
         const A = ascender(resolvedFont, true)
         const D = descender(resolvedFont, true)
-        const sGlyphHeight = A - D
         const glyphHeight = engine.height(s, resolvedFont)
-        const sTypoOffset = glyphHeight - sGlyphHeight
         const { yMax, yMin } = resolvedFont.tables.head
-        const baseline = yMax / (yMax - yMin)
 
-        return sTypoOffset + baseline * sGlyphHeight
+        const sGlyphHeight = A - D
+        const baselineOffset = (yMax / (yMax - yMin) - 1) * sGlyphHeight
+
+        return glyphHeight * ((1.2 / lineHeight + 1) / 2) + baselineOffset
       },
       height: (
         s?: string,
