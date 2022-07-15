@@ -585,7 +585,8 @@ export default function* buildTextNodes(
 
     result +=
       (filter
-        ? buildXMLString(
+        ? filter +
+          buildXMLString(
             'g',
             { filter: `url(#satori_s-${id})` },
             p + decorationShape
