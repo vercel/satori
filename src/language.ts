@@ -33,10 +33,8 @@ const code = {
 export function detectLanguageCode(segment: string): string {
   for (const c in code) {
     if (code[c].test(segment)) {
-      console.log(segment, c)
       return c
     }
   }
-  console.log(segment)
   return 'unknown'
 }
