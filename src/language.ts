@@ -15,7 +15,7 @@
 // - https://fonts.google.com/noto/fonts?sort=popularity&noto.query=sans
 const code = {
   emoji: /\p{Emoji_Presentation}/u,
-  ja: /\p{scx=Hira}|\p{scx=Kana}/u,
+  ja: /\p{scx=Hira}|\p{scx=Kana}|[，；：]/u,
   ko: /\p{scx=Hangul}/u,
   zh: /\p{scx=Han}/u,
   th: /\p{scx=Thai}/u,
