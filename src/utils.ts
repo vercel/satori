@@ -1,8 +1,5 @@
 import type { ReactNode, ReactElement } from 'react'
 
-import { LineBreaker } from 'css-line-break'
-import { splitGraphemes } from 'text-segmentation'
-
 export function isReactElement(node: ReactNode): node is ReactElement {
   const type = typeof node
   if (
@@ -45,9 +42,14 @@ export function v(
 const locale = undefined
 
 const INTL_SEGMENTER_SUPPORTED =
-  typeof Intl !== 'undefined' &&
-  'Segmenter' in Intl &&
-  process.env.NODE_ENV !== 'test'
+  typeof Intl !== 'undefined' && 'Segmenter' in Intl
+
+if (!INTL_SEGMENTER_SUPPORTED) {
+  // https://caniuse.com/mdn-javascript_builtins_intl_segments
+  throw new Error(
+    'Intl.Segmenter does not exist, please use import a polyfill.'
+  )
+}
 
 const wordSegmenter = INTL_SEGMENTER_SUPPORTED
   ? new (Intl as any).Segmenter(locale, { granularity: 'word' })
@@ -65,56 +67,13 @@ export const wordSeparators = [
   0x0020, 0x00a0, 0x1361, 0x10100, 0x10101, 0x1039, 0x1091, 0xa,
 ].map((point) => String.fromCodePoint(point))
 
-const breakWords = (str: string): string[] => {
-  const breaker = LineBreaker(str, {
-    lineBreak: 'strict',
-    wordBreak: 'normal',
-  })
-
-  const words = []
-  let bk
-
-  while (!(bk = breaker.next()).done) {
-    if (bk.value) {
-      const value = bk.value.slice()
-      let word = ''
-      for (let i = 0; i < value.length; i++) {
-        const char = value[i]
-        if (!wordSeparators.includes(char)) {
-          word += char
-        } else {
-          if (word.length) {
-            words.push(word)
-          }
-          words.push(char)
-          word = ''
-        }
-      }
-
-      if (word.length) {
-        words.push(word)
-      }
-    }
-  }
-
-  return words
-}
-
 export function segment(
   content: string,
   granularity: 'word' | 'grapheme'
 ): string[] {
-  if (INTL_SEGMENTER_SUPPORTED) {
-    return granularity === 'word'
-      ? [...wordSegmenter.segment(content)].map((seg) => seg.segment)
-      : [...graphemeSegmenter.segment(content)].map((seg) => seg.segment)
-  }
-
-  if (granularity === 'word') {
-    return breakWords(content)
-  } else {
-    return splitGraphemes(content)
-  }
+  return granularity === 'word'
+    ? [...wordSegmenter.segment(content)].map((seg) => seg.segment)
+    : [...graphemeSegmenter.segment(content)].map((seg) => seg.segment)
 }
 
 export function buildXMLString(

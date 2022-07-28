@@ -20,5 +20,6 @@ export default defineConfig({
       }
     }
     options.tsconfig = process.env.WASM ? 'tsconfig.wasm.json' : 'tsconfig.json'
+    options.legalComments = 'external'
   },
 })
