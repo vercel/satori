@@ -1,3 +1,7 @@
+export const config = {
+  runtime: 'experimental-edge',
+}
+
 export default async function loadGoogleFont(req) {
   if (req.nextUrl.pathname !== '/api/font') return
   const { searchParams } = new URL(req.url)
