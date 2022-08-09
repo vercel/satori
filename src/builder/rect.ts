@@ -126,6 +126,38 @@ export default function rect(
 
       const hasStroke =
         i === fills.length - 1 && strokeWidth && backgroundClip !== 'text'
+
+      let currentClipPath =
+        backgroundClip === 'text'
+          ? `url(#satori_bct-${id})`
+          : clipPathId
+          ? `url(#${clipPathId})`
+          : undefined
+
+      if (hasStroke) {
+        // In SVG, stroke is always centered on the path and there is no
+        // existing property to make it behave like CSS border. So here we
+        // 2x the border width and introduce another clip path to clip the
+        // overflowed part.
+
+        defs += buildXMLString(
+          'clipPath',
+          {
+            id: `satori_bc-${id}`,
+            'clip-path': currentClipPath,
+          },
+          buildXMLString(type, {
+            x: left,
+            y: top,
+            width,
+            height,
+            transform: matrix ? matrix : undefined,
+          })
+        )
+
+        currentClipPath = `url(#satori_bc-${id})`
+      }
+
       return buildXMLString(type, {
         x: left,
         y: top,
@@ -133,15 +165,10 @@ export default function rect(
         height,
         fill,
         stroke: hasStroke ? stroke : undefined,
-        'stroke-width': hasStroke ? strokeWidth : undefined,
+        'stroke-width': hasStroke ? strokeWidth * 2 : undefined,
         d: path ? path : undefined,
         transform: matrix ? matrix : undefined,
-        'clip-path':
-          backgroundClip === 'text'
-            ? `url(#satori_bct-${id})`
-            : clipPathId
-            ? `url(#${clipPathId})`
-            : undefined,
+        'clip-path': currentClipPath,
         style: cssFilter ? `filter:${cssFilter}` : undefined,
       })
     })
@@ -157,7 +184,7 @@ export default function rect(
         height,
         fill: 'transparent',
         stroke,
-        'stroke-width': strokeWidth,
+        'stroke-width': strokeWidth * 2,
         d: path ? path : undefined,
         transform: matrix ? matrix : undefined,
         'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,

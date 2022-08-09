@@ -329,7 +329,7 @@ const LiveSatori = withLive(function ({ live }) {
                     <>
                       <style
                         dangerouslySetInnerHTML={{
-                          __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');body{display:flex;height:100%;margin:0;font-family:Inter,sans-serif;align-items:center;justify-content:center;overflow:hidden}body>div,body>div *{box-sizing:border-box;display:flex}`,
+                          __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');body{display:flex;height:100%;margin:0;font-family:Inter,sans-serif;overflow:hidden}body>div,body>div *{box-sizing:border-box;display:flex}`,
                         }}
                       />
                       {live.element ? <live.element /> : null}
@@ -600,25 +600,25 @@ export default function Playground() {
           rel='preload'
           href='https://unpkg.com/@resvg/resvg-wasm@2.0.0-alpha.4/index_bg.wasm'
           as='fetch'
-          crossorigin='anonymous'
+          crossOrigin='anonymous'
         />
         <link
           rel='preload'
           href='https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'
           as='fetch'
-          crossorigin='anonymous'
+          crossOrigin='anonymous'
         />
         <link
           rel='preload'
           href='https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-700-normal.woff'
           as='fetch'
-          crossorigin='anonymous'
+          crossOrigin='anonymous'
         />
         <link
           rel='preload'
           href='https://unpkg.com/@fontsource/material-icons@4.5.2/files/material-icons-base-400-normal.woff'
           as='fetch'
-          crossorigin='anonymous'
+          crossOrigin='anonymous'
         />
         <link
           rel='icon'
