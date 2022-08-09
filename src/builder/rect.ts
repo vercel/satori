@@ -124,8 +124,9 @@ export default function rect(
         return ''
       }
 
-      const hasStroke =
-        i === fills.length - 1 && strokeWidth && backgroundClip !== 'text'
+      const hasStroke = !!strokeWidth
+      const drawStroke =
+        i === fills.length - 1 && hasStroke && backgroundClip !== 'text'
 
       let currentClipPath =
         backgroundClip === 'text'
@@ -134,7 +135,7 @@ export default function rect(
           ? `url(#${clipPathId})`
           : undefined
 
-      if (hasStroke) {
+      if (drawStroke) {
         // In SVG, stroke is always centered on the path and there is no
         // existing property to make it behave like CSS border. So here we
         // 2x the border width and introduce another clip path to clip the
@@ -151,7 +152,7 @@ export default function rect(
             y: top,
             width,
             height,
-            transform: matrix ? matrix : undefined,
+            d: path ? path : undefined,
           })
         )
 
@@ -164,8 +165,14 @@ export default function rect(
         width,
         height,
         fill,
-        stroke: hasStroke ? stroke : undefined,
-        'stroke-width': hasStroke ? strokeWidth * 2 : undefined,
+        stroke: drawStroke || hasStroke ? stroke : undefined,
+        'stroke-width': drawStroke
+          ? strokeWidth * 2
+          : hasStroke
+          ? // Here we work around some sub-pixel rendering issue caused by
+            // clip-path by adding an extra stroke to the underlying fill layers.
+            1
+          : undefined,
         d: path ? path : undefined,
         transform: matrix ? matrix : undefined,
         'clip-path': currentClipPath,
