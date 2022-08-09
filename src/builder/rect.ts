@@ -31,6 +31,7 @@ export default function rect(
 
   let type = 'rect'
   let stroke = 'transparent'
+  let strokeDashArray = ''
   let strokeWidth = 0
   let matrix = ''
   let defs = ''
@@ -45,6 +46,9 @@ export default function rect(
   if (style.borderWidth) {
     strokeWidth = style.borderWidth as number
     stroke = style.borderColor as string
+    if (style.borderStyle === 'dashed') {
+      strokeDashArray = strokeWidth * 2 + '  ' + strokeWidth
+    }
   }
 
   if (style.opacity) {
@@ -106,6 +110,7 @@ export default function rect(
       fill: 'transparent',
       stroke: '#ff5757',
       'stroke-width': 1,
+      'stroke-dasharray': strokeDashArray || undefined,
       transform: matrix || undefined,
       'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
     })
@@ -173,6 +178,7 @@ export default function rect(
             // clip-path by adding an extra stroke to the underlying fill layers.
             1
           : undefined,
+        'stroke-dasharray': strokeDashArray || undefined,
         d: path ? path : undefined,
         transform: matrix ? matrix : undefined,
         'clip-path': currentClipPath,
@@ -192,6 +198,7 @@ export default function rect(
         fill: 'transparent',
         stroke,
         'stroke-width': strokeWidth * 2,
+        'stroke-dasharray': strokeDashArray || undefined,
         d: path ? path : undefined,
         transform: matrix ? matrix : undefined,
         'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,

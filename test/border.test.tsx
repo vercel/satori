@@ -86,4 +86,18 @@ describe('Border', () => {
       )
     })
   })
+
+  describe('border-style', () => {
+    it('should support dashed border', async () => {
+      const svg = await satori(
+        <div
+          style={{ border: '5px dashed black', width: 50, height: 50 }}
+        ></div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(svg).toMatchInlineSnapshot(
+        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"transparent\\" stroke=\\"black\\" stroke-width=\\"10\\" stroke-dasharray=\\"10  5\\" clip-path=\\"url(#satori_bc-id)\\"/></svg>"'
+      )
+    })
+  })
 })

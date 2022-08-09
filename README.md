@@ -97,53 +97,143 @@ If you want to render the generated SVG to another image format such as PNG, it 
 
 Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Native, and it’s **not** a complete CSS implementation. However, it supports a subset of the spec that covers most common CSS features:
 
-| Property | Supported Values |
-| --- | --- |
-| `display` | `none`, `flex` |
-| `position` | `relative`, `absolute` |
-| `margin`, `padding` | Supported |
-| `top`, `right`, `bottom`, `left` | Supported |
-| `width`, `height` | Supported |
-| `max-width`, `max-height` | Supported |
-| `min-width`, `min-height` | Supported |
-| `border` | Supported |
-| `flex-direction` | Supported |
-| `flex-wrap` | Supported |
-| `flex-grow` | Supported |
-| `flex-shrink` | Supported |
-| `flex-basis` | Supported except for `auto` |
-| `align-items` | Supported |
-| `align-content` | Supported |
-| `align-self` | Supported |
-| `justify-content` | Supported |
-| `font-family` | Supported |
-| `font-size` | Supported |
-| `font-weight` | Supported |
-| `font-style` | Supported |
-| `text-align` | Supported |
-| `letter-spacing` | Supported |
-| `box-shadow` | All supported except `spread-radius` and `inset` (works like `drop-shadow`) |
-| `border-radius` | Supported |
-| `overflow` | `visible`, `hidden` |
-| `color` | Supported |
-| `transform` | Support absolute values |
-| `transform-origin` | Support one-value and two-value syntax (both relative and absolute values) |
-| `object-fit` | `contain`, `cover`, `none` |
-| `opacity` | Supported |
-| `background-color` | Supported |
-| `background-image` | Support `linear-gradient`, `radial-gradient`, `url` |
-| `word-break` | Supported |
-| `text-shadow` | Supported |
-| `text-transform` | Support `lowercase`, `uppercase`, `capitalize` |
-| `background-position` | Supported |
-| `background-size` | Support two-value size string such as `10px 20%` |
-| `white-space` | Support `normal`, `pre`, `pre-wrap` and `nowrap` |
-| `text-overflow` | Support `clip` and `ellipsis` |
-| `text-decoration` | Support line types `underline` and `line-through`, and styles `dotted`, `dashed`, `solid` |
-| `line-height` | Supported |
-| `background-clip` | Support `border-box` and `text` |
-| `background-repeat` | Supported |
-| `filter` | Supported |
+<table>
+<thead>
+<tr>
+  <th>Property</th>
+  <th>Property Expanded</th>
+  <th>Supported Values</th>
+</tr>
+</thead>
+<tbody>
+
+<tr>
+<td colspan="2"><code>display</code></td>
+<td><code>none</code> and <code>flex</code>, default to <code>flex</code></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>position</code></td>
+<td><code>relative</code> and <code>absolute</code>, default to <code>relative</code></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>color</code></td>
+<td>Supported</td>
+</tr>
+
+<tr><td rowspan="5"><code>margin</code></td></tr>
+<tr><td><code>marginTop</code></td><td>Supported</td></tr>
+<tr><td><code>marginRight</code></td><td>Supported</td></tr>
+<tr><td><code>marginBottom</code></td><td>Supported</td></tr>
+<tr><td><code>marginLeft</code></td><td>Supported</td></tr>
+
+<tr><td rowspan="5">Position</td></tr>
+<tr><td><code>top</code></td><td>Supported</td></tr>
+<tr><td><code>right</code></td><td>Supported</td></tr>
+<tr><td><code>bottom</code></td><td>Supported</td></tr>
+<tr><td><code>left</code></td><td>Supported</td></tr>
+
+<tr><td rowspan="3">Size</td></tr>
+<tr><td><code>width</code></td><td>Supported</td></tr>
+<tr><td><code>height</code></td><td>Supported</td></tr>
+
+<tr><td rowspan="5">Min & max size</td></tr>
+<tr><td><code>min-width</code></td><td>Supported</td></tr>
+<tr><td><code>min-height</code></td><td>Supported</td></tr>
+<tr><td><code>max-width</code></td><td>Supported</td></tr>
+<tr><td><code>max-height</code></td><td>Supported</td></tr>
+
+<tr><td rowspan="5"><code>border</code></td></tr>
+<tr><td><code>borderWidth</code></td><td>Supported</td></tr>
+<tr><td><code>borderStyle</code></td><td><code>solid</code> and <code>dashed</code>, default to <code>solid</code></td></tr>
+<tr><td><code>borderColor</code></td><td>Supported</td></tr>
+<tr><td>
+  Shorthand</td><td>Supported, i.e. <code>1px solid gray</code><br/>
+  Note that it isn't supported to set border width/style/color for individual directions.
+</td></tr>
+
+<tr><td rowspan="6"><code>borderRadius</code></td></tr>
+<tr><td><code>borderTopLeftRadius</code></td><td>Supported</td></tr>
+<tr><td><code>borderTopRightRadius</code></td><td>Supported</td></tr>
+<tr><td><code>borderBottomLeftRadius</code></td><td>Supported</td></tr>
+<tr><td><code>borderBottomRightRadius</code></td><td>Supported</td></tr>
+<tr><td>Shorthand</td><td>Supported, i.e. <code>5px</code></td></tr>
+
+<tr><td rowspan="10">Flex</td></tr>
+<tr><td><code>flexDirection</code></td><td><code>column</code>, <code>row</code>, <code>row-reverse</code>, <code>column-reverse</code>, default to <code>row</code></td></tr>
+<tr><td><code>flexWrap</code></td><td><code>wrap</code>, <code>nowrap</code>, <code>wrap-reverse</code>, default to <code>wrap</code></td></tr>
+<tr><td><code>flexGrow</code></td><td>Supported</td></tr>
+<tr><td><code>flexShrink</code></td><td>Supported</td></tr>
+<tr><td><code>flexBasis</code></td><td>Supported except for <code>auto</code></td></tr>
+<tr><td><code>alignItems</code></td><td>Supported</td></tr>
+<tr><td><code>alignContent</code></td><td>Supported</td></tr>
+<tr><td><code>alignSelf</code></td><td>Supported</td></tr>
+<tr><td><code>justifyContent</code></td><td>Supported</td></tr>
+
+<tr><td rowspan="5">Font</td></tr>
+<tr><td><code>fontFamily</code></td><td>Supported</td></tr>
+<tr><td><code>fontSize</code></td><td>Supported</td></tr>
+<tr><td><code>fontWeight</code></td><td>Supported</td></tr>
+<tr><td><code>fontStyle</code></td><td>Supported</td></tr>
+
+<tr><td rowspan="10">Text</td></tr>
+<tr><td><code>textAlign</code></td><td><code>start</code>, <code>end</code>, <code>left</code>, <code>right</code>, <code>center</code>, <code>justify</code>, default to <code>start</code></td></tr>
+<tr><td><code>textTransform</code></td><td><code>none</code>, <code>lowercase</code>, <code>uppercase</code>, <code>capitalize</code>, defaults to <code>none</code></td></tr>
+<tr><td><code>textOverflow</code></td><td><code>clip</code>, <code>ellipsis</code>, defaults to <code>clip</code></td></tr>
+<tr><td><code>textDecoration</code></td><td>Support line types <code>underline</code> and <code>line-through</code>, and styles <code>dotted</code>, <code>dashed</code>, <code>solid</code></td></tr>
+<tr><td><code>textShadow</code></td><td>Support single shadow</td></tr>
+<tr><td><code>lineHeight</code></td><td>Supported</td></tr>
+<tr><td><code>letterSpacing</code></td><td>Supported</td></tr>
+<tr><td><code>whiteSpace</code></td><td><code>normal</code>, <code>pre</code>, <code>pre-wrap</code>, <code>nowrap</code>, defaults to <code>normal</code></td></tr>
+<tr><td><code>wordBreak</code></td><td><code>normal</code>, <code>break-all</code>, <code>break-word</code>, <code>keep-all</code>, defaults to <code>normal</code></td></tr>
+
+<tr><td rowspan="7">Background</td></tr>
+<tr><td><code>backgroundColor</code></td><td>Supported, single value</td></tr>
+<tr><td><code>backgroundImage</code></td><td><code>linear-gradient</code>, <code>radial-gradient</code>, <code>url</code>, single value</td></tr>
+<tr><td><code>backgroundPosition</code></td><td>Support single value</td></tr>
+<tr><td><code>backgroundSize</code></td><td>Support two-value size i.e. `10px 20%`</td></tr>
+<tr><td><code>backgroundClip</code></td><td><code>border-box</code>, <code>text</code></td></tr>
+<tr><td><code>backgroundRepeat</code></td><td><code>repeat</code>, <code>repeat-x</code>, <code>repeat-y</code>, <code>no-repeat</code>, defaults to <code>repeat</code></td></tr>
+
+<tr><td rowspan="5"><code>transform</code></td></tr>
+<tr><td>Translate (<code>translate</code>, <code>translateX</code>, <code>translateY</code>)</td><td>Support absolute values only</td></tr>
+<tr><td>Rotate</td><td>Supported</td></tr>
+<tr><td>Scale (<code>scale</code>, <code>scaleX</code>, <code>scaleY</code>)</td><td>Supported</td></tr>
+<tr><td>Skew (<code>skew</code>, <code>skewX</code>, <code>skewY</code>)</td><td>Supported</td></tr>
+
+<tr>
+<td colspan="2"><code>transformOrigin</code></td>
+<td>Support one-value and two-value syntax (both relative and absolute values)</td>
+</tr>
+
+<tr>
+<td colspan="2"><code>objectFit</code></td>
+<td><code>contain</code>, <code>cover</code>, <code>none</code>, default to <code>node</code></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>opacity</code></td>
+<td>Supported</td>
+</tr>
+
+<tr>
+<td colspan="2"><code>boxShadow</code></td>
+<td>Supported except spread radius and inset shadow.<br/>Note: this property works similar to <code>drop-shadow</code> in CSS.</td>
+</tr>
+
+<tr>
+<td colspan="2"><code>overflow</code></td>
+<td><code>visible</code> and <code>hidden</code>, default to <code>visible</code></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>filter</code></td>
+<td>Supported</td>
+</tr>
+
+</tbody>
+</table>
 
 Note:
 
