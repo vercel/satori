@@ -31,6 +31,7 @@ export default function rect(
 
   let type = 'rect'
   let stroke = 'transparent'
+  let strokeDashArray = ''
   let strokeWidth = 0
   let matrix = ''
   let defs = ''
@@ -45,6 +46,9 @@ export default function rect(
   if (style.borderWidth) {
     strokeWidth = style.borderWidth as number
     stroke = style.borderColor as string
+    if (style.borderStyle === 'dashed') {
+      strokeDashArray = strokeWidth * 2 + '  ' + strokeWidth
+    }
   }
 
   if (style.opacity) {
@@ -106,6 +110,7 @@ export default function rect(
       fill: 'transparent',
       stroke: '#ff5757',
       'stroke-width': 1,
+      'stroke-dasharray': strokeDashArray || undefined,
       transform: matrix || undefined,
       'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
     })
@@ -124,8 +129,9 @@ export default function rect(
         return ''
       }
 
-      const hasStroke =
-        i === fills.length - 1 && strokeWidth && backgroundClip !== 'text'
+      const hasStroke = !!strokeWidth
+      const drawStroke =
+        i === fills.length - 1 && hasStroke && backgroundClip !== 'text'
 
       let currentClipPath =
         backgroundClip === 'text'
@@ -134,7 +140,7 @@ export default function rect(
           ? `url(#${clipPathId})`
           : undefined
 
-      if (hasStroke) {
+      if (drawStroke) {
         // In SVG, stroke is always centered on the path and there is no
         // existing property to make it behave like CSS border. So here we
         // 2x the border width and introduce another clip path to clip the
@@ -151,7 +157,7 @@ export default function rect(
             y: top,
             width,
             height,
-            transform: matrix ? matrix : undefined,
+            d: path ? path : undefined,
           })
         )
 
@@ -164,8 +170,15 @@ export default function rect(
         width,
         height,
         fill,
-        stroke: hasStroke ? stroke : undefined,
-        'stroke-width': hasStroke ? strokeWidth * 2 : undefined,
+        stroke: drawStroke || hasStroke ? stroke : undefined,
+        'stroke-width': drawStroke
+          ? strokeWidth * 2
+          : hasStroke
+          ? // Here we work around some sub-pixel rendering issue caused by
+            // clip-path by adding an extra stroke to the underlying fill layers.
+            1
+          : undefined,
+        'stroke-dasharray': strokeDashArray || undefined,
         d: path ? path : undefined,
         transform: matrix ? matrix : undefined,
         'clip-path': currentClipPath,
@@ -185,6 +198,7 @@ export default function rect(
         fill: 'transparent',
         stroke,
         'stroke-width': strokeWidth * 2,
+        'stroke-dasharray': strokeDashArray || undefined,
         d: path ? path : undefined,
         transform: matrix ? matrix : undefined,
         'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
