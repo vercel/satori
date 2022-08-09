@@ -600,25 +600,25 @@ export default function Playground() {
           rel='preload'
           href='https://unpkg.com/@resvg/resvg-wasm@2.0.0-alpha.4/index_bg.wasm'
           as='fetch'
-          crossorigin='anonymous'
+          crossOrigin='anonymous'
         />
         <link
           rel='preload'
           href='https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'
           as='fetch'
-          crossorigin='anonymous'
+          crossOrigin='anonymous'
         />
         <link
           rel='preload'
           href='https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-700-normal.woff'
           as='fetch'
-          crossorigin='anonymous'
+          crossOrigin='anonymous'
         />
         <link
           rel='preload'
           href='https://unpkg.com/@fontsource/material-icons@4.5.2/files/material-icons-base-400-normal.woff'
           as='fetch'
-          crossorigin='anonymous'
+          crossOrigin='anonymous'
         />
         <link
           rel='icon'

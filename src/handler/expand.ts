@@ -36,15 +36,17 @@ function handleFallbackColor(
   prop: string,
   parsed: Record<string, string>,
   rawInput: string,
-  color: string
+  currentColor: string
 ) {
   if (prop === 'border' && !rawInput.includes(parsed.borderColor)) {
-    parsed.borderColor = color
+    parsed.borderColor = currentColor
+  } else if (prop === 'borderColor') {
+    parsed.borderColor = parsed.borderTopColor
   } else if (
     prop === 'textDecoration' &&
     !rawInput.includes(parsed.textDecorationColor)
   ) {
-    parsed.textDecorationColor = color
+    parsed.textDecorationColor = currentColor
   }
   return parsed
 }
