@@ -14,7 +14,9 @@
 // found here (sort by popularity):
 // - https://fonts.google.com/noto/fonts?sort=popularity&noto.query=sans
 const code = {
-  emoji: /\p{Emoji_Presentation}/u,
+  emoji:
+    // https://stackoverflow.com/a/68146409
+    /\p{RI}\p{RI}|\p{Emoji}(\p{EMod}+|\u{FE0F}\u{20E3}?|[\u{E0020}-\u{E007E}]+\u{E007F})?(\u{200D}\p{Emoji}(\p{EMod}+|\u{FE0F}\u{20E3}?|[\u{E0020}-\u{E007E}]+\u{E007F})?)+|\p{EPres}(\p{EMod}+|\u{FE0F}\u{20E3}?|[\u{E0020}-\u{E007E}]+\u{E007F})?|\p{Emoji}(\p{EMod}+|\u{FE0F}\u{20E3}?|[\u{E0020}-\u{E007E}]+\u{E007F})/u,
   ja: /\p{scx=Hira}|\p{scx=Kana}|[，；：]/u,
   ko: /\p{scx=Hangul}/u,
   zh: /\p{scx=Han}/u,
