@@ -21,6 +21,7 @@ const code = {
   ko: /\p{scx=Hangul}/u,
   zh: /\p{scx=Han}/u,
   th: /\p{scx=Thai}/u,
+  bn: /\p{scx=Bengali}/u,
   ar: /\p{scx=Arabic}/u,
   ta: /\p{scx=Tamil}/u,
   ml: /\p{scx=Malayalam}/u,
