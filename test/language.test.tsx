@@ -61,4 +61,7 @@ describe('detectLanguageCode', () => {
     expect(detectLanguageCode('नमस्ते')).toBe('devanagari')
   });
 
+  it('should detect unknown', async () => {
+    expect(detectLanguageCode('wat')).toBe('unknown')
+  });
 })
