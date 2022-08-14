@@ -7,7 +7,7 @@
 // - https://unicode.org/reports/tr18/#General_Category_Property
 // - https://tc39.es/ecma262/multipage/text-processing.html#table-unicode-script-values
 
-// Supported langauges. The order matters.
+// Supported languages. The order matters.
 // Usually, this is only for "special cases" like CJKV languages as latin
 // characters are usually included in the base font, and can be safely fallback
 // to the Noto Sans font. A list of special cases we want to support can be

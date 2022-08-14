@@ -85,14 +85,14 @@ export default async function satori(
         new Set(segment(segmentsMissingFont.join(''), 'grapheme'))
       )
 
-      const langaugeCodes: Record<string, string[]> = {}
+      const languageCodes: Record<string, string[]> = {}
       segmentsMissingFont.forEach((seg) => {
         const code = detectLanguageCode(seg)
-        langaugeCodes[code] = langaugeCodes[code] || []
+        languageCodes[code] = languageCodes[code] || []
         if (code === 'emoji') {
-          langaugeCodes[code].push(seg)
+          languageCodes[code].push(seg)
         } else {
-          langaugeCodes[code][0] = (langaugeCodes[code][0] || '') + seg
+          languageCodes[code][0] = (languageCodes[code][0] || '') + seg
         }
       })
 
@@ -100,7 +100,7 @@ export default async function satori(
       const images: Record<string, string> = {}
 
       await Promise.all(
-        Object.entries(langaugeCodes).flatMap(([code, segments]) =>
+        Object.entries(languageCodes).flatMap(([code, segments]) =>
           segments.map((segment) =>
             options.loadAdditionalAsset(code, segment).then((asset) => {
               if (typeof asset === 'string') {
