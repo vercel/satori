@@ -200,5 +200,4 @@ describe('Units', () => {
     expect(typeof svg).toBe('string');
   })
 
-  
 })
