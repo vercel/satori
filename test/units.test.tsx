@@ -139,4 +139,65 @@ describe('Units', () => {
       '"<svg width=\\"100\\" height=\\"200\\" viewBox=\\"0 0 100 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><pattern id=\\"satori_pattern_id_0\\" x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\" patternUnits=\\"userSpaceOnUse\\"><radialGradient id=\\"satori_radial_id_0\\"><stop offset=\\"0\\" stop-color=\\"lightgray\\"/><stop offset=\\"0.02\\" stop-color=\\"lightgray\\"/><stop offset=\\"0\\" stop-color=\\"transparent\\"/><stop offset=\\"1\\" stop-color=\\"transparent\\"/></radialGradient><circle cx=\\"25\\" cy=\\"25\\" width=\\"100\\" height=\\"100\\" r=\\"106.06601717798213\\" fill=\\"url(#satori_radial_id_0)\\"/></pattern><pattern id=\\"satori_pattern_id_1\\" x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\" patternUnits=\\"userSpaceOnUse\\"><radialGradient id=\\"satori_radial_id_1\\"><stop offset=\\"0\\" stop-color=\\"lightgray\\"/><stop offset=\\"0.02\\" stop-color=\\"lightgray\\"/><stop offset=\\"0\\" stop-color=\\"transparent\\"/><stop offset=\\"1\\" stop-color=\\"transparent\\"/></radialGradient><circle cx=\\"75\\" cy=\\"75\\" width=\\"100\\" height=\\"100\\" r=\\"106.06601717798213\\" fill=\\"url(#satori_radial_id_1)\\"/></pattern></defs><rect x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"200\\" fill=\\"white\\"/><rect x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"200\\" fill=\\"url(#satori_pattern_id_0)\\"/><rect x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"200\\" fill=\\"url(#satori_pattern_id_1)\\"/></svg>"'
     )
   })
+
+  it('should throw if flex missing on div that has children', async () => {
+    const result = satori(
+      <div>Test <span>satori</span> with space</div>,
+      {
+        width: 10,
+        height: 10,
+        fonts,
+      }
+    )
+    expect(result).rejects.toThrowError(`Expected <div> to have style={{display: 'flex'}} but received style={{display: 'block'}}`)
+  })
+
+  it('should throw if display inline-block on div that has children', async () => {
+    const result = satori(
+      <div style={{display: 'inline-block'}}>Test <span>satori</span> with space</div>,
+      {
+        width: 10,
+        height: 10,
+        fonts,
+      }
+    )
+    expect(result).rejects.toThrowError(`Expected <div> to have style={{display: 'flex'}} but received style={{display: 'inline-block'}}`)
+  })
+
+  it('should not throw if display none on div that has children', async () => {
+    const svg = await satori(
+      <div style={{display: 'none'}}>Test <span>satori</span> with space</div>,
+      {
+        width: 10,
+        height: 10,
+        fonts,
+      }
+    )
+    expect(typeof svg).toBe('string');
+  })
+
+  it('should not throw if flex missing on span that has children', async () => {
+    const svg = await satori(
+      <span>Test <span>satori</span> with space</span>,
+      {
+        width: 10,
+        height: 10,
+        fonts,
+      }
+    )
+    expect(typeof svg).toBe('string');
+  })
+
+  it('should not throw if flex missing on div without children', async () => {
+    const svg = await satori(
+      <div></div>,
+      {
+        width: 10,
+        height: 10,
+        fonts,
+      }
+    )
+    expect(typeof svg).toBe('string');
+  })
+
 })

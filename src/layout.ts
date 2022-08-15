@@ -172,6 +172,10 @@ export default function* layout(
       computedStyle
     )
   } else {
+    const display = style?.display ?? 'block'
+    if (type === 'div' && Array.isArray(children) && display !== 'flex' && display !== 'none') {
+      throw new Error(`Expected <div> to have style={{display: 'flex'}} but received style={{display: '${display}'}}`)
+    }
     baseRenderResult = rect(
       { id, left, top, width, height, isInheritingTransform, debug },
       computedStyle
