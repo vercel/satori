@@ -1,13 +1,5 @@
 import React from 'react'
-import {
-  it,
-  describe,
-  expect,
-  beforeAll,
-  afterAll,
-  beforeEach,
-  afterEach,
-} from 'vitest'
+import { it, describe, expect, beforeEach, afterEach } from 'vitest'
 
 import { initFonts } from './utils'
 import satori from '../src'
