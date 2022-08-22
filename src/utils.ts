@@ -274,6 +274,9 @@ const ATTRIBUTE_MAPPING = {
   zoomAndPan: 'zoomandpan',
 }
 
+// From https://github.com/yoksel/url-encoder/blob/master/src/js/script.js
+const SVGSymbols = /[\r\n%#()<>?[\\\]^`{|}"']/g
+
 function translateSVGNodeToSVGString(
   node: ReactElement | string | (ReactElement | string)[]
 ): string {
@@ -290,7 +293,7 @@ function translateSVGNodeToSVGString(
     )
   }
 
-  const { children, restProps } = node.props || {}
+  const { children, ...restProps } = node.props || {}
   return `<${type}${Object.entries(restProps)
     .map(([k, v]) => {
       return ` ${ATTRIBUTE_MAPPING[k] || k}="${v}"`
@@ -303,9 +306,7 @@ export function SVGNodeToImage(node: ReactElement): string {
   const viewBoxSize = viewBox.split(' ').map((v) => parseInt(v, 10))
   const width = node.props.width || viewBoxSize[2] || 0
   const height = node.props.height || viewBoxSize[3] || 0
-  return `data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${viewBox}">${translateSVGNodeToSVGString(
-      node.props.children
-    )}</svg>`
-  )}`
+  return `data:image/svg+xml;utf8,${`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${viewBox}">${translateSVGNodeToSVGString(
+    node.props.children
+  )}</svg>`.replace(SVGSymbols, encodeURIComponent)}`
 }
