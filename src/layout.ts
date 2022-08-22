@@ -82,7 +82,7 @@ export default async function* layout(
 
   // Process as element.
   const { type, props } = element
-  const { style, children } = props
+  const { style, children } = props || {}
 
   const node = Yoga.Node.create()
   parent.insertChild(node, parent.getChildCount())
@@ -121,7 +121,7 @@ export default async function* layout(
 
   // 2. Do layout recursively for its children.
   const normalizedChildren =
-    typeof children === 'undefined' ? [] : [].concat(children)
+    typeof children === 'undefined' ? [] : [].concat(children).flat(Infinity)
   const iterators: ReturnType<typeof layout>[] = []
 
   let i = 0
