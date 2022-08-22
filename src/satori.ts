@@ -76,7 +76,7 @@ export default async function satori(
     canLoadAdditionalAssets: !!options.loadAdditionalAsset,
   })
 
-  let segmentsMissingFont = handler.next().value as string[]
+  let segmentsMissingFont = (await handler.next()).value as string[]
 
   if (options.loadAdditionalAsset) {
     if (segmentsMissingFont.length) {
@@ -119,10 +119,10 @@ export default async function satori(
     }
   }
 
-  handler.next()
+  await handler.next()
   root.calculateLayout(options.width, options.height, Yoga.DIRECTION_LTR)
 
-  const content = handler.next([0, 0]).value as string
+  const content = (await handler.next([0, 0])).value as string
 
   root.freeRecursive()
 

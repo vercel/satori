@@ -13,7 +13,7 @@ import decoration from './builder/text-decoration'
 // @TODO: Support "lang" attribute to modify the locale
 const locale = undefined
 
-export default function* buildTextNodes(
+export default async function* buildTextNodes(
   content: string,
   context: LayoutContext
 ) {

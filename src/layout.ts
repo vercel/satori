@@ -26,10 +26,10 @@ export interface LayoutContext {
   canLoadAdditionalAssets: boolean
 }
 
-export default function* layout(
+export default async function* layout(
   element: ReactNode,
   context: LayoutContext
-): Generator<string[], string, [number, number]> {
+): AsyncGenerator<string[], string, [number, number]> {
   const Yoga = getYoga()
   const {
     id,
@@ -56,7 +56,7 @@ export default function* layout(
     if (!isReactElement(element)) {
       // Process as text node.
       iter = layoutText(String(element), context)
-      yield iter.next().value as string[]
+      yield (await iter.next()).value as string[]
     } else {
       if (isClass(element.type as Function)) {
         throw new Error('Class component is not supported.')
@@ -66,12 +66,12 @@ export default function* layout(
       // So we can safely evaluate it to render. Otherwise, an error will be
       // thrown by React.
       iter = layout((element.type as Function)(element.props), context)
-      yield iter.next().value as string[]
+      yield (await iter.next()).value as string[]
     }
 
-    iter.next()
+    await iter.next()
     const offset = yield
-    return iter.next(offset).value as string
+    return (await iter.next(offset)).value as string
   }
 
   // Process as element.
@@ -134,14 +134,14 @@ export default function* layout(
       canLoadAdditionalAssets,
     })
     if (canLoadAdditionalAssets) {
-      segmentsMissingFont.push(...((iter.next().value as any) || []))
+      segmentsMissingFont.push(...(((await iter.next()).value as any) || []))
     } else {
-      iter.next()
+      await iter.next()
     }
     iterators.push(iter)
   }
   yield segmentsMissingFont
-  for (const iter of iterators) iter.next()
+  for (const iter of iterators) await iter.next()
 
   // 3. Post-process the node.
   const [x, y] = yield
@@ -184,7 +184,7 @@ export default function* layout(
 
   // Generate the rendered markup for the children.
   for (const iter of iterators) {
-    childrenRenderResult += iter.next([left, top]).value
+    childrenRenderResult += (await iter.next([left, top])).value
   }
 
   // An extra pass to generate the special background-clip shape collected from
