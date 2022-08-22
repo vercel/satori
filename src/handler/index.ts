@@ -38,6 +38,15 @@ export default function handler(
     if (!style.height) style.height = r * (style.width as number)
   }
 
+  if (type === 'svg') {
+    const viewBox = props.viewBox || props.viewbox
+    const viewBoxSize = viewBox.split(' ').map((v) => parseInt(v, 10))
+    const width = props.width || viewBoxSize[2] || 0
+    const height = props.height || viewBoxSize[3] || 0
+    if (!style.width) style.width = width
+    if (!style.height) style.height = height
+  }
+
   // Set properties for Yoga.
   node.setDisplay(
     v(

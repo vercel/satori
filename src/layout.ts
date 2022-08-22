@@ -6,7 +6,12 @@ import type { ReactNode } from 'react'
 import type { YogaNode } from 'yoga-layout'
 
 import getYoga from './yoga'
-import { isReactElement, isClass, buildXMLString } from './utils'
+import {
+  isReactElement,
+  isClass,
+  buildXMLString,
+  SVGNodeToImage,
+} from './utils'
 import handler from './handler'
 import FontLoader from './font'
 import layoutText from './text'
@@ -160,6 +165,23 @@ export default async function* layout(
   // Generate the rendered markup for the current node.
   if (type === 'img') {
     const src = await resolveImageData(props.src)
+    baseRenderResult = image(
+      {
+        id,
+        left,
+        top,
+        width,
+        height,
+        src,
+        isInheritingTransform,
+        debug,
+      },
+      computedStyle
+    )
+  } else if (type === 'svg') {
+    // When entering a <svg> node, we need to convert it to a <img> with the
+    // SVG data URL embedded.
+    const src = SVGNodeToImage(element)
     baseRenderResult = image(
       {
         id,

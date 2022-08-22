@@ -119,3 +119,194 @@ export function createLRU<T>(max: number = 20) {
     get,
   }
 }
+
+// Based on
+// https://raw.githubusercontent.com/facebook/react/master/packages/react-dom/src/shared/possibleStandardNames.js
+const ATTRIBUTE_MAPPING = {
+  accentHeight: 'accent-height',
+  alignmentBaseline: 'alignment-baseline',
+  allowReorder: 'allowreorder',
+  arabicForm: 'arabic-form',
+  attributeName: 'attributename',
+  attributeType: 'attributetype',
+  autoReverse: 'autoreverse',
+  baseFrequency: 'basefrequency',
+  baseProfile: 'baseprofile',
+  baselineShift: 'baseline-shift',
+  calcMode: 'calcmode',
+  capHeight: 'cap-height',
+  clipPath: 'clip-path',
+  clipPathUnits: 'clippathunits',
+  clipRule: 'clip-rule',
+  colorInterpolation: 'color-interpolation',
+  colorInterpolationFilters: 'color-interpolation-filters',
+  colorProfile: 'color-profile',
+  colorRendering: 'color-rendering',
+  contentScriptType: 'contentscripttype',
+  contentStyleType: 'contentstyletype',
+  diffuseConstant: 'diffuseconstant',
+  dominantBaseline: 'dominant-baseline',
+  edgeMode: 'edgemode',
+  enableBackground: 'enable-background',
+  externalResourcesRequired: 'externalresourcesrequired',
+  fillOpacity: 'fill-opacity',
+  fillRule: 'fill-rule',
+  filterRes: 'filterres',
+  filterUnits: 'filterunits',
+  floodColor: 'flood-color',
+  floodOpacity: 'flood-opacity',
+  fontFamily: 'font-family',
+  fontSize: 'font-size',
+  fontSizeAdjust: 'font-size-adjust',
+  fontStretch: 'font-stretch',
+  fontStyle: 'font-style',
+  fontVariant: 'font-variant',
+  fontWeight: 'font-weight',
+  glyphName: 'glyph-name',
+  glyphOrientationHorizontal: 'glyph-orientation-horizontal',
+  glyphOrientationVertical: 'glyph-orientation-vertical',
+  glyphRef: 'glyphref',
+  gradientTransform: 'gradienttransform',
+  gradientUnits: 'gradientunits',
+  horizAdvX: 'horiz-adv-x',
+  horizOriginX: 'horiz-origin-x',
+  imageRendering: 'image-rendering',
+  kernelMatrix: 'kernelmatrix',
+  kernelUnitLength: 'kernelunitlength',
+  keyPoints: 'keypoints',
+  keySplines: 'keysplines',
+  keyTimes: 'keytimes',
+  lengthAdjust: 'lengthadjust',
+  letterSpacing: 'letter-spacing',
+  lightingColor: 'lighting-color',
+  limitingConeAngle: 'limitingconeangle',
+  markerEnd: 'marker-end',
+  markerHeight: 'markerheight',
+  markerMid: 'marker-mid',
+  markerStart: 'marker-start',
+  markerUnits: 'markerunits',
+  markerWidth: 'markerwidth',
+  maskContentUnits: 'maskcontentunits',
+  maskUnits: 'maskunits',
+  numOctaves: 'numoctaves',
+  overlinePosition: 'overline-position',
+  overlineThickness: 'overline-thickness',
+  paintOrder: 'paint-order',
+  panose1: 'panose-1',
+  pathLength: 'pathlength',
+  patternContentUnits: 'patterncontentunits',
+  patternTransform: 'patterntransform',
+  patternUnits: 'patternunits',
+  pointerEvents: 'pointer-events',
+  pointsAtX: 'pointsatx',
+  pointsAtY: 'pointsaty',
+  pointsAtZ: 'pointsatz',
+  preserveAlpha: 'preservealpha',
+  preserveAspectRatio: 'preserveaspectratio',
+  primitiveUnits: 'primitiveunits',
+  refX: 'refx',
+  refY: 'refy',
+  renderingIntent: 'rendering-intent',
+  repeatCount: 'repeatcount',
+  repeatDur: 'repeatdur',
+  requiredExtensions: 'requiredextensions',
+  requiredFeatures: 'requiredfeatures',
+  shapeRendering: 'shape-rendering',
+  specularConstant: 'specularconstant',
+  specularExponent: 'specularexponent',
+  spreadMethod: 'spreadmethod',
+  startOffset: 'startoffset',
+  stdDeviation: 'stddeviation',
+  stitchTiles: 'stitchtiles',
+  stopColor: 'stop-color',
+  stopOpacity: 'stop-opacity',
+  strikethroughPosition: 'strikethrough-position',
+  strikethroughThickness: 'strikethrough-thickness',
+  strokeDasharray: 'stroke-dasharray',
+  strokeDashoffset: 'stroke-dashoffset',
+  strokeLinecap: 'stroke-linecap',
+  strokeLinejoin: 'stroke-linejoin',
+  strokeMiterlimit: 'stroke-miterlimit',
+  strokeOpacity: 'stroke-opacity',
+  strokeWidth: 'stroke-width',
+  suppressContentEditableWarning: 'suppresscontenteditablewarning',
+  suppressHydrationWarning: 'suppresshydrationwarning',
+  surfaceScale: 'surfacescale',
+  systemLanguage: 'systemlanguage',
+  tableValues: 'tablevalues',
+  targetX: 'targetx',
+  targetY: 'targety',
+  textAnchor: 'text-anchor',
+  textDecoration: 'text-decoration',
+  textLength: 'textlength',
+  textRendering: 'text-rendering',
+  underlinePosition: 'underline-position',
+  underlineThickness: 'underline-thickness',
+  unicodeBidi: 'unicode-bidi',
+  unicodeRange: 'unicode-range',
+  unitsPerEm: 'units-per-em',
+  vAlphabetic: 'v-alphabetic',
+  vHanging: 'v-hanging',
+  vIdeographic: 'v-ideographic',
+  vMathematical: 'v-mathematical',
+  vectorEffect: 'vector-effect',
+  vertAdvY: 'vert-adv-y',
+  vertOriginX: 'vert-origin-x',
+  vertOriginY: 'vert-origin-y',
+  viewBox: 'viewbox',
+  viewTarget: 'viewtarget',
+  wordSpacing: 'word-spacing',
+  writingMode: 'writing-mode',
+  xChannelSelector: 'xchannelselector',
+  xHeight: 'x-height',
+  xlinkActuate: 'xlink:actuate',
+  xlinkArcrole: 'xlink:arcrole',
+  xlinkHref: 'xlink:href',
+  xlinkRole: 'xlink:role',
+  xlinkShow: 'xlink:show',
+  xlinkTitle: 'xlink:title',
+  xlinkType: 'xlink:type',
+  xmlBase: 'xml:base',
+  xmlLang: 'xml:lang',
+  xmlSpace: 'xmlspace',
+  xmlnsXlink: 'xmlns:xlink',
+  yChannelSelector: 'ychannelselector',
+  zoomAndPan: 'zoomandpan',
+}
+
+// From https://github.com/yoksel/url-encoder/blob/master/src/js/script.js
+const SVGSymbols = /[\r\n%#()<>?[\\\]^`{|}"']/g
+
+function translateSVGNodeToSVGString(
+  node: ReactElement | string | (ReactElement | string)[]
+): string {
+  if (!node) return ''
+  if (Array.isArray(node)) {
+    return node.map(translateSVGNodeToSVGString).join('')
+  }
+  if (typeof node !== 'object') return String(node)
+
+  const type = node.type
+  if (type === 'text') {
+    throw new Error(
+      '<text> nodes are not currently supported, please convert them to <path>'
+    )
+  }
+
+  const { children, ...restProps } = node.props || {}
+  return `<${type}${Object.entries(restProps)
+    .map(([k, v]) => {
+      return ` ${ATTRIBUTE_MAPPING[k] || k}="${v}"`
+    })
+    .join('')}>${translateSVGNodeToSVGString(children)}</${type}>`
+}
+
+export function SVGNodeToImage(node: ReactElement): string {
+  const viewBox = node.props.viewBox || node.props.viewbox
+  const viewBoxSize = viewBox.split(' ').map((v) => parseInt(v, 10))
+  const width = node.props.width || viewBoxSize[2] || 0
+  const height = node.props.height || viewBoxSize[3] || 0
+  return `data:image/svg+xml;utf8,${`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${viewBox}">${translateSVGNodeToSVGString(
+    node.props.children
+  )}</svg>`.replace(SVGSymbols, encodeURIComponent)}`
+}
