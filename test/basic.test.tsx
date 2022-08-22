@@ -88,44 +88,31 @@ describe('Basic', () => {
     )
   })
 
-  it('should support border radius', async () => {
+  it('should support array in JSX children', async () => {
     const svg = await satori(
       <div
         style={{
-          borderRadius: '10px',
-          background: 'red',
+          backgroundColor: '#ff0',
           width: '100%',
           height: '100%',
+          display: 'flex',
         }}
-      ></div>,
+      >
+        <div>1</div>
+        {[
+          <div style={{ display: 'flex' }}>2{[<div>3</div>]}</div>,
+          <div style={{ display: 'flex' }}>{[4]}</div>,
+        ]}
+      </div>,
       {
         width: 100,
         height: 100,
+        embedFont: false,
         fonts,
       }
     )
     expect(svg).toMatchInlineSnapshot(
-      '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><path x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\" fill=\\"red\\" d=\\"M10,0 h80 a10,10 0 0 1 10,10 v80 a10,10 0 0 1 -10,10 h-80 a10,10 0 0 1 -10,-10 v-80 a10,10 0 0 1 10,-10\\"/></svg>"'
-    )
-  })
-
-  it('should support border width and color', async () => {
-    const svg = await satori(
-      <div
-        style={{
-          border: '1px solid',
-          width: '100%',
-          height: '100%',
-        }}
-      ></div>,
-      {
-        width: 100,
-        height: 100,
-        fonts,
-      }
-    )
-    expect(svg).toMatchInlineSnapshot(
-      '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\" fill=\\"transparent\\" stroke=\\"black\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/></svg>"'
+      '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><rect x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\" fill=\\"#ff0\\"/><text x=\\"0\\" y=\\"15.48289183222958\\" width=\\"8.984375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">1</text><text x=\\"9\\" y=\\"15.48289183222958\\" width=\\"8.984375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">2</text><text x=\\"18\\" y=\\"15.48289183222958\\" width=\\"8.984375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">3</text><text x=\\"27\\" y=\\"15.48289183222958\\" width=\\"8.984375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">4</text></svg>"'
     )
   })
 })

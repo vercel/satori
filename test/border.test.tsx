@@ -8,6 +8,47 @@ describe('Border', () => {
   let fonts
   initFonts((f) => (fonts = f))
 
+  it('should support border radius', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          borderRadius: '10px',
+          background: 'red',
+          width: '100%',
+          height: '100%',
+        }}
+      ></div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(svg).toMatchInlineSnapshot(
+      '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><path x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\" fill=\\"red\\" d=\\"M10,0 h80 a10,10 0 0 1 10,10 v80 a10,10 0 0 1 -10,10 h-80 a10,10 0 0 1 -10,-10 v-80 a10,10 0 0 1 10,-10\\"/></svg>"'
+    )
+  })
+
+  it('should support border width and color', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          border: '1px solid',
+          width: '100%',
+          height: '100%',
+        }}
+      ></div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(svg).toMatchInlineSnapshot(
+      '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\" fill=\\"transparent\\" stroke=\\"black\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/></svg>"'
+    )
+  })
+
   describe('border-color', () => {
     it('should render black border by default', async () => {
       const svg = await satori(
