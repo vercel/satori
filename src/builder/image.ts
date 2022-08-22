@@ -13,7 +13,7 @@ export default function image(
     width,
     height,
     src,
-    debug,
+    debug: _debug,
     isInheritingTransform,
   }: {
     id: string
