@@ -94,3 +94,28 @@ export function buildXMLString(
   }
   return `<${type}${attrString}/>`
 }
+
+export function createLRU<T>(max: number = 20) {
+  const store: Map<string, T> = new Map()
+  function set(key: string, value: T) {
+    if (store.size >= max) {
+      const keyToDelete = store.keys().next().value
+      store.delete(keyToDelete)
+    }
+    store.set(key, value)
+  }
+  function get(key: string): T | undefined {
+    const hasKey = store.has(key)
+    if (!hasKey) return undefined
+
+    const entry = store.get(key)!
+    store.delete(key)
+    store.set(key, entry)
+    return entry
+  }
+
+  return {
+    set,
+    get,
+  }
+}

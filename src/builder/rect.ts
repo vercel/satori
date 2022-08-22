@@ -7,7 +7,7 @@ import transform from './transform'
 import overflow from './overflow'
 import { buildXMLString } from '../utils'
 
-export default function rect(
+export default async function rect(
   {
     id,
     left,
@@ -71,11 +71,23 @@ export default function rect(
 
   let backgroundShapes = ''
   if (style.backgroundImage) {
-    const backgrounds: string[] = (style.backgroundImage as any)
-      .map((background, index) =>
-        backgroundImage({ id: id + '_' + index, width, height }, background)
+    const backgrounds: string[][] = []
+
+    for (
+      let index = 0;
+      index < (style.backgroundImage as any).length;
+      index++
+    ) {
+      const background = (style.backgroundImage as any)[index]
+      const image = await backgroundImage(
+        { id: id + '_' + index, width, height },
+        background
       )
-      .filter(Boolean)
+      if (image) {
+        backgrounds.push(image)
+      }
+    }
+
     for (const background of backgrounds) {
       fills.push(`url(#${background[0]})`)
       defs += background[1]
