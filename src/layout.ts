@@ -12,6 +12,7 @@ import FontLoader from './font'
 import layoutText from './text'
 import rect from './builder/rect'
 import image from './builder/image'
+import { resolveImageData } from './handler/image'
 
 export interface LayoutContext {
   id: string
@@ -158,6 +159,7 @@ export default async function* layout(
 
   // Generate the rendered markup for the current node.
   if (type === 'img') {
+    const src = await resolveImageData(props.src)
     baseRenderResult = image(
       {
         id,
@@ -165,7 +167,7 @@ export default async function* layout(
         top,
         width,
         height,
-        src: props.src,
+        src,
         isInheritingTransform,
         debug,
       },
@@ -173,10 +175,18 @@ export default async function* layout(
     )
   } else {
     const display = style?.display ?? 'block'
-    if (type === 'div' && Array.isArray(children) && display !== 'flex' && display !== 'none') {
-      throw new Error(`Expected <div> to have style={{display: 'flex'}} but received style={{display: '${display}'}}`)
+    if (
+      type === 'div' &&
+      children &&
+      typeof children !== 'string' &&
+      display !== 'flex' &&
+      display !== 'none'
+    ) {
+      throw new Error(
+        `Expected <div> to have style={{display: 'flex'}} but received style={{display: '${display}'}}`
+      )
     }
-    baseRenderResult = rect(
+    baseRenderResult = await rect(
       { id, left, top, width, height, isInheritingTransform, debug },
       computedStyle
     )

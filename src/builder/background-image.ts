@@ -2,6 +2,7 @@ import CssDimension from '../vendor/parse-css-dimension'
 import { buildXMLString } from '../utils'
 
 import gradient from '../vendor/gradient-parser'
+import { resolveImageData } from '../handler/image'
 
 interface Background {
   attachment: string
@@ -133,10 +134,10 @@ function normalizeStops(totalLength: number, colorStops: any[]) {
   return stops
 }
 
-export default function backgroundImage(
+export default async function backgroundImage(
   { id, width, height }: { id: string; width: number; height: number },
   { image, size, position, repeat }: Background
-): string[] {
+): Promise<string[]> {
   // Default to `repeat`.
   repeat = repeat || 'repeat'
 
@@ -292,7 +293,7 @@ export default function backgroundImage(
   }
 
   if (image.startsWith('url(')) {
-    const src = image.slice(4, -1)
+    const src = await resolveImageData(image.slice(4, -1))
     return [
       `satori_bi${id}`,
       buildXMLString(
