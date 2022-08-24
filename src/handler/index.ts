@@ -41,8 +41,26 @@ export default function handler(
   if (type === 'svg') {
     const viewBox = props.viewBox || props.viewbox
     const viewBoxSize = viewBox.split(' ').map((v) => parseInt(v, 10))
-    const width = props.width || viewBoxSize[2] || 0
-    const height = props.height || viewBoxSize[3] || 0
+    const ratio = viewBoxSize[3] / viewBoxSize[2]
+
+    let { width, height } = props
+    if (typeof width === 'undefined' && height) {
+      if (typeof height === 'string' && height.endsWith('%')) {
+        width = parseInt(height) / ratio + '%'
+      } else {
+        width = parseInt(height) / ratio
+      }
+    } else if (typeof height === 'undefined' && width) {
+      if (typeof width === 'string' && width.endsWith('%')) {
+        height = parseInt(width) * ratio + '%'
+      } else {
+        height = parseInt(width) * ratio
+      }
+    } else {
+      width ||= viewBoxSize[2]
+      height ||= viewBoxSize[3]
+    }
+
     if (!style.width) style.width = width
     if (!style.height) style.height = height
   }
