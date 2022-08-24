@@ -302,11 +302,17 @@ function translateSVGNodeToSVGString(
 }
 
 export function SVGNodeToImage(node: ReactElement): string {
-  const viewBox = node.props.viewBox || node.props.viewbox
-  const viewBoxSize = viewBox.split(' ').map((v) => parseInt(v, 10))
-  const width = node.props.width || viewBoxSize[2] || 0
-  const height = node.props.height || viewBoxSize[3] || 0
-  return `data:image/svg+xml;utf8,${`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${viewBox}">${translateSVGNodeToSVGString(
-    node.props.children
-  )}</svg>`.replace(SVGSymbols, encodeURIComponent)}`
+  let { className, style, children, ...restProps } = node.props || {}
+
+  // We directly assign the xmlns attribute here to deduplicate.
+  restProps.xmlns = 'http://www.w3.org/2000/svg'
+
+  return `data:image/svg+xml;utf8,${`<svg${Object.entries(restProps)
+    .map(([k, v]) => {
+      return ` ${ATTRIBUTE_MAPPING[k] || k}="${v}"`
+    })
+    .join('')}>${translateSVGNodeToSVGString(children)}</svg>`.replace(
+    SVGSymbols,
+    encodeURIComponent
+  )}`
 }
