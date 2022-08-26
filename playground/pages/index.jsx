@@ -348,7 +348,7 @@ const LiveSatori = withLive(function ({ live }) {
     ;(async () => {
       // We leave a small buffer here to debounce if it's PNG.
       if (png) {
-        await new Promise((resolve) => setTimeout(resolve, 200))
+        await new Promise((resolve) => setTimeout(resolve, 15))
       }
       if (cancelled) return
 
