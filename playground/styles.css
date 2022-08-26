@@ -81,14 +81,30 @@ code {
   font-family: var(--font) !important;
 }
 .editor {
-  font-size: 14px;
-  font-weight: 300;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   box-shadow: 0 4px 24px rgb(0 0 0 / 10%), 0 0 0 1px rgb(0 0 0 / 5%);
   background: white;
   border-radius: 12px;
   border-top-left-radius: 0;
   overflow: auto;
+}
+.editor .editor-controls {
+  padding: 4px 8px;
+  gap: 8px;
+  display: flex;
+  justify-content: end;
+}
+.editor .editor-controls button {
+  font-family: var(--font);
+  font-size: 12px;
+  user-select: none;
+  padding: 0px 4px;
+  height: 20px;
+}
+.editor .monaco-container {
+  flex: 1;
 }
 
 .container {
@@ -167,38 +183,6 @@ code {
 }
 .error pre {
   margin: 0;
-}
-.token-line {
-  counter-increment: line;
-  padding-left: 35px;
-}
-
-.token-line:before {
-  content: counter(line);
-  width: 20px;
-  display: inline-block;
-  color: rgb(0 0 0 / 25%);
-  text-align: right;
-  margin-left: -35px;
-  margin-right: 15px;
-  white-space: nowrap;
-}
-
-textarea.npm__react-simple-code-editor__textarea {
-  word-break: break-all !important;
-  padding-left: 45px !important;
-  outline: none;
-}
-textarea.npm__react-simple-code-editor__textarea:active {
-  outline: initial;
-}
-
-.editor > div {
-  min-height: 100%;
-}
-
-.editor pre {
-  word-break: break-all !important;
 }
 
 .preview {
