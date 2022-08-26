@@ -1,6 +1,6 @@
 {
   "name": "satori",
-  "version": "0.0.29",
+  "version": "0.0.30-beta.1",
   "description": "Satori converts HTML JSX to SVG string.",
   "module": "./dist/esm/index.js",
   "main": "./dist/esm/index.js",
@@ -50,7 +50,7 @@
     "vitest": "0.7.6"
   },
   "dependencies": {
-    "@shuding/opentype.js": "^1.3.5",
+    "@shuding/opentype.js": "1.4.0-beta.0",
     "css-background-parser": "^0.1.0",
     "css-to-react-native": "^3.0.0",
     "postcss-value-parser": "^4.2.0",
