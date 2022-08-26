@@ -604,7 +604,9 @@ function ResetCode({ activeCard }) {
     const shared = params.get('share')
     if (shared) {
       try {
-        const card = atob(shared.replace(/-/g, '+').replace(/_/g, '='))
+        const card = decodeURIComponent(
+          atob(shared.replace(/-/g, '+').replace(/_/g, '='))
+        )
         editedCards[activeCard] = card
         onChange(editedCards[activeCard])
       } catch (e) {
@@ -658,7 +660,7 @@ export default function Playground() {
                 <button
                   onClick={() => {
                     const code = editedCards[activeCard]
-                    const data = btoa(code)
+                    const data = btoa(encodeURIComponent(code))
                       .replace(/\+/g, '-')
                       .replace(/=/g, '_')
                     window.history.replaceState(null, null, '?share=' + data)
