@@ -26,7 +26,9 @@ export default {
     justifyContent: 'center',
     flexDirection: 'column',
     fontFamily: 'Inter',
-    backgroundImage: 'linear-gradient(to bottom, white, #ddd)',
+    letterSpacing: '-.02em',
+    fontWeight: 700,
+    background: 'white',
   }}
 >
   <div
@@ -48,9 +50,7 @@ export default {
     <span
       style={{
         marginLeft: 8,
-        letterSpacing: -0.2,
         fontSize: 20,
-        fontWeight: 700,
       }}
     >
       rauchg.com
@@ -61,38 +61,18 @@ export default {
       display: 'flex',
       flexWrap: 'wrap',
       justifyContent: 'center',
-      padding: '20px 40px',
-      letterSpacing: -2,
+      padding: '20px 50px',
+      margin: '0 42px',
       fontSize: 40,
-      fontWeight: 700,
       width: 'auto',
       maxWidth: 550,
       textAlign: 'center',
-      backgroundColor: 'blue',
-      backgroundImage: 'linear-gradient(to bottom, red, rgba(255,0,0,0))',
+      backgroundColor: 'black',
       color: 'white',
-      borderTopLeftRadius: 100,
-      borderTopRightRadius: 20,
-      borderBottomRightRadius: 100,
-      borderBottomLeftRadius: 20,
-      border: '8px solid gold',
-      textShadow: '10px 10px 5px black',
-      transform:
-        'rotate(-10deg) translate(0, -10px) skewX(-10deg) scale(1.2, 1.2)',
+      lineHeight: 1.4,
     }}
   >
-    7 Principles of
-    <span
-      style={{
-        margin: '0 10px',
-        color: 'gold',
-        display: 'block',
-        transform: 'rotate(10deg) scale(1, 2)',
-      }}
-    >
-      Rich
-    </span>
-    Web Applications
+    Making the Web. Faster.
   </div>
 </div>`,
   Vercel: `<div
@@ -323,7 +303,12 @@ export default {
   //     </div>
   //   </div>
   // </div>`,
-  'Font & Emoji': `<div
+  'Font & Emoji': `/**
+* Note that the fallback fonts and Emoji are dynamically loaded from
+* Google Fonts and Twemoji CDN in this demo.
+*/
+
+<div
   style={{
     display: 'flex',
     height: '100%',
@@ -339,11 +324,6 @@ export default {
 >
   Hello! 你好! &#xe766; 안녕! こんにちは! 👋 Χαίρετε! Hallå!
 </div>
-
-/**
-* Note that the fallback fonts and Emoji are dynamically loaded from
-* Google Fonts and Twemoji CDN in this demo.
-*/
 `,
   'Vercel Docs': `<div
   style={{
@@ -369,12 +349,14 @@ export default {
       justifyItems: 'center',
     }}
   >
-    <img
+    <svg
+      height={80}
+      viewBox="0 0 75 65"
+      fill="black"
       style={{ margin: '0 75px' }}
-      src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTE2IiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTU3LjUgMEwxMTUgMTAwSDBMNTcuNSAweiIgLz48L3N2Zz4="
-      width={255 * 0.4}
-      height={225 * 0.4}
-    />
+    >
+      <path d="M37.59.25l36.95 64H.64l36.95-64z"></path>
+    </svg>
   </div>
   <div
     style={{
