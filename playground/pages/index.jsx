@@ -1,14 +1,20 @@
 import satori from 'satori'
-import { LiveProvider, LiveEditor, withLive } from 'react-live'
-import { useEffect, useState, useRef } from 'react'
+import { LiveProvider, LiveContext, withLive } from 'react-live'
+import { useEffect, useState, useRef, useContext } from 'react'
 import { createPortal } from 'react-dom'
 import Head from 'next/head'
+import Editor, { useMonaco } from '@monaco-editor/react'
+import toast, { Toaster } from 'react-hot-toast'
+import copy from 'copy-to-clipboard'
 import packageJson from 'satori/package.json'
 import * as resvg from '@resvg/resvg-wasm'
 
 import { loadEmoji, getIconCode } from '../utils/twemoji'
 
 import cards from '../cards/data'
+
+const cardNames = Object.keys(cards)
+const editedCards = { ...cards }
 
 // @TODO: Support font style and weights, and make this option extensible rather
 // than built-in.
@@ -170,6 +176,117 @@ function Tabs({ options, onChange, children }) {
   )
 }
 
+function LiveEditor({ id }) {
+  const { onChange } = useContext(LiveContext)
+  const monaco = useMonaco()
+  useEffect(() => {
+    if (monaco) {
+      monaco.editor.defineTheme('IDLE', {
+        base: 'vs',
+        inherit: false,
+        rules: [
+          {
+            background: 'FFFFFF',
+            token: '',
+          },
+          {
+            foreground: '919191',
+            token: 'comment',
+          },
+          {
+            foreground: '00a33f',
+            token: 'string',
+          },
+          {
+            foreground: 'a535ae',
+            token: 'constant.language',
+          },
+          {
+            foreground: 'ff5600',
+            token: 'keyword',
+          },
+          {
+            foreground: 'ff5600',
+            token: 'storage',
+          },
+          {
+            foreground: '21439c',
+            token: 'entity.name.type',
+          },
+          {
+            foreground: '21439c',
+            token: 'entity.name.function',
+          },
+          {
+            foreground: 'a535ae',
+            token: 'support.function',
+          },
+          {
+            foreground: 'a535ae',
+            token: 'support.constant',
+          },
+          {
+            foreground: 'a535ae',
+            token: 'support.type',
+          },
+          {
+            foreground: 'a535ae',
+            token: 'support.class',
+          },
+          {
+            foreground: 'a535ae',
+            token: 'support.variable',
+          },
+          {
+            foreground: '000000',
+            background: '990000',
+            token: 'invalid',
+          },
+          {
+            foreground: '990000',
+            token: 'constant.other.placeholder.py',
+          },
+        ],
+        colors: {
+          'editor.foreground': '#000000',
+          'editor.background': '#FFFFFF',
+          'editor.selectionBackground': '#BAD6FD',
+          'editor.lineHighlightBackground': '#00000012',
+          'editorCursor.foreground': '#000000',
+          'editorWhitespace.foreground': '#BFBFBF',
+        },
+      })
+      monaco.editor.setTheme('IDLE')
+    }
+  }, [monaco])
+
+  return (
+    <Editor
+      height='100%'
+      theme='IDLE'
+      defaultLanguage='javascript'
+      value={editedCards[id]}
+      onChange={(newCode) => {
+        // We also update the code in memory so switching tabs will preserve the
+        // edited code (until refreshing).
+        editedCards[id] = newCode
+        onChange(newCode)
+      }}
+      options={{
+        fontFamily: 'iaw-mono-var',
+        fontSize: 14,
+        wordWrap: 'on',
+        tabSize: 2,
+        minimap: {
+          enabled: false,
+        },
+        smoothScrolling: true,
+        contextmenu: false,
+      }}
+    />
+  )
+}
+
 const LiveSatori = withLive(function ({ live }) {
   const [options, setOptions] = useState(null)
   const [debug, setDebug] = useState(false)
@@ -285,6 +402,15 @@ const LiveSatori = withLive(function ({ live }) {
 
   return (
     <>
+      <Toaster
+        toastOptions={{
+          style: {
+            fontSize: 13,
+            borderRadius: 6,
+            padding: '2px 4px 2px 12px',
+          },
+        }}
+      />
       <Tabs
         options={['SVG (Satori)', 'PNG (Satori + Resvg-js)', 'HTML (Native)']}
         onChange={(type) => {
@@ -422,7 +548,7 @@ const LiveSatori = withLive(function ({ live }) {
                 setHeight(200 * 2)
               }}
             >
-              Reset to 2:1
+              Reset
             </button>
           </div>
           <div className='control'>
@@ -470,7 +596,36 @@ const LiveSatori = withLive(function ({ live }) {
   )
 })
 
-const cardNames = Object.keys(cards)
+function ResetCode({ activeCard }) {
+  const { onChange } = useContext(LiveContext)
+
+  useEffect(() => {
+    const params = new URL(document.location).searchParams
+    const shared = params.get('share')
+    if (shared) {
+      try {
+        const card = decodeURIComponent(
+          atob(shared.replace(/-/g, '+').replace(/_/g, '='))
+        )
+        editedCards[activeCard] = card
+        onChange(editedCards[activeCard])
+      } catch (e) {
+        console.error('Failed to parse shared card:', e)
+      }
+    }
+  }, [])
+
+  return (
+    <button
+      onClick={() => {
+        editedCards[activeCard] = cards[activeCard]
+        onChange(editedCards[activeCard])
+      }}
+    >
+      Reset
+    </button>
+  )
+}
 
 export default function Playground() {
   const [activeCard, setActiveCard] = useState(cardNames[0])
@@ -481,6 +636,9 @@ export default function Playground() {
         <h1>Satori Playground</h1>
         <ul>
           <li>
+            <a href='https://github.com/vercel/satori'>Documentation</a>
+          </li>
+          <li>
             <a href='https://nextjs.org/discord'>Discord</a>
           </li>
           <li>
@@ -489,90 +647,7 @@ export default function Playground() {
         </ul>
       </nav>
       <div className='container'>
-        <LiveProvider
-          theme={{
-            plain: {
-              color: '#111',
-            },
-            styles: [
-              {
-                types: ['prolog', 'comment', 'doctype', 'cdata'],
-                style: {
-                  color: 'hsl(30, 20%, 50%)',
-                },
-              },
-              {
-                types: [
-                  'property',
-                  'tag',
-                  'boolean',
-                  'number',
-                  'constant',
-                  'symbol',
-                ],
-                style: {
-                  color: '#111',
-                },
-              },
-              {
-                types: ['attr-name', 'string', 'char', 'builtin', 'insterted'],
-                style: {
-                  color: '#0076ff',
-                },
-              },
-              {
-                types: [
-                  'entity',
-                  'url',
-                  'string',
-                  'variable',
-                  'language-css',
-                  'number',
-                ],
-                style: {
-                  color: '#028265',
-                },
-              },
-              {
-                types: ['deleted'],
-                style: {
-                  color: 'rgb(255, 85, 85)',
-                },
-              },
-              {
-                types: ['italic'],
-                style: {
-                  fontStyle: 'italic',
-                },
-              },
-              {
-                types: ['important', 'bold'],
-                style: {
-                  fontWeight: 'bold',
-                },
-              },
-              {
-                types: ['regex', 'important'],
-                style: {
-                  color: '#e90',
-                },
-              },
-              {
-                types: ['atrule', 'attr-value', 'keyword'],
-                style: {
-                  color: '#f677e1',
-                },
-              },
-              {
-                types: ['punctuation', 'symbol', 'operator'],
-                style: {
-                  color: '#898989',
-                },
-              },
-            ],
-          }}
-          code={cards[activeCard]}
-        >
+        <LiveProvider code={editedCards[activeCard]}>
           <Tabs
             options={cardNames}
             onChange={(name) => {
@@ -580,7 +655,25 @@ export default function Playground() {
             }}
           >
             <div className='editor'>
-              <LiveEditor key={activeCard} />
+              <div className='editor-controls'>
+                <ResetCode activeCard={activeCard} />
+                <button
+                  onClick={() => {
+                    const code = editedCards[activeCard]
+                    const data = btoa(encodeURIComponent(code))
+                      .replace(/\+/g, '-')
+                      .replace(/=/g, '_')
+                    window.history.replaceState(null, null, '?share=' + data)
+                    copy(window.location.href)
+                    toast.success('Copied to clipboard')
+                  }}
+                >
+                  Share
+                </button>
+              </div>
+              <div className='monaco-container'>
+                <LiveEditor key={activeCard} id={activeCard} />
+              </div>
             </div>
           </Tabs>
           <div className='preview'>
