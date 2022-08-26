@@ -29,6 +29,10 @@ function arrayBufferToBase64(buffer) {
 }
 
 export async function resolveImageData(src: string) {
+  if (!src) {
+    throw new Error('Image URL is not provided')
+  }
+
   if (src.startsWith('data:')) {
     return src
   }
