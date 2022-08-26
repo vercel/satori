@@ -8,7 +8,7 @@ describe('Position', () => {
   let fonts
   initFonts((f) => (fonts = f))
 
-  describe('absolute', () => {
+  describe.todo('absolute', () => {
     it('should support absolute position', async () => {
       const svg = await satori(
         <div
