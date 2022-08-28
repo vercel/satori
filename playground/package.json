@@ -3,8 +3,7 @@
     "dev": "next",
     "debug": "node --inspect node_modules/next/dist/bin/next",
     "build": "next build",
-    "start": "next start",
-    "postinstall": "cp node_modules/yoga-wasm-web/dist/yoga.wasm public/"
+    "start": "next start"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.4.5",
@@ -17,6 +16,6 @@
     "react-hot-toast": "^2.3.0",
     "react-live": "^2.4.1",
     "satori": "workspace:*",
-    "yoga-wasm-web": "^0.0.8"
+    "yoga-wasm-web": "0.1.2"
   }
 }

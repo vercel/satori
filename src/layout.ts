@@ -152,10 +152,6 @@ export default async function* layout(
   // 3. Post-process the node.
   const [x, y] = yield
 
-  if (computedStyle.position === 'absolute') {
-    node.calculateLayout()
-  }
-
   let { left, top, width, height } = node.getComputedLayout()
 
   // Attach offset to the current node.

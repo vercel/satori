@@ -1,4 +1,4 @@
-import satori from 'satori'
+import satori, { init as initSatori } from 'satori/wasm'
 import { LiveProvider, LiveContext, withLive } from 'react-live'
 import { useEffect, useState, useRef, useContext } from 'react'
 import { createPortal } from 'react-dom'
@@ -8,6 +8,7 @@ import toast, { Toaster } from 'react-hot-toast'
 import copy from 'copy-to-clipboard'
 import packageJson from 'satori/package.json'
 import * as resvg from '@resvg/resvg-wasm'
+import { initStreaming } from 'yoga-wasm-web'
 
 import { loadEmoji, getIconCode } from '../utils/twemoji'
 
@@ -25,6 +26,13 @@ const languageFontMap = {
   ja: 'Noto+Sans+JP',
   ko: 'Noto+Sans+KR',
   th: 'Noto+Sans+Thai',
+  he: 'Noto+Sans+Hebrew',
+  ar: 'Noto+Sans+Arabic',
+  bn: 'Noto+Sans+Bengali',
+  ta: 'Noto+Sans+Tamil',
+  te: 'Noto+Sans+Telugu',
+  ml: 'Noto+Sans+Malayalam',
+  devanagari: 'Noto+Sans+Devanagari',
   unknown: 'Noto+Sans',
 }
 
@@ -106,12 +114,15 @@ const spinner = (
 async function init() {
   if (typeof window === 'undefined') return []
 
-  const [_, font, fontBold, fontIcon] =
+  const [_, __, font, fontBold, fontIcon] =
     window.__resource ||
     (window.__resource = await Promise.all([
       fetch(
         'https://unpkg.com/@resvg/resvg-wasm@2.0.0-alpha.4/index_bg.wasm'
       ).then((res) => resvg.initWasm(res)),
+      fetch('https://unpkg.com/yoga-wasm-web@0.1.2/dist/yoga.wasm')
+        .then((res) => initStreaming(res))
+        .then((yoga) => initSatori(yoga)),
       ...(
         await Promise.all([
           fetch(

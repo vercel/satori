@@ -53,13 +53,35 @@ export async function resolveImageData(src: string) {
     let imageType: string
     fetch(src)
       .then((res) => {
-        imageType = res.headers.get('content-type').toLowerCase()
-        if (!ALLOWED_IMAGE_TYPES.includes(imageType)) {
-          throw new Error(`Unsupported image type: ${imageType}`)
-        }
+        imageType = (res.headers.get('content-type') || '').toLowerCase()
         return res.arrayBuffer()
       })
       .then((data) => {
+        // `content-type` might be missing, we detect the type based on magic bytes.
+        if (!imageType) {
+          const magicBytes = new Uint8Array(data.slice(0, 4))
+          const magicString = [...magicBytes]
+            .map((byte) => byte.toString(16))
+            .join('')
+          switch (magicString) {
+            case '89504e47':
+              imageType = 'image/png'
+              break
+            case '47494638':
+              imageType = 'image/gif'
+              break
+            case 'ffd8ffe0':
+            case 'ffd8ffe1':
+            case 'ffd8ffe2':
+            case 'ffd8ffe3':
+            case 'ffd8ffe8':
+              imageType = 'image/jpeg'
+              break
+          }
+        }
+        if (!ALLOWED_IMAGE_TYPES.includes(imageType)) {
+          throw new Error(`Unsupported image type: ${imageType || 'unknown'}`)
+        }
         const newSrc = `data:${imageType};base64,${arrayBufferToBase64(data)}`
         cache.set(src, newSrc)
         resolve(newSrc)

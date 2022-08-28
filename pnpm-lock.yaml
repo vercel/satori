@@ -47,7 +47,7 @@ importers:
       react-hot-toast: ^2.3.0
       react-live: ^2.4.1
       satori: workspace:*
-      yoga-wasm-web: ^0.0.8
+      yoga-wasm-web: 0.1.2
     dependencies:
       '@monaco-editor/react': 4.4.5_sfoxds7t5ydpegc3knd667wn6m
       '@resvg/resvg-js': 1.4.0
@@ -59,7 +59,7 @@ importers:
       react-hot-toast: 2.3.0_sfoxds7t5ydpegc3knd667wn6m
       react-live: 2.4.1_sfoxds7t5ydpegc3knd667wn6m
       satori: link:..
-      yoga-wasm-web: 0.0.8
+      yoga-wasm-web: 0.1.2
 
 packages:
 
@@ -1837,6 +1837,6 @@ packages:
       '@types/yoga-layout': 1.9.2
     dev: false
 
-  /yoga-wasm-web/0.0.8:
-    resolution: {integrity: sha512-AFcRBnFk24jhNwjkT+wIc3+RgN3jv5czBjA4lsFd9rrnZ28cnEdevOpHH8Qa8BVPNKbgJPj5gHJdnqUHy+C0KQ==}
+  /yoga-wasm-web/0.1.2:
+    resolution: {integrity: sha512-8SkgawHcA0RUbMrnhxbaQkZDBi8rMed8pQHixkFF9w32zGhAwZ9/cOHWlpYfr6RCx42Yp3siV45/jPEkJxsk6w==}
     dev: false
