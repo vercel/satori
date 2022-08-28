@@ -698,8 +698,32 @@ export default function Playground() {
           name='viewport'
           content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'
         />
-        <meta name='description' content='Satori Playground' />
         <meta name='theme-color' content='#fff' />
+        <meta name='title' content='Satori Playground' />
+        <meta name='description' content='Satori Playground' />
+        <meta property='og:type' content='website' />
+        <meta
+          property='og:url'
+          content='https://satori-playground.vercel.app/'
+        />
+        <meta property='og:title' content='Satori Playground' />
+        <meta property='og:description' content='Satori Playground' />
+        <meta
+          property='og:image'
+          content='https://satori-playground.vercel.app/satori-card.jpeg'
+        />
+        <meta property='twitter:card' content='summary_large_image' />
+        <meta
+          property='twitter:url'
+          content='https://satori-playground.vercel.app/'
+        />
+        <meta property='twitter:title' content='Satori Playground' />
+        <meta property='twitter:description' content='Satori Playground' />
+        <meta
+          property='twitter:image'
+          content='https://satori-playground.vercel.app/satori-card.jpeg'
+        />
+
         <link
           rel='preload'
           href='https://unpkg.com/@resvg/resvg-wasm@2.0.0-alpha.4/index_bg.wasm'
