@@ -150,7 +150,15 @@ export default class FontLoader {
       fontStyle?: Style
     }
   ) {
-    fontFamily = Array.isArray(fontFamily) ? fontFamily : [fontFamily]
+    if (!this.fonts.size) {
+      throw new Error(
+        'No fonts are loaded. At least one font is required to calculate the layout.'
+      )
+    }
+
+    fontFamily = (Array.isArray(fontFamily) ? fontFamily : [fontFamily]).map(
+      (name) => name.toLowerCase()
+    )
     const fonts = fontFamily
       .map((face) =>
         this.get({
