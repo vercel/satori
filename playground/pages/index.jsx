@@ -700,14 +700,20 @@ export default function Playground() {
         />
         <meta name='theme-color' content='#fff' />
         <meta name='title' content='Satori Playground' />
-        <meta name='description' content='Satori Playground' />
+        <meta
+          name='description'
+          content='Satori is a JavaScript library that converts HTML and CSS into SVG.'
+        />
         <meta property='og:type' content='website' />
         <meta
           property='og:url'
           content='https://satori-playground.vercel.app/'
         />
         <meta property='og:title' content='Satori Playground' />
-        <meta property='og:description' content='Satori Playground' />
+        <meta
+          property='og:description'
+          content='Satori is a JavaScript library that converts HTML and CSS into SVG.'
+        />
         <meta
           property='og:image'
           content='https://satori-playground.vercel.app/satori-card.jpeg'
@@ -718,7 +724,10 @@ export default function Playground() {
           content='https://satori-playground.vercel.app/'
         />
         <meta property='twitter:title' content='Satori Playground' />
-        <meta property='twitter:description' content='Satori Playground' />
+        <meta
+          property='twitter:description'
+          content='Satori is a JavaScript library that converts HTML and CSS into SVG.'
+        />
         <meta
           property='twitter:image'
           content='https://satori-playground.vercel.app/satori-card.jpeg'
