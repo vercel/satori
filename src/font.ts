@@ -343,6 +343,9 @@ export default class FontLoader {
     const unpatch = this.patchFontFallbackResolver(font, resolveFont)
 
     try {
+      if (fontSize === 0) {
+        return ''
+      }
       return font
         .getPath(content, left, top, fontSize, {
           letterSpacing: letterSpacing / fontSize,

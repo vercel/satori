@@ -30,6 +30,29 @@ function toCodePoint(unicodeSurrogates) {
   return r.join('-')
 }
 
-export function loadEmoji(code) {
-  return fetch(`https://twemoji.maxcdn.com/v/13.1.0/svg/${code}.svg`)
+const apis = {
+  twemoji: (code) =>
+    'https://twemoji.maxcdn.com/v/latest/svg/' + code.toLowerCase() + '.svg',
+  openmoji: 'https://cdn.jsdelivr.net/npm/@svgmoji/openmoji@2.0.0/svg/',
+  blobmoji: 'https://cdn.jsdelivr.net/npm/@svgmoji/blob@2.0.0/svg/',
+  noto: 'https://cdn.jsdelivr.net/gh/svgmoji/svgmoji/packages/svgmoji__noto/svg/',
+  fluent: (code) =>
+    'https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/' +
+    code.toLowerCase() +
+    '_color.svg',
+  fluentFlat: (code) =>
+    'https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/' +
+    code.toLowerCase() +
+    '_flat.svg',
+}
+
+export function loadEmoji(type, code) {
+  if (!type || !apis[type]) {
+    type = 'twemoji'
+  }
+  const api = apis[type]
+  if (typeof api === 'function') {
+    return fetch(api(code))
+  }
+  return fetch(`${api}${code.toUpperCase()}.svg`)
 }

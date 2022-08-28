@@ -156,7 +156,9 @@ export default function expand(
 
   // Calculate the base font size.
   let baseFontSize: number =
-    transformedStyle.fontSize || inheritedStyle.fontSize
+    typeof transformedStyle.fontSize === 'number'
+      ? transformedStyle.fontSize
+      : inheritedStyle.fontSize
   if (typeof baseFontSize === 'string') {
     try {
       const parsed = new CssDimension(baseFontSize)

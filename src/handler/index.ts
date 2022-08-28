@@ -157,7 +157,7 @@ export default function handler(
         nowrap: Yoga.WRAP_NO_WRAP,
         'wrap-reverse': Yoga.WRAP_WRAP_REVERSE,
       },
-      Yoga.WRAP_WRAP
+      Yoga.WRAP_NO_WRAP
     )
   )
 
