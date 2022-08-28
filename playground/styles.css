@@ -94,7 +94,7 @@ code {
   padding: 4px 8px;
   gap: 8px;
   display: flex;
-  justify-content: end;
+  justify-content: flex-end;
 }
 .editor .editor-controls button {
   font-family: var(--font);
