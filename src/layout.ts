@@ -11,6 +11,7 @@ import {
   isClass,
   buildXMLString,
   SVGNodeToImage,
+  normalizeChildren,
 } from './utils'
 import handler from './handler'
 import FontLoader from './font'
@@ -120,8 +121,7 @@ export default async function* layout(
   }
 
   // 2. Do layout recursively for its children.
-  const normalizedChildren =
-    typeof children === 'undefined' ? [] : [].concat(children).flat(Infinity)
+  const normalizedChildren = normalizeChildren(children)
   const iterators: ReturnType<typeof layout>[] = []
 
   let i = 0
