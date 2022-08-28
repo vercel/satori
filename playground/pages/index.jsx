@@ -20,7 +20,6 @@ const editedCards = { ...cards }
 // @TODO: Support font style and weights, and make this option extensible rather
 // than built-in.
 // @TODO: Cover most languages with Noto Sans.
-// @TODO: Fix CJK missing punctuations, maybe inline guessLanguage?
 const languageFontMap = {
   zh: 'Noto+Sans+SC',
   ja: 'Noto+Sans+JP',
@@ -47,12 +46,12 @@ function withCache(fn) {
   }
 }
 
-const loadDynamicAsset = withCache(async (code, text) => {
+const loadDynamicAsset = withCache(async (emojiType, code, text) => {
   if (code === 'emoji') {
     // It's an emoji, load the image.
     return (
       `data:image/svg+xml;base64,` +
-      btoa(await (await loadEmoji(getIconCode(text))).text())
+      btoa(await (await loadEmoji(emojiType, getIconCode(text))).text())
     )
   }
 
@@ -298,10 +297,15 @@ function LiveEditor({ id }) {
   )
 }
 
+// For sharing & resuming.
+const currentOptions = {}
+let overrideOptions
+
 const LiveSatori = withLive(function ({ live }) {
   const [options, setOptions] = useState(null)
   const [debug, setDebug] = useState(false)
   const [fontEmbed, setFontEmbed] = useState(true)
+  const [emojiType, setEmojiType] = useState('twemoji')
   const [native, setNative] = useState(false)
   const [png, setPNG] = useState(false)
   const [pngUrl, setPNGUrl] = useState(null)
@@ -310,6 +314,17 @@ const LiveSatori = withLive(function ({ live }) {
   const [iframeNode, setIframeNode] = useState(null)
   const [scaleRatio, setScaleRatio] = useState(1)
   const [loadingResources, setLoadingResources] = useState(true)
+
+  useEffect(() => {
+    if (overrideOptions) {
+      setWidth(Math.min(overrideOptions.width || 800, 2000))
+      setHeight(Math.min(overrideOptions.height || 800, 2000))
+      setDebug(!!overrideOptions.debug)
+      setEmojiType(overrideOptions.emojiType || 'twemoji')
+      setFontEmbed(!!overrideOptions.fontEmbed)
+      overrideOptions = null
+    }
+  }, [overrideOptions])
 
   const sizeRef = useRef([width, height])
   sizeRef.current = [width, height]
@@ -378,7 +393,8 @@ const LiveSatori = withLive(function ({ live }) {
               width,
               height,
               debug,
-              loadAdditionalAsset: loadDynamicAsset,
+              loadAdditionalAsset: (...args) =>
+                loadDynamicAsset(emojiType, ...args),
             })
             if (png) {
               const renderer = new resvg.Resvg(_result, {
@@ -402,6 +418,13 @@ const LiveSatori = withLive(function ({ live }) {
           start
       }
 
+      Object.assign(currentOptions, {
+        width,
+        height,
+        debug,
+        emojiType,
+        fontEmbed,
+      })
       setResult(_result)
       setRenderTime(_renderedTimeSpent)
     })()
@@ -409,7 +432,7 @@ const LiveSatori = withLive(function ({ live }) {
     return () => {
       cancelled = true
     }
-  }, [live.element, options, width, height, debug, fontEmbed, native, png])
+  }, [live.element, options, width, height, debug, emojiType, fontEmbed, native, png])
 
   return (
     <>
@@ -581,6 +604,21 @@ const LiveSatori = withLive(function ({ live }) {
             />
           </div>
           <div className='control'>
+            <label htmlFor='emoji'>Emoji Provider</label>
+            <select
+              id='emoji'
+              onChange={(e) => setEmojiType(e.target.value)}
+              value={emojiType}
+            >
+              <option value='twemoji'>Twemoji</option>
+              <option value='fluent'>Fluent Emoji</option>
+              <option value='fluentFlat'>Fluent Emoji Flat</option>
+              <option value='noto'>Noto Emoji</option>
+              <option value='blobmoji'>Blobmoji</option>
+              <option value='openmoji'>OpenMoji</option>
+            </select>
+          </div>
+          <div className='control'>
             <label htmlFor='export'>Export</label>
             <a
               className={!result || native ? 'disabled' : ''}
@@ -615,9 +653,18 @@ function ResetCode({ activeCard }) {
     const shared = params.get('share')
     if (shared) {
       try {
-        const card = decodeURIComponent(
+        const data = decodeURIComponent(
           atob(shared.replace(/-/g, '+').replace(/_/g, '='))
         )
+        let card
+        try {
+          const decoded = JSON.parse(data)
+          card = decoded.code
+          overrideOptions = decoded.options
+        } catch (e) {
+          card = data
+        }
+
         editedCards[activeCard] = card
         onChange(editedCards[activeCard])
       } catch (e) {
@@ -671,7 +718,14 @@ export default function Playground() {
                 <button
                   onClick={() => {
                     const code = editedCards[activeCard]
-                    const data = btoa(encodeURIComponent(code))
+                    const data = btoa(
+                      encodeURIComponent(
+                        JSON.stringify({
+                          code,
+                          options: currentOptions,
+                        })
+                      )
+                    )
                       .replace(/\+/g, '-')
                       .replace(/=/g, '_')
                     window.history.replaceState(null, null, '?share=' + data)
