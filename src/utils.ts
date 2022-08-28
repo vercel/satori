@@ -17,6 +17,36 @@ export function isClass(f: Function) {
   return /^class\s/.test(Function.prototype.toString.call(f))
 }
 
+export function normalizeChildren(children: any) {
+  const flattend =
+    typeof children === 'undefined' ? [] : [].concat(children).flat(Infinity)
+
+  const res = []
+  for (let i = 0; i < flattend.length; i++) {
+    let value = flattend[i]
+    if (
+      typeof value === 'undefined' ||
+      typeof value === 'boolean' ||
+      value === null
+    ) {
+      continue
+    }
+    if (typeof value === 'number') {
+      value = String(value)
+    }
+    if (
+      typeof value === 'string' &&
+      res.length &&
+      typeof res[res.length - 1] === 'string'
+    ) {
+      res[res.length - 1] += value
+    } else {
+      res.push(value)
+    }
+  }
+  return res
+}
+
 // Multiplies two 2d transform matrices.
 export function multiply(m1: number[], m2: number[]) {
   return [

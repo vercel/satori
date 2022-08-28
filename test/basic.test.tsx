@@ -115,4 +115,28 @@ describe('Basic', () => {
       '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><rect x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\" fill=\\"#ff0\\"/><text x=\\"0\\" y=\\"15.48289183222958\\" width=\\"8.984375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">1</text><text x=\\"9\\" y=\\"15.48289183222958\\" width=\\"8.984375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">2</text><text x=\\"18\\" y=\\"15.48289183222958\\" width=\\"8.984375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">3</text><text x=\\"27\\" y=\\"15.48289183222958\\" width=\\"8.984375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">4</text></svg>"'
     )
   })
+
+  it('should combine textNodes correctly', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          height: '100%',
+          width: '100%',
+        }}
+      >
+        Hi {0} <div>hi</div> {0} {false} {undefined} {0} {null} {0} {true} {'x'}{' '}
+        {0}
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        embedFont: false,
+        fonts,
+      }
+    )
+    expect(svg).toMatchInlineSnapshot(
+      '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"15.48289183222958\\" width=\\"15.2890625\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">Hi</text><text x=\\"19.25\\" y=\\"15.48289183222958\\" width=\\"8.984375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">0</text><text x=\\"28\\" y=\\"15.48289183222958\\" width=\\"12.6953125\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hi</text><text x=\\"0\\" y=\\"33.48289183222958\\" width=\\"8.984375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">0</text><text x=\\"12.9453125\\" y=\\"33.48289183222958\\" width=\\"8.984375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">0</text><text x=\\"25.890625\\" y=\\"33.48289183222958\\" width=\\"8.984375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">0</text><text x=\\"38.8359375\\" y=\\"33.48289183222958\\" width=\\"7.9296875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">x</text><text x=\\"50.7265625\\" y=\\"33.48289183222958\\" width=\\"8.984375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">0</text></svg>"'
+    )
+  })
 })
