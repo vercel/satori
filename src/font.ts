@@ -287,7 +287,31 @@ export default class FontLoader {
           const char = brokenChars.shift()
           const anotherFont = resolveFont(char)
           if (anotherFont !== font) {
-            glyphs[i] = anotherFont.charToGlyph(char)
+            const glyph = anotherFont.charToGlyph(char)
+            // Scale the glyph to match the current units per em.
+            const scale = font.unitsPerEm / anotherFont.unitsPerEm
+            const p = new opentype.Path()
+            p.unitsPerEm = font.unitsPerEm
+            p.commands = glyph.path.commands.map((command) => {
+              const scaledCommand = { ...command }
+              for (let k in scaledCommand) {
+                if (typeof scaledCommand[k] === 'number') {
+                  scaledCommand[k] *= scale
+                }
+              }
+              return scaledCommand
+            })
+            const g = new opentype.Glyph({
+              ...glyph,
+              advanceWidth: glyph.advanceWidth * scale,
+              xMin: glyph.xMin * scale,
+              xMax: glyph.xMax * scale,
+              yMin: glyph.yMin * scale,
+              yMax: glyph.yMax * scale,
+              path: p,
+            })
+
+            glyphs[i] = g
           }
         }
       }

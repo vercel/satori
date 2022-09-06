@@ -4,7 +4,7 @@ export const config = {
 
 export default async function loadGoogleFont(req) {
   if (req.nextUrl.pathname !== '/api/font') return
-  const { searchParams } = new URL(req.url)
+  const { searchParams, hostname } = new URL(req.url)
 
   const font = searchParams.get('font')
   const text = searchParams.get('text')
@@ -26,7 +26,16 @@ export default async function loadGoogleFont(req) {
   ).text()
 
   const resource = css.match(/src: url\((.+)\) format\('(opentype|truetype)'\)/)
+
   if (!resource) return
 
-  return fetch(resource[1])
+  const res = await fetch(resource[1])
+
+  // Make sure not to mess it around with compression when developing it locally.
+  if (hostname === 'localhost') {
+    res.headers.delete('content-encoding')
+    res.headers.delete('content-length')
+  }
+
+  return res
 }
