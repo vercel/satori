@@ -9,6 +9,8 @@ import copy from 'copy-to-clipboard'
 import packageJson from 'satori/package.json'
 import * as resvg from '@resvg/resvg-wasm'
 import { initStreaming } from 'yoga-wasm-web'
+import * as fflate from 'fflate'
+import { Base64 } from 'js-base64'
 
 import { loadEmoji, getIconCode } from '../utils/twemoji'
 
@@ -653,9 +655,10 @@ function ResetCode({ activeCard }) {
     const shared = params.get('share')
     if (shared) {
       try {
-        const data = decodeURIComponent(
-          atob(shared.replace(/-/g, '+').replace(/_/g, '='))
+        const data = fflate.strFromU8(
+          fflate.decompressSync(Base64.toUint8Array(shared))
         )
+
         let card
         try {
           const decoded = JSON.parse(data)
@@ -718,17 +721,23 @@ export default function Playground() {
                 <button
                   onClick={() => {
                     const code = editedCards[activeCard]
-                    const data = btoa(
-                      encodeURIComponent(
-                        JSON.stringify({
-                          code,
-                          options: currentOptions,
-                        })
-                      )
+                    const compressed = Base64.fromUint8Array(
+                      fflate.deflateSync(
+                        fflate.strToU8(
+                          JSON.stringify({
+                            code,
+                            options: currentOptions,
+                          })
+                        )
+                      ),
+                      true
                     )
-                      .replace(/\+/g, '-')
-                      .replace(/=/g, '_')
-                    window.history.replaceState(null, null, '?share=' + data)
+
+                    window.history.replaceState(
+                      null,
+                      null,
+                      '?share=' + compressed
+                    )
                     copy(window.location.href)
                     toast.success('Copied to clipboard')
                   }}
