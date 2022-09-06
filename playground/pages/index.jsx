@@ -11,6 +11,9 @@ import * as resvg from '@resvg/resvg-wasm'
 import { initStreaming } from 'yoga-wasm-web'
 import * as fflate from 'fflate'
 import { Base64 } from 'js-base64'
+import PDFDocument from 'pdfkit/js/pdfkit.standalone.js'
+import SVGtoPDF from 'svg-to-pdfkit'
+import blobStream from 'blob-stream'
 
 import { loadEmoji, getIconCode } from '../utils/twemoji'
 
@@ -308,9 +311,8 @@ const LiveSatori = withLive(function ({ live }) {
   const [debug, setDebug] = useState(false)
   const [fontEmbed, setFontEmbed] = useState(true)
   const [emojiType, setEmojiType] = useState('twemoji')
-  const [native, setNative] = useState(false)
-  const [png, setPNG] = useState(false)
-  const [pngUrl, setPNGUrl] = useState(null)
+  const [objectURL, setObjectURL] = useState(null)
+  const [renderType, setRenderType] = useState('svg')
   const [width, setWidth] = useState(400 * 2)
   const [height, setHeight] = useState(200 * 2)
   const [iframeNode, setIframeNode] = useState(null)
@@ -375,7 +377,7 @@ const LiveSatori = withLive(function ({ live }) {
 
     ;(async () => {
       // We leave a small buffer here to debounce if it's PNG.
-      if (png) {
+      if (renderType === 'png') {
         await new Promise((resolve) => setTimeout(resolve, 15))
       }
       if (cancelled) return
@@ -387,7 +389,7 @@ const LiveSatori = withLive(function ({ live }) {
         const start = (
           typeof performance !== 'undefined' ? performance : Date
         ).now()
-        if (!native) {
+        if (renderType !== 'html') {
           try {
             _result = await satori(live.element.prototype.render(), {
               ...options,
@@ -398,7 +400,7 @@ const LiveSatori = withLive(function ({ live }) {
               loadAdditionalAsset: (...args) =>
                 loadDynamicAsset(emojiType, ...args),
             })
-            if (png) {
+            if (renderType === 'png') {
               const renderer = new resvg.Resvg(_result, {
                 fitTo: {
                   mode: 'width',
@@ -406,9 +408,19 @@ const LiveSatori = withLive(function ({ live }) {
                 },
               })
               const pngData = renderer.render()
-              setPNGUrl(
+              setObjectURL(
                 URL.createObjectURL(new Blob([pngData], { type: 'image/png' }))
               )
+            }
+            if (renderType === 'pdf') {
+              const doc = new PDFDocument({compress: false});
+              SVGtoPDF(doc, _result, 0, 0);
+              const stream = doc.pipe(blobStream());
+              stream.on('finish', () => {
+                const blob = stream.toBlob('application/pdf');
+                setObjectURL(URL.createObjectURL(blob));
+              });
+              doc.end();
             }
           } catch (e) {
             console.error(e)
@@ -434,7 +446,7 @@ const LiveSatori = withLive(function ({ live }) {
     return () => {
       cancelled = true
     }
-  }, [live.element, options, width, height, debug, emojiType, fontEmbed, native, png])
+  }, [live.element, options, width, height, debug, emojiType, fontEmbed, renderType])
 
   return (
     <>
@@ -448,10 +460,11 @@ const LiveSatori = withLive(function ({ live }) {
         }}
       />
       <Tabs
-        options={['SVG (Satori)', 'PNG (Satori + Resvg-js)', 'HTML (Native)']}
-        onChange={(type) => {
-          setNative(type.startsWith('HTML'))
-          setPNG(type.startsWith('PNG'))
+        options={['SVG (Satori)', 'PNG (Satori + Resvg-js)', 'PDF (Satori + PDFKit)', 'HTML (Native)']}
+        onChange={(text) => {
+          const renderType = text.split(' ')[0].toLowerCase()
+          // 'svg' | 'png' | 'html' | 'pdf'
+          setRenderType(renderType)
         }}
       >
         <div className='preview-card'>
@@ -464,16 +477,14 @@ const LiveSatori = withLive(function ({ live }) {
           <div
             className='svg-container'
             dangerouslySetInnerHTML={
-              native
-                ? undefined
-                : png
+              renderType !== 'svg'
                 ? undefined
                 : {
                     __html: `<div style="position:absolute;width:${width}px;height:${height}px;transform:scale(${scaleRatio});display:flex;align-items:center;justify-content:center">${result}</div>`,
                   }
             }
           >
-            {native ? (
+            {renderType === 'html' ? (
               <iframe
                 ref={(node) => {
                   if (node) {
@@ -499,9 +510,9 @@ const LiveSatori = withLive(function ({ live }) {
                     iframeNode
                   )}
               </iframe>
-            ) : png && pngUrl ? (
+            ) : renderType === 'png' && objectURL ? (
               <img
-                src={pngUrl}
+                src={objectURL}
                 width={width}
                 height={height}
                 style={{
@@ -509,18 +520,20 @@ const LiveSatori = withLive(function ({ live }) {
                 }}
                 alt='Preview'
               />
+            ) : renderType === 'pdf' && objectURL ? (
+              <iframe
+                width={width}
+                height={height}
+                src={objectURL}
+              />
             ) : null}
           </div>
           <footer>
             <span className='ellipsis'>
-              {native
-                ? `[HTML] Rendered by browser.`
-                : png
-                ? `[PNG] Generated by Satori and Resvg-js in `
-                : `[SVG] Generated by Satori in `}
+              {`[${renderType.toUpperCase()}] Generated by Satori in `}
             </span>
             <span className='data'>
-              {native ? '' : `${~~(renderedTimeSpent * 100) / 100}ms.`}
+              {renderType === 'html' ? '' : `${~~(renderedTimeSpent * 100) / 100}ms.`}
             </span>
             <span>{`[${width}×${height}]`}</span>
           </footer>
@@ -623,7 +636,7 @@ const LiveSatori = withLive(function ({ live }) {
           <div className='control'>
             <label htmlFor='export'>Export</label>
             <a
-              className={!result || native ? 'disabled' : ''}
+              className={!result || renderType === 'html' ? 'disabled' : ''}
               href={
                 result
                   ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
