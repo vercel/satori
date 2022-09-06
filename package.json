@@ -60,6 +60,7 @@
     "postcss-value-parser": "^4.2.0",
     "yoga-layout-prebuilt": "^1.10.0"
   },
+  "packageManager": "pnpm@7.11.0",
   "engines": {
     "node": ">=16"
   }
