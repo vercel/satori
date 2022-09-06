@@ -6,6 +6,7 @@
   "main": "./dist/esm/index.js",
   "types": "./dist/index.d.ts",
   "type": "module",
+  "license": "MPL-2.0",
   "files": [
     "dist/**"
   ],
