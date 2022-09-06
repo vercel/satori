@@ -1,4 +1,6 @@
 {
+  "private": true,
+  "license": "MPL-2.0",
   "scripts": {
     "dev": "next",
     "debug": "node --inspect node_modules/next/dist/bin/next",
