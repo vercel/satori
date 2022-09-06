@@ -43,6 +43,8 @@ importers:
       '@resvg/resvg-js': ^1.4.0
       '@resvg/resvg-wasm': 2.0.0-alpha.4
       copy-to-clipboard: ^3.3.2
+      fflate: ^0.7.3
+      js-base64: ^3.7.2
       next: ^12.0.9
       react: ^17.0.2
       react-dom: ^17.0.2
@@ -55,6 +57,8 @@ importers:
       '@resvg/resvg-js': 1.4.0
       '@resvg/resvg-wasm': 2.0.0-alpha.4
       copy-to-clipboard: 3.3.2
+      fflate: 0.7.3
+      js-base64: 3.7.2
       next: 12.2.3_sfoxds7t5ydpegc3knd667wn6m
       react: 17.0.2
       react-dom: 17.0.2_react@17.0.2
@@ -1159,6 +1163,10 @@ packages:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
     engines: {node: '>=10'}
     dev: true
+
+  /js-base64/3.7.2:
+    resolution: {integrity: sha512-NnRs6dsyqUXejqk/yv2aiXlAvOs56sLkX6nUdeaNezI5LFFLlsZjOThmwnrcwh5ZZRwZlCMnVAY3CvhIhoVEKQ==}
+    dev: false
 
   /js-tokens/4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
