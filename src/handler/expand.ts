@@ -57,8 +57,6 @@ function purify(name: string, value?: string | number) {
     if (keepNumber.has(name)) return value
     return String(value)
   }
-  // @TODO: For `transform`, we need to convert relative values to absolute
-  // values here.
   return value
 }
 
@@ -74,6 +72,13 @@ function handleSpecialCase(name: string, value: string | number) {
       }),
     }
   return null
+}
+
+function getErrorHint(name: string) {
+  if (name === 'transform') {
+    return ' Only absolute lengths such as `10px` are supported.'
+  }
+  return ''
 }
 
 function lengthToNumber(
@@ -136,16 +141,24 @@ export default function expand(
     }
 
     const name = getPropertyName(prop)
-    Object.assign(
-      transformedStyle,
-      handleSpecialCase(name, style[prop]) ||
-        handleFallbackColor(
-          name,
-          getStylesForProperty(name, purify(name, style[prop]), true),
-          style[prop] as string,
-          (style.color || inheritedStyle.color) as string
-        )
-    )
+
+    try {
+      Object.assign(
+        transformedStyle,
+        handleSpecialCase(name, style[prop]) ||
+          handleFallbackColor(
+            name,
+            getStylesForProperty(name, purify(name, style[prop]), true),
+            style[prop] as string,
+            (style.color || inheritedStyle.color) as string
+          )
+      )
+    } catch (err) {
+      console.error(err)
+      throw new Error(
+        `Failed to parse CSS \`${name}: ${style[prop]}\`.${getErrorHint(name)}`
+      )
+    }
   }
 
   // Parse background images.
