@@ -71,24 +71,8 @@ export function v(
 // @TODO: Support "lang" attribute to modify the locale
 const locale = undefined
 
-const INTL_SEGMENTER_SUPPORTED =
-  typeof Intl !== 'undefined' && 'Segmenter' in Intl
-
-if (!INTL_SEGMENTER_SUPPORTED) {
-  // https://caniuse.com/mdn-javascript_builtins_intl_segments
-  throw new Error(
-    'Intl.Segmenter does not exist, please use import a polyfill.'
-  )
-}
-
-const wordSegmenter = INTL_SEGMENTER_SUPPORTED
-  ? new (Intl as any).Segmenter(locale, { granularity: 'word' })
-  : null
-const graphemeSegmenter = INTL_SEGMENTER_SUPPORTED
-  ? new (Intl as any).Segmenter(locale, {
-      granularity: 'grapheme',
-    })
-  : null
+let wordSegmenter
+let graphemeSegmenter
 
 // Implementation modified from
 // https://github.com/niklasvh/html2canvas/blob/6521a487d78172f7179f7c973c1a3af40eb92009/src/css/layout/text.ts
@@ -101,6 +85,20 @@ export function segment(
   content: string,
   granularity: 'word' | 'grapheme'
 ): string[] {
+  if (!wordSegmenter || !graphemeSegmenter) {
+    if (!(typeof Intl !== 'undefined' && 'Segmenter' in Intl)) {
+      // https://caniuse.com/mdn-javascript_builtins_intl_segments
+      throw new Error(
+        'Intl.Segmenter does not exist, please use import a polyfill.'
+      )
+    }
+
+    wordSegmenter = new (Intl as any).Segmenter(locale, { granularity: 'word' })
+    graphemeSegmenter = new (Intl as any).Segmenter(locale, {
+      granularity: 'grapheme',
+    })
+  }
+
   return granularity === 'word'
     ? [...wordSegmenter.segment(content)].map((seg) => seg.segment)
     : [...graphemeSegmenter.segment(content)].map((seg) => seg.segment)

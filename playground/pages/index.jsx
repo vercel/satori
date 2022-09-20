@@ -1,4 +1,4 @@
-import satori, { init as initSatori } from 'satori/wasm'
+import satori from 'satori'
 import { LiveProvider, LiveContext, withLive } from 'react-live'
 import { useEffect, useState, useRef, useContext } from 'react'
 import { createPortal } from 'react-dom'
@@ -14,6 +14,7 @@ import { Base64 } from 'js-base64'
 import PDFDocument from 'pdfkit/js/pdfkit.standalone.js'
 import SVGtoPDF from 'svg-to-pdfkit'
 import blobStream from 'blob-stream'
+import { createIntlSegmenterPolyfill } from 'intl-segmenter-polyfill'
 
 import { loadEmoji, getIconCode } from '../utils/twemoji'
 
@@ -118,29 +119,30 @@ const spinner = (
 async function init() {
   if (typeof window === 'undefined') return []
 
-  const [_, __, font, fontBold, fontIcon] =
+  const [_, font, fontBold, fontIcon, Segmenter] =
     window.__resource ||
     (window.__resource = await Promise.all([
       fetch(
         'https://unpkg.com/@resvg/resvg-wasm@2.0.0-alpha.4/index_bg.wasm'
       ).then((res) => resvg.initWasm(res)),
-      fetch('https://unpkg.com/yoga-wasm-web@0.1.2/dist/yoga.wasm')
-        .then((res) => initStreaming(res))
-        .then((yoga) => initSatori(yoga)),
-      ...(
-        await Promise.all([
-          fetch(
-            'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'
-          ),
-          fetch(
-            'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-700-normal.woff'
-          ),
-          fetch(
-            'https://unpkg.com/@fontsource/material-icons@4.5.2/files/material-icons-base-400-normal.woff'
-          ),
-        ])
-      ).map((res) => res.arrayBuffer()),
+      fetch(
+        'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-400-normal.woff'
+      ).then((res) => res.arrayBuffer()),
+      fetch(
+        'https://unpkg.com/@fontsource/inter@4.5.2/files/inter-latin-ext-700-normal.woff'
+      ).then((res) => res.arrayBuffer()),
+      fetch(
+        'https://unpkg.com/@fontsource/material-icons@4.5.2/files/material-icons-base-400-normal.woff'
+      ).then((res) => res.arrayBuffer()),
+      !globalThis.Intl || !globalThis.Intl.Segmenter
+        ? createIntlSegmenterPolyfill(fetch('/break_iterator.wasm'))
+        : null,
     ]))
+
+  if (Segmenter) {
+    globalThis.Intl = globalThis.Intl || {}
+    globalThis.Intl.Segmenter = Segmenter
+  }
 
   return [
     {
