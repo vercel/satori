@@ -21,7 +21,18 @@ describe('Image', () => {
             if (key === 'content-type') return 'image/png'
           },
         },
-        arrayBuffer: async () => new ArrayBuffer(100),
+        arrayBuffer: async () => {
+          // 1x1 #00F blue image.
+          const binary_string = atob(
+            `iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==`
+          )
+          const len = binary_string.length
+          const bytes = new Uint8Array(len)
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binary_string.charCodeAt(i)
+          }
+          return bytes.buffer
+        },
       }
     }
   })
@@ -50,7 +61,7 @@ describe('Image', () => {
         { width: 100, height: 100, fonts }
       )
       expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"transparent\\" stroke=\\"black\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/><image x=\\"1\\" y=\\"1\\" width=\\"100\\" height=\\"100\\" href=\\"data:image/png;base64,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\\" preserveAspectRatio=\\"none\\"/></svg>"'
+        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"transparent\\" stroke=\\"black\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/><image x=\\"1\\" y=\\"1\\" width=\\"100\\" height=\\"100\\" href=\\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==\\" preserveAspectRatio=\\"none\\"/></svg>"'
       )
 
       expect(requests).toEqual(['https://via.placeholder.com/150'])
@@ -72,7 +83,7 @@ describe('Image', () => {
         { width: 100, height: 100, fonts }
       )
       expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"transparent\\" stroke=\\"black\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/><image x=\\"1\\" y=\\"1\\" width=\\"10\\" height=\\"10\\" href=\\"data:image/png;base64,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\\" preserveAspectRatio=\\"none\\"/><image x=\\"11\\" y=\\"1\\" width=\\"20\\" height=\\"30\\" href=\\"data:image/png;base64,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\\" preserveAspectRatio=\\"none\\"/></svg>"'
+        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"transparent\\" stroke=\\"black\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/><image x=\\"1\\" y=\\"1\\" width=\\"10\\" height=\\"10\\" href=\\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==\\" preserveAspectRatio=\\"none\\"/><image x=\\"11\\" y=\\"1\\" width=\\"20\\" height=\\"30\\" href=\\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==\\" preserveAspectRatio=\\"none\\"/></svg>"'
       )
 
       expect(requests).toEqual(['https://via.placeholder.com/200'])
@@ -94,7 +105,7 @@ describe('Image', () => {
         { width: 100, height: 100, fonts }
       )
       expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><pattern id=\\"satori_biid_0\\" patternContentUnits=\\"userSpaceOnUse\\" patternUnits=\\"userSpaceOnUse\\" x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"><image x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" href=\\"data:image/png;base64,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==\\"/></pattern><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"url(#satori_biid_0)\\" stroke=\\"black\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/></svg>"'
+        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><pattern id=\\"satori_biid_0\\" patternContentUnits=\\"userSpaceOnUse\\" patternUnits=\\"userSpaceOnUse\\" x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"><image x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" href=\\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==\\"/></pattern><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"url(#satori_biid_0)\\" stroke=\\"black\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/></svg>"'
       )
 
       expect(requests).toEqual(['https://via.placeholder.com/300'])

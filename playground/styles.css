@@ -1,5 +1,10 @@
 /* Fonts for the demo */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  src: url(/inter-latin-ext-700-normal.woff) format('woff2');
+}
 
 /* UI */
 
