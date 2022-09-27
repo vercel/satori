@@ -1,8 +1,12 @@
 ![Satori](.github/card.png)
 
 <p align="center">
-  Satori: A library that converts HTML and CSS into SVG.
+  <b>Satori: A library that converts HTML and CSS into SVG.</b>
+  <br/>
+  <a href="https://satori-playground.vercel.app" target="_blank"><b>Playground</b></a>
 </p>
+
+<br/>
 
 ## API
 
@@ -41,9 +45,13 @@ Which yields:
 
 Text (with font data) will be embedded in the SVG as paths.
 
+<br/>
+
 ## Playground
 
 https://satori-playground.vercel.app
+
+<br/>
 
 ## Documentation
 
@@ -338,6 +346,8 @@ init(yoga)
 await satori(...)
 ```
 
+<br/>
+
 ## Contribute
 
 This project uses [pnpm](https://pnpm.io). To install dependencies, run:
@@ -362,6 +372,8 @@ To start and live-watch the tests, run:
 ```bash
 pnpm dev:test
 ```
+
+<br/>
 
 ## Author
 
