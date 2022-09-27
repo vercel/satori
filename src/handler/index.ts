@@ -11,16 +11,17 @@ import presets from './presets'
 import inheritable from './inheritable'
 import expand from './expand'
 import { v } from '../utils'
+import { resolveImageData } from './image'
 
 type SatoriElement = keyof typeof presets
 
-export default function handler(
+export default async function handler(
   node: YogaNode,
   type: SatoriElement | string,
   inheritedStyle: Record<string, string | number>,
   definedStyle: Record<string, string | number>,
   props: Record<string, any>
-): [Record<string, string | number>, Record<string, string | number>] {
+): Promise<[Record<string, string | number>, Record<string, string | number>]> {
   const Yoga = getYoga()
 
   // Extend the default style with defined and inherited styles.
@@ -31,11 +32,39 @@ export default function handler(
   }
 
   if (type === 'img') {
-    const width = parseInt(props.width)
-    const height = parseInt(props.height)
-    const r = height / width
-    if (!style.width) style.width = width
-    if (!style.height) style.height = r * (style.width as number)
+    let [resolvedSrc, imageWidth, imageHeight] = await resolveImageData(
+      props.src
+    )
+
+    // Cannot parse the image size (e.g. base64 data URI).
+    if (imageWidth === undefined && imageHeight === undefined) {
+      if (props.width === undefined || props.height === undefined) {
+        throw new Error(
+          'Image size cannot be determined. Please provide the width and height of the image.'
+        )
+      }
+      imageWidth = parseInt(props.width)
+      imageHeight = parseInt(props.height)
+    }
+    const r = imageHeight / imageWidth
+
+    let displayedWidth = style.width || props.width
+    let displayedHeight = style.height || props.height
+    if (!displayedWidth && !displayedHeight) {
+      displayedWidth = imageWidth
+      displayedHeight = imageHeight
+    }
+
+    if (!displayedWidth) {
+      displayedWidth = displayedHeight / r
+    }
+    if (!displayedHeight) {
+      displayedHeight = displayedWidth * r
+    }
+
+    style.width = displayedWidth
+    style.height = displayedHeight
+    style.__src = resolvedSrc
   }
 
   if (type === 'svg') {
