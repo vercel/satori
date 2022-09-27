@@ -1,6 +1,8 @@
-<h1 align="center">
-  Satori
-</h1>
+![Satori](.github/card.png)
+
+<p align="center">
+  Satori: A library that converts HTML and CSS into SVG.
+</p>
 
 ## API
 
