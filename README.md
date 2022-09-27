@@ -1,10 +1,8 @@
 ![Satori](.github/card.png)
 
-<p align="center">
-  <b>Satori: A library that converts HTML and CSS into SVG.</b>
-  <br/>
-  <a href="https://satori-playground.vercel.app" target="_blank"><b>Playground</b></a>
-</p>
+**Satori**: A library that converts HTML and CSS into SVG.
+
+[Playground](https://satori-playground.vercel.app)
 
 <br/>
 
