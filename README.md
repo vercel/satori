@@ -2,15 +2,14 @@
 
 **Satori**: A library that converts HTML and CSS into SVG.
 
-[Playground](https://satori-playground.vercel.app)
+[Playground →](https://satori-playground.vercel.app)
 
-<br/>
+## Overview
 
-## API
-
-Satori converts HTML and CSS into SVG.
+Satori supports the JSX syntax, which makes it very straightforward to use. Here’s an overview of the basic usage:
 
 ```jsx
+// api.jsx
 import satori from 'satori'
 
 const svg = await satori(
@@ -25,23 +24,18 @@ const svg = await satori(
         weight: 400,
         style: 'normal',
       },
-      ...
     ],
-    embedFont: true,     // Embed the font in SVG as path data. Optional, default: true.
-    debug: false,        // Show the bounding box for debugging. Optional, default: false.
-    graphemeImages: {},  // Custom grapheme images, see "Emojis". Optional, default: empty.
-    loadAdditionalAsset, // See "Dynamically Load Emojis and Fonts" below. Optional.
   },
 )
 ```
 
-Which yields:
+Satori will render the element into a 600×400 SVG, and return the SVG string:
 
 ```js
 '<svg ...><path d="..." fill="black"></path></svg>'
 ```
 
-Text (with font data) will be embedded in the SVG as paths.
+Under the hood, it handles layout calculation, font, typography and more, to generate a SVG that matches the exact same HTML and CSS in a browser.
 
 <br/>
 
@@ -342,6 +336,36 @@ const yoga = initYoga(await fetch('/yoga.wasm').then(res => res.arrayBuffer()))
 init(yoga)
 
 await satori(...)
+```
+
+### Font Embedding
+
+By default, Satori renders the text as `<path>` in SVG, instead of `<text>`. That means it embeds the font path data as inlined information, so succeeding processes (e.g. render the SVG on another platform) don’t need to deal with font files anymore.
+
+You can turn off this behavior by setting `embedFonts` to `false`, and Satori will use `<text>` instead:
+
+```jsx
+const svg = await satori(
+  <div style={{ color: 'black' }}>hello, world</div>,
+  {
+    ...,
+    embedFont: false,
+  },
+)
+```
+
+### Debug
+
+To draw the bounding box for debugging, you can pass `debug: true` as an option:
+
+```jsx
+const svg = await satori(
+  <div style={{ color: 'black' }}>hello, world</div>,
+  {
+    ...,
+    debug: true,
+  },
+)
 ```
 
 <br/>
