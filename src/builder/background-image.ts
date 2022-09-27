@@ -293,7 +293,18 @@ export default async function backgroundImage(
   }
 
   if (image.startsWith('url(')) {
-    const src = await resolveImageData(image.slice(4, -1))
+    const dimensionsWithoutFallback = parseLengthPairs(size, {
+      x: width,
+      y: height,
+      defaultX: 0,
+      defaultY: 0,
+    })
+    const [src, imageWidth, imageHeight] = await resolveImageData(
+      image.slice(4, -1)
+    )
+    const resolvedWidth = dimensionsWithoutFallback[0] || imageWidth
+    const resolvedHeight = dimensionsWithoutFallback[1] || imageHeight
+
     return [
       `satori_bi${id}`,
       buildXMLString(
@@ -304,14 +315,14 @@ export default async function backgroundImage(
           patternUnits: 'userSpaceOnUse',
           x: offsets[0],
           y: offsets[1],
-          width: repeatX ? dimensions[0] : '100%',
-          height: repeatY ? dimensions[1] : '100%',
+          width: repeatX ? resolvedWidth : '100%',
+          height: repeatY ? resolvedHeight : '100%',
         },
         buildXMLString('image', {
           x: 0,
           y: 0,
-          width: dimensions[0],
-          height: dimensions[1],
+          width: resolvedWidth,
+          height: resolvedHeight,
           href: src,
         })
       ),

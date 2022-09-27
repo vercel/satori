@@ -18,7 +18,6 @@ import FontLoader from './font'
 import layoutText from './text'
 import rect from './builder/rect'
 import image from './builder/image'
-import { resolveImageData } from './handler/image'
 
 export interface LayoutContext {
   id: string
@@ -88,7 +87,7 @@ export default async function* layout(
   const node = Yoga.Node.create()
   parent.insertChild(node, parent.getChildCount())
 
-  const [computedStyle, newInheritableStyle] = handler(
+  const [computedStyle, newInheritableStyle] = await handler(
     node,
     type,
     inheritedStyle,
@@ -164,7 +163,7 @@ export default async function* layout(
 
   // Generate the rendered markup for the current node.
   if (type === 'img') {
-    const src = await resolveImageData(props.src)
+    const src = computedStyle.__src as string
     baseRenderResult = image(
       {
         id,

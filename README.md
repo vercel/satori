@@ -80,7 +80,7 @@ You can find the list of supported HTML elements and their preset styles [here](
 
 #### Images
 
-You can use `<img>` to embed images but `src`, `width`, and `height` attributes are all required.
+You can use `<img>` to embed images. However, `width`, and `height` attributes are recommended to set:
 
 ```jsx
 await satori(
