@@ -91,6 +91,20 @@ function handleSpecialCase(name: string, value: string | number) {
     return vv
   }
 
+  if (/^border(Top|Right|Bottom|Left)?$/.test(name)) {
+    const resolved = getStylesForProperty(name, value, true)
+
+    // Border width should be default to 3px (medium) instead of 1px:
+    // https://w3c.github.io/csswg-drafts/css-backgrounds-3/#border-width
+    // Although on Chrome it will be displayed as 1.5px but let's stick to the
+    // spec.
+    if (resolved.borderWidth === 1 && !String(value).includes('1px')) {
+      resolved.borderWidth = 3
+    }
+
+    return resolved
+  }
+
   return
 }
 
@@ -124,6 +138,7 @@ export default function expand(
           style[prop] as string,
           (style.color || inheritedStyle.color) as string
         )
+
       Object.assign(transformedStyle, resolvedStyle)
     } catch (err) {
       console.error(err)
