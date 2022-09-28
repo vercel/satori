@@ -160,7 +160,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>borderTopRightRadius</code></td><td>Supported</td></tr>
 <tr><td><code>borderBottomLeftRadius</code></td><td>Supported</td></tr>
 <tr><td><code>borderBottomRightRadius</code></td><td>Supported</td></tr>
-<tr><td>Shorthand</td><td>Supported, i.e. <code>5px</code></td></tr>
+<tr><td>Shorthand</td><td>Supported, i.e. <code>5px</code>, <code>50% / 5px</code></td></tr>
 
 <tr><td rowspan="10">Flex</td></tr>
 <tr><td><code>flexDirection</code></td><td><code>column</code>, <code>row</code>, <code>row-reverse</code>, <code>column-reverse</code>, default to <code>row</code></td></tr>

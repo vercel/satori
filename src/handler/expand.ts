@@ -61,8 +61,11 @@ function purify(name: string, value?: string | number) {
 }
 
 function handleSpecialCase(name: string, value: string | number) {
-  if (name === 'lineHeight') return { lineHeight: purify(name, value) }
-  if (name === 'fontFamily')
+  if (name === 'lineHeight') {
+    return { lineHeight: purify(name, value) }
+  }
+
+  if (name === 'fontFamily') {
     return {
       fontFamily: (value as string).split(',').map((v) => {
         return v
@@ -71,7 +74,24 @@ function handleSpecialCase(name: string, value: string | number) {
           .toLocaleLowerCase()
       }),
     }
-  return null
+  }
+
+  if (name === 'borderRadius') {
+    if (typeof value !== 'string' || !value.includes('/')) {
+      // Regular border radius
+      return
+    }
+    // Support the `border-radius: 10px / 20px` syntax.
+    const [horizontal, vertical] = value.split('/')
+    const vh = getStylesForProperty(name, horizontal, true)
+    const vv = getStylesForProperty(name, vertical, true)
+    for (const k in vh) {
+      vv[k] = purify(name, vh[k]) + ' ' + purify(name, vv[k])
+    }
+    return vv
+  }
+
+  return
 }
 
 function getErrorHint(name: string) {
@@ -96,16 +116,15 @@ export default function expand(
     const name = getPropertyName(prop)
 
     try {
-      Object.assign(
-        transformedStyle,
+      const resolvedStyle =
         handleSpecialCase(name, style[prop]) ||
-          handleFallbackColor(
-            name,
-            getStylesForProperty(name, purify(name, style[prop]), true),
-            style[prop] as string,
-            (style.color || inheritedStyle.color) as string
-          )
-      )
+        handleFallbackColor(
+          name,
+          getStylesForProperty(name, purify(name, style[prop]), true),
+          style[prop] as string,
+          (style.color || inheritedStyle.color) as string
+        )
+      Object.assign(transformedStyle, resolvedStyle)
     } catch (err) {
       console.error(err)
       throw new Error(

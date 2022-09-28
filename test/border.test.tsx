@@ -215,5 +215,34 @@ describe('Border', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support slash and 2-value corner', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            width: '100%',
+            height: '100%',
+            fontSize: '8px',
+          }}
+        >
+          <div
+            style={{
+              borderRadius: '50px 25% / 10px 20px',
+              borderTopLeftRadius: '10px 50px',
+              background: 'red',
+              width: '100%',
+              height: '100%',
+            }}
+          ></div>
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 })
