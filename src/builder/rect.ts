@@ -84,7 +84,8 @@ export default async function rect(
         background
       )
       if (image) {
-        backgrounds.push(image)
+        // Background images that come first in the array are rendered last.
+        backgrounds.unshift(image)
       }
     }
 

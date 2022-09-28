@@ -159,6 +159,7 @@ export default async function backgroundImage(
 
   if (image.startsWith('linear-gradient(')) {
     const parsed = gradient.parse(image)[0]
+    const [xDelta, yDelta] = dimensions
 
     // Calculate the direction.
     let x1, y1, x2, y2
@@ -190,15 +191,46 @@ export default async function backgroundImage(
 
     const stops = normalizeStops(width, parsed.colorStops)
 
-    return [
-      `satori_bi${id}`,
-      `<linearGradient id="satori_bi${id}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${stops
-        .map(
-          (stop) =>
-            `<stop offset="${stop.offset * 100}%" stop-color="${stop.color}"/>`
-        )
-        .join('')}</linearGradient>`,
-    ]
+    const gradientId = `satori_bi${id}`
+    const patternId = `satori_pattern_${id}`
+
+    const defs = buildXMLString(
+      'pattern',
+      {
+        id: patternId,
+        x: offsets[0],
+        y: offsets[1],
+        width: repeatX ? xDelta : '100%',
+        height: repeatY ? yDelta : '100%',
+        patternUnits: 'userSpaceOnUse',
+      },
+      buildXMLString(
+        'linearGradient',
+        {
+          id: gradientId,
+          x1,
+          y1,
+          x2,
+          y2,
+        },
+        stops
+          .map((stop) =>
+            buildXMLString('stop', {
+              offset: stop.offset * 100 + '%',
+              'stop-color': stop.color,
+            })
+          )
+          .join('')
+      ) +
+        buildXMLString('rect', {
+          x: 0,
+          y: 0,
+          width: xDelta,
+          height: yDelta,
+          fill: `url(#${gradientId})`,
+        })
+    )
+    return [patternId, defs]
   }
 
   if (image.startsWith('radial-gradient(')) {
@@ -230,6 +262,7 @@ export default async function backgroundImage(
 
     const gradientId = `satori_radial_${id}`
     const patternId = `satori_pattern_${id}`
+    const maskId = `satori_mask_${id}`
 
     // We currently only support `farthest-corner`:
     // https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/radial-gradient()#values
@@ -278,6 +311,19 @@ export default async function backgroundImage(
           )
           .join('')
       ) +
+        buildXMLString(
+          'mask',
+          {
+            id: maskId,
+          },
+          buildXMLString('rect', {
+            x: 0,
+            y: 0,
+            width: xDelta,
+            height: yDelta,
+            fill: '#fff',
+          })
+        ) +
         buildXMLString(shape, {
           cx: cx,
           cy: cy,
@@ -285,6 +331,7 @@ export default async function backgroundImage(
           height: yDelta,
           ...spread,
           fill: `url(#${gradientId})`,
+          mask: `url(#${maskId})`,
         })
     )
 
