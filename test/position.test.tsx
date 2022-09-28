@@ -1,7 +1,7 @@
 import React from 'react'
 import { it, describe, expect } from 'vitest'
 
-import { initFonts } from './utils'
+import { initFonts, toImage } from './utils'
 import satori from '../src'
 
 describe('Position', () => {
@@ -31,9 +31,7 @@ describe('Position', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><rect x=\\"90\\" y=\\"90\\" width=\\"10\\" height=\\"10\\" fill=\\"black\\"/></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 })

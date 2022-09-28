@@ -1,52 +1,73 @@
 import React from 'react'
 import { it, describe, expect } from 'vitest'
 
-import { initFonts } from './utils'
+import { initFonts, toImage } from './utils'
 import satori from '../src'
 
 describe('Border', () => {
   let fonts
   initFonts((f) => (fonts = f))
 
-  it('should support border radius', async () => {
-    const svg = await satori(
-      <div
-        style={{
-          borderRadius: '10px',
-          background: 'red',
-          width: '100%',
-          height: '100%',
-        }}
-      ></div>,
-      {
-        width: 100,
-        height: 100,
-        fonts,
-      }
-    )
-    expect(svg).toMatchInlineSnapshot(
-      '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><path x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\" fill=\\"red\\" d=\\"M10,0 h80 a10,10 0 0 1 10,10 v80 a10,10 0 0 1 -10,10 h-80 a10,10 0 0 1 -10,-10 v-80 a10,10 0 0 1 10,-10\\"/></svg>"'
-    )
+  describe('border-radius', () => {
+    it('should support the shorthand', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            borderRadius: '10px',
+            background: 'red',
+            width: '100%',
+            height: '100%',
+          }}
+        ></div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support radius for a certain corner', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            borderTopRightRadius: '50px',
+            borderTopLeftRadius: '10px',
+            borderBottomLeftRadius: '60px',
+            background: 'red',
+            width: '100%',
+            height: '100%',
+          }}
+        ></div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 
-  it('should support border width and color', async () => {
-    const svg = await satori(
-      <div
-        style={{
-          border: '1px solid',
-          width: '100%',
-          height: '100%',
-        }}
-      ></div>,
-      {
-        width: 100,
-        height: 100,
-        fonts,
-      }
-    )
-    expect(svg).toMatchInlineSnapshot(
-      '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"100\\" height=\\"100\\" fill=\\"transparent\\" stroke=\\"black\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/></svg>"'
-    )
+  describe('border', () => {
+    it('should support the shorthand', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            border: '1px solid',
+            width: '100%',
+            height: '100%',
+          }}
+        ></div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 
   describe('border-color', () => {
@@ -57,9 +78,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"transparent\\" stroke=\\"black\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should fallback border color to the current color', async () => {
@@ -74,26 +93,22 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"transparent\\" stroke=\\"red\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
-    it('should support specifying borderColor', async () => {
+    it('should support specifying `borderColor`', async () => {
       const svg = await satori(
         <div
           style={{
             border: '1px',
-            borderColor: 'red',
+            borderColor: 'green',
             width: '50%',
             height: '50%',
           }}
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"transparent\\" stroke=\\"red\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support overriding borderColor', async () => {
@@ -108,9 +123,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"transparent\\" stroke=\\"red\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -122,9 +135,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"transparent\\" stroke=\\"black\\" stroke-width=\\"10\\" clip-path=\\"url(#satori_bc-id)\\"/></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -136,9 +147,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"transparent\\" stroke=\\"black\\" stroke-width=\\"10\\" stroke-dasharray=\\"10  5\\" clip-path=\\"url(#satori_bc-id)\\"/></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 })
