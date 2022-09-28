@@ -27,6 +27,14 @@ export function toImage(svg: string, width: number = 100) {
       mode: 'width',
       value: width,
     },
+    font: {
+      // As system fallback font
+      fontFiles: [
+        join(process.cwd(), 'test', 'assets', 'playfair-display.ttf'),
+      ],
+      loadSystemFonts: false,
+      defaultFontFamily: 'Playfair Display',
+    },
   })
   const pngData = resvg.render()
   return pngData.asPng()
