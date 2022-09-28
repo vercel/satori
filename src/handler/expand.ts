@@ -8,7 +8,7 @@ import { parseElementStyle } from 'css-background-parser'
 
 import CssDimension from '../vendor/parse-css-dimension'
 import parseTransformOrigin from '../transform-origin'
-import { multiply } from '../utils'
+import { lengthToNumber, multiply } from '../utils'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
@@ -79,53 +79,6 @@ function getErrorHint(name: string) {
     return ' Only absolute lengths such as `10px` are supported.'
   }
   return ''
-}
-
-function lengthToNumber(
-  length: string | number,
-  baseFontSize: number,
-  inheritedStyle: Record<string, string | number>,
-  { percentage }: { percentage: boolean } = { percentage: false }
-): number | undefined {
-  if (typeof length === 'number') return length
-
-  // Convert em and rem values to number (px), convert rad to deg.
-  try {
-    const parsed = new CssDimension(length)
-    if (parsed.type === 'length') {
-      switch (parsed.unit) {
-        case 'em':
-          return parsed.value * baseFontSize
-        case 'rem':
-          return parsed.value * 16
-        case 'vw':
-          return ~~(
-            (parsed.value * (inheritedStyle._viewportWidth as number)) /
-            100
-          )
-        case 'vh':
-          return ~~(
-            (parsed.value * (inheritedStyle._viewportHeight as number)) /
-            100
-          )
-        default:
-          return parsed.value
-      }
-    } else if (parsed.type === 'angle') {
-      switch (parsed.unit) {
-        case 'deg':
-          return parsed.value
-        case 'rad':
-          return (parsed.value * 180) / Math.PI
-        default:
-          return parsed.value
-      }
-    } else if (parsed.type === 'percentage') {
-      if (percentage) {
-        return (parsed.value / 100) * baseFontSize
-      }
-    }
-  } catch (err) {}
 }
 
 export default function expand(
@@ -205,14 +158,23 @@ export default function expand(
     if (prop === 'lineHeight') {
       if (typeof value === 'string') {
         value = transformedStyle[prop] =
-          lengthToNumber(value, baseFontSize, inheritedStyle, {
-            percentage: true,
-          }) / baseFontSize
+          lengthToNumber(
+            value,
+            baseFontSize,
+            baseFontSize,
+            inheritedStyle,
+            true
+          ) / baseFontSize
       }
     } else {
       // Convert em and rem values to px (number).
       if (typeof value === 'string') {
-        const len = lengthToNumber(value, baseFontSize, inheritedStyle)
+        const len = lengthToNumber(
+          value,
+          baseFontSize,
+          baseFontSize,
+          inheritedStyle
+        )
         if (typeof len !== 'undefined') transformedStyle[prop] = len
         value = transformedStyle[prop]
       }
@@ -239,7 +201,7 @@ export default function expand(
         const v = transform[type]
         const len =
           typeof v === 'string'
-            ? lengthToNumber(v, baseFontSize, inheritedStyle)
+            ? lengthToNumber(v, baseFontSize, baseFontSize, inheritedStyle)
             : v
 
         const transformMatrix = [...baseMatrix]
