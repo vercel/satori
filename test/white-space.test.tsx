@@ -1,7 +1,7 @@
 import React from 'react'
 import { it, describe, expect } from 'vitest'
 
-import { initFonts } from './utils'
+import { initFonts, toImage } from './utils'
 import satori from '../src'
 
 describe('white-space', () => {
@@ -19,15 +19,13 @@ describe('white-space', () => {
           {' hello '}
         </div>,
         {
-          width: 200,
-          height: 200,
+          width: 100,
+          height: 100,
           fonts,
-          embedFont: false,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"15.48289183222958\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text></svg>"'
-      )
+
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should not render extra line breaks with `white-space: normal`', async () => {
@@ -40,15 +38,12 @@ describe('white-space', () => {
           {' hello \n world'}
         </div>,
         {
-          width: 200,
-          height: 200,
+          width: 100,
+          height: 100,
           fonts,
-          embedFont: false,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"15.48289183222958\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"15.48289183222958\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should wrap automatically with `white-space: normal`', async () => {
@@ -62,14 +57,11 @@ describe('white-space', () => {
         </div>,
         {
           width: 20,
-          height: 200,
+          height: 100,
           fonts,
-          embedFont: false,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"20\\" height=\\"200\\" viewBox=\\"0 0 20 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"15.48289183222958\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"34.1796875\\" y=\\"15.48289183222958\\" width=\\"3.140625\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">,</text><text x=\\"0\\" y=\\"34.23289183222958\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
-      )
+      expect(toImage(svg, 20)).toMatchImageSnapshot()
     })
   })
 
@@ -81,18 +73,15 @@ describe('white-space', () => {
             whiteSpace: 'pre',
           }}
         >
-          {' hello '}
+          {'     hello '}
         </div>,
         {
-          width: 200,
-          height: 200,
+          width: 100,
+          height: 100,
           fonts,
-          embedFont: false,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"15.48289183222958\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"15.48289183222958\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"15.48289183222958\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should always preserve extra line breaks with `white-space: pre`', async () => {
@@ -102,21 +91,16 @@ describe('white-space', () => {
             whiteSpace: 'pre',
           }}
         >
-          {' hello \n world'}
+          {' hello \n world '}
         </div>,
         {
-          width: 200,
-          height: 200,
+          width: 100,
+          height: 100,
           fonts,
           embedFont: false,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        `
-        "<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"15.48289183222958\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"15.48289183222958\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"15.48289183222958\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"0\\" y=\\"34.23289183222958\\" width=\\"0\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">
-        </text><text x=\\"0\\" y=\\"34.23289183222958\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"34.23289183222958\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"
-      `
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should not wrap with `white-space: pre`', async () => {
@@ -130,14 +114,12 @@ describe('white-space', () => {
         </div>,
         {
           width: 20,
-          height: 200,
+          height: 100,
           fonts,
           embedFont: false,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"20\\" height=\\"200\\" viewBox=\\"0 0 20 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"15.48289183222958\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"34.1796875\\" y=\\"15.48289183222958\\" width=\\"3.140625\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">,</text><text x=\\"37.3203125\\" y=\\"15.48289183222958\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"41.28125\\" y=\\"15.48289183222958\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
-      )
+      expect(toImage(svg, 20)).toMatchImageSnapshot()
     })
   })
 
@@ -152,15 +134,12 @@ describe('white-space', () => {
           {' hello '}
         </div>,
         {
-          width: 200,
-          height: 200,
+          width: 100,
+          height: 100,
           fonts,
-          embedFont: false,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"15.48289183222958\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"15.48289183222958\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"15.48289183222958\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should always preserve extra line breaks with `white-space: pre-wrap`', async () => {
@@ -173,18 +152,13 @@ describe('white-space', () => {
           {' hello \n world'}
         </div>,
         {
-          width: 200,
-          height: 200,
+          width: 100,
+          height: 100,
           fonts,
           embedFont: false,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        `
-        "<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"15.48289183222958\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"15.48289183222958\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"38.140625\\" y=\\"15.48289183222958\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"0\\" y=\\"34.23289183222958\\" width=\\"0\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">
-        </text><text x=\\"0\\" y=\\"34.23289183222958\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"3.9609375\\" y=\\"34.23289183222958\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"
-      `
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should automatically wrap with `white-space: pre-wrap`', async () => {
@@ -198,14 +172,12 @@ describe('white-space', () => {
         </div>,
         {
           width: 20,
-          height: 200,
+          height: 100,
           fonts,
           embedFont: false,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"20\\" height=\\"200\\" viewBox=\\"0 0 20 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"15.48289183222958\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"34.1796875\\" y=\\"15.48289183222958\\" width=\\"3.140625\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">,</text><text x=\\"0\\" y=\\"34.23289183222958\\" width=\\"3.9609375\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\"> </text><text x=\\"0\\" y=\\"52.98289183222958\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
-      )
+      expect(toImage(svg, 20)).toMatchImageSnapshot()
     })
   })
 
@@ -221,14 +193,12 @@ describe('white-space', () => {
         </div>,
         {
           width: 20,
-          height: 200,
+          height: 100,
           fonts,
           embedFont: false,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"20\\" height=\\"200\\" viewBox=\\"0 0 20 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><text x=\\"0\\" y=\\"15.48289183222958\\" width=\\"34.1796875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">hello</text><text x=\\"34.1796875\\" y=\\"15.48289183222958\\" width=\\"3.140625\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">,</text><text x=\\"41.28125\\" y=\\"15.48289183222958\\" width=\\"39.46875\\" height=\\"18.75\\" font-weight=\\"normal\\" font-style=\\"normal\\" font-size=\\"16\\" font-family=\\"serif\\" fill=\\"black\\">world</text></svg>"'
-      )
+      expect(toImage(svg, 20)).toMatchImageSnapshot()
     })
   })
 })

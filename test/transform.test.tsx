@@ -1,7 +1,7 @@
 import React from 'react'
 import { it, describe, expect } from 'vitest'
 
-import { initFonts } from './utils'
+import { initFonts, toImage } from './utils'
 import satori from '../src'
 
 describe('transform', () => {
@@ -20,14 +20,12 @@ describe('transform', () => {
           }}
         />,
         {
-          width: 200,
-          height: 200,
+          width: 100,
+          height: 100,
           fonts,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><rect x=\\"0\\" y=\\"0\\" width=\\"10\\" height=\\"10\\" fill=\\"red\\" transform=\\"matrix(1.00,0.00,0.00,1.00,10.00,20.00)\\"/></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should translate shape in x-axis', async () => {
@@ -41,14 +39,12 @@ describe('transform', () => {
           }}
         />,
         {
-          width: 200,
-          height: 200,
+          width: 100,
+          height: 100,
           fonts,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><rect x=\\"0\\" y=\\"0\\" width=\\"10\\" height=\\"10\\" fill=\\"red\\" transform=\\"matrix(1.00,0.00,0.00,1.00,10.00,0.00)\\"/></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should translate shape in y-axis', async () => {
@@ -62,14 +58,12 @@ describe('transform', () => {
           }}
         />,
         {
-          width: 200,
-          height: 200,
+          width: 100,
+          height: 100,
           fonts,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><rect x=\\"0\\" y=\\"0\\" width=\\"10\\" height=\\"10\\" fill=\\"red\\" transform=\\"matrix(1.00,0.00,0.00,1.00,0.00,10.00)\\"/></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -85,14 +79,12 @@ describe('transform', () => {
           }}
         />,
         {
-          width: 200,
-          height: 200,
+          width: 100,
+          height: 100,
           fonts,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><rect x=\\"0\\" y=\\"0\\" width=\\"10\\" height=\\"10\\" fill=\\"red\\" transform=\\"matrix(0.87,0.50,-0.50,0.87,3.17,-1.83)\\"/></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -108,14 +100,12 @@ describe('transform', () => {
           }}
         />,
         {
-          width: 200,
-          height: 200,
+          width: 100,
+          height: 100,
           fonts,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><rect x=\\"0\\" y=\\"0\\" width=\\"10\\" height=\\"10\\" fill=\\"red\\" transform=\\"matrix(1.50,0.00,0.00,1.50,-2.50,-2.50)\\"/></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should scale shape in two directions', async () => {
@@ -129,14 +119,33 @@ describe('transform', () => {
           }}
         />,
         {
-          width: 200,
-          height: 200,
+          width: 100,
+          height: 100,
           fonts,
         }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"200\\" height=\\"200\\" viewBox=\\"0 0 200 200\\" xmlns=\\"http://www.w3.org/2000/svg\\"><rect x=\\"0\\" y=\\"0\\" width=\\"10\\" height=\\"10\\" fill=\\"red\\" transform=\\"matrix(2.00,0.00,0.00,3.00,-5.00,-10.00)\\"/></svg>"'
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+  })
+
+  describe('multiple transforms', () => {
+    it('should support translate rotate and scale', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: 10,
+            height: 10,
+            backgroundColor: 'red',
+            transform: 'rotate(45deg) scale(2, 0.2) translate(50px, 50px)',
+          }}
+        />,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
       )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 })

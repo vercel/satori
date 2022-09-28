@@ -1,7 +1,7 @@
 import React from 'react'
 import { it, describe, expect, beforeEach, afterEach } from 'vitest'
 
-import { initFonts } from './utils'
+import { initFonts, toImage } from './utils'
 import satori from '../src'
 
 describe('Image', () => {
@@ -60,9 +60,7 @@ describe('Image', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"transparent\\" stroke=\\"black\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/><image x=\\"1\\" y=\\"1\\" width=\\"48\\" height=\\"48\\" href=\\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==\\" preserveAspectRatio=\\"none\\"/></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
 
       expect(requests).toEqual(['https://via.placeholder.com/150'])
     })
@@ -82,11 +80,26 @@ describe('Image', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"transparent\\" stroke=\\"black\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/><image x=\\"1\\" y=\\"1\\" width=\\"5\\" height=\\"5\\" href=\\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==\\" preserveAspectRatio=\\"none\\"/><image x=\\"6\\" y=\\"1\\" width=\\"9\\" height=\\"14\\" href=\\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==\\" preserveAspectRatio=\\"none\\"/></svg>"'
-      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
 
       expect(requests).toEqual(['https://via.placeholder.com/200'])
+    })
+
+    it('should resolve the image size and scale automatically', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            border: '1px solid',
+            width: '50%',
+            height: '50%',
+            display: 'flex',
+          }}
+        >
+          <img width={30} src='https://via.placeholder.com/200' />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -104,9 +117,8 @@ describe('Image', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(svg).toMatchInlineSnapshot(
-        '"<svg width=\\"100\\" height=\\"100\\" viewBox=\\"0 0 100 100\\" xmlns=\\"http://www.w3.org/2000/svg\\"><defs><pattern id=\\"satori_biid_0\\" patternContentUnits=\\"userSpaceOnUse\\" patternUnits=\\"userSpaceOnUse\\" x=\\"0\\" y=\\"0\\" width=\\"1\\" height=\\"1\\"><image x=\\"0\\" y=\\"0\\" width=\\"1\\" height=\\"1\\" href=\\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==\\"/></pattern><clipPath id=\\"satori_bc-id\\"><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\"/></clipPath></defs><rect x=\\"0\\" y=\\"0\\" width=\\"50\\" height=\\"50\\" fill=\\"url(#satori_biid_0)\\" stroke=\\"black\\" stroke-width=\\"2\\" clip-path=\\"url(#satori_bc-id)\\"/></svg>"'
-      )
+
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
 
       expect(requests).toEqual(['https://via.placeholder.com/300'])
     })
