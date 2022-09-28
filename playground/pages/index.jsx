@@ -116,6 +116,8 @@ const spinner = (
 
 async function initResvg() {
   if (typeof window === 'undefined') return
+  if (globalThis.resvgInitialized) return
+  globalThis.resvgInitialized = true
 
   // Can always be delayed a bit to unblock other resources.
   await new Promise((resolve) => setTimeout(resolve, 500))

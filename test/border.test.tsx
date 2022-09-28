@@ -8,48 +8,6 @@ describe('Border', () => {
   let fonts
   initFonts((f) => (fonts = f))
 
-  describe('border-radius', () => {
-    it('should support the shorthand', async () => {
-      const svg = await satori(
-        <div
-          style={{
-            borderRadius: '10px',
-            background: 'red',
-            width: '100%',
-            height: '100%',
-          }}
-        ></div>,
-        {
-          width: 100,
-          height: 100,
-          fonts,
-        }
-      )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
-    })
-
-    it('should support radius for a certain corner', async () => {
-      const svg = await satori(
-        <div
-          style={{
-            borderTopRightRadius: '50px',
-            borderTopLeftRadius: '10px',
-            borderBottomLeftRadius: '60px',
-            background: 'red',
-            width: '100%',
-            height: '100%',
-          }}
-        ></div>,
-        {
-          width: 100,
-          height: 100,
-          fonts,
-        }
-      )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
-    })
-  })
-
   describe('border', () => {
     it('should support the shorthand', async () => {
       const svg = await satori(
@@ -146,6 +104,114 @@ describe('Border', () => {
           style={{ border: '5px dashed black', width: 50, height: 50 }}
         ></div>,
         { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+  })
+
+  describe('border-radius', () => {
+    it('should support the shorthand', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            borderRadius: '10px',
+            background: 'red',
+            width: '100%',
+            height: '100%',
+          }}
+        ></div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support radius for a certain corner', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            borderTopRightRadius: '50px',
+            borderTopLeftRadius: '10px',
+            borderBottomLeftRadius: '60px',
+            background: 'red',
+            width: '100%',
+            height: '100%',
+          }}
+        ></div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should not exceed the length of the short side', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            borderRadius: 100,
+            background: 'red',
+            width: '100%',
+            height: '100%',
+          }}
+        ></div>,
+        {
+          width: 100,
+          height: 50,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support percentage border radius', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            borderRadius: '100% 10px',
+            background: 'red',
+            width: '100%',
+            height: '100%',
+          }}
+        ></div>,
+        {
+          width: 100,
+          height: 50,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support vw vh em and rem units', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            width: '100%',
+            height: '100%',
+            fontSize: '8px',
+          }}
+        >
+          <div
+            style={{
+              borderRadius: '50vw 25vh 1em 1rem',
+              background: 'red',
+              width: '100%',
+              height: '100%',
+            }}
+          ></div>
+        </div>,
+        {
+          width: 100,
+          height: 50,
+          fonts,
+        }
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })

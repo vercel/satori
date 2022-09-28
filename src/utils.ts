@@ -1,5 +1,7 @@
 import type { ReactNode, ReactElement } from 'react'
 
+import CssDimension from './vendor/parse-css-dimension'
+
 export function isReactElement(node: ReactNode): node is ReactElement {
   const type = typeof node
   if (
@@ -45,6 +47,54 @@ export function normalizeChildren(children: any) {
     }
   }
   return res
+}
+
+export function lengthToNumber(
+  length: string | number,
+  baseFontSize: number,
+  baseLength: number,
+  inheritedStyle: Record<string, string | number>,
+  percentage = false
+): number | undefined {
+  if (typeof length === 'number') return length
+
+  // Convert em and rem values to number (px), convert rad to deg.
+  try {
+    const parsed = new CssDimension(length)
+    if (parsed.type === 'length') {
+      switch (parsed.unit) {
+        case 'em':
+          return parsed.value * baseFontSize
+        case 'rem':
+          return parsed.value * 16
+        case 'vw':
+          return ~~(
+            (parsed.value * (inheritedStyle._viewportWidth as number)) /
+            100
+          )
+        case 'vh':
+          return ~~(
+            (parsed.value * (inheritedStyle._viewportHeight as number)) /
+            100
+          )
+        default:
+          return parsed.value
+      }
+    } else if (parsed.type === 'angle') {
+      switch (parsed.unit) {
+        case 'deg':
+          return parsed.value
+        case 'rad':
+          return (parsed.value * 180) / Math.PI
+        default:
+          return parsed.value
+      }
+    } else if (parsed.type === 'percentage') {
+      if (percentage) {
+        return (parsed.value / 100) * baseLength
+      }
+    }
+  } catch (err) {}
 }
 
 // Multiplies two 2d transform matrices.
