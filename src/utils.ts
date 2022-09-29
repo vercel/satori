@@ -60,6 +60,11 @@ export function lengthToNumber(
 
   // Convert em and rem values to number (px), convert rad to deg.
   try {
+    length = length.trim()
+
+    // Not length: `1px/2px`, `1px 2px`, `1px, 2px`, `calc(1px)`.
+    if (/[ /\(,]/.test(length)) return
+
     const parsed = new CssDimension(length)
     if (parsed.type === 'length') {
       switch (parsed.unit) {

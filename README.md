@@ -147,12 +147,11 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>max-height</code></td><td>Supported</td></tr>
 
 <tr><td rowspan="5"><code>border</code></td></tr>
-<tr><td><code>borderWidth</code></td><td>Supported</td></tr>
-<tr><td><code>borderStyle</code></td><td><code>solid</code> and <code>dashed</code>, default to <code>solid</code></td></tr>
-<tr><td><code>borderColor</code></td><td>Supported</td></tr>
+<tr><td>Width (<code>borderWidth</code>, <code>borderTopWidth</code>, ...)</td><td>Supported</td></tr>
+<tr><td>Style (<code>borderStyle</code>, <code>borderTopStyle</code>, ...)</td><td><code>solid</code> and <code>dashed</code>, default to <code>solid</code></td></tr>
+<tr><td>Color (<code>borderColor</code>, <code>borderTopColor</code>, ...)</td><td>Supported</td></tr>
 <tr><td>
-  Shorthand</td><td>Supported, i.e. <code>1px solid gray</code><br/>
-  Note that it isn't supported to set border width/style/color for individual directions.
+  Shorthand (<code>border</code>, <code>borderTop</code>, ...)</td><td>Supported, i.e. <code>1px solid gray</code><br/>
 </td></tr>
 
 <tr><td rowspan="6"><code>borderRadius</code></td></tr>
@@ -160,7 +159,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>borderTopRightRadius</code></td><td>Supported</td></tr>
 <tr><td><code>borderBottomLeftRadius</code></td><td>Supported</td></tr>
 <tr><td><code>borderBottomRightRadius</code></td><td>Supported</td></tr>
-<tr><td>Shorthand</td><td>Supported, i.e. <code>5px</code></td></tr>
+<tr><td>Shorthand</td><td>Supported, i.e. <code>5px</code>, <code>50% / 5px</code></td></tr>
 
 <tr><td rowspan="10">Flex</td></tr>
 <tr><td><code>flexDirection</code></td><td><code>column</code>, <code>row</code>, <code>row-reverse</code>, <code>column-reverse</code>, default to <code>row</code></td></tr>

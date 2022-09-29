@@ -7,6 +7,16 @@
 
 import { lengthToNumber } from '../utils'
 
+// Getting the intersection of a 45deg ray with the elliptical arc x^2/rx^2 + y^2/ry^2 = 1.
+// Reference:
+// https://www.w3.org/TR/SVG/implnote.html#ArcConversionEndpointToCenter
+function svgArcCenterOffset([rx, ry]: number[]) {
+  if (Math.round(rx * 1000) === 0 && Math.round(ry * 1000) === 0) {
+    return 0
+  }
+  return Math.round(((rx * ry) / Math.sqrt(rx * rx + ry * ry)) * 1000) / 1000
+}
+
 function resolveSize(a: number, b: number, limit: number) {
   if (limit < a + b) {
     if (limit / 2 < a && limit / 2 < b) {
@@ -65,7 +75,8 @@ export default function radius(
     width: number
     height: number
   },
-  style: Record<string, any>
+  style: Record<string, any>,
+  partialSides?: boolean[]
 ) {
   let {
     borderTopLeftRadius,
@@ -109,6 +120,7 @@ export default function radius(
   )
 
   if (
+    !partialSides &&
     !borderTopLeftRadius &&
     !borderTopRightRadius &&
     !borderBottomLeftRadius &&
@@ -163,22 +175,114 @@ export default function radius(
     makeSmaller(borderBottomRightRadius)
   }
 
-  // Generate the path
-  return `M${left + borderTopLeftRadius[0]},${top} h${
-    width - borderTopLeftRadius[0] - borderTopRightRadius[0]
-  } a${borderTopRightRadius[0]},${borderTopRightRadius[1]} 0 0 1 ${
-    borderTopRightRadius[0]
-  },${borderTopRightRadius[1]} v${
+  type Arc = [[number, number], [number, number]]
+  const p: Arc[] = []
+  p[0] = [borderTopRightRadius, borderTopRightRadius]
+  p[1] = [
+    borderBottomRightRadius,
+    [-borderBottomRightRadius[0], borderBottomRightRadius[1]],
+  ]
+  p[2] = [
+    borderBottomLeftRadius,
+    [-borderBottomLeftRadius[0], -borderBottomLeftRadius[1]],
+  ]
+  p[3] = [
+    borderTopLeftRadius,
+    [borderTopLeftRadius[0], -borderTopLeftRadius[1]],
+  ]
+
+  const T = `h${width - borderTopLeftRadius[0] - borderTopRightRadius[0]} a${
+    p[0][0]
+  } 0 0 1 ${p[0][1]}`
+  const R = `v${
     height - borderTopRightRadius[1] - borderBottomRightRadius[1]
-  } a${borderBottomRightRadius[0]},${
-    borderBottomRightRadius[1]
-  } 0 0 1 ${-borderBottomRightRadius[0]},${borderBottomRightRadius[1]} h${
+  } a${p[1][0]} 0 0 1 ${p[1][1]}`
+  const B = `h${
     borderBottomRightRadius[0] + borderBottomLeftRadius[0] - width
-  } a${borderBottomLeftRadius[0]},${
-    borderBottomLeftRadius[1]
-  } 0 0 1 ${-borderBottomLeftRadius[0]},${-borderBottomLeftRadius[1]} v${
-    borderBottomLeftRadius[1] + borderTopLeftRadius[1] - height
-  } a${borderTopLeftRadius[0]},${borderTopLeftRadius[1]} 0 0 1 ${
-    borderTopLeftRadius[0]
-  },${-borderTopLeftRadius[1]}`
+  } a${p[2][0]} 0 0 1 ${p[2][1]}`
+  const L = `v${borderBottomLeftRadius[1] + borderTopLeftRadius[1] - height} a${
+    p[3][0]
+  } 0 0 1 ${p[3][1]}`
+
+  if (partialSides) {
+    // "However it is not defined what these transitions look like or what function maps from this ratio to a point on the curve."
+    // https://w3c.github.io/csswg-drafts/css-backgrounds-3/#corner-transitions
+    let start = partialSides.indexOf(false)
+
+    if (!partialSides.includes(true)) throw new Error('Invalid `partialSides`.')
+
+    if (start === -1) {
+      start = 0
+    } else {
+      while (!partialSides[start]) {
+        start = (start + 1) % 4
+      }
+    }
+
+    function getArc(i: number) {
+      const c0 = svgArcCenterOffset(
+        [
+          borderTopLeftRadius,
+          borderTopRightRadius,
+          borderBottomRightRadius,
+          borderBottomLeftRadius,
+        ][i]
+      )
+      return i === 0
+        ? [
+            [
+              left + borderTopLeftRadius[0] - c0,
+              top + borderTopLeftRadius[1] - c0,
+            ],
+            [left + borderTopLeftRadius[0], top],
+          ]
+        : i === 1
+        ? [
+            [
+              left + width - borderTopRightRadius[0] + c0,
+              top + borderTopRightRadius[1] - c0,
+            ],
+            [left + width, top + borderTopRightRadius[1]],
+          ]
+        : i === 2
+        ? [
+            [
+              left + width - borderBottomRightRadius[0] + c0,
+              top + height - borderBottomRightRadius[1] + c0,
+            ],
+            [left + width - borderBottomRightRadius[0], top + height],
+          ]
+        : [
+            [
+              left + borderBottomLeftRadius[0] - c0,
+              top + height - borderBottomLeftRadius[1] + c0,
+            ],
+            [left, top + height - borderBottomLeftRadius[1]],
+          ]
+    }
+
+    let result = ''
+
+    const arc0 = getArc(start)
+
+    let l = `M${arc0[0]} A${p[(start + 3) % 4][0]} 0 0 1 ${arc0[1]}`
+
+    let len = 0
+    for (; len < 4 && partialSides[(start + len) % 4]; len++) {
+      result += l + ' '
+      l = [T, R, B, L][(start + len) % 4]
+    }
+    const end = (start + len) % 4
+
+    // For the last segment, we skip the full arc and add the half arc.
+    result += l.split(' ')[0]
+
+    const arc1 = getArc(end)
+    result += ` A${p[(end + 3) % 4][0]} 0 0 1 ${arc1[0]}`
+
+    return result
+  }
+
+  // Generate the path
+  return `M${left + borderTopLeftRadius[0]},${top} ${T} ${R} ${B} ${L}`
 }

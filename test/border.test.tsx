@@ -215,5 +215,88 @@ describe('Border', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support slash and 2-value corner', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            width: '100%',
+            height: '100%',
+            fontSize: '8px',
+          }}
+        >
+          <div
+            style={{
+              borderRadius: '50px 25% / 10px 20px',
+              borderTopLeftRadius: '10px 50px',
+              background: 'red',
+              width: '100%',
+              height: '100%',
+            }}
+          ></div>
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+  })
+
+  describe('directional', () => {
+    it('should support directional border', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            borderTop: '1px solid red',
+            borderRight: '2px solid green',
+            borderBottom: '3px solid blue',
+            borderLeft: '4px solid yellow',
+            width: '100%',
+            height: '100%',
+          }}
+        ></div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support non-complete border', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            borderTop: '10px solid red',
+            borderBottom: '5px dashed blue',
+            width: '100%',
+            height: '100%',
+          }}
+        ></div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support advanced border with radius', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            borderRadius: '10px 20%',
+            borderTopLeftRadius: '10px 25px',
+            borderTop: '10px solid red',
+            borderBottom: '5px dashed blue',
+            borderLeft: '2px solid yellow',
+            borderRight: '5px dashed blue',
+            background: 'gray',
+            width: '100%',
+            height: '100%',
+          }}
+        ></div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 })

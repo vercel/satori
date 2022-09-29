@@ -133,4 +133,32 @@ describe('Gradient', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should render gradient patterns in the correct object space', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div
+          style={{
+            width: '50%',
+            height: '50%',
+            backgroundImage: 'linear-gradient(to bottom, red, blue)',
+          }}
+        ></div>
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })
