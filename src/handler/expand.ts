@@ -27,22 +27,13 @@ const keepNumber = new Set(['lineHeight'])
 
 const baseMatrix = [1, 0, 0, 1, 0, 0]
 
-/**
- * A trick to fix `border: 1px solid` to not use `black` but the inherited
- * `color` value. This is necessary because css-to-react-native automatically
- * fallbacks to default color values.
- */
 function handleFallbackColor(
   prop: string,
   parsed: Record<string, string>,
   rawInput: string,
   currentColor: string
 ) {
-  if (prop === 'border' && !rawInput.includes(parsed.borderColor)) {
-    parsed.borderColor = currentColor
-  } else if (prop === 'borderColor') {
-    parsed.borderColor = parsed.borderTopColor
-  } else if (
+  if (
     prop === 'textDecoration' &&
     !rawInput.includes(parsed.textDecorationColor)
   ) {
@@ -60,7 +51,11 @@ function purify(name: string, value?: string | number) {
   return value
 }
 
-function handleSpecialCase(name: string, value: string | number) {
+function handleSpecialCase(
+  name: string,
+  value: string | number,
+  currentColor: string
+) {
   if (name === 'lineHeight') {
     return { lineHeight: purify(name, value) }
   }
@@ -102,6 +97,13 @@ function handleSpecialCase(name: string, value: string | number) {
       resolved.borderWidth = 3
     }
 
+    // A trick to fix `border: 1px solid` to not use `black` but the inherited
+    // `color` value. This is necessary because css-to-react-native automatically
+    // fallbacks to default color values.
+    if (resolved.borderColor === 'black' && !String(value).includes('black')) {
+      resolved.borderColor = currentColor
+    }
+
     const purified = {
       Width: purify(name + 'Width', resolved.borderWidth),
       Style: resolved.borderStyle,
@@ -134,6 +136,7 @@ export default function expand(
   inheritedStyle: Record<string, string | number>
 ): Record<string, string | number> {
   const transformedStyle = {} as any
+
   for (const prop in style) {
     // Internal properties.
     if (prop.startsWith('_')) {
@@ -142,15 +145,16 @@ export default function expand(
     }
 
     const name = getPropertyName(prop)
+    const currentColor = (style.color || inheritedStyle.color) as string
 
     try {
       const resolvedStyle =
-        handleSpecialCase(name, style[prop]) ||
+        handleSpecialCase(name, style[prop], currentColor) ||
         handleFallbackColor(
           name,
           getStylesForProperty(name, purify(name, style[prop]), true),
           style[prop] as string,
-          (style.color || inheritedStyle.color) as string
+          currentColor
         )
 
       Object.assign(transformedStyle, resolvedStyle)
