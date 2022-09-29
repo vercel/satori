@@ -92,7 +92,7 @@ function handleSpecialCase(name: string, value: string | number) {
   }
 
   if (/^border(Top|Right|Bottom|Left)?$/.test(name)) {
-    const resolved = getStylesForProperty(name, value, true)
+    const resolved = getStylesForProperty('border', value, true)
 
     // Border width should be default to 3px (medium) instead of 1px:
     // https://w3c.github.io/csswg-drafts/css-backgrounds-3/#border-width
@@ -102,7 +102,21 @@ function handleSpecialCase(name: string, value: string | number) {
       resolved.borderWidth = 3
     }
 
-    return resolved
+    const purified = {
+      Width: purify(name + 'Width', resolved.borderWidth),
+      Style: resolved.borderStyle,
+      Color: resolved.borderColor,
+    }
+
+    const full = {}
+    for (const k of name === 'border'
+      ? ['Top', 'Right', 'Bottom', 'Left']
+      : [name.slice(6)]) {
+      for (const p in purified) {
+        full['border' + k + p] = purified[p]
+      }
+    }
+    return full
   }
 
   return

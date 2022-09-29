@@ -198,11 +198,11 @@ export default async function backgroundImage(
       'pattern',
       {
         id: patternId,
-        x: offsets[0],
-        y: offsets[1],
-        width: repeatX ? xDelta : '100%',
-        height: repeatY ? yDelta : '100%',
-        patternUnits: 'userSpaceOnUse',
+        x: offsets[0] / width,
+        y: offsets[1] / height,
+        width: repeatX ? xDelta / width : '1',
+        height: repeatY ? yDelta / height : '1',
+        patternUnits: 'objectBoundingBox',
       },
       buildXMLString(
         'linearGradient',
@@ -291,11 +291,11 @@ export default async function backgroundImage(
       'pattern',
       {
         id: patternId,
-        x: offsets[0],
-        y: offsets[1],
-        width: repeatX ? xDelta : '100%',
-        height: repeatY ? yDelta : '100%',
-        patternUnits: 'userSpaceOnUse',
+        x: offsets[0] / width,
+        y: offsets[1] / height,
+        width: repeatX ? xDelta / width : '1',
+        height: repeatY ? yDelta / height : '1',
+        patternUnits: 'objectBoundingBox',
       },
       buildXMLString(
         'radialGradient',
