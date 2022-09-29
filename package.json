@@ -19,7 +19,7 @@
     "dev": "concurrently \"pnpm dev:default\" \"pnpm dev:wasm\"",
     "dev:default": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
     "dev:wasm": "WASM=1 NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
-    "build": "NODE_ENV=production pnpm run test && pnpm run build:default && pnpm run build:wasm",
+    "build": "NODE_ENV=production pnpm run build:default && pnpm run build:wasm",
     "build:default": "tsup",
     "build:wasm": "WASM=1 tsup",
     "test": "NODE_ENV=test vitest run --outputTruncateLength=9999999",
