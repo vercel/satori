@@ -234,11 +234,10 @@ export default async function handler(
   node.setMargin(Yoga.EDGE_LEFT, (style.marginLeft as number) || 0)
   node.setMargin(Yoga.EDGE_RIGHT, (style.marginRight as number) || 0)
 
-  // @TODO: Add directional border support.
-  node.setBorder(Yoga.EDGE_TOP, (style.borderWidth as number) || 0)
-  node.setBorder(Yoga.EDGE_BOTTOM, (style.borderWidth as number) || 0)
-  node.setBorder(Yoga.EDGE_LEFT, (style.borderWidth as number) || 0)
-  node.setBorder(Yoga.EDGE_RIGHT, (style.borderWidth as number) || 0)
+  node.setBorder(Yoga.EDGE_TOP, (style.borderTopWidth as number) || 0)
+  node.setBorder(Yoga.EDGE_BOTTOM, (style.borderBottomWidth as number) || 0)
+  node.setBorder(Yoga.EDGE_LEFT, (style.borderLeftWidth as number) || 0)
+  node.setBorder(Yoga.EDGE_RIGHT, (style.borderRightWidth as number) || 0)
 
   node.setPadding(Yoga.EDGE_TOP, style.paddingTop || 0)
   node.setPadding(Yoga.EDGE_BOTTOM, style.paddingBottom || 0)
