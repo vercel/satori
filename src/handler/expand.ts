@@ -8,7 +8,7 @@ import { parseElementStyle } from 'css-background-parser'
 
 import CssDimension from '../vendor/parse-css-dimension'
 import parseTransformOrigin from '../transform-origin'
-import { lengthToNumber, multiply } from '../utils'
+import { lengthToNumber, multiply, v } from '../utils'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
@@ -106,7 +106,15 @@ function handleSpecialCase(
 
     const purified = {
       Width: purify(name + 'Width', resolved.borderWidth),
-      Style: resolved.borderStyle,
+      Style: v(
+        resolved.borderStyle,
+        {
+          solid: 'solid',
+          dashed: 'dashed',
+        },
+        'solid',
+        name + 'Style'
+      ),
       Color: resolved.borderColor,
     }
 
@@ -159,9 +167,15 @@ export default function expand(
 
       Object.assign(transformedStyle, resolvedStyle)
     } catch (err) {
-      console.error(err)
       throw new Error(
-        `Failed to parse CSS \`${name}: ${style[prop]}\`.${getErrorHint(name)}`
+        err.message +
+          // Attach the extra information of the rule itself if it's not included in
+          // the error message.
+          (err.message.includes(style[prop])
+            ? ''
+            : `\n  in CSS rule \`${name}: ${style[prop]}\`.${getErrorHint(
+                name
+              )}`)
       )
     }
   }

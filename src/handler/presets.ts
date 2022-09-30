@@ -36,7 +36,8 @@ export default {
     marginLeft: 'auto',
     marginRight: 'auto',
     borderWidth: 1,
-    borderStyle: 'inset',
+    // We don't have `inset`
+    borderStyle: 'solid',
   },
   // Heading elements
   h1: {
