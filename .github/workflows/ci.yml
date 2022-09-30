@@ -14,13 +14,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        node: [16]
+        node: [16, 18]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Add pnpm global
-        run: npm install --global --no-fund --no-audit pnpm@7
+      - name: Use pnpm
+        run: corepack enable pnpm && pnpm --version
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
