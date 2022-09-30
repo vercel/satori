@@ -195,7 +195,7 @@ export default async function* layout(
       computedStyle
     )
   } else {
-    const display = style?.display ?? 'block'
+    const display = style?.display
     if (
       type === 'div' &&
       children &&
@@ -204,7 +204,7 @@ export default async function* layout(
       display !== 'none'
     ) {
       throw new Error(
-        `Expected <div> to have style={{display: 'flex'}} but received style={{display: '${display}'}}`
+        `Expected <div> to have explicit "display: flex" or "display: none" if it has more than one child node.`
       )
     }
     baseRenderResult = await rect(

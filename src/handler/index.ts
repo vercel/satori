@@ -102,7 +102,8 @@ export default async function handler(
         flex: Yoga.DISPLAY_FLEX,
         none: Yoga.DISPLAY_NONE,
       },
-      Yoga.DISPLAY_FLEX
+      Yoga.DISPLAY_FLEX,
+      'display'
     )
   )
 
@@ -119,7 +120,8 @@ export default async function handler(
         baseline: Yoga.ALIGN_BASELINE,
         normal: Yoga.ALIGN_AUTO,
       },
-      Yoga.ALIGN_AUTO
+      Yoga.ALIGN_AUTO,
+      'alignContent'
     )
   )
 
@@ -134,7 +136,8 @@ export default async function handler(
         baseline: Yoga.ALIGN_BASELINE,
         normal: Yoga.ALIGN_AUTO,
       },
-      Yoga.ALIGN_FLEX_START
+      Yoga.ALIGN_FLEX_START,
+      'alignItems'
     )
   )
   node.setAlignSelf(
@@ -148,7 +151,8 @@ export default async function handler(
         baseline: Yoga.ALIGN_BASELINE,
         normal: Yoga.ALIGN_AUTO,
       },
-      Yoga.ALIGN_AUTO
+      Yoga.ALIGN_AUTO,
+      'alignSelf'
     )
   )
   node.setJustifyContent(
@@ -161,7 +165,8 @@ export default async function handler(
         'space-between': Yoga.JUSTIFY_SPACE_BETWEEN,
         'space-around': Yoga.JUSTIFY_SPACE_AROUND,
       },
-      Yoga.JUSTIFY_FLEX_START
+      Yoga.JUSTIFY_FLEX_START,
+      'justifyContent'
     )
   )
   // @TODO: node.setAspectRatio
@@ -175,7 +180,8 @@ export default async function handler(
         'row-reverse': Yoga.FLEX_DIRECTION_ROW_REVERSE,
         'column-reverse': Yoga.FLEX_DIRECTION_COLUMN_REVERSE,
       },
-      Yoga.FLEX_DIRECTION_ROW
+      Yoga.FLEX_DIRECTION_ROW,
+      'flexDirection'
     )
   )
   node.setFlexWrap(
@@ -186,7 +192,8 @@ export default async function handler(
         nowrap: Yoga.WRAP_NO_WRAP,
         'wrap-reverse': Yoga.WRAP_WRAP_REVERSE,
       },
-      Yoga.WRAP_NO_WRAP
+      Yoga.WRAP_NO_WRAP,
+      'flexWrap'
     )
   )
 
@@ -225,7 +232,8 @@ export default async function handler(
         visible: Yoga.OVERFLOW_VISIBLE,
         hidden: Yoga.OVERFLOW_HIDDEN,
       },
-      Yoga.OVERFLOW_VISIBLE
+      Yoga.OVERFLOW_VISIBLE,
+      'overflow'
     )
   )
 
@@ -251,7 +259,8 @@ export default async function handler(
         absolute: Yoga.POSITION_TYPE_ABSOLUTE,
         relative: Yoga.POSITION_TYPE_RELATIVE,
       },
-      Yoga.POSITION_TYPE_RELATIVE
+      Yoga.POSITION_TYPE_RELATIVE,
+      'position'
     )
   )
 
