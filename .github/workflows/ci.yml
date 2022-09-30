@@ -20,9 +20,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Use pnpm
-        run: corepack enable pnpm
-        env:
-          DEBUG: corepack
+        run: corepack enable pnpm && pnpm --version
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
