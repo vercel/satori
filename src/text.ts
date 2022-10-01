@@ -339,6 +339,8 @@ export default async function* buildTextNodes(
   let backgroundClipDef = ''
 
   const clipPathId = inheritedStyle._inheritedClipPathId as string | undefined
+  const overflowMaskId = inheritedStyle._inheritedMaskId as number | undefined
+
   const {
     left: containerLeft,
     top: containerTop,
@@ -579,6 +581,7 @@ export default async function* buildTextNodes(
             transform: matrix ? matrix : undefined,
             opacity: opacity !== 1 ? opacity : undefined,
             'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+            mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
 
             style: cssFilter ? `filter:${cssFilter}` : undefined,
           })

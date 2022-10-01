@@ -48,22 +48,41 @@ export default async function handler(
     }
     const r = imageHeight / imageWidth
 
+    // Before calculating the missing width or height based on the image ratio,
+    // we must subtract the padding and border due to how box model works.
+    let extraWidthHorizontal =
+      ((style.borderLeftWidth as number) || 0) +
+      ((style.borderRightWidth as number) || 0) +
+      ((style.paddingLeft as number) || 0) +
+      ((style.paddingRight as number) || 0)
+    let extraWidthVertical =
+      ((style.borderTopWidth as number) || 0) +
+      ((style.borderBottomWidth as number) || 0) +
+      ((style.paddingTop as number) || 0) +
+      ((style.paddingBottom as number) || 0)
     let displayedWidth = style.width || props.width
     let displayedHeight = style.height || props.height
-    if (!displayedWidth && !displayedHeight) {
+    if (displayedWidth !== undefined) {
+      displayedWidth -= extraWidthHorizontal
+    }
+    if (displayedHeight !== undefined) {
+      displayedHeight -= extraWidthVertical
+    }
+
+    if (displayedWidth === undefined && displayedHeight === undefined) {
       displayedWidth = imageWidth
       displayedHeight = imageHeight
     }
 
-    if (!displayedWidth) {
+    if (displayedWidth === undefined) {
       displayedWidth = displayedHeight / r
     }
-    if (!displayedHeight) {
+    if (displayedHeight === undefined) {
       displayedHeight = displayedWidth * r
     }
 
-    style.width = displayedWidth
-    style.height = displayedHeight
+    style.width = displayedWidth + extraWidthHorizontal
+    style.height = displayedHeight + extraWidthVertical
     style.__src = resolvedSrc
   }
 

@@ -20,7 +20,7 @@ describe('Error', () => {
       }
     )
     expect(result).rejects.toThrowError(
-      `Expected <div> to have style={{display: 'flex'}} but received style={{display: 'block'}}`
+      `Expected <div> to have explicit "display: flex" or "display: none" if it has more than one child node.`
     )
   })
 
@@ -36,7 +36,7 @@ describe('Error', () => {
       }
     )
     expect(result).rejects.toThrowError(
-      `Expected <div> to have style={{display: 'flex'}} but received style={{display: 'inline-block'}}`
+      `Invalid value for CSS property "display". Allowed values: "flex" | "none". Received: "inline-block".`
     )
   })
 

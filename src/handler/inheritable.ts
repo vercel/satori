@@ -28,6 +28,7 @@ const list = new Set([
   '_viewportWidth',
   '_viewportHeight',
   '_inheritedClipPathId',
+  '_inheritedMaskId',
   '_inheritedBackgroundClipTextPath',
 ])
 

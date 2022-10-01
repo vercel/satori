@@ -14,6 +14,8 @@ export default function shadow(
     return ''
   }
 
+  // console.log(style)
+
   // Expand the area for the filter to prevent it from cutting off.
   const grow = (style.shadowRadius * style.shadowRadius) / 4
 

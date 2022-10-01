@@ -9,6 +9,60 @@ function compareBorderDirections(a: string, b: string, style: any) {
   )
 }
 
+export function getBorderClipPath(
+  {
+    id,
+    // Can be `overflow: hidden` from parent containers.
+    currentClipPathId,
+    borderPath,
+    borderType,
+    left,
+    top,
+    width,
+    height,
+  }: {
+    id: string
+    currentClipPathId?: string | number
+    borderPath?: string
+    borderType?: 'rect' | 'path'
+    left: number
+    top: number
+    width: number
+    height: number
+  },
+  style: Record<string, number | string>
+) {
+  const hasBorder =
+    style.borderTopWidth ||
+    style.borderRightWidth ||
+    style.borderBottomWidth ||
+    style.borderLeftWidth
+
+  if (!hasBorder) return null
+
+  // In SVG, stroke is always centered on the path and there is no
+  // existing property to make it behave like CSS border. So here we
+  // 2x the border width and introduce another clip path to clip the
+  // overflowed part.
+  const rectClipId = `satori_bc-${id}`
+  const defs = buildXMLString(
+    'clipPath',
+    {
+      id: rectClipId,
+      'clip-path': currentClipPathId ? `url(#${currentClipPathId})` : undefined,
+    },
+    buildXMLString(borderType, {
+      x: left,
+      y: top,
+      width,
+      height,
+      d: borderPath ? borderPath : undefined,
+    })
+  )
+
+  return [defs, rectClipId]
+}
+
 export default function border(
   {
     left,
@@ -16,20 +70,27 @@ export default function border(
     width,
     height,
     props,
+    asContentMask,
+    maskBorderOnly,
   }: {
-    id: string
     left: number
     top: number
     width: number
     height: number
     props: any
+    asContentMask?: boolean
+    maskBorderOnly?: boolean
   },
   style: Record<string, number | string>
 ) {
   const directions = ['borderTop', 'borderRight', 'borderBottom', 'borderLeft']
 
   // No border
-  if (!directions.some((direction) => style[direction + 'Width'])) return ''
+  if (
+    !asContentMask &&
+    !directions.some((direction) => style[direction + 'Width'])
+  )
+    return ''
 
   let fullBorder = ''
 
@@ -55,20 +116,31 @@ export default function border(
     const nd = directions[ni]
 
     partialSides[i] = true
-    currentStyle = [style[d + 'Width'], style[d + 'Style'], style[d + 'Color']]
+    currentStyle = [
+      style[d + 'Width'],
+      style[d + 'Style'],
+      style[d + 'Color'],
+      d,
+    ]
 
     if (!compareBorderDirections(d, nd, style)) {
-      if (currentStyle[0]) {
-        const w = currentStyle[0]
+      const w =
+        (currentStyle[0] || 0) +
+        (asContentMask && !maskBorderOnly
+          ? style[d.replace('border', 'padding')] || 0
+          : 0)
+      if (w) {
         fullBorder += buildXMLString('path', {
           width,
           height,
           ...props,
           fill: 'none',
-          stroke: currentStyle[2],
+          stroke: asContentMask ? '#000' : currentStyle[2],
           'stroke-width': w * 2,
           'stroke-dasharray':
-            currentStyle[1] === 'dashed' ? w * 2 + ' ' + w : undefined,
+            !asContentMask && currentStyle[1] === 'dashed'
+              ? w * 2 + ' ' + w
+              : undefined,
           d: radius(
             { left, top, width, height },
             style as Record<string, number>,
@@ -80,23 +152,31 @@ export default function border(
     }
   }
 
-  if (partialSides.some(Boolean) && currentStyle[0]) {
-    const w = currentStyle[0]
-    fullBorder += buildXMLString('path', {
-      width,
-      height,
-      ...props,
-      fill: 'none',
-      stroke: currentStyle[2],
-      'stroke-width': w * 2,
-      'stroke-dasharray':
-        currentStyle[1] === 'dashed' ? w * 2 + ' ' + w : undefined,
-      d: radius(
-        { left, top, width, height },
-        style as Record<string, number>,
-        partialSides
-      ),
-    })
+  if (partialSides.some(Boolean)) {
+    const w =
+      (currentStyle[0] || 0) +
+      (asContentMask && !maskBorderOnly
+        ? style[currentStyle[3].replace('border', 'padding')] || 0
+        : 0)
+    if (w) {
+      fullBorder += buildXMLString('path', {
+        width,
+        height,
+        ...props,
+        fill: 'none',
+        stroke: asContentMask ? '#000' : currentStyle[2],
+        'stroke-width': w * 2,
+        'stroke-dasharray':
+          !asContentMask && currentStyle[1] === 'dashed'
+            ? w * 2 + ' ' + w
+            : undefined,
+        d: radius(
+          { left, top, width, height },
+          style as Record<string, number>,
+          partialSides
+        ),
+      })
+    }
   }
 
   return fullBorder

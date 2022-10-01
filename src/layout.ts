@@ -109,6 +109,7 @@ export default async function* layout(
   // path and use it in all its children.
   if (computedStyle.overflow === 'hidden') {
     newInheritableStyle._inheritedClipPathId = `satori_cp-${id}`
+    newInheritableStyle._inheritedMaskId = `satori_om-${id}`
   }
 
   // If the element has `background-clip: text` set, we need to create a clip
