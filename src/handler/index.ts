@@ -62,10 +62,13 @@ export default async function handler(
       ((style.paddingBottom as number) || 0)
     let displayedWidth = style.width || props.width
     let displayedHeight = style.height || props.height
-    if (displayedWidth !== undefined) {
+    const calculateInsetRatio =
+      typeof displayedWidth !== 'string' && typeof displayedHeight !== 'string'
+
+    if (displayedWidth !== undefined && calculateInsetRatio) {
       displayedWidth -= extraWidthHorizontal
     }
-    if (displayedHeight !== undefined) {
+    if (displayedHeight !== undefined && calculateInsetRatio) {
       displayedHeight -= extraWidthVertical
     }
 
@@ -81,8 +84,12 @@ export default async function handler(
       displayedHeight = displayedWidth * r
     }
 
-    style.width = displayedWidth + extraWidthHorizontal
-    style.height = displayedHeight + extraWidthVertical
+    style.width = calculateInsetRatio
+      ? displayedWidth + extraWidthHorizontal
+      : displayedWidth
+    style.height = calculateInsetRatio
+      ? displayedHeight + extraWidthVertical
+      : displayedHeight
     style.__src = resolvedSrc
   }
 
