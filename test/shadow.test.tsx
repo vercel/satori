@@ -121,5 +121,21 @@ describe('Shadow', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support inset box shadows', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: 50,
+            height: 50,
+            margin: '25px 25px',
+            borderRadius: 20,
+            boxShadow: '20px -20px 4px 5px inset rgba(0, 0, 0, 0.5)',
+          }}
+        ></div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 })

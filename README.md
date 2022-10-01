@@ -220,7 +220,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 <tr>
 <td colspan="2"><code>boxShadow</code></td>
-<td>Supported except inset shadows.</td>
+<td>Supported</td>
 </tr>
 
 <tr>
