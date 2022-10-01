@@ -165,7 +165,7 @@ describe('Image', () => {
             src='https://via.placeholder.com/150'
             style={{
               padding: 10,
-              borderRadius: '10px 20%',
+              borderRadius: '20px 30%',
               border: '10px solid rgba(0, 0, 0, 0.5)',
             }}
           />
