@@ -40,6 +40,21 @@ describe('Error', () => {
     )
   })
 
+  it('should throw if using invalid values', async () => {
+    const result = satori(
+      // @ts-expect-error
+      <div style={{ position: 'fixed ' }}>Test</div>,
+      {
+        width: 10,
+        height: 10,
+        fonts,
+      }
+    )
+    expect(result).rejects.toThrowError(
+      `Invalid value for CSS property "position". Allowed values: "absolute" | "relative". Received: "fixed".`
+    )
+  })
+
   it('should not throw if display none on div that has children', async () => {
     const svg = await satori(
       <div style={{ display: 'none' }}>
