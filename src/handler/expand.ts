@@ -131,6 +131,9 @@ function handleSpecialCase(
   }
 
   if (name === 'boxShadow') {
+    if (!value) {
+      throw new Error('Invalid `boxShadow` value: "' + value + '".')
+    }
     return {
       [name]: parseBoxShadow(value),
     }
