@@ -4,7 +4,7 @@ import { buildXMLString } from '../utils'
 import border, { getBorderClipPath } from './border'
 import radius from './border-radius'
 import mask from './content-mask'
-import shadow from './shadow'
+import { boxShadow } from './shadow'
 import transform from './transform'
 
 export default function image(
@@ -125,7 +125,25 @@ export default function image(
     opacity = +style.opacity
   }
 
-  const filter = shadow({ width, height, id }, style)
+  const shadow = boxShadow(
+    {
+      width,
+      height,
+      id,
+      shape: buildXMLString(path ? 'path' : 'rect', {
+        x: left,
+        y: top,
+        width,
+        height,
+        fill: '#fff',
+        d: path ? path : undefined,
+        transform: matrix ? matrix : undefined,
+        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+        mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
+      }),
+    },
+    style
+  )
 
   // If there is any border radius, we need to mask the content.
   if (path) {
@@ -160,8 +178,7 @@ export default function image(
   return (
     (defs ? buildXMLString('defs', {}, defs) : '') +
     contentMask +
-    filter +
-    (filter ? `<g filter="url(#satori_s-${id})">` : '') +
+    (shadow ? shadow[0] : '') +
     clip +
     buildXMLString('image', {
       x: left + offsetLeft,
@@ -178,7 +195,7 @@ export default function image(
         : undefined,
       mask: contentMaskId ? `url(#${contentMaskId})` : undefined,
     }) +
-    (filter ? `</g>` : '') +
+    (shadow ? shadow[1] : '') +
     borderShape
   )
 }

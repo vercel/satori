@@ -710,6 +710,8 @@ function ResetCode({ activeCard }) {
       onClick={() => {
         editedCards[activeCard] = cards[activeCard]
         onChange(editedCards[activeCard])
+        window.history.replaceState(null, null, '/')
+        toast.success('Content reset')
       }}
     >
       Reset

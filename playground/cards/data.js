@@ -16,7 +16,7 @@ export default {
   <div>Satori</div>
 </div>
 `,
-  Rauchg: `<div
+  rauchg: `<div
   style={{
     display: 'flex',
     height: '100%',
