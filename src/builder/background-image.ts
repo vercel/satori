@@ -375,4 +375,6 @@ export default async function backgroundImage(
       ),
     ]
   }
+
+  throw new Error(`Invalid background image: "${image}"`)
 }

@@ -3,6 +3,7 @@
  */
 
 import { buildXMLString } from '../utils'
+import mask from './content-mask'
 
 export default function overflow(
   {
@@ -11,6 +12,7 @@ export default function overflow(
     width,
     height,
     path,
+    matrix,
     id,
   }: {
     left: number
@@ -18,6 +20,7 @@ export default function overflow(
     width: number
     height: number
     path: string
+    matrix: string | undefined
     id: string
   },
   style: Record<string, string | number>
@@ -26,9 +29,21 @@ export default function overflow(
     return ''
   }
 
-  if (path) {
-    // <clipPath id="myClip"><circle cx="40" cy="35" r="35" /></clipPath>
-    return buildXMLString(
+  const contentMask = mask(
+    {
+      id: `satori_om-${id}`,
+      left,
+      top,
+      width,
+      height,
+      matrix,
+      borderOnly: true,
+    },
+    style
+  )
+
+  return (
+    buildXMLString(
       'clipPath',
       {
         id: `satori_cp-${id}`,
@@ -36,28 +51,13 @@ export default function overflow(
           ? `url(#${style._inheritedClipPathId})`
           : undefined,
       },
-      buildXMLString('path', {
+      buildXMLString(path ? 'path' : 'rect', {
         x: left,
         y: top,
         width,
         height,
-        d: path,
+        d: path ? path : undefined,
       })
-    )
-  }
-  return buildXMLString(
-    'clipPath',
-    {
-      id: `satori_cp-${id}`,
-      'clip-path': style._inheritedClipPathId
-        ? `url(#${style._inheritedClipPathId})`
-        : undefined,
-    },
-    buildXMLString('rect', {
-      x: left,
-      y: top,
-      width,
-      height,
-    })
+    ) + contentMask
   )
 }

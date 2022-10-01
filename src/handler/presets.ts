@@ -6,39 +6,42 @@
  * We try to only include commonly used, styling elements rather than senmantic elements.
  */
 
+const DEFAULT_DISPLAY = 'flex'
+
 export default {
   // Generic block-level elements
   p: {
-    display: 'block',
+    display: DEFAULT_DISPLAY,
     marginTop: '1em',
     marginBottom: '1em',
   },
   div: {
-    display: 'block',
+    display: DEFAULT_DISPLAY,
   },
   blockquote: {
-    display: 'block',
+    display: DEFAULT_DISPLAY,
     marginTop: '1em',
     marginBottom: '1em',
     marginLeft: 40,
     marginRight: 40,
   },
   center: {
-    display: 'block',
+    display: DEFAULT_DISPLAY,
     textAlign: 'center',
   },
   hr: {
-    display: 'block',
+    display: DEFAULT_DISPLAY,
     marginTop: '0.5em',
     marginBottom: '0.5em',
     marginLeft: 'auto',
     marginRight: 'auto',
     borderWidth: 1,
-    borderStyle: 'inset',
+    // We don't have `inset`
+    borderStyle: 'solid',
   },
   // Heading elements
   h1: {
-    display: 'block',
+    display: DEFAULT_DISPLAY,
     fontSize: '2em',
     marginTop: '0.67em',
     marginBottom: '0.67em',
@@ -47,7 +50,7 @@ export default {
     fontWeight: 'bold',
   },
   h2: {
-    display: 'block',
+    display: DEFAULT_DISPLAY,
     fontSize: '1.5em',
     marginTop: '0.83em',
     marginBottom: '0.83em',
@@ -56,7 +59,7 @@ export default {
     fontWeight: 'bold',
   },
   h3: {
-    display: 'block',
+    display: DEFAULT_DISPLAY,
     fontSize: '1.17em',
     marginTop: '1em',
     marginBottom: '1em',
@@ -65,7 +68,7 @@ export default {
     fontWeight: 'bold',
   },
   h4: {
-    display: 'block',
+    display: DEFAULT_DISPLAY,
     marginTop: '1.33em',
     marginBottom: '1.33em',
     marginLeft: 0,
@@ -73,7 +76,7 @@ export default {
     fontWeight: 'bold',
   },
   h5: {
-    display: 'block',
+    display: DEFAULT_DISPLAY,
     fontSize: '0.83em',
     marginTop: '1.67em',
     marginBottom: '1.67em',
@@ -82,7 +85,7 @@ export default {
     fontWeight: 'bold',
   },
   h6: {
-    display: 'block',
+    display: DEFAULT_DISPLAY,
     fontSize: '0.67em',
     marginTop: '2.33em',
     marginBottom: '2.33em',
@@ -116,7 +119,7 @@ export default {
     fontFamily: 'monospace',
   },
   pre: {
-    display: 'block',
+    display: DEFAULT_DISPLAY,
     fontFamily: 'monospace',
     whiteSpace: 'pre',
     marginTop: '1em',

@@ -6,7 +6,7 @@ import shadow from './shadow'
 import transform from './transform'
 import overflow from './overflow'
 import { buildXMLString } from '../utils'
-import border from './border'
+import border, { getBorderClipPath } from './border'
 
 export default async function rect(
   {
@@ -30,10 +30,7 @@ export default async function rect(
 ) {
   if (style.display === 'none') return ''
 
-  let type = 'rect'
-  let stroke = 'transparent'
-  let strokeDashArray = ''
-  let strokeWidth = 0
+  let type: 'rect' | 'path' = 'rect'
   let matrix = ''
   let defs = ''
   let fills: string[] = []
@@ -42,14 +39,6 @@ export default async function rect(
 
   if (style.backgroundColor) {
     fills.push(style.backgroundColor as string)
-  }
-
-  if (style.borderWidth) {
-    strokeWidth = style.borderWidth as number
-    stroke = style.borderColor as string
-    if (style.borderStyle === 'dashed') {
-      strokeDashArray = strokeWidth * 2 + '  ' + strokeWidth
-    }
   }
 
   if (style.opacity) {
@@ -108,12 +97,17 @@ export default async function rect(
   }
 
   const clip = overflow(
-    { left, top, width, height, path, id },
+    { left, top, width, height, path, id, matrix },
     style as Record<string, number>
   )
   const clipPathId = style._inheritedClipPathId as number | undefined
+  const overflowMaskId = style._inheritedMaskId as number | undefined
 
   const filter = shadow({ width, height, id }, style)
+  if (filter && !fills.length) {
+    // TODO: Transparent fills won't render shadows.
+    fills.push('transparent')
+  }
 
   if (debug) {
     extra = buildXMLString('rect', {
@@ -153,46 +147,39 @@ export default async function rect(
         transform: matrix ? matrix : undefined,
         'clip-path': currentClipPath,
         style: cssFilter ? `filter:${cssFilter}` : undefined,
+        mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
       })
     )
     .join('')
 
-  const hasStroke =
-    style.borderTopWidth ||
-    style.borderRightWidth ||
-    style.borderBottomWidth ||
-    style.borderLeftWidth
-  const drawStroke = hasStroke && backgroundClip !== 'text'
-  if (drawStroke) {
-    // In SVG, stroke is always centered on the path and there is no
-    // existing property to make it behave like CSS border. So here we
-    // 2x the border width and introduce another clip path to clip the
-    // overflowed part.
-    const rectClipId = `satori_bc-${id}`
-    defs += buildXMLString(
-      'clipPath',
-      {
-        id: rectClipId,
-        'clip-path': currentClipPath,
-      },
-      buildXMLString(type, {
-        x: left,
-        y: top,
-        width,
-        height,
-        d: path ? path : undefined,
-      })
-    )
+  const borderClip = getBorderClipPath(
+    {
+      id,
+      left,
+      top,
+      width,
+      height,
+      currentClipPathId: clipPathId,
+      borderPath: path,
+      borderType: type,
+    },
+    style
+  )
+
+  if (borderClip) {
+    defs += borderClip[0]
+    const rectClipId = borderClip[1]
 
     shape += border(
       {
-        id,
         left,
         top,
         width,
         height,
         props: {
           transform: matrix ? matrix : undefined,
+          // When using `background-clip: text`, we need to draw the extra border because
+          // it shouldn't be clipped by the clip path, so we are not using currentClipPath here.
           'clip-path': `url(#${rectClipId})`,
         },
       },
@@ -200,26 +187,8 @@ export default async function rect(
     )
   }
 
-  // When using `background-clip: text`, we need to draw the extra border.
-  if (backgroundClip === 'text' && strokeWidth) {
-    shape =
-      buildXMLString(type, {
-        x: left,
-        y: top,
-        width,
-        height,
-        fill: 'transparent',
-        stroke,
-        'stroke-width': strokeWidth * 2,
-        'stroke-dasharray': strokeDashArray || undefined,
-        d: path ? path : undefined,
-        transform: matrix ? matrix : undefined,
-        'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-      }) + shape
-  }
-
   return (
-    (defs ? `<defs>${defs}</defs>` : '') +
+    (defs ? buildXMLString('defs', {}, defs) : '') +
     clip +
     (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
     (opacity !== 1 ? `<g opacity="${opacity}">` : '') +

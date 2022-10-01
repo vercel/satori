@@ -48,22 +48,48 @@ export default async function handler(
     }
     const r = imageHeight / imageWidth
 
+    // Before calculating the missing width or height based on the image ratio,
+    // we must subtract the padding and border due to how box model works.
+    let extraWidthHorizontal =
+      ((style.borderLeftWidth as number) || 0) +
+      ((style.borderRightWidth as number) || 0) +
+      ((style.paddingLeft as number) || 0) +
+      ((style.paddingRight as number) || 0)
+    let extraWidthVertical =
+      ((style.borderTopWidth as number) || 0) +
+      ((style.borderBottomWidth as number) || 0) +
+      ((style.paddingTop as number) || 0) +
+      ((style.paddingBottom as number) || 0)
     let displayedWidth = style.width || props.width
     let displayedHeight = style.height || props.height
-    if (!displayedWidth && !displayedHeight) {
+    const calculateInsetRatio =
+      typeof displayedWidth !== 'string' && typeof displayedHeight !== 'string'
+
+    if (displayedWidth !== undefined && calculateInsetRatio) {
+      displayedWidth -= extraWidthHorizontal
+    }
+    if (displayedHeight !== undefined && calculateInsetRatio) {
+      displayedHeight -= extraWidthVertical
+    }
+
+    if (displayedWidth === undefined && displayedHeight === undefined) {
       displayedWidth = imageWidth
       displayedHeight = imageHeight
     }
 
-    if (!displayedWidth) {
+    if (displayedWidth === undefined) {
       displayedWidth = displayedHeight / r
     }
-    if (!displayedHeight) {
+    if (displayedHeight === undefined) {
       displayedHeight = displayedWidth * r
     }
 
-    style.width = displayedWidth
-    style.height = displayedHeight
+    style.width = calculateInsetRatio
+      ? displayedWidth + extraWidthHorizontal
+      : displayedWidth
+    style.height = calculateInsetRatio
+      ? displayedHeight + extraWidthVertical
+      : displayedHeight
     style.__src = resolvedSrc
   }
 
@@ -102,7 +128,8 @@ export default async function handler(
         flex: Yoga.DISPLAY_FLEX,
         none: Yoga.DISPLAY_NONE,
       },
-      Yoga.DISPLAY_FLEX
+      Yoga.DISPLAY_FLEX,
+      'display'
     )
   )
 
@@ -119,7 +146,8 @@ export default async function handler(
         baseline: Yoga.ALIGN_BASELINE,
         normal: Yoga.ALIGN_AUTO,
       },
-      Yoga.ALIGN_AUTO
+      Yoga.ALIGN_AUTO,
+      'alignContent'
     )
   )
 
@@ -134,7 +162,8 @@ export default async function handler(
         baseline: Yoga.ALIGN_BASELINE,
         normal: Yoga.ALIGN_AUTO,
       },
-      Yoga.ALIGN_FLEX_START
+      Yoga.ALIGN_FLEX_START,
+      'alignItems'
     )
   )
   node.setAlignSelf(
@@ -148,7 +177,8 @@ export default async function handler(
         baseline: Yoga.ALIGN_BASELINE,
         normal: Yoga.ALIGN_AUTO,
       },
-      Yoga.ALIGN_AUTO
+      Yoga.ALIGN_AUTO,
+      'alignSelf'
     )
   )
   node.setJustifyContent(
@@ -161,7 +191,8 @@ export default async function handler(
         'space-between': Yoga.JUSTIFY_SPACE_BETWEEN,
         'space-around': Yoga.JUSTIFY_SPACE_AROUND,
       },
-      Yoga.JUSTIFY_FLEX_START
+      Yoga.JUSTIFY_FLEX_START,
+      'justifyContent'
     )
   )
   // @TODO: node.setAspectRatio
@@ -175,7 +206,8 @@ export default async function handler(
         'row-reverse': Yoga.FLEX_DIRECTION_ROW_REVERSE,
         'column-reverse': Yoga.FLEX_DIRECTION_COLUMN_REVERSE,
       },
-      Yoga.FLEX_DIRECTION_ROW
+      Yoga.FLEX_DIRECTION_ROW,
+      'flexDirection'
     )
   )
   node.setFlexWrap(
@@ -186,7 +218,8 @@ export default async function handler(
         nowrap: Yoga.WRAP_NO_WRAP,
         'wrap-reverse': Yoga.WRAP_WRAP_REVERSE,
       },
-      Yoga.WRAP_NO_WRAP
+      Yoga.WRAP_NO_WRAP,
+      'flexWrap'
     )
   )
 
@@ -225,7 +258,8 @@ export default async function handler(
         visible: Yoga.OVERFLOW_VISIBLE,
         hidden: Yoga.OVERFLOW_HIDDEN,
       },
-      Yoga.OVERFLOW_VISIBLE
+      Yoga.OVERFLOW_VISIBLE,
+      'overflow'
     )
   )
 
@@ -251,7 +285,8 @@ export default async function handler(
         absolute: Yoga.POSITION_TYPE_ABSOLUTE,
         relative: Yoga.POSITION_TYPE_RELATIVE,
       },
-      Yoga.POSITION_TYPE_RELATIVE
+      Yoga.POSITION_TYPE_RELATIVE,
+      'position'
     )
   )
 

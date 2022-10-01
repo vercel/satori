@@ -59,7 +59,8 @@ export default async function* buildTextNodes(
       'break-word': 'grapheme',
       'keep-all': 'word',
     },
-    'word'
+    'word',
+    'wordBreak'
   )
 
   const words = segment(content, segmenter)
@@ -67,15 +68,22 @@ export default async function* buildTextNodes(
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
   textContainer.setAlignItems(Yoga.ALIGN_BASELINE)
-  if (parentStyle.textAlign === 'left') {
-    textContainer.setJustifyContent(Yoga.JUSTIFY_FLEX_START)
-  } else if (parentStyle.textAlign === 'center') {
-    textContainer.setJustifyContent(Yoga.JUSTIFY_CENTER)
-  } else if (parentStyle.textAlign === 'right') {
-    textContainer.setJustifyContent(Yoga.JUSTIFY_FLEX_END)
-  } else if (parentStyle.textAlign === 'justify') {
-    textContainer.setJustifyContent(Yoga.JUSTIFY_SPACE_BETWEEN)
-  }
+  textContainer.setJustifyContent(
+    v(
+      parentStyle.textAlign,
+      {
+        left: Yoga.JUSTIFY_FLEX_START,
+        right: Yoga.JUSTIFY_FLEX_END,
+        center: Yoga.JUSTIFY_CENTER,
+        justify: Yoga.JUSTIFY_SPACE_BETWEEN,
+        // We don't have other writing modes yet.
+        start: Yoga.JUSTIFY_FLEX_START,
+        end: Yoga.JUSTIFY_FLEX_END,
+      },
+      Yoga.JUSTIFY_FLEX_START,
+      'textAlign'
+    )
+  )
   parent.insertChild(textContainer, parent.getChildCount())
 
   const {
@@ -331,6 +339,8 @@ export default async function* buildTextNodes(
   let backgroundClipDef = ''
 
   const clipPathId = inheritedStyle._inheritedClipPathId as string | undefined
+  const overflowMaskId = inheritedStyle._inheritedMaskId as number | undefined
+
   const {
     left: containerLeft,
     top: containerTop,
@@ -571,6 +581,7 @@ export default async function* buildTextNodes(
             transform: matrix ? matrix : undefined,
             opacity: opacity !== 1 ? opacity : undefined,
             'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+            mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
 
             style: cssFilter ? `filter:${cssFilter}` : undefined,
           })

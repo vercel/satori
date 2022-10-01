@@ -101,6 +101,79 @@ describe('Image', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support styles', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+          }}
+        >
+          <img
+            width='100%'
+            height='100%'
+            src='https://via.placeholder.com/150'
+            style={{
+              transform: 'scale(0.8) skew(10deg, 10deg)',
+              borderRadius: '10px 20%',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should clip content in the border area', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+          }}
+        >
+          <img
+            width='100%'
+            height='100%'
+            src='https://via.placeholder.com/150'
+            style={{
+              borderRadius: '10px 20%',
+              border: '10px solid rgba(0, 0, 0, 0.5)',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should clip content in the border and padding areas', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+          }}
+        >
+          <img
+            width='100%'
+            height='100%'
+            src='https://via.placeholder.com/150'
+            style={{
+              padding: 10,
+              borderRadius: '20px 30%',
+              border: '10px solid rgba(0, 0, 0, 0.5)',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 
   describe('background-image: url()', () => {

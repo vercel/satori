@@ -20,7 +20,7 @@ describe('Error', () => {
       }
     )
     expect(result).rejects.toThrowError(
-      `Expected <div> to have style={{display: 'flex'}} but received style={{display: 'block'}}`
+      `Expected <div> to have explicit "display: flex" or "display: none" if it has more than one child node.`
     )
   })
 
@@ -36,7 +36,22 @@ describe('Error', () => {
       }
     )
     expect(result).rejects.toThrowError(
-      `Expected <div> to have style={{display: 'flex'}} but received style={{display: 'inline-block'}}`
+      `Invalid value for CSS property "display". Allowed values: "flex" | "none". Received: "inline-block".`
+    )
+  })
+
+  it('should throw if using invalid values', async () => {
+    const result = satori(
+      // @ts-expect-error
+      <div style={{ position: 'fixed ' }}>Test</div>,
+      {
+        width: 10,
+        height: 10,
+        fonts,
+      }
+    )
+    expect(result).rejects.toThrowError(
+      `Invalid value for CSS property "position". Allowed values: "absolute" | "relative". Received: "fixed".`
     )
   })
 

@@ -109,6 +109,7 @@ export default async function* layout(
   // path and use it in all its children.
   if (computedStyle.overflow === 'hidden') {
     newInheritableStyle._inheritedClipPathId = `satori_cp-${id}`
+    newInheritableStyle._inheritedMaskId = `satori_om-${id}`
   }
 
   // If the element has `background-clip: text` set, we need to create a clip
@@ -195,7 +196,7 @@ export default async function* layout(
       computedStyle
     )
   } else {
-    const display = style?.display ?? 'block'
+    const display = style?.display
     if (
       type === 'div' &&
       children &&
@@ -204,7 +205,7 @@ export default async function* layout(
       display !== 'none'
     ) {
       throw new Error(
-        `Expected <div> to have style={{display: 'flex'}} but received style={{display: '${display}'}}`
+        `Expected <div> to have explicit "display: flex" or "display: none" if it has more than one child node.`
       )
     }
     baseRenderResult = await rect(

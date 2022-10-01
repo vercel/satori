@@ -115,12 +115,25 @@ export function multiply(m1: number[], m2: number[]) {
 }
 
 export function v(
-  field: string | number,
+  field: string | number | undefined,
   map: Record<string, any>,
-  fallback: any
+  fallback: any,
+  errorIfNotAllowedForProperty?: string
 ) {
-  const value = map[field]
-  return typeof value === 'undefined' ? fallback : value
+  let value = map[field]
+  if (typeof value === 'undefined') {
+    if (errorIfNotAllowedForProperty && typeof field !== 'undefined') {
+      throw new Error(
+        `Invalid value for CSS property "${errorIfNotAllowedForProperty}". Allowed values: ${Object.keys(
+          map
+        )
+          .map((v) => `"${v}"`)
+          .join(' | ')}. Received: "${field}".`
+      )
+    }
+    value = fallback
+  }
+  return value
 }
 
 // @TODO: Support "lang" attribute to modify the locale
