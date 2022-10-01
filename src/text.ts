@@ -7,7 +7,7 @@ import type { LayoutContext } from './layout'
 import getYoga from './yoga'
 import { v, segment, wordSeparators, buildXMLString } from './utils'
 import text, { container } from './builder/text'
-import shadow from './builder/shadow'
+import { dropShadow } from './builder/shadow'
 import decoration from './builder/text-decoration'
 
 // @TODO: Support "lang" attribute to modify the locale
@@ -371,7 +371,7 @@ export default async function* buildTextNodes(
 
   let filter = ''
   if (parentStyle.textShadowOffset) {
-    filter = shadow(
+    filter = dropShadow(
       {
         width: containerWidth,
         height: containerHeight,

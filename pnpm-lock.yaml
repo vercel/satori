@@ -13,6 +13,7 @@ importers:
       '@vitest/ui': ^0.7.6
       concurrently: ^7.3.0
       css-background-parser: ^0.1.0
+      css-box-shadow: 1.0.0-3
       css-to-react-native: ^3.0.0
       jest-image-snapshot: ^5.2.0
       postcss-value-parser: ^4.2.0
@@ -24,6 +25,7 @@ importers:
     dependencies:
       '@shuding/opentype.js': 1.4.0-beta.0
       css-background-parser: 0.1.0
+      css-box-shadow: 1.0.0-3
       css-to-react-native: 3.0.0
       postcss-value-parser: 4.2.0
       yoga-layout-prebuilt: 1.10.0
@@ -902,6 +904,10 @@ packages:
 
   /css-background-parser/0.1.0:
     resolution: {integrity: sha512-2EZLisiZQ+7m4wwur/qiYJRniHX4K5Tc9w93MT3AS0WS1u5kaZ4FKXlOTBhOjc+CgEgPiGY+fX1yWD8UwpEqUA==}
+    dev: false
+
+  /css-box-shadow/1.0.0-3:
+    resolution: {integrity: sha512-9jaqR6e7Ohds+aWwmhe6wILJ99xYQbfmK9QQB9CcMjDbTxPZjwEmUQpU91OG05Xgm8BahT5fW+svbsQGjS/zPg==}
     dev: false
 
   /css-color-keywords/1.0.0:

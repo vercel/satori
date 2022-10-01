@@ -5,6 +5,7 @@
 
 import { getPropertyName, getStylesForProperty } from 'css-to-react-native'
 import { parseElementStyle } from 'css-background-parser'
+import { parse as parseBoxShadow } from 'css-box-shadow'
 
 import CssDimension from '../vendor/parse-css-dimension'
 import parseTransformOrigin from '../transform-origin'
@@ -127,6 +128,12 @@ function handleSpecialCase(
       }
     }
     return full
+  }
+
+  if (name === 'boxShadow') {
+    return {
+      [name]: parseBoxShadow(value),
+    }
   }
 
   return

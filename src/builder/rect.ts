@@ -2,7 +2,7 @@ import type { ParsedTransformOrigin } from '../transform-origin'
 
 import backgroundImage from './background-image'
 import radius from './border-radius'
-import shadow from './shadow'
+import { boxShadow } from './shadow'
 import transform from './transform'
 import overflow from './overflow'
 import { buildXMLString } from '../utils'
@@ -103,12 +103,6 @@ export default async function rect(
   const clipPathId = style._inheritedClipPathId as number | undefined
   const overflowMaskId = style._inheritedMaskId as number | undefined
 
-  const filter = shadow({ width, height, id }, style)
-  if (filter && !fills.length) {
-    // TODO: Transparent fills won't render shadows.
-    fills.push('transparent')
-  }
-
   if (debug) {
     extra = buildXMLString('rect', {
       x: left,
@@ -187,14 +181,37 @@ export default async function rect(
     )
   }
 
+  // box-shadow.
+  const shadow = boxShadow(
+    {
+      width,
+      height,
+      id,
+      shape: buildXMLString(type, {
+        x: left,
+        y: top,
+        width,
+        height,
+        fill: '#fff',
+        stroke: '#fff',
+        'stroke-width': 0,
+        d: path ? path : undefined,
+        transform: matrix ? matrix : undefined,
+        'clip-path': currentClipPath,
+        mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
+      }),
+    },
+    style
+  )
+
   return (
     (defs ? buildXMLString('defs', {}, defs) : '') +
+    (shadow ? shadow[0] : '') +
     clip +
-    (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
     (opacity !== 1 ? `<g opacity="${opacity}">` : '') +
     (backgroundShapes || shape) +
     (opacity !== 1 ? `</g>` : '') +
-    (filter ? '</g>' : '') +
+    (shadow ? shadow[1] : '') +
     extra
   )
 }
