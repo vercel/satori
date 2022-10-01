@@ -142,10 +142,6 @@ export function boxShadow(
         )
       }
 
-      finalShape = finalShape
-        .replace('fill="#fff"', `fill="${shadowStyle.color}"`)
-        .replace('stroke="#fff"', `stroke="${shadowStyle.color}"`)
-
       if (shadowStyle.spreadRadius && shadowStyle.spreadRadius < 0) {
         finalShape = buildXMLString(
           'g',
@@ -176,7 +172,17 @@ export function boxShadow(
               // > blur with a standard deviation equal to half the blur radius
               // > https://www.w3.org/TR/css-backgrounds-3/#shadow-blur
               stdDeviation: shadowStyle.blurRadius / 2,
-            })
+              result: 'b',
+            }) +
+              buildXMLString('feFlood', {
+                'flood-color': shadowStyle.color,
+                result: 'f',
+              }) +
+              buildXMLString('feComposite', {
+                in: 'f',
+                in2: 'b',
+                operator: 'in',
+              })
           )
         ) +
         buildXMLString(
