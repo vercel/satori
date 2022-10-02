@@ -100,4 +100,38 @@ describe('Units', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should support rgb syntaxs', async () => {
+    const svg = await satori(
+      <div style={{ display: 'flex' }}>
+        <div
+          style={{
+            width: 10,
+            height: 10,
+            background: 'rgb(100%,0%,0%)',
+          }}
+        ></div>
+        <div
+          style={{
+            width: 10,
+            height: 10,
+            background: 'rgb(255 0 0 / 50%)',
+          }}
+        ></div>
+        <div
+          style={{
+            width: 10,
+            height: 10,
+            background: 'rgb(255, 0, 0, 0.5)',
+          }}
+        ></div>
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })

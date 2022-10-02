@@ -30,6 +30,7 @@ export interface LayoutContext {
   debug?: boolean
   graphemeImages?: Record<string, string>
   canLoadAdditionalAssets: boolean
+  getTwStyles: (tw: string, style: any) => any
 }
 
 export default async function* layout(
@@ -46,6 +47,7 @@ export default async function* layout(
     embedFont = true,
     graphemeImages,
     canLoadAdditionalAssets,
+    getTwStyles,
   } = context
 
   // 1. Pre-process the node.
@@ -82,7 +84,13 @@ export default async function* layout(
 
   // Process as element.
   const { type, props } = element
-  const { style, children } = props || {}
+  let { style, children, tw } = props || {}
+
+  // Extend Tailwind styles.
+  if (tw) {
+    const twStyles = getTwStyles(tw, style)
+    style = Object.assign(twStyles, style)
+  }
 
   const node = Yoga.Node.create()
   parent.insertChild(node, parent.getChildCount())
@@ -138,6 +146,7 @@ export default async function* layout(
       debug,
       graphemeImages,
       canLoadAdditionalAssets,
+      getTwStyles,
     })
     if (canLoadAdditionalAssets) {
       segmentsMissingFont.push(...(((await iter.next()).value as any) || []))

@@ -35,7 +35,7 @@ export function container(
     )
   }
 
-  if (style.opacity) {
+  if (style.opacity !== undefined) {
     opacity = +style.opacity
   }
 

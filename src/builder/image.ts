@@ -130,6 +130,7 @@ export default function image(
       width,
       height,
       id,
+      opacity,
       shape: buildXMLString(path ? 'path' : 'rect', {
         x: left,
         y: top,

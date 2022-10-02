@@ -135,7 +135,7 @@ function handleSpecialCase(
       throw new Error('Invalid `boxShadow` value: "' + value + '".')
     }
     return {
-      [name]: parseBoxShadow(value),
+      [name]: typeof value === 'string' ? parseBoxShadow(value) : value,
     }
   }
 
@@ -147,6 +147,28 @@ function getErrorHint(name: string) {
     return ' Only absolute lengths such as `10px` are supported.'
   }
   return ''
+}
+
+const RGB_SLASH = /rgb\((\d+)\s+(\d+)\s+(\d+)\s*\/\s*([\.\d]+)\)/
+function normalizeColor(value: string | object) {
+  if (typeof value === 'string') {
+    if (RGB_SLASH.test(value.trim())) {
+      // rgb(255 122 127 / .2) -> rgba(255, 122, 127, .2)
+      return value.trim().replace(RGB_SLASH, (_, r, g, b, a) => {
+        return `rgba(${r}, ${g}, ${b}, ${a})`
+      })
+    }
+  }
+
+  // Recursively normalize colors in arrays and objects.
+  if (typeof value === 'object' && value !== null) {
+    for (const k in value) {
+      value[k] = normalizeColor(value[k])
+    }
+    return value
+  }
+
+  return value
 }
 
 export default function expand(
@@ -252,6 +274,12 @@ export default function expand(
           inheritedStyle
         )
         if (typeof len !== 'undefined') transformedStyle[prop] = len
+        value = transformedStyle[prop]
+      }
+
+      if (typeof value === 'string' || typeof value === 'object') {
+        const color = normalizeColor(value)
+        if (color) transformedStyle[prop] = color
         value = transformedStyle[prop]
       }
     }

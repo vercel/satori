@@ -6,6 +6,7 @@ import FontLoader, { FontOptions } from './font'
 import svg from './builder/svg'
 import { segment } from './utils'
 import { detectLanguageCode } from './language'
+import getTw from './handler/tailwind'
 
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
@@ -74,6 +75,24 @@ export default async function satori(
     debug: options.debug,
     graphemeImages,
     canLoadAdditionalAssets: !!options.loadAdditionalAsset,
+    getTwStyles: (tw, style) => {
+      const twToStyles = getTw({
+        width: options.width,
+        height: options.height,
+      })
+      const twStyles = { ...twToStyles([tw] as any) }
+      if (typeof twStyles.lineHeight === 'number') {
+        twStyles.lineHeight =
+          twStyles.lineHeight / (+twStyles.fontSize || style.fontSize || 16)
+      }
+      if (twStyles.shadowColor && twStyles.boxShadow) {
+        twStyles.boxShadow = (twStyles.boxShadow as string).replace(
+          /rgba?\([^)]+\)/,
+          twStyles.shadowColor as string
+        )
+      }
+      return twStyles
+    },
   })
 
   let segmentsMissingFont = (await handler.next()).value as string[]
