@@ -103,7 +103,7 @@ describe('Units', () => {
 
   it('should support rgb syntaxs', async () => {
     const svg = await satori(
-      <div>
+      <div style={{ display: 'flex' }}>
         <div
           style={{
             width: 10,
