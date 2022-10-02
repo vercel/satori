@@ -373,7 +373,7 @@ export default {
     <b>Vercel Edge Network</b>
   </div>
 </div>`,
-  'TailwindCSS (Experimental)': `// Modified based on https://tailwindui.com/components/marketing/sections/cta-sections
+  'Tailwind CSS (Experimental)': `// Modified based on https://tailwindui.com/components/marketing/sections/cta-sections
 
 <div
   style={{

@@ -213,12 +213,24 @@ function LiveEditor({ id }) {
             token: '',
           },
           {
+            token: 'delimiter',
+            foreground: '999999',
+          },
+          {
+            token: 'aaa',
+            foreground: '00ff00',
+          },
+          {
             foreground: '919191',
             token: 'comment',
           },
           {
             foreground: '00a33f',
             token: 'string',
+          },
+          {
+            foreground: '3b54bf',
+            token: 'number',
           },
           {
             foreground: 'a535ae',
@@ -287,13 +299,26 @@ function LiveEditor({ id }) {
     <Editor
       height='100%'
       theme='IDLE'
-      defaultLanguage='javascript'
+      defaultLanguage='typescript'
       value={editedCards[id]}
       onChange={(newCode) => {
         // We also update the code in memory so switching tabs will preserve the
         // edited code (until refreshing).
         editedCards[id] = newCode
         onChange(newCode)
+      }}
+      onMount={async (editor, monaco) => {
+        const modelUri = monaco.Uri.file('satori.tsx')
+        const codeModel = monaco.editor.createModel(
+          editedCards[id],
+          'typescript',
+          modelUri // Pass the file name to the model here.
+        )
+        monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+          jsx: 'react',
+        })
+        monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({})
+        editor.setModel(codeModel)
       }}
       options={{
         fontFamily: 'iaw-mono-var',
@@ -304,7 +329,9 @@ function LiveEditor({ id }) {
           enabled: false,
         },
         smoothScrolling: true,
+        cursorSmoothCaretAnimation: true,
         contextmenu: false,
+        scrollBeyondLastLine: false,
       }}
     />
   )
