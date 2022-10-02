@@ -41,7 +41,7 @@ export default async function rect(
     fills.push(style.backgroundColor as string)
   }
 
-  if (style.opacity) {
+  if (style.opacity !== undefined) {
     opacity = +style.opacity
   }
 
@@ -187,6 +187,7 @@ export default async function rect(
       width,
       height,
       id,
+      opacity,
       shape: buildXMLString(type, {
         x: left,
         y: top,
