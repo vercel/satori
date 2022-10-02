@@ -198,7 +198,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>backgroundRepeat</code></td><td><code>repeat</code>, <code>repeat-x</code>, <code>repeat-y</code>, <code>no-repeat</code>, defaults to <code>repeat</code></td></tr>
 
 <tr><td rowspan="5"><code>transform</code></td></tr>
-<tr><td>Translate (<code>translate</code>, <code>translateX</code>, <code>translateY</code>)</td><td>Support absolute values only</td></tr>
+<tr><td>Translate (<code>translate</code>, <code>translateX</code>, <code>translateY</code>)</td><td>Supported</td></tr>
 <tr><td>Rotate</td><td>Supported</td></tr>
 <tr><td>Scale (<code>scale</code>, <code>scaleX</code>, <code>scaleY</code>)</td><td>Supported</td></tr>
 <tr><td>Skew (<code>skew</code>, <code>skewX</code>, <code>skewY</code>)</td><td>Supported</td></tr>

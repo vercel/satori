@@ -65,6 +65,35 @@ describe('transform', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support %', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            width: 50,
+            height: 10,
+            backgroundColor: 'red',
+            transform: 'translate(100%,100%)',
+          }}
+        >
+          <div
+            style={{
+              width: 50,
+              height: 10,
+              backgroundColor: 'blue',
+              transform: 'translate(-100%,100%) rotate(90deg)',
+            }}
+          />
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 
   describe('rotate', () => {

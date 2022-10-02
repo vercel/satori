@@ -1,6 +1,77 @@
 import { multiply } from '../utils'
 import type { ParsedTransformOrigin } from '../transform-origin'
 
+const baseMatrix = [1, 0, 0, 1, 0, 0]
+
+// Mutate the array in place.
+function resolveTransforms(transforms: any[], width: number, height: number) {
+  let matrix = [...baseMatrix]
+
+  // Handle CSS transforms To make it easier, we convert different transform
+  // types directly to a matrix and apply it recursively to all its children.
+  // Transforms are applied from right to left.
+  for (const transform of transforms) {
+    const type = Object.keys(transform)[0]
+    let v = transform[type]
+
+    // Resolve percentages based on the element's final size.
+    if (typeof v === 'string') {
+      if (type === 'translateX') {
+        v = (parseFloat(v) / 100) * width
+        // Override the orignal object.
+        transform[type] = v
+      } else if (type === 'translateY') {
+        v = (parseFloat(v) / 100) * height
+        transform[type] = v
+      } else {
+        throw new Error(`Invalid transform: "${type}: ${v}".`)
+      }
+    }
+
+    let len = v as number
+
+    const transformMatrix = [...baseMatrix]
+    switch (type) {
+      case 'translateX':
+        transformMatrix[4] = len
+        break
+      case 'translateY':
+        transformMatrix[5] = len
+        break
+      case 'scale':
+        transformMatrix[0] = len
+        transformMatrix[3] = len
+        break
+      case 'scaleX':
+        transformMatrix[0] = len
+        break
+      case 'scaleY':
+        transformMatrix[3] = len
+        break
+      case 'rotate':
+        const rad = (len * Math.PI) / 180
+        const c = Math.cos(rad)
+        const s = Math.sin(rad)
+        transformMatrix[0] = c
+        transformMatrix[1] = s
+        transformMatrix[2] = -s
+        transformMatrix[3] = c
+        break
+      case 'skewX':
+        transformMatrix[2] = Math.tan((len * Math.PI) / 180)
+        break
+      case 'skewY':
+        transformMatrix[1] = Math.tan((len * Math.PI) / 180)
+        break
+    }
+    matrix = multiply(transformMatrix, matrix)
+  }
+
+  transforms.splice(0, transforms.length)
+  transforms.push(...matrix)
+  ;(transforms as any).__resolved = true
+}
+
 export default function transform(
   {
     left,
@@ -13,11 +84,17 @@ export default function transform(
     width: number
     height: number
   },
-  matrix: number[],
+  transforms: number[],
   isInheritingTransform: boolean,
   transformOrigin?: ParsedTransformOrigin
 ) {
   let result: number[]
+
+  if (!(transforms as any).__resolved) {
+    resolveTransforms(transforms, width, height)
+  }
+
+  let matrix = transforms
 
   // Calculate the transform origin.
   if (isInheritingTransform) {
