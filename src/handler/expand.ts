@@ -9,7 +9,7 @@ import { parse as parseBoxShadow } from 'css-box-shadow'
 
 import CssDimension from '../vendor/parse-css-dimension'
 import parseTransformOrigin from '../transform-origin'
-import { lengthToNumber, multiply, v } from '../utils'
+import { lengthToNumber, v } from '../utils'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
@@ -25,8 +25,6 @@ const optOutPx = new Set([
   'scaleY',
 ])
 const keepNumber = new Set(['lineHeight'])
-
-const baseMatrix = [1, 0, 0, 1, 0, 0]
 
 function handleFallbackColor(
   prop: string,
@@ -139,6 +137,27 @@ function handleSpecialCase(
     }
   }
 
+  if (name === 'transform') {
+    if (typeof value !== 'string') throw new Error('Invalid `transform` value.')
+    // To support percentages in transform (which is not supported in RN), we
+    // replace them with random symbols and then replace them back after parsing.
+    const symbols = {}
+    const replaced = value.replace(/(-?[\d.]+%)/g, (_, v) => {
+      const symbol = ~~(Math.random() * 1e9)
+      symbols[symbol] = v
+      return symbol + 'px'
+    })
+    const parsed = getStylesForProperty('transform', replaced, true)
+    for (const t of parsed.transform) {
+      for (const k in t) {
+        if (symbols[t[k]]) {
+          t[k] = symbols[t[k]]
+        }
+      }
+    }
+    return parsed
+  }
+
   return
 }
 
@@ -204,7 +223,7 @@ export default function expand(
           // Attach the extra information of the rule itself if it's not included in
           // the error message.
           (err.message.includes(style[prop])
-            ? ''
+            ? '\n  ' + getErrorHint(name)
             : `\n  in CSS rule \`${name}: ${style[prop]}\`.${getErrorHint(
                 name
               )}`)
@@ -290,62 +309,20 @@ export default function expand(
         value * (inheritedStyle.opacity as number)
     }
 
-    // Handle CSS transforms To make it easier, we convert different transform
-    // types directly to a matrix and apply it recursively to all its children.
-    // @TODO: We need to convert relative values (50%) to absolute values. This
-    // is pretty tricky to support as we need an extra pass to handle them after
-    // the full layout pass.
     if (prop === 'transform') {
-      let matrix = [...baseMatrix]
       const transforms = value as { [type: string]: number | string }[]
 
-      // Transforms are applied from right to left.
       for (const transform of transforms) {
         const type = Object.keys(transform)[0]
         const v = transform[type]
+
+        // Convert em, rem, vw, vh values to px (number), but keep % values.
         const len =
           typeof v === 'string'
-            ? lengthToNumber(v, baseFontSize, baseFontSize, inheritedStyle)
+            ? lengthToNumber(v, baseFontSize, baseFontSize, inheritedStyle) ?? v
             : v
-
-        const transformMatrix = [...baseMatrix]
-        switch (type) {
-          case 'translateX':
-            transformMatrix[4] = len
-            break
-          case 'translateY':
-            transformMatrix[5] = len
-            break
-          case 'scale':
-            transformMatrix[0] = len
-            transformMatrix[3] = len
-            break
-          case 'scaleX':
-            transformMatrix[0] = len
-            break
-          case 'scaleY':
-            transformMatrix[3] = len
-            break
-          case 'rotate':
-            const rad = (len * Math.PI) / 180
-            const c = Math.cos(rad)
-            const s = Math.sin(rad)
-            transformMatrix[0] = c
-            transformMatrix[1] = s
-            transformMatrix[2] = -s
-            transformMatrix[3] = c
-            break
-          case 'skewX':
-            transformMatrix[2] = Math.tan((len * Math.PI) / 180)
-            break
-          case 'skewY':
-            transformMatrix[1] = Math.tan((len * Math.PI) / 180)
-            break
-        }
-        matrix = multiply(transformMatrix, matrix)
+        transform[type] = len
       }
-
-      transformedStyle.transform = matrix
     }
   }
 

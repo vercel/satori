@@ -331,7 +331,6 @@ function LiveEditor({ id }) {
         smoothScrolling: true,
         cursorSmoothCaretAnimation: true,
         contextmenu: false,
-        scrollBeyondLastLine: false,
       }}
     />
   )
