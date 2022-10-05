@@ -1,4 +1,4 @@
-import satori from 'satori'
+import satori from '../../dist/esm/index'
 import { LiveProvider, LiveContext, withLive } from 'react-live'
 import { useEffect, useState, useRef, useContext } from 'react'
 import { createPortal } from 'react-dom'
@@ -447,6 +447,23 @@ const LiveSatori = withLive(function ({ live }) {
               setObjectURL(
                 URL.createObjectURL(new Blob([pngData], { type: 'image/png' }))
               )
+              // After rendering the PNG @1x quickly, we render the PNG @2x for
+              // the playground only to make it look less blurry.
+              setTimeout(() => {
+                if (cancelled) return
+                const renderer = new resvg.Resvg(_result, {
+                  fitTo: {
+                    mode: 'width',
+                    value: width * 2,
+                  },
+                })
+                const pngData = renderer.render()
+                setObjectURL(
+                  URL.createObjectURL(
+                    new Blob([pngData], { type: 'image/png' })
+                  )
+                )
+              }, 20)
             }
             if (renderType === 'pdf') {
               const doc = new PDFDocument({
