@@ -5,6 +5,7 @@
 
 import { defineConfig } from 'tsup'
 import { join } from 'path'
+import { replace } from 'esbuild-plugin-replace'
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -54,5 +55,10 @@ export default defineConfig({
         })
       },
     },
+    // We don't like `Function`.
+    // https://github.com/tailwindlabs/tailwindcss/blob/bf4494104953b13a5f326b250d7028074815e77e/src/util/getAllConfigs.js#L8
+    replace({
+      'preset instanceof Function': 'typeof preset === "function"',
+    }),
   ],
 })

@@ -15,6 +15,7 @@ importers:
       css-background-parser: ^0.1.0
       css-box-shadow: 1.0.0-3
       css-to-react-native: ^3.0.0
+      esbuild-plugin-replace: ^1.2.0
       jest-image-snapshot: ^5.2.0
       postcss-value-parser: ^4.2.0
       react: ^17.0.2
@@ -38,6 +39,7 @@ importers:
       '@types/yoga-layout': 1.9.4
       '@vitest/ui': 0.7.13
       concurrently: 7.4.0
+      esbuild-plugin-replace: 1.2.0
       jest-image-snapshot: 5.2.0
       react: 17.0.2
       tsup: 5.12.9_typescript@4.8.3
@@ -1254,6 +1256,12 @@ packages:
     dev: true
     optional: true
 
+  /esbuild-plugin-replace/1.2.0:
+    resolution: {integrity: sha512-dYlDwjcKKgAi8fqsvLwDvO+03asnp1qyG4VU/qbvg061CIMfecF/qwkjr4QRetQP9Os2nJuNO95Y0rUUXhFAwg==}
+    dependencies:
+      magic-string: 0.25.9
+    dev: true
+
   /esbuild-sunos-64/0.14.54:
     resolution: {integrity: sha512-28GZ24KmMSeKi5ueWzMcco6EBHStL3B6ubM7M51RmPwXQGLe0teBGJocmWhgwccA1GeFXqxzILIxXpHbl9Q/Kw==}
     engines: {node: '>=12'}
@@ -1841,7 +1849,6 @@ packages:
     resolution: {integrity: sha512-RmF0AsMzgt25qzqqLc1+MbHmhdx0ojF2Fvs4XnOqz2ZOBXzzkEwc/dJQZCYHAn7v1jbVOjAZfK8msRn4BxO4VQ==}
     dependencies:
       sourcemap-codec: 1.4.8
-    dev: false
 
   /merge-stream/2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
@@ -2453,7 +2460,6 @@ packages:
 
   /sourcemap-codec/1.4.8:
     resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
-    dev: false
 
   /spawn-command/0.0.2-1:
     resolution: {integrity: sha512-n98l9E2RMSJ9ON1AKisHzz7V42VDiBQGY6PB1BwRglz99wpVsSuGzQ+jOi6lFXBGVTCrRpltvjm+/XA+tpeJrg==}

@@ -49,6 +49,7 @@
     "@types/yoga-layout": "^1.9.4",
     "@vitest/ui": "^0.7.6",
     "concurrently": "^7.3.0",
+    "esbuild-plugin-replace": "^1.2.0",
     "jest-image-snapshot": "^5.2.0",
     "react": "^17.0.2",
     "tsup": "^5.11.13",
