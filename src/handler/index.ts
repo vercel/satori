@@ -60,6 +60,7 @@ export default async function handler(
       ((style.borderBottomWidth as number) || 0) +
       ((style.paddingTop as number) || 0) +
       ((style.paddingBottom as number) || 0)
+
     let displayedWidth = style.width || props.width
     let displayedHeight = style.height || props.height
     const calculateInsetRatio =
@@ -78,10 +79,10 @@ export default async function handler(
     }
 
     if (displayedWidth === undefined) {
-      displayedWidth = displayedHeight / r
+      node.setAspectRatio(1 / r)
     }
     if (displayedHeight === undefined) {
-      displayedHeight = displayedWidth * r
+      node.setAspectRatio(1 / r)
     }
 
     style.width = calculateInsetRatio
