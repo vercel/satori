@@ -15,6 +15,16 @@ describe('Image', () => {
     requests = []
     ;(globalThis as any).fetch = async (url) => {
       requests.push(url)
+      if (url.endsWith('.svg')) {
+        return {
+          headers: {
+            get: () => 'image/svg+xml',
+          },
+          text: async () =>
+            '<svg width="116" height="100" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M57.5 0L115 100H0L57.5 0z"/></svg>',
+        }
+      }
+
       return {
         headers: {
           get: (key) => {
@@ -120,6 +130,22 @@ describe('Image', () => {
               borderRadius: '10px 20%',
             }}
           />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support SVG images and percentage with correct aspect ratio', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+          }}
+        >
+          <img width='100%' src='https://via.placeholder.com/150.svg' />
         </div>,
         { width: 100, height: 100, fonts }
       )

@@ -97,8 +97,48 @@ export async function resolveImageData(
 
   const promise = new Promise<ResolvedImageData>((resolve, reject) => {
     fetch(src)
-      .then((res) => res.arrayBuffer())
+      .then((res): Promise<string | ArrayBuffer> => {
+        const type = res.headers.get('content-type')
+
+        // Handle SVG specially
+        if (type === 'image/svg+xml' || type === 'application/svg+xml') {
+          return res.text()
+        }
+
+        return res.arrayBuffer()
+      })
       .then((data) => {
+        if (typeof data === 'string') {
+          try {
+            const newSrc = `data:image/svg+xml;base64,${btoa(data)}`
+            // Parse the SVG image size
+            const svgTag = data.match(/<svg[^>]*>/)[0]
+
+            let viewBox = svgTag.match(/viewBox="0 0 (\d+) (\d+)"/)
+            const width = svgTag.match(/width="(\d+)"/)
+            const height = svgTag.match(/height="(\d+)"/)
+            if (!viewBox && width && height) {
+              viewBox = [null, width[1], height[1]]
+            }
+
+            const ratio = +viewBox[1] / +viewBox[2]
+            const imageSize: [number, number] =
+              width && height
+                ? [+width[1], +height[1]]
+                : width
+                ? [+width[1], +width[1] / ratio]
+                : height
+                ? [+height[1] * ratio, +height[1]]
+                : [+viewBox[1], +viewBox[2]]
+
+            cache.set(src, [newSrc, ...imageSize])
+            resolve([newSrc, ...imageSize])
+            return
+          } catch (e) {
+            throw new Error(`Failed to parse SVG image: ${e.message}`)
+          }
+        }
+
         let imageType: string
         let imageSize: [number, number]
 
@@ -124,6 +164,7 @@ export async function resolveImageData(
             imageSize = parseJPEG(data)
             break
         }
+
         if (!ALLOWED_IMAGE_TYPES.includes(imageType)) {
           throw new Error(`Unsupported image type: ${imageType || 'unknown'}`)
         }
