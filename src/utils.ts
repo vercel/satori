@@ -16,7 +16,7 @@ export function isReactElement(node: ReactNode): node is ReactElement {
 }
 
 export function isClass(f: Function) {
-  return /^class\s/.test(Function.prototype.toString.call(f))
+  return /^class\s/.test(f.toString())
 }
 
 export function normalizeChildren(children: any) {
