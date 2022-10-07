@@ -1,4 +1,4 @@
-import satori from '../../dist/esm/index'
+import satori from 'satori'
 import { LiveProvider, LiveContext, withLive } from 'react-live'
 import { useEffect, useState, useRef, useContext } from 'react'
 import { createPortal } from 'react-dom'
