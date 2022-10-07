@@ -1,8 +1,9 @@
 ![Satori](.github/card.png)
 
-**Satori**: A library that converts HTML and CSS into SVG.
+**Satori**: Enlightened library to convert HTML and CSS to SVG.
 
-[Playground →](https://satori-playground.vercel.app)
+> **Note**
+> To use Satori in your project to generate PNG images like Open Graph images and social cards, check out [Vercel’s Open Graph Image Generation](https://github.com/vercel/og).
 
 ## Overview
 
@@ -36,12 +37,6 @@ Satori will render the element into a 600×400 SVG, and return the SVG string:
 ```
 
 Under the hood, it handles layout calculation, font, typography and more, to generate a SVG that matches the exact same HTML and CSS in a browser.
-
-<br/>
-
-## Playground
-
-https://satori-playground.vercel.app
 
 <br/>
 
@@ -244,7 +239,7 @@ Note:
 4. `calc` isn't supported.
 5. `overflow: hidden` and `transform` can't be used together.
 
-### Typography
+### Language and Typography
 
 Advanced typography features such as kerning, ligatures and other OpenType features are not currently supported. 
 
@@ -296,7 +291,7 @@ await satori(
 )
 ```
 
-The image will be resized to the current font-size (both width and height), so it must be a square.
+The image will be resized to the current font-size (both width and height) as a square.
 
 #### Dynamically Load Emojis and Fonts
 
@@ -371,28 +366,7 @@ const svg = await satori(
 
 ## Contribute
 
-This project uses [pnpm](https://pnpm.io). To install dependencies, run:
-
-```bash
-pnpm install
-```
-
-To start the playground locally, run:
-
-```bash
-cd playground
-pnpm dev
-```
-
-And visit localhost:3000/test.
-
-To start the development mode, run `pnpm dev` in the root directory (can be used together with the playground to view it in live).
-
-To start and live-watch the tests, run:
-
-```bash
-pnpm dev:test
-```
+You can use [Satori’s playground](https://satori-playground.vercel.app) to test and report bugs of Satori.  Please follow our [contribution guidelines](/CONTRIBUTING.md) before opening a Pull Request.
 
 <br/>
 
