@@ -1,6 +1,6 @@
 ![Satori](.github/card.png)
 
-**Satori**: A library that converts HTML and CSS into SVG.
+**Satori**: Enlightened library to convert HTML and CSS to SVG.
 
 > **Note**
 > To use Satori in your project to generate PNG images like Open Graph images and social cards, check out [Vercel’s Open Graph Image Generation](https://github.com/vercel/og).
