@@ -160,6 +160,8 @@ export async function resolveImageData(
           case 'ffd8ffe2':
           case 'ffd8ffe3':
           case 'ffd8ffe8':
+          case 'ffd8ffed':
+          case 'ffd8ffdb':
             imageType = 'image/jpeg'
             imageSize = parseJPEG(data)
             break
@@ -172,7 +174,9 @@ export async function resolveImageData(
         cache.set(src, [newSrc, ...imageSize])
         resolve([newSrc, ...imageSize])
       })
-      .catch(reject)
+      .catch((err) => {
+        reject(new Error(`Can't load image ${src}: ` + err.message))
+      })
   })
   inflightRequests.set(src, promise)
   return promise
