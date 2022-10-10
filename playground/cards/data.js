@@ -403,4 +403,33 @@ export default {
     </div>
   </div>
 </div>`,
+  'Color Models': `<div
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    fontSize: 25,
+    fontWeight: 600,
+    textAlign: 'center',
+    margin: 20,
+    color: 'black',
+    backgroundColor: 'white',
+    height: '100%',
+    width: '100%'
+  }}
+>
+  <div style={{ display: 'flex', color: '#ff0000' }}>Hexadecimal Colors</div>
+  <div style={{ display: 'flex', color: '#00ff0070' }}>
+    Hexadecimal Colors With Transparency
+  </div>
+  <div style={{ display: 'flex', color: 'rgb(0, 0, 255)' }}>RGB</div>
+  <div style={{ display: 'flex', color: 'rgba(255, 0, 0, 0.3)' }}>RGBA</div>
+  <div style={{ display: 'flex', color: 'hsl(120, 60%, 70%)' }}>HSL</div>
+  <div style={{ display: 'flex', color: 'hsla(120, 100%, 25%, 0.3)' }}>HSLA</div>
+  <div style={{ display: 'flex', color: 'brown' }}>Predefined Color Names</div>
+  <div style={{ display: 'flex', color: 'currentcolor' }}>
+    The <code>currentcolor</code> Keyword
+  </div>
+</div>`,
 }
