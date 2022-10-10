@@ -301,7 +301,7 @@ Satori supports dynamically loading emoji images (grapheme pictures) and fonts. 
 await satori(
   <div>👋 你好</div>,
   {
-    // `code` will be the detected language code, `emoji` if it's an Emoji, or `unknwon` if not able to tell.
+    // `code` will be the detected language code, `emoji` if it's an Emoji, or `unknown` if not able to tell.
     // `segment` will be the content to render.
     loadAdditionalAsset: async (code: string, segment: string) => {
       if (code === 'emoji') {
