@@ -10,7 +10,7 @@ You can use the repository's [Discussions](https://github.com/vercel/satori/disc
 
 Whenever you find something which is not working properly, please first search the repository's [Issues](https://github.com/vercel/satori/issues) page and make sure it's not reported by someone else already.
 
-If not, feel free to open an issue with a detailed description of the problem and the expected behavior. A bug reproduction using [Satori’s playground](https://satori-playground.vercel.app) will be extremely helpful.
+If not, feel free to open an issue with a detailed description of the problem and the expected behavior. A bug reproduction using [Satori’s playground](https://og-playground.vercel.app) will be extremely helpful.
 
 ## Request for a New Feature
 
