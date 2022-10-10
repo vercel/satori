@@ -1,6 +1,6 @@
 {
   "name": "satori",
-  "version": "0.0.37",
+  "version": "0.0.38",
   "description": "Enlightened library to convert HTML and CSS to SVG.",
   "module": "./dist/esm/index.js",
   "main": "./dist/esm/index.js",
