@@ -285,7 +285,7 @@ export default async function* buildTextNodes(
           lineSegmentNumber.push(1)
           lineIndex = -1
 
-          // If it's neturally breaked, we update the max width.
+          // If it's naturally broken, we update the max width.
           // Since if there are multiple lines, the width should fit the
           // container.
           if (!forceBreak) {
@@ -296,7 +296,7 @@ export default async function* buildTextNodes(
           currentWidth += remainingSpaceWidth + w
           const glyphHeight = engine.height(word)
           if (glyphHeight > currentLineHeight) {
-            // Use the baseline of the heighest segment as the baseline of the line.
+            // Use the baseline of the highest segment as the baseline of the line.
             currentLineHeight = glyphHeight
             currentBaselineOffset = engine.baseline(word)
           }
@@ -416,7 +416,7 @@ export default async function* buildTextNodes(
     let extendedWidth = false
 
     if (lineWidths.length > 1) {
-      // Calculate alignment. Note that for flexbox, there is only text
+      // Calculate alignment. Note that for Flexbox, there is only text
       // alignment when the container is multi-line.
       const remainingWidth = containerWidth - lineWidths[line]
       if (textAlign === 'right' || textAlign === 'end') {

@@ -18,7 +18,7 @@ function resolveTransforms(transforms: any[], width: number, height: number) {
     if (typeof v === 'string') {
       if (type === 'translateX') {
         v = (parseFloat(v) / 100) * width
-        // Override the orignal object.
+        // Override the original object.
         transform[type] = v
       } else if (type === 'translateY') {
         v = (parseFloat(v) / 100) * height
