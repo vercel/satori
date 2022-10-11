@@ -44,10 +44,6 @@ const apis = {
     'https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/' +
     code.toLowerCase() +
     '_flat.svg',
-  tossface: (code) => 
-    'https://raw.githubusercontent.com/toss/tossface/main/dist/svg/u' +
-    code.toUpperCase() +
-    '.svg', 
 }
 
 export function loadEmoji(type, code) {

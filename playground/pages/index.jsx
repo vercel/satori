@@ -717,7 +717,6 @@ const LiveSatori = withLive(function ({ live }) {
               <option value='noto'>Noto Emoji</option>
               <option value='blobmoji'>Blobmoji</option>
               <option value='openmoji'>OpenMoji</option>
-              <option value='tossface'>Tossface</option>
             </select>
           </div>
           <div className='control'>
