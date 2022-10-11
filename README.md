@@ -205,7 +205,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 <tr>
 <td colspan="2"><code>objectFit</code></td>
-<td><code>contain</code>, <code>cover</code>, <code>none</code>, default to <code>node</code></td>
+<td><code>contain</code>, <code>cover</code>, <code>none</code>, default to <code>none</code></td>
 </tr>
 
 <tr>
