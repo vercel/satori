@@ -3,7 +3,10 @@
 **Satori**: Enlightened library to convert HTML and CSS to SVG.
 
 > **Note**
-> To use Satori in your project to generate PNG images like Open Graph images and social cards, check out [Vercel’s Open Graph Image Generation](https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation).
+> 
+> To use Satori in your project to generate PNG images like Open Graph images and social cards, check out our [announcement](https://vercel.com/blog/introducing-vercel-og-image-generation-fast-dynamic-social-card-images) and [Vercel’s Open Graph Image Generation →](https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation)   
+> 
+> To use it in Next.js, take a look at the [Next.js Open Graph Image Generation template →](https://vercel.com/templates/next.js/og-image-generation)
 
 ## Overview
 
