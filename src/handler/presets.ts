@@ -3,7 +3,7 @@
  * default styles:
  * https://chromium.googlesource.com/chromium/blink/+/master/Source/core/css/html.css
  *
- * We try to only include commonly used, styling elements rather than senmantic elements.
+ * We try to only include commonly used, styling elements rather than semantic elements.
  */
 
 const DEFAULT_DISPLAY = 'flex'
