@@ -15,6 +15,7 @@ import blobStream from 'blob-stream'
 import { createIntlSegmenterPolyfill } from 'intl-segmenter-polyfill'
 
 import { loadEmoji, getIconCode } from '../utils/twemoji'
+import Introduction from '../components/introduction'
 
 import cards from '../cards/data'
 
@@ -552,6 +553,7 @@ const LiveSatori = withLive(function ({ live }) {
           >
             {renderType === 'html' ? (
               <iframe
+                key='html'
                 ref={(node) => {
                   if (node) {
                     setIframeNode(node.contentWindow?.document?.body)
@@ -588,6 +590,7 @@ const LiveSatori = withLive(function ({ live }) {
               />
             ) : renderType === 'pdf' && objectURL ? (
               <iframe
+                key='pdf'
                 width={width}
                 height={height}
                 src={
@@ -749,7 +752,9 @@ const LiveSatori = withLive(function ({ live }) {
           </div>
           <div className='control'>
             <label>Satori Version</label>
-            <span>{packageJson.version}</span>
+            <a href='https://github.com/vercel/satori' target='_blank'>
+              {packageJson.version}
+            </a>
           </div>
         </div>
       </div>
@@ -802,14 +807,39 @@ function ResetCode({ activeCard }) {
 
 export default function Playground() {
   const [activeCard, setActiveCard] = useState(cardNames[0])
+  const [showIntroduction, setShowIntroduction] = useState(false)
+
+  useEffect(() => {
+    try {
+      const hasVisited = localStorage.getItem('_vercel_og_playground_visited')
+      if (hasVisited) return
+    } catch (e) {}
+
+    setShowIntroduction(true)
+  }, [])
 
   return (
     <>
+      {showIntroduction ? (
+        <Introduction
+          onClose={() => {
+            setShowIntroduction(false)
+            localStorage.setItem('_vercel_og_playground_visited', '1')
+          }}
+        />
+      ) : null}
       <nav>
-        <h1>Satori Playground</h1>
+        <h1>
+          <svg viewBox='0 0 75 65' fill='#000' height='12' title='Vercel'>
+            <path d='M37.59.25l36.95 64H.64l36.95-64z'></path>
+          </svg>
+          OG Image Playground
+        </h1>
         <ul>
           <li>
-            <a href='https://github.com/vercel/satori'>Documentation</a>
+            <a href='https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation'>
+              Docs
+            </a>
           </li>
           <li>
             <a href='https://nextjs.org/discord'>Discord</a>
