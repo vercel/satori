@@ -485,9 +485,12 @@ const LiveSatori = withLive(function ({ live }) {
             }
             setRenderError(null)
           } catch (e) {
+            console.error(e)
             setRenderError(e.message)
             return null
           }
+        } else {
+          setRenderError(null)
         }
         _renderedTimeSpent =
           (typeof performance !== 'undefined' ? performance : Date).now() -
