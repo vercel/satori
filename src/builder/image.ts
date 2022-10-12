@@ -188,6 +188,7 @@ export default function image(
       height: height - offsetTop - offsetBottom,
       href: src,
       preserveAspectRatio,
+      opacity,
       transform: matrix ? matrix : undefined,
       'clip-path': clip
         ? `url(#satori_c-${id})`
