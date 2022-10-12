@@ -85,6 +85,24 @@ describe('Gradient', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support using background instead of backgroundImage', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            background: 'linear-gradient(to right, red, black)',
+            height: '100%',
+            width: '100%',
+          }}
+        ></div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 
   describe('radial-gradient', () => {
