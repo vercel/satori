@@ -218,7 +218,8 @@ export default class FontLoader {
     }
 
     const engine = {
-      check: (s: string) => {
+      has: (s: string) => {
+        if (s === '\n') return true
         const font = resolve(s)
         if (!font) return false
         ;(font as any)._trackBrokenChars = []
@@ -371,7 +372,7 @@ export default class FontLoader {
         return ''
       }
       return font
-        .getPath(content, left, top, fontSize, {
+        .getPath(content.replace(/\n/g, ''), left, top, fontSize, {
           letterSpacing: letterSpacing / fontSize,
         })
         .toPathData(1)

@@ -107,7 +107,7 @@ export default async function* buildTextNodes(
 
   // Yield segments that are missing a font.
   const wordsMissingFont = canLoadAdditionalAssets
-    ? words.filter((word) => !engine.check(word))
+    ? words.filter((word) => !engine.has(word))
     : []
   yield wordsMissingFont
   if (wordsMissingFont.length) {
