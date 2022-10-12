@@ -737,7 +737,7 @@ const LiveSatori = withLive(function ({ live }) {
                   : undefined
               }
               target={result ? '_blank' : ''}
-              download={result ? 'satori-playground.svg' : false}
+              download={result ? 'image.svg' : false}
             >
               Export SVG
             </a>

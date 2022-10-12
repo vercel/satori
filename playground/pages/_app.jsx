@@ -12,38 +12,35 @@ export default function App({ Component, pageProps }) {
           content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'
         />
         <meta name='theme-color' content='#fff' />
-        <meta name='title' content='Satori Playground' />
+        <meta name='title' content='Vercel OG Image Playground' />
         <meta
           name='description'
-          content='Satori is a JavaScript library that converts HTML and CSS into SVG.'
+          content='Generate Open Graph images with Vercel’s Edge Function.'
         />
         <meta property='og:type' content='website' />
-        <meta
-          property='og:url'
-          content='https://satori-playground.vercel.app/'
-        />
-        <meta property='og:title' content='Satori Playground' />
+        <meta property='og:url' content='https://og-playground.vercel.app/' />
+        <meta property='og:title' content='Vercel OG Image Playground' />
         <meta
           property='og:description'
-          content='Satori is a JavaScript library that converts HTML and CSS into SVG.'
+          content='Generate Open Graph images with Vercel’s Edge Function.'
         />
         <meta
           property='og:image'
-          content='https://satori-playground.vercel.app/satori-card.jpeg'
+          content='https://og-playground.vercel.app/og.png'
         />
         <meta property='twitter:card' content='summary_large_image' />
         <meta
           property='twitter:url'
-          content='https://satori-playground.vercel.app/'
+          content='https://og-playground.vercel.app/'
         />
-        <meta property='twitter:title' content='Satori Playground' />
+        <meta property='twitter:title' content='Vercel OG Image Playground' />
         <meta
           property='twitter:description'
-          content='Satori is a JavaScript library that converts HTML and CSS into SVG.'
+          content='Generate Open Graph images with Vercel’s Edge Function.'
         />
         <meta
           property='twitter:image'
-          content='https://satori-playground.vercel.app/satori-card.jpeg'
+          content='https://og-playground.vercel.app/og.png'
         />
         <link
           rel='preload'
