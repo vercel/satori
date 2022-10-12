@@ -60,6 +60,12 @@ h1 {
   font-size: 0.9rem;
   font-weight: 500;
   color: #444;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  letter-spacing: -0.015rem;
+  word-spacing: -0.09rem;
+  cursor: default;
 }
 
 nav ul {
@@ -224,6 +230,7 @@ code {
 
 .tab.active {
   color: #111;
+  font-weight: 600;
   box-shadow: 0 1px white, 0 0px 0 1px rgb(0 0 0 / 5%);
   background: white;
 }
