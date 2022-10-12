@@ -244,5 +244,22 @@ describe('Image', () => {
 
       expect(requests).toEqual(['https://via.placeholder.com/300'])
     })
+
+    it('should support stretched backgroundSize', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: '50%',
+            height: '50%',
+            display: 'flex',
+            backgroundImage: 'url(https://via.placeholder.com/300)',
+            backgroundSize: '100% 100%',
+          }}
+        ></div>,
+        { width: 100, height: 50, fonts }
+      )
+
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 })

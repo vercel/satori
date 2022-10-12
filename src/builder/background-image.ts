@@ -370,6 +370,7 @@ export default async function backgroundImage(
           y: 0,
           width: resolvedWidth,
           height: resolvedHeight,
+          preserveAspectRatio: 'none',
           href: src,
         })
       ),
