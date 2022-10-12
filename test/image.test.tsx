@@ -136,6 +136,29 @@ describe('Image', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
+    it('should support opacity', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+          }}
+        >
+          <img
+            width='100%'
+            height='100%'
+            src='https://via.placeholder.com/150'
+            style={{
+              opacity: 0.5,
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
     it('should support SVG images and percentage with correct aspect ratio', async () => {
       const svg = await satori(
         <div
@@ -220,6 +243,23 @@ describe('Image', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
 
       expect(requests).toEqual(['https://via.placeholder.com/300'])
+    })
+
+    it('should support stretched backgroundSize', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: '50%',
+            height: '50%',
+            display: 'flex',
+            backgroundImage: 'url(https://via.placeholder.com/300)',
+            backgroundSize: '100% 100%',
+          }}
+        ></div>,
+        { width: 100, height: 50, fonts }
+      )
+
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 })
