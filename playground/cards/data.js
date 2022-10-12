@@ -31,7 +31,7 @@ export default {
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'column',
-    backgroundColor: 'white',
+    backgroundImage: 'linear-gradient(to bottom, #dbf4ff, #fff1f1)',
     fontSize: 60,
     letterSpacing: -2,
     fontWeight: 700,
