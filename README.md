@@ -14,8 +14,10 @@ Satori supports the JSX syntax, which makes it very straightforward to use. Here
 
 ```jsx
 // api.jsx
+import fs from 'fs/promises'
 import satori from 'satori'
 
+const robotoArrayBuffer = await fs.readFile('./assets/Roboto-Regular.ttf')
 const svg = await satori(
   <div style={{ color: 'black' }}>hello, world</div>,
   {
