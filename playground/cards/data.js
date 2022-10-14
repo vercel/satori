@@ -406,30 +406,56 @@ export default {
   'Color Models': `<div
   style={{
     display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    fontSize: 25,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    fontSize: 24,
     fontWeight: 600,
-    textAlign: 'center',
-    margin: 20,
-    color: 'white',
-    backgroundColor: 'pink',
+    textAlign: 'left',
+    padding: 70,
+    color: 'red',
+    backgroundImage: 'linear-gradient(to right, #334d50, #cbcaa5)',
     height: '100%',
     width: '100%'
   }}
 >
-  <div style={{ display: 'flex', color: '#ff0000' }}>Hexadecimal Colors</div>
-  <div style={{ display: 'flex', color: '#00ff0070' }}>
-    Hexadecimal Colors With Transparency
+
+  <div style={{ display: 'flex', flexDirection: 'column' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '15px', color: '#fff' }}>
+      #fff
+      <div style={{ fontWeight: 100 }}>hexadecimal</div>
+    </div>
+    <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '15px', color: '#ffffff70' }}>
+      #ffffff70
+      <div style={{ fontWeight: 100 }}>hexadecimal + transparency</div>
+    </div>
+    <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '15px', color: 'rgb(45, 45, 45)' }}>
+      rgb(45, 45, 45)
+      <div style={{ fontWeight: 100 }}>rgb</div>
+    </div>
+    <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '15px', color: 'rgb(45, 45, 45, 0.3)' }}>
+      rgb(45, 45, 45, 0.3)
+      <div style={{ fontWeight: 100 }}>rgba</div>
+    </div>
   </div>
-  <div style={{ display: 'flex', color: 'rgb(0, 0, 255)' }}>RGB</div>
-  <div style={{ display: 'flex', color: 'rgba(255, 0, 0, 0.3)' }}>RGBA</div>
-  <div style={{ display: 'flex', color: 'hsl(120, 60%, 70%)' }}>HSL</div>
-  <div style={{ display: 'flex', color: 'hsla(120, 100%, 25%, 0.3)' }}>HSLA</div>
-  <div style={{ display: 'flex', color: 'brown' }}>Predefined Color Names</div>
-  <div style={{ display: 'flex', color: 'currentcolor' }}>
-    The "currentcolor" Keyword
+
+  <div style={{ display: 'flex', flexDirection: 'column' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '15px', color: 'hsl(186, 22%, 26%)' }}>
+      hsl(186, 22%, 26%)
+      <div style={{ fontWeight: 100 }}>hsl</div>
+    </div>
+    <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '15px', color: 'hsla(186, 22%, 26%, 40%)' }}>
+      hsla(186, 22%, 26%, 40%)
+      <div style={{ fontWeight: 100 }}>hsla</div>
+    </div>
+    <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '15px', color: 'white' }}>
+      "white"
+      <div style={{ fontWeight: 100 }}>predefined color names</div>
+    </div>
+    <div style={{ display: 'flex', flexDirection: 'column', marginBottom: '15px', color: 'currentcolor' }}>
+      should be red
+      <div style={{ fontWeight: 100 }}>"currentcolor"</div>
+    </div>
   </div>
+
 </div>`,
 }
