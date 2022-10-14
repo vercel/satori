@@ -1,3 +1,4 @@
+import React from 'react'
 import satori from 'satori'
 import { LiveProvider, LiveContext, withLive } from 'react-live'
 import { useEffect, useState, useRef, useContext } from 'react'
@@ -308,17 +309,19 @@ function LiveEditor({ id }) {
         editedCards[id] = newCode
         onChange(newCode)
       }}
-      onMount={async (editor, monaco) => {
-        const modelUri = monaco.Uri.file('satori.tsx')
-        const codeModel = monaco.editor.createModel(
+      onMount={async (editor, _monaco) => {
+        const modelUri = _monaco.Uri.file('satori.tsx')
+        const codeModel = _monaco.editor.createModel(
           editedCards[id],
           'typescript',
           modelUri // Pass the file name to the model here.
         )
-        monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+        _monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
           jsx: 'react',
         })
-        monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({})
+        _monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions(
+          {}
+        )
         editor.setModel(codeModel)
       }}
       options={{
@@ -452,16 +455,16 @@ const LiveSatori = withLive(function ({ live }) {
               // the playground only to make it look less blurry.
               setTimeout(() => {
                 if (cancelled) return
-                const renderer = new resvg.Resvg(_result, {
+                const _renderer = new resvg.Resvg(_result, {
                   fitTo: {
                     mode: 'width',
                     value: width * 2,
                   },
                 })
-                const pngData = renderer.render()
+                const _pngData = _renderer.render()
                 setObjectURL(
                   URL.createObjectURL(
-                    new Blob([pngData], { type: 'image/png' })
+                    new Blob([_pngData], { type: 'image/png' })
                   )
                 )
               }, 20)
@@ -532,9 +535,9 @@ const LiveSatori = withLive(function ({ live }) {
           'HTML (Native)',
         ]}
         onChange={(text) => {
-          const renderType = text.split(' ')[0].toLowerCase()
+          const _renderType = text.split(' ')[0].toLowerCase()
           // 'svg' | 'png' | 'html' | 'pdf'
-          setRenderType(renderType)
+          setRenderType(_renderType)
         }}
       >
         <div className='preview-card'>
@@ -619,7 +622,7 @@ const LiveSatori = withLive(function ({ live }) {
               {renderType === 'pdf' || renderType === 'png' ? (
                 <>
                   {' '}
-                  <a href={objectURL} target='_blank'>
+                  <a href={objectURL} target='_blank' rel='noreferrer'>
                     (View in New Tab ↗)
                   </a>
                 </>
@@ -738,6 +741,7 @@ const LiveSatori = withLive(function ({ live }) {
               }
               target={result ? '_blank' : ''}
               download={result ? 'image.svg' : false}
+              rel='noreferrer'
             >
               Export SVG
             </a>
@@ -755,7 +759,11 @@ const LiveSatori = withLive(function ({ live }) {
           </div>
           <div className='control'>
             <label>Satori Version</label>
-            <a href='https://github.com/vercel/satori' target='_blank'>
+            <a
+              href='https://github.com/vercel/satori'
+              target='_blank'
+              rel='noreferrer'
+            >
               {packageJson.version}
             </a>
           </div>
@@ -816,7 +824,9 @@ export default function Playground() {
     try {
       const hasVisited = localStorage.getItem('_vercel_og_playground_visited')
       if (hasVisited) return
-    } catch (e) {}
+    } catch (e) {
+      console.error(e)
+    }
 
     setShowIntroduction(true)
   }, [])

@@ -187,9 +187,9 @@ export default class FontLoader {
       const code = word.charCodeAt(0)
       if (cachedFontResolver.has(code)) return cachedFontResolver.get(code)
 
-      const font = fonts.find((font, index) => {
+      const font = fonts.find((_font, index) => {
         return (
-          !!font.charToGlyphIndex(word) ||
+          !!_font.charToGlyphIndex(word) ||
           (fallback && index === fonts.length - 1)
         )
       })
@@ -201,16 +201,16 @@ export default class FontLoader {
     }
 
     const ascender = (resolvedFont: opentype.Font, useOS2Table = false) => {
-      const ascender =
+      const _ascender =
         (useOS2Table ? resolvedFont.tables?.os2?.sTypoAscender : 0) ||
         resolvedFont.ascender
-      return (ascender / resolvedFont.unitsPerEm) * fontSize
+      return (_ascender / resolvedFont.unitsPerEm) * fontSize
     }
     const descender = (resolvedFont: opentype.Font, useOS2Table = false) => {
-      const descender =
+      const _descender =
         (useOS2Table ? resolvedFont.tables?.os2?.sTypoDescender : 0) ||
         resolvedFont.descender
-      return (descender / resolvedFont.unitsPerEm) * fontSize
+      return (_descender / resolvedFont.unitsPerEm) * fontSize
     }
 
     const resolve = (s: string) => {

@@ -120,10 +120,10 @@ export default async function satori(
 
       await Promise.all(
         Object.entries(languageCodes).flatMap(([code, segments]) =>
-          segments.map((segment) =>
-            options.loadAdditionalAsset(code, segment).then((asset) => {
+          segments.map((_segment) =>
+            options.loadAdditionalAsset(code, _segment).then((asset) => {
               if (typeof asset === 'string') {
-                images[segment] = asset
+                images[_segment] = asset
               } else if (asset) {
                 fonts.push(asset)
               }
