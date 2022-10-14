@@ -24,7 +24,9 @@
     "build:default": "tsup",
     "build:wasm": "WASM=1 tsup",
     "test": "NODE_ENV=test vitest run --outputTruncateLength=9999999",
-    "dev:test": "NODE_ENV=test vitest --update --outputTruncateLength=9999999"
+    "dev:test": "NODE_ENV=test vitest --update --outputTruncateLength=9999999",
+    "prettier-check": "prettier --check .",
+    "prettier-fix": "prettier --write ."
   },
   "repository": {
     "type": "git",
@@ -52,6 +54,7 @@
     "concurrently": "^7.3.0",
     "esbuild-plugin-replace": "^1.2.0",
     "jest-image-snapshot": "^5.2.0",
+    "prettier": "^2.7.1",
     "react": "^17.0.2",
     "tsup": "^5.11.13",
     "twrnc": "^3.4.0",
