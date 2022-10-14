@@ -99,7 +99,9 @@ export function lengthToNumber(
         return (parsed.value / 100) * baseLength
       }
     }
-  } catch (err) {}
+  } catch (err) {
+    console.error(err)
+  }
 }
 
 // Multiplies two 2d transform matrices.
@@ -127,7 +129,7 @@ export function v(
         `Invalid value for CSS property "${errorIfNotAllowedForProperty}". Allowed values: ${Object.keys(
           map
         )
-          .map((v) => `"${v}"`)
+          .map((_v) => `"${_v}"`)
           .join(' | ')}. Received: "${field}".`
       )
     }
@@ -179,9 +181,9 @@ export function buildXMLString(
 ) {
   let attrString = ''
 
-  for (const [k, v] of Object.entries(attrs)) {
-    if (typeof v !== 'undefined') {
-      attrString += ` ${k}="${v}"`
+  for (const [k, _v] of Object.entries(attrs)) {
+    if (typeof _v !== 'undefined') {
+      attrString += ` ${k}="${_v}"`
     }
   }
 
@@ -191,7 +193,7 @@ export function buildXMLString(
   return `<${type}${attrString}/>`
 }
 
-export function createLRU<T>(max: number = 20) {
+export function createLRU<T>(max = 20) {
   const store: Map<string, T> = new Map()
   function set(key: string, value: T) {
     if (store.size >= max) {
@@ -325,8 +327,8 @@ function translateSVGNodeToSVGString(
 
   const { children, ...restProps } = node.props || {}
   return `<${type}${Object.entries(restProps)
-    .map(([k, v]) => {
-      return ` ${ATTRIBUTE_MAPPING[k] || k}="${v}"`
+    .map(([k, _v]) => {
+      return ` ${ATTRIBUTE_MAPPING[k] || k}="${_v}"`
     })
     .join('')}>${translateSVGNodeToSVGString(children)}</${type}>`
 }
@@ -344,7 +346,7 @@ export function SVGNodeToImage(node: ReactElement): string {
   } = node.props || {}
 
   viewBox ||= viewbox
-  const viewBoxSize = viewBox.split(' ').map((v) => parseInt(v, 10))
+  const viewBoxSize = viewBox.split(' ').map((_v) => parseInt(_v, 10))
 
   // We directly assign the xmlns attribute here to deduplicate.
   restProps.xmlns = 'http://www.w3.org/2000/svg'
@@ -353,8 +355,8 @@ export function SVGNodeToImage(node: ReactElement): string {
   restProps.height = viewBoxSize[3]
 
   return `data:image/svg+xml;utf8,${`<svg${Object.entries(restProps)
-    .map(([k, v]) => {
-      return ` ${ATTRIBUTE_MAPPING[k] || k}="${v}"`
+    .map(([k, _v]) => {
+      return ` ${ATTRIBUTE_MAPPING[k] || k}="${_v}"`
     })
     .join('')}>${translateSVGNodeToSVGString(children)}</svg>`.replace(
     SVGSymbols,

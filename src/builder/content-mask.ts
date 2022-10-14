@@ -47,7 +47,7 @@ export default function contentMask(
     height: height - offsetTop - offsetBottom,
   }
 
-  const contentMask = buildXMLString(
+  const _contentMask = buildXMLString(
     'mask',
     { id },
     buildXMLString('rect', {
@@ -73,5 +73,5 @@ export default function contentMask(
       )
   )
 
-  return contentMask
+  return _contentMask
 }

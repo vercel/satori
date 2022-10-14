@@ -59,7 +59,7 @@ function handleWord(
       return { yRelative: 100 }
     case 'center':
       return {}
-    default:
+    default: {
       const parsedUnit = parseUnit(word, baseFontSize)
       return parsedUnit.absolute
         ? {
@@ -70,6 +70,7 @@ function handleWord(
             [unitIsHorizontal ? 'xRelative' : 'yRelative']: parsedUnit.relative,
           }
         : {}
+    }
   }
 }
 
