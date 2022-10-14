@@ -1,3 +1,4 @@
+import React from 'react'
 import styles from './introduction.module.css'
 
 export default function Introduction({ onClose }) {
@@ -11,6 +12,7 @@ export default function Introduction({ onClose }) {
         <a
           href='https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation'
           target='_blank'
+          rel='noreferrer'
         >
           our documentation
         </a>{' '}
@@ -18,6 +20,7 @@ export default function Introduction({ onClose }) {
         <a
           href='https://vercel.com/blog/introducing-vercel-og-image-generation-fast-dynamic-social-card-images'
           target='_blank'
+          rel='noreferrer'
         >
           announcement post
         </a>

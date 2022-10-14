@@ -10,6 +10,7 @@ function resolveTransforms(transforms: any[], width: number, height: number) {
   // Handle CSS transforms To make it easier, we convert different transform
   // types directly to a matrix and apply it recursively to all its children.
   // Transforms are applied from right to left.
+  // eslint-disable-next-line @typescript-eslint/no-shadow
   for (const transform of transforms) {
     const type = Object.keys(transform)[0]
     let v = transform[type]
@@ -48,7 +49,7 @@ function resolveTransforms(transforms: any[], width: number, height: number) {
       case 'scaleY':
         transformMatrix[3] = len
         break
-      case 'rotate':
+      case 'rotate': {
         const rad = (len * Math.PI) / 180
         const c = Math.cos(rad)
         const s = Math.sin(rad)
@@ -57,6 +58,7 @@ function resolveTransforms(transforms: any[], width: number, height: number) {
         transformMatrix[2] = -s
         transformMatrix[3] = c
         break
+      }
       case 'skewX':
         transformMatrix[2] = Math.tan((len * Math.PI) / 180)
         break

@@ -61,8 +61,8 @@ function handleSpecialCase(
 
   if (name === 'fontFamily') {
     return {
-      fontFamily: (value as string).split(',').map((v) => {
-        return v
+      fontFamily: (value as string).split(',').map((_v) => {
+        return _v
           .trim()
           .replace(/(^['"])|(['"]$)/g, '')
           .toLocaleLowerCase()
@@ -142,9 +142,9 @@ function handleSpecialCase(
     // To support percentages in transform (which is not supported in RN), we
     // replace them with random symbols and then replace them back after parsing.
     const symbols = {}
-    const replaced = value.replace(/(-?[\d.]+%)/g, (_, v) => {
+    const replaced = value.replace(/(-?[\d.]+%)/g, (_, _v) => {
       const symbol = ~~(Math.random() * 1e9)
-      symbols[symbol] = v
+      symbols[symbol] = _v
       return symbol + 'px'
     })
     const parsed = getStylesForProperty('transform', replaced, true)
@@ -322,13 +322,14 @@ export default function expand(
 
       for (const transform of transforms) {
         const type = Object.keys(transform)[0]
-        const v = transform[type]
+        const _v = transform[type]
 
         // Convert em, rem, vw, vh values to px (number), but keep % values.
         const len =
-          typeof v === 'string'
-            ? lengthToNumber(v, baseFontSize, baseFontSize, inheritedStyle) ?? v
-            : v
+          typeof _v === 'string'
+            ? lengthToNumber(_v, baseFontSize, baseFontSize, inheritedStyle) ??
+              _v
+            : _v
         transform[type] = len
       }
     }

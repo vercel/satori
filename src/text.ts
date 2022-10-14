@@ -216,7 +216,7 @@ export default async function* buildTextNodes(
     let lines = 0
     let remainingSpace = ''
     let remainingSpaceWidth = 0
-    let currentWidth = 0
+    let _currentWidth = 0
     let maxWidth = 0
     let lineIndex = -1
     let height = 0
@@ -257,29 +257,29 @@ export default async function* buildTextNodes(
           : measureWithCache([word])
 
         // This is the start of the line, we can ignore all spaces here.
-        if (!currentWidth) {
+        if (!_currentWidth) {
           remainingSpace = ''
           remainingSpaceWidth = 0
         }
 
         const allowedToPutAtBeginning =
           remainingSpaceWidth || ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
-        const allowedToJustify = !currentWidth || !!remainingSpaceWidth
+        const allowedToJustify = !_currentWidth || !!remainingSpaceWidth
 
         if (
           forceBreak ||
           (i &&
             allowedToPutAtBeginning &&
-            currentWidth + remainingSpaceWidth + w > width &&
+            _currentWidth + remainingSpaceWidth + w > width &&
             whiteSpace !== 'nowrap' &&
             whiteSpace !== 'pre')
         ) {
           // Start a new line, spaces can be ignored.
-          lineWidths.push(currentWidth)
+          lineWidths.push(_currentWidth)
           baselines.push(currentBaselineOffset)
           lines++
           height += currentLineHeight
-          currentWidth = w
+          _currentWidth = w
           currentLineHeight = w ? engine.height(word) : 0
           currentBaselineOffset = w ? engine.baseline(word) : 0
           lineSegmentNumber.push(1)
@@ -293,7 +293,7 @@ export default async function* buildTextNodes(
           }
         } else {
           // It fits into the current line.
-          currentWidth += remainingSpaceWidth + w
+          _currentWidth += remainingSpaceWidth + w
           const glyphHeight = engine.height(word)
           if (glyphHeight > currentLineHeight) {
             // Use the baseline of the highest segment as the baseline of the line.
@@ -312,19 +312,19 @@ export default async function* buildTextNodes(
           lineIndex++
         }
 
-        maxWidth = Math.max(maxWidth, currentWidth)
+        maxWidth = Math.max(maxWidth, _currentWidth)
         wordsInLayout[i] = {
           y: height,
-          x: currentWidth - w,
+          x: _currentWidth - w,
           width: w,
           line: lines,
           lineIndex,
         }
       }
     }
-    if (currentWidth) {
+    if (_currentWidth) {
       lines++
-      lineWidths.push(currentWidth)
+      lineWidths.push(_currentWidth)
       baselines.push(currentBaselineOffset)
       height += currentLineHeight
     }
@@ -587,7 +587,7 @@ export default async function* buildTextNodes(
           })
         : ''
 
-    if (!!_inheritedBackgroundClipTextPath) {
+    if (_inheritedBackgroundClipTextPath) {
       backgroundClipDef = buildXMLString('path', {
         d: mergedPath,
         transform: matrix ? matrix : undefined,
