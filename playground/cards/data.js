@@ -413,8 +413,8 @@ export default {
     fontWeight: 600,
     textAlign: 'center',
     margin: 20,
-    color: 'black',
-    backgroundColor: 'white',
+    color: 'white',
+    backgroundColor: 'pink',
     height: '100%',
     width: '100%'
   }}
@@ -429,7 +429,7 @@ export default {
   <div style={{ display: 'flex', color: 'hsla(120, 100%, 25%, 0.3)' }}>HSLA</div>
   <div style={{ display: 'flex', color: 'brown' }}>Predefined Color Names</div>
   <div style={{ display: 'flex', color: 'currentcolor' }}>
-    The <code>currentcolor</code> Keyword
+    The "currentcolor" Keyword
   </div>
 </div>`,
 }
