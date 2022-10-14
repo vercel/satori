@@ -638,6 +638,19 @@ const LiveSatori = withLive(function ({ live }) {
         <h2 className='title'>Configurations</h2>
         <div className='content'>
           <div className='control'>
+            <label htmlFor='aspect-ratio'>Aspect Ratio</label>
+            <div>
+              <button type='button' onClick={() => {
+                setWidth(1000)
+                setHeight(1000)
+              }}>1:1</button>
+              <button type='button' onClick={() => {
+                setWidth(1000)
+                setHeight((1000 * 9) / 16)
+              }}>16:9</button>
+            </div>
+          </div>
+          <div className='control'>
             <label htmlFor='width'>Container Width</label>
             <div>
               <input
