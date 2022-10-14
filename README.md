@@ -26,6 +26,7 @@ const svg = await satori(
     fonts: [
       {
         name: 'Roboto',
+        //You can use fs in Node.js, or fetch in the browser to load the font. Both Buffer and ArrayBuffer are supported.
         data: robotoArrayBuffer,
         weight: 400,
         style: 'normal',
