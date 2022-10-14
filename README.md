@@ -14,10 +14,8 @@ Satori supports the JSX syntax, which makes it very straightforward to use. Here
 
 ```jsx
 // api.jsx
-import fs from 'fs/promises'
 import satori from 'satori'
 
-const robotoArrayBuffer = await fs.readFile('./assets/Roboto-Regular.ttf')
 const svg = await satori(
   <div style={{ color: 'black' }}>hello, world</div>,
   {
@@ -26,7 +24,7 @@ const svg = await satori(
     fonts: [
       {
         name: 'Roboto',
-        //You can use fs in Node.js, or fetch in the browser to load the font. Both Buffer and ArrayBuffer are supported.
+        // You can use `fs` in Node.js, or `fetch` in the browser to load the font file as `data` here. Both Buffer and ArrayBuffer are supported.
         data: robotoArrayBuffer,
         weight: 400,
         style: 'normal',
