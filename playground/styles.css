@@ -212,6 +212,8 @@ code {
   z-index: 1;
   user-select: none;
   margin-bottom: 1px;
+  white-space: nowrap;
+  max-width: calc(100% - 15px);
 }
 
 .tab {
@@ -223,6 +225,9 @@ code {
   border-top-right-radius: 6px;
   padding: 2px 10px;
   cursor: default;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  overflow: hidden;
 }
 .tab:hover {
   background: #fafafa;
@@ -304,15 +309,6 @@ code {
 }
 .controller .copyright {
   flex: 1;
-}
-.tabs-container {
-  white-space: nowrap;
-  max-width: calc(100% - 15px);
-}
-.tab {
-  text-overflow: ellipsis;
-  max-width: 100%;
-  overflow: hidden;
 }
 
 @media screen and (max-width: 999px) {
