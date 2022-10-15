@@ -471,12 +471,12 @@ const LiveSatori = withLive(function ({ live }) {
                 if (width * height <= 1440000) {
                   setTimeout(async () => {
                     if (cancelled) return
-                    const url = await renderPNG({
+                    const _url = await renderPNG({
                       svg: _result,
                       width: width * 2,
                     })
                     if (cancelled) return
-                    setObjectURL(url)
+                    setObjectURL(_url)
                   }, 20)
                 }
               }
