@@ -100,10 +100,6 @@ export default async function rect(
     type = 'path'
   }
 
-  const clip = overflow(
-    { left, top, width, height, path, id, matrix },
-    style as Record<string, number>
-  )
   const clipPathId = style._inheritedClipPathId as number | undefined
   const overflowMaskId = style._inheritedMaskId as number | undefined
 
@@ -130,6 +126,11 @@ export default async function rect(
       ? `url(#${clipPathId})`
       : undefined
 
+  const clip = overflow(
+    { left, top, width, height, path, id, matrix, currentClipPath, src },
+    style as Record<string, number>
+  )
+
   // Each background generates a new rectangle.
   // @TODO: Not sure if this is the best way to do it, maybe <pattern> with
   // multiple <image>s is better.
@@ -149,6 +150,20 @@ export default async function rect(
       })
     )
     .join('')
+
+  const borderClip = getBorderClipPath(
+    {
+      id,
+      left,
+      top,
+      width,
+      height,
+      currentClipPathId: clipPathId,
+      borderPath: path,
+      borderType: type,
+    },
+    style
+  )
 
   // If it's an image (<img>) tag, we add an extra layer of the image itself.
   if (isImage) {
@@ -180,27 +195,12 @@ export default async function rect(
       height: height - offsetTop - offsetBottom,
       href: src,
       preserveAspectRatio,
-      opacity,
       transform: matrix ? matrix : undefined,
-      'clip-path': currentClipPath,
       style: cssFilter ? `filter:${cssFilter}` : undefined,
-      mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
+      'clip-path': `url(#satori_cp-${id})`,
+      mask: `url(#satori_om-${id})`,
     })
   }
-
-  const borderClip = getBorderClipPath(
-    {
-      id,
-      left,
-      top,
-      width,
-      height,
-      currentClipPathId: clipPathId,
-      borderPath: path,
-      borderType: type,
-    },
-    style
-  )
 
   if (borderClip) {
     defs += borderClip[0]

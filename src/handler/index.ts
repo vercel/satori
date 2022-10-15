@@ -62,12 +62,8 @@ export default async function handler(
       ((style.paddingTop as number) || 0) +
       ((style.paddingBottom as number) || 0)
 
-    let contentBoxWidth =
-      style.width ||
-      (typeof props.width !== 'undefined' ? parseInt(props.width) : undefined)
-    let contentBoxHeight =
-      style.height ||
-      (typeof props.height !== 'undefined' ? parseInt(props.height) : undefined)
+    let contentBoxWidth = style.width || props.width
+    let contentBoxHeight = style.height || props.height
     const isAbsoluteContentSize =
       typeof contentBoxWidth !== 'string' &&
       typeof contentBoxHeight !== 'string'
@@ -93,7 +89,7 @@ export default async function handler(
           // Note: this doesn't work well if there are paddings or borders.
           node.setAspectRatio(1 / r)
         }
-      } else {
+      } else if (contentBoxHeight === undefined) {
         if (typeof contentBoxWidth === 'number') {
           contentBoxHeight = contentBoxWidth * r
         } else {
