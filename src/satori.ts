@@ -31,7 +31,11 @@ export default async function satori(
   options: SatoriOptions
 ): Promise<string> {
   const Yoga = getYoga()
-  if (!Yoga) throw new Error('Satori is not initialized.')
+  if (!Yoga || !Yoga.Node) {
+    throw new Error(
+      'Satori is not initialized: expect `yoga` to be loaded, got ' + Yoga
+    )
+  }
 
   let font: FontLoader
   if (fontCache.has(options.fonts)) {

@@ -14,6 +14,8 @@ export default function overflow(
     path,
     matrix,
     id,
+    currentClipPath,
+    src,
   }: {
     left: number
     top: number
@@ -22,10 +24,12 @@ export default function overflow(
     path: string
     matrix: string | undefined
     id: string
+    currentClipPath: string | string
+    src?: string
   },
   style: Record<string, string | number>
 ) {
-  if (style.overflow !== 'hidden') {
+  if (style.overflow !== 'hidden' && !src) {
     return ''
   }
 
@@ -37,7 +41,7 @@ export default function overflow(
       width,
       height,
       matrix,
-      borderOnly: true,
+      borderOnly: src ? false : true,
     },
     style
   )
@@ -47,9 +51,7 @@ export default function overflow(
       'clipPath',
       {
         id: `satori_cp-${id}`,
-        'clip-path': style._inheritedClipPathId
-          ? `url(#${style._inheritedClipPathId})`
-          : undefined,
+        'clip-path': currentClipPath,
       },
       buildXMLString(path ? 'path' : 'rect', {
         x: left,

@@ -256,6 +256,12 @@ export default async function* buildTextNodes(
           ? (parentStyle.fontSize as number)
           : measureWithCache([word])
 
+        // When starting a new line from an empty line, we should push one extra
+        // line height.
+        if (forceBreak && currentLineHeight === 0) {
+          currentLineHeight = engine.height(word)
+        }
+
         // This is the start of the line, we can ignore all spaces here.
         if (!_currentWidth) {
           remainingSpace = ''

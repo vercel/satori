@@ -99,8 +99,8 @@ export function lengthToNumber(
         return (parsed.value / 100) * baseLength
       }
     }
-  } catch (err) {
-    console.error(err)
+  } catch {
+    // Not a length unit, silently ignore.
   }
 }
 
