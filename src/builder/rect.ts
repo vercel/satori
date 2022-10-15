@@ -16,6 +16,7 @@ export default async function rect(
     width,
     height,
     isInheritingTransform,
+    src,
     debug,
   }: {
     id: string
@@ -24,11 +25,14 @@ export default async function rect(
     width: number
     height: number
     isInheritingTransform: boolean
+    src?: string
     debug?: boolean
   },
   style: Record<string, number | string>
 ) {
   if (style.display === 'none') return ''
+
+  const isImage = !!src
 
   let type: 'rect' | 'path' = 'rect'
   let matrix = ''
@@ -145,6 +149,44 @@ export default async function rect(
       })
     )
     .join('')
+
+  // If it's an image (<img>) tag, we add an extra layer of the image itself.
+  if (isImage) {
+    // We need to subtract the border and padding sizes from the image size.
+    const offsetLeft =
+      ((style.borderLeftWidth as number) || 0) +
+      ((style.paddingLeft as number) || 0)
+    const offsetTop =
+      ((style.borderTopWidth as number) || 0) +
+      ((style.paddingTop as number) || 0)
+    const offsetRight =
+      ((style.borderRightWidth as number) || 0) +
+      ((style.paddingRight as number) || 0)
+    const offsetBottom =
+      ((style.borderBottomWidth as number) || 0) +
+      ((style.paddingBottom as number) || 0)
+
+    const preserveAspectRatio =
+      style.objectFit === 'contain'
+        ? 'xMidYMid'
+        : style.objectFit === 'cover'
+        ? 'xMidYMid slice'
+        : 'none'
+
+    shape += buildXMLString('image', {
+      x: left + offsetLeft,
+      y: top + offsetTop,
+      width: width - offsetLeft - offsetRight,
+      height: height - offsetTop - offsetBottom,
+      href: src,
+      preserveAspectRatio,
+      opacity,
+      transform: matrix ? matrix : undefined,
+      'clip-path': currentClipPath,
+      style: cssFilter ? `filter:${cssFilter}` : undefined,
+      mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
+    })
+  }
 
   const borderClip = getBorderClipPath(
     {

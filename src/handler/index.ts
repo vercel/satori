@@ -50,47 +50,66 @@ export default async function handler(
 
     // Before calculating the missing width or height based on the image ratio,
     // we must subtract the padding and border due to how box model works.
-    let extraWidthHorizontal =
+    // TODO: Ensure these are absolute length values, not relative values.
+    let extraHorizontal =
       ((style.borderLeftWidth as number) || 0) +
       ((style.borderRightWidth as number) || 0) +
       ((style.paddingLeft as number) || 0) +
       ((style.paddingRight as number) || 0)
-    let extraWidthVertical =
+    let extraVertical =
       ((style.borderTopWidth as number) || 0) +
       ((style.borderBottomWidth as number) || 0) +
       ((style.paddingTop as number) || 0) +
       ((style.paddingBottom as number) || 0)
 
-    let displayedWidth = style.width || props.width
-    let displayedHeight = style.height || props.height
-    const calculateInsetRatio =
-      typeof displayedWidth !== 'string' && typeof displayedHeight !== 'string'
+    let contentBoxWidth =
+      style.width ||
+      (typeof props.width !== 'undefined' ? parseInt(props.width) : undefined)
+    let contentBoxHeight =
+      style.height ||
+      (typeof props.height !== 'undefined' ? parseInt(props.height) : undefined)
+    const isAbsoluteContentSize =
+      typeof contentBoxWidth !== 'string' &&
+      typeof contentBoxHeight !== 'string'
 
-    if (displayedWidth !== undefined && calculateInsetRatio) {
-      displayedWidth -= extraWidthHorizontal
+    if (typeof contentBoxWidth === 'number' && isAbsoluteContentSize) {
+      contentBoxWidth -= extraHorizontal
     }
-    if (displayedHeight !== undefined && calculateInsetRatio) {
-      displayedHeight -= extraWidthVertical
-    }
-
-    if (displayedWidth === undefined && displayedHeight === undefined) {
-      displayedWidth = imageWidth
-      displayedHeight = imageHeight
-    }
-
-    if (displayedWidth === undefined) {
-      node.setAspectRatio(1 / r)
-    }
-    if (displayedHeight === undefined) {
-      node.setAspectRatio(1 / r)
+    if (typeof contentBoxHeight === 'number' && isAbsoluteContentSize) {
+      contentBoxHeight -= extraVertical
     }
 
-    style.width = calculateInsetRatio
-      ? displayedWidth + extraWidthHorizontal
-      : displayedWidth
-    style.height = calculateInsetRatio
-      ? displayedHeight + extraWidthVertical
-      : displayedHeight
+    // When no content size is defined, we use the image size as the content size.
+    if (contentBoxWidth === undefined && contentBoxHeight === undefined) {
+      contentBoxWidth = imageWidth
+      contentBoxHeight = imageHeight
+    } else {
+      // If only one sisde is not defined, we can calculate the other one.
+      if (contentBoxWidth === undefined) {
+        if (typeof contentBoxHeight === 'number') {
+          contentBoxWidth = contentBoxHeight / r
+        } else {
+          // If it uses a relative value (e.g. 50%), we can rely on aspect ratio.
+          // Note: this doesn't work well if there are paddings or borders.
+          node.setAspectRatio(1 / r)
+        }
+      } else {
+        if (typeof contentBoxWidth === 'number') {
+          contentBoxHeight = contentBoxWidth * r
+        } else {
+          // If it uses a relative value (e.g. 50%), we can rely on aspect ratio.
+          // Note: this doesn't work well if there are paddings or borders.
+          node.setAspectRatio(1 / r)
+        }
+      }
+    }
+
+    style.width = isAbsoluteContentSize
+      ? (contentBoxWidth as number) + extraHorizontal
+      : contentBoxWidth
+    style.height = isAbsoluteContentSize
+      ? (contentBoxWidth as number) + extraVertical
+      : contentBoxHeight
     style.__src = resolvedSrc
   }
 
