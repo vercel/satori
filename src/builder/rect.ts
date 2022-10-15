@@ -74,7 +74,7 @@ export default async function rect(
     ) {
       const background = (style.backgroundImage as any)[index]
       const image = await backgroundImage(
-        { id: id + '_' + index, width, height },
+        { id: id + '_' + index, width, height, left, top },
         background
       )
       if (image) {
