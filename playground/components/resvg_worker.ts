@@ -1,5 +1,3 @@
-console.log('hei')
-
 import * as resvg from '@resvg/resvg-wasm'
 
 fetch('/resvg.wasm').then((res) => resvg.initWasm(res))
