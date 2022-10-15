@@ -447,6 +447,7 @@ const LiveSatori = withLive(function ({ live }) {
                   value: width,
                 },
               })
+              // Shall we do this in a worker or iframe so it doesn't block the editor?
               const pngData = renderer.render()
               setObjectURL(
                 URL.createObjectURL(new Blob([pngData], { type: 'image/png' }))
