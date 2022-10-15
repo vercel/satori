@@ -17,7 +17,6 @@ import handler from './handler'
 import FontLoader from './font'
 import layoutText from './text'
 import rect from './builder/rect'
-import image from './builder/image'
 
 export interface LayoutContext {
   id: string
@@ -174,7 +173,7 @@ export default async function* layout(
   // Generate the rendered markup for the current node.
   if (type === 'img') {
     const src = computedStyle.__src as string
-    baseRenderResult = image(
+    baseRenderResult = await rect(
       {
         id,
         left,
@@ -191,7 +190,7 @@ export default async function* layout(
     // When entering a <svg> node, we need to convert it to a <img> with the
     // SVG data URL embedded.
     const src = SVGNodeToImage(element)
-    baseRenderResult = image(
+    baseRenderResult = await rect(
       {
         id,
         left,

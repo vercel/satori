@@ -1,0 +1,64 @@
+.container {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  width: 700px;
+  min-height: 200px;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 40px);
+  margin: auto;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 20px;
+  color: #ddd;
+  font-size: 14px;
+  backdrop-filter: blur(24px);
+  background-color: rgb(0 0 0 / 88%);
+  box-shadow: 0 20px 40px #0000005c, 0 0 0 1px #868686;
+  z-index: 4;
+  opacity: 0;
+  line-height: 1.6;
+  letter-spacing: -0.01rem;
+  word-spacing: -0.12rem;
+  animation: fadein 0.4s ease 0.4s forwards;
+}
+
+.container p {
+  margin: 0;
+  margin-bottom: 1em;
+}
+
+.container code {
+  background-color: #4a4a4a;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.container button {
+  appearance: none;
+  border: none;
+  background: white;
+  border-radius: 5px;
+  padding: 8px 12px;
+  width: 120px;
+  align-self: flex-start;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.container button:hover {
+  background: #ccc;
+}
+
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

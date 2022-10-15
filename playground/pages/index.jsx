@@ -1,3 +1,4 @@
+import React from 'react'
 import satori from 'satori'
 import { LiveProvider, LiveContext, withLive } from 'react-live'
 import { useEffect, useState, useRef, useContext } from 'react'
@@ -6,7 +7,6 @@ import Editor, { useMonaco } from '@monaco-editor/react'
 import toast, { Toaster } from 'react-hot-toast'
 import copy from 'copy-to-clipboard'
 import packageJson from 'satori/package.json'
-import * as resvg from '@resvg/resvg-wasm'
 import * as fflate from 'fflate'
 import { Base64 } from 'js-base64'
 import PDFDocument from 'pdfkit/js/pdfkit.standalone.js'
@@ -15,6 +15,7 @@ import blobStream from 'blob-stream'
 import { createIntlSegmenterPolyfill } from 'intl-segmenter-polyfill'
 
 import { loadEmoji, getIconCode } from '../utils/twemoji'
+import Introduction from '../components/introduction'
 
 import cards from '../cards/data'
 
@@ -114,14 +115,33 @@ const spinner = (
   </svg>
 )
 
-async function initResvg() {
+function initResvgWorker() {
   if (typeof window === 'undefined') return
-  if (globalThis.resvgInitialized) return
-  globalThis.resvgInitialized = true
 
-  // Can always be delayed a bit to unblock other resources.
-  await new Promise((resolve) => setTimeout(resolve, 500))
-  await fetch('/resvg.wasm').then((res) => resvg.initWasm(res))
+  const worker = new Worker(
+    new URL('../components/resvg_worker.ts', import.meta.url)
+  )
+
+  const pending = new Map()
+  worker.onmessage = (e) => {
+    const { _id, url } = e.data
+    const resolve = pending.get(_id)
+    if (resolve) {
+      resolve(url)
+      pending.delete(_id)
+    }
+  }
+
+  return async (msg) => {
+    const _id = Math.random()
+    worker.postMessage({
+      ...msg,
+      _id,
+    })
+    return new Promise((resolve) => {
+      pending.set(_id, resolve)
+    })
+  }
 }
 
 async function init() {
@@ -172,7 +192,7 @@ async function init() {
 }
 
 const loadFonts = init()
-const loadResvg = initResvg()
+const renderPNG = initResvgWorker()
 
 function Tabs({ options, onChange, children }) {
   const [active, setActive] = useState(options[0])
@@ -307,17 +327,19 @@ function LiveEditor({ id }) {
         editedCards[id] = newCode
         onChange(newCode)
       }}
-      onMount={async (editor, monaco) => {
-        const modelUri = monaco.Uri.file('satori.tsx')
-        const codeModel = monaco.editor.createModel(
+      onMount={async (editor, _monaco) => {
+        const modelUri = _monaco.Uri.file('satori.tsx')
+        const codeModel = _monaco.editor.createModel(
           editedCards[id],
           'typescript',
           modelUri // Pass the file name to the model here.
         )
-        monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+        _monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
           jsx: 'react',
         })
-        monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({})
+        _monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions(
+          {}
+        )
         editor.setModel(codeModel)
       }}
       options={{
@@ -436,34 +458,28 @@ const LiveSatori = withLive(function ({ live }) {
                 loadDynamicAsset(emojiType, ...args),
             })
             if (renderType === 'png') {
-              await loadResvg
-              const renderer = new resvg.Resvg(_result, {
-                fitTo: {
-                  mode: 'width',
-                  value: width,
-                },
+              const url = await renderPNG({
+                svg: _result,
+                width,
               })
-              const pngData = renderer.render()
-              setObjectURL(
-                URL.createObjectURL(new Blob([pngData], { type: 'image/png' }))
-              )
-              // After rendering the PNG @1x quickly, we render the PNG @2x for
-              // the playground only to make it look less blurry.
-              setTimeout(() => {
-                if (cancelled) return
-                const renderer = new resvg.Resvg(_result, {
-                  fitTo: {
-                    mode: 'width',
-                    value: width * 2,
-                  },
-                })
-                const pngData = renderer.render()
-                setObjectURL(
-                  URL.createObjectURL(
-                    new Blob([pngData], { type: 'image/png' })
-                  )
-                )
-              }, 20)
+              if (!cancelled) {
+                setObjectURL(url)
+
+                // After rendering the PNG @1x quickly, we render the PNG @2x for
+                // the playground only to make it look less blurry.
+                // We only do that for images that are not too big (1200^2).
+                if (width * height <= 1440000) {
+                  setTimeout(async () => {
+                    if (cancelled) return
+                    const _url = await renderPNG({
+                      svg: _result,
+                      width: width * 2,
+                    })
+                    if (cancelled) return
+                    setObjectURL(_url)
+                  }, 20)
+                }
+              }
             }
             if (renderType === 'pdf') {
               const doc = new PDFDocument({
@@ -484,9 +500,12 @@ const LiveSatori = withLive(function ({ live }) {
             }
             setRenderError(null)
           } catch (e) {
+            console.error(e)
             setRenderError(e.message)
             return null
           }
+        } else {
+          setRenderError(null)
         }
         _renderedTimeSpent =
           (typeof performance !== 'undefined' ? performance : Date).now() -
@@ -528,9 +547,9 @@ const LiveSatori = withLive(function ({ live }) {
           'HTML (Native)',
         ]}
         onChange={(text) => {
-          const renderType = text.split(' ')[0].toLowerCase()
+          const _renderType = text.split(' ')[0].toLowerCase()
           // 'svg' | 'png' | 'html' | 'pdf'
-          setRenderType(renderType)
+          setRenderType(_renderType)
         }}
       >
         <div className='preview-card'>
@@ -552,6 +571,7 @@ const LiveSatori = withLive(function ({ live }) {
           >
             {renderType === 'html' ? (
               <iframe
+                key='html'
                 ref={(node) => {
                   if (node) {
                     setIframeNode(node.contentWindow?.document?.body)
@@ -588,6 +608,7 @@ const LiveSatori = withLive(function ({ live }) {
               />
             ) : renderType === 'pdf' && objectURL ? (
               <iframe
+                key='pdf'
                 width={width}
                 height={height}
                 src={
@@ -613,7 +634,7 @@ const LiveSatori = withLive(function ({ live }) {
               {renderType === 'pdf' || renderType === 'png' ? (
                 <>
                   {' '}
-                  <a href={objectURL} target='_blank'>
+                  <a href={objectURL} target='_blank' rel='noreferrer'>
                     (View in New Tab ↗)
                   </a>
                 </>
@@ -731,7 +752,8 @@ const LiveSatori = withLive(function ({ live }) {
                   : undefined
               }
               target={result ? '_blank' : ''}
-              download={result ? 'satori-playground.svg' : false}
+              download={result ? 'image.svg' : false}
+              rel='noreferrer'
             >
               Export SVG
             </a>
@@ -749,7 +771,13 @@ const LiveSatori = withLive(function ({ live }) {
           </div>
           <div className='control'>
             <label>Satori Version</label>
-            <span>{packageJson.version}</span>
+            <a
+              href='https://github.com/vercel/satori'
+              target='_blank'
+              rel='noreferrer'
+            >
+              {packageJson.version}
+            </a>
           </div>
         </div>
       </div>
@@ -802,14 +830,41 @@ function ResetCode({ activeCard }) {
 
 export default function Playground() {
   const [activeCard, setActiveCard] = useState(cardNames[0])
+  const [showIntroduction, setShowIntroduction] = useState(false)
+
+  useEffect(() => {
+    try {
+      const hasVisited = localStorage.getItem('_vercel_og_playground_visited')
+      if (hasVisited) return
+    } catch (e) {
+      console.error(e)
+    }
+
+    setShowIntroduction(true)
+  }, [])
 
   return (
     <>
+      {showIntroduction ? (
+        <Introduction
+          onClose={() => {
+            setShowIntroduction(false)
+            localStorage.setItem('_vercel_og_playground_visited', '1')
+          }}
+        />
+      ) : null}
       <nav>
-        <h1>Satori Playground</h1>
+        <h1>
+          <svg viewBox='0 0 75 65' fill='#000' height='12' title='Vercel'>
+            <path d='M37.59.25l36.95 64H.64l36.95-64z'></path>
+          </svg>
+          OG Image Playground
+        </h1>
         <ul>
           <li>
-            <a href='https://github.com/vercel/satori'>Documentation</a>
+            <a href='https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation'>
+              Docs
+            </a>
           </li>
           <li>
             <a href='https://nextjs.org/discord'>Discord</a>

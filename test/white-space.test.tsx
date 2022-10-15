@@ -201,4 +201,51 @@ describe('white-space', () => {
       expect(toImage(svg, 20)).toMatchImageSnapshot()
     })
   })
+
+  describe('with `\\n` in content', () => {
+    it('should render `\\n` as a whitespace', async () => {
+      const svg = await satori(<div style={{}}>{`hello\nworld`}</div>, {
+        width: 100,
+        height: 100,
+        fonts,
+      })
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should render `\\n` as a line break with `pre`', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            whiteSpace: 'pre',
+          }}
+        >
+          {`hello\nworld`}
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should render consecutive line breaks with `pre`', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            whiteSpace: 'pre',
+          }}
+        >
+          {`hello\n\nworld`}
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+  })
 })

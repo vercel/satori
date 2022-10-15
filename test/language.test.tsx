@@ -3,7 +3,6 @@ import { it, describe, expect } from 'vitest'
 import { detectLanguageCode } from '../src/language'
 
 describe('detectLanguageCode', () => {
-
   it('should detect emoji', async () => {
     expect(detectLanguageCode('🔺')).toBe('emoji')
     expect(detectLanguageCode('😀')).toBe('emoji')
@@ -59,9 +58,9 @@ describe('detectLanguageCode', () => {
 
   it('should detect devanagari', async () => {
     expect(detectLanguageCode('नमस्ते')).toBe('devanagari')
-  });
+  })
 
   it('should detect unknown', async () => {
     expect(detectLanguageCode('wat')).toBe('unknown')
-  });
+  })
 })

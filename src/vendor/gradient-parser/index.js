@@ -4,6 +4,10 @@
 
 var GradientParser = GradientParser || {}
 
+// https://w3c.github.io/csswg-drafts/css-images-3/#linear-gradients
+// It may be omitted; if so, it defaults to to bottom.
+const FALLBACK_LINEAR_ORIENTATION = { type: 'directional', value: 'bottom' }
+
 GradientParser.parse = (function () {
   var tokens = {
     linearGradient: /^(\-(webkit|o|ms|moz)\-)?(linear\-gradient)/i,
@@ -58,12 +62,14 @@ GradientParser.parse = (function () {
       matchGradient(
         'linear-gradient',
         tokens.linearGradient,
-        matchLinearOrientation
+        matchLinearOrientation,
+        FALLBACK_LINEAR_ORIENTATION
       ) ||
       matchGradient(
         'repeating-linear-gradient',
         tokens.repeatingLinearGradient,
-        matchLinearOrientation
+        matchLinearOrientation,
+        FALLBACK_LINEAR_ORIENTATION
       ) ||
       matchGradient(
         'radial-gradient',
@@ -78,13 +84,20 @@ GradientParser.parse = (function () {
     )
   }
 
-  function matchGradient(gradientType, pattern, orientationMatcher) {
+  function matchGradient(
+    gradientType,
+    pattern,
+    orientationMatcher,
+    fallbackOrientation
+  ) {
     return matchCall(pattern, function (captures) {
       var orientation = orientationMatcher()
       if (orientation) {
         if (!scan(tokens.comma)) {
           error('Missing comma before color stops')
         }
+      } else {
+        orientation = fallbackOrientation
       }
 
       return {

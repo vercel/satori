@@ -3,7 +3,10 @@
 **Satori**: Enlightened library to convert HTML and CSS to SVG.
 
 > **Note**
-> To use Satori in your project to generate PNG images like Open Graph images and social cards, check out [Vercel’s Open Graph Image Generation](https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation).
+> 
+> To use Satori in your project to generate PNG images like Open Graph images and social cards, check out our [announcement](https://vercel.com/blog/introducing-vercel-og-image-generation-fast-dynamic-social-card-images) and [Vercel’s Open Graph Image Generation →](https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation)   
+> 
+> To use it in Next.js, take a look at the [Next.js Open Graph Image Generation template →](https://vercel.com/templates/next.js/og-image-generation)
 
 ## Overview
 
@@ -21,6 +24,7 @@ const svg = await satori(
     fonts: [
       {
         name: 'Roboto',
+        // Use `fs` (Node.js only) or `fetch` to read the font as Buffer/ArrayBuffer and provide `data` here.
         data: robotoArrayBuffer,
         weight: 400,
         style: 'normal',
@@ -205,7 +209,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 <tr>
 <td colspan="2"><code>objectFit</code></td>
-<td><code>contain</code>, <code>cover</code>, <code>none</code>, default to <code>node</code></td>
+<td><code>contain</code>, <code>cover</code>, <code>none</code>, default to <code>none</code></td>
 </tr>
 
 <tr>
@@ -301,7 +305,7 @@ Satori supports dynamically loading emoji images (grapheme pictures) and fonts. 
 await satori(
   <div>👋 你好</div>,
   {
-    // `code` will be the detected language code, `emoji` if it's an Emoji, or `unknwon` if not able to tell.
+    // `code` will be the detected language code, `emoji` if it's an Emoji, or `unknown` if not able to tell.
     // `segment` will be the content to render.
     loadAdditionalAsset: async (code: string, segment: string) => {
       if (code === 'emoji') {

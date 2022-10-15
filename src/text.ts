@@ -107,7 +107,7 @@ export default async function* buildTextNodes(
 
   // Yield segments that are missing a font.
   const wordsMissingFont = canLoadAdditionalAssets
-    ? words.filter((word) => !engine.check(word))
+    ? words.filter((word) => !engine.has(word))
     : []
   yield wordsMissingFont
   if (wordsMissingFont.length) {
@@ -216,7 +216,7 @@ export default async function* buildTextNodes(
     let lines = 0
     let remainingSpace = ''
     let remainingSpaceWidth = 0
-    let currentWidth = 0
+    let _currentWidth = 0
     let maxWidth = 0
     let lineIndex = -1
     let height = 0
@@ -256,36 +256,42 @@ export default async function* buildTextNodes(
           ? (parentStyle.fontSize as number)
           : measureWithCache([word])
 
+        // When starting a new line from an empty line, we should push one extra
+        // line height.
+        if (forceBreak && currentLineHeight === 0) {
+          currentLineHeight = engine.height(word)
+        }
+
         // This is the start of the line, we can ignore all spaces here.
-        if (!currentWidth) {
+        if (!_currentWidth) {
           remainingSpace = ''
           remainingSpaceWidth = 0
         }
 
         const allowedToPutAtBeginning =
           remainingSpaceWidth || ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
-        const allowedToJustify = !currentWidth || !!remainingSpaceWidth
+        const allowedToJustify = !_currentWidth || !!remainingSpaceWidth
 
         if (
           forceBreak ||
           (i &&
             allowedToPutAtBeginning &&
-            currentWidth + remainingSpaceWidth + w > width &&
+            _currentWidth + remainingSpaceWidth + w > width &&
             whiteSpace !== 'nowrap' &&
             whiteSpace !== 'pre')
         ) {
           // Start a new line, spaces can be ignored.
-          lineWidths.push(currentWidth)
+          lineWidths.push(_currentWidth)
           baselines.push(currentBaselineOffset)
           lines++
           height += currentLineHeight
-          currentWidth = w
+          _currentWidth = w
           currentLineHeight = w ? engine.height(word) : 0
           currentBaselineOffset = w ? engine.baseline(word) : 0
           lineSegmentNumber.push(1)
           lineIndex = -1
 
-          // If it's neturally breaked, we update the max width.
+          // If it's naturally broken, we update the max width.
           // Since if there are multiple lines, the width should fit the
           // container.
           if (!forceBreak) {
@@ -293,10 +299,10 @@ export default async function* buildTextNodes(
           }
         } else {
           // It fits into the current line.
-          currentWidth += remainingSpaceWidth + w
+          _currentWidth += remainingSpaceWidth + w
           const glyphHeight = engine.height(word)
           if (glyphHeight > currentLineHeight) {
-            // Use the baseline of the heighest segment as the baseline of the line.
+            // Use the baseline of the highest segment as the baseline of the line.
             currentLineHeight = glyphHeight
             currentBaselineOffset = engine.baseline(word)
           }
@@ -312,19 +318,19 @@ export default async function* buildTextNodes(
           lineIndex++
         }
 
-        maxWidth = Math.max(maxWidth, currentWidth)
+        maxWidth = Math.max(maxWidth, _currentWidth)
         wordsInLayout[i] = {
           y: height,
-          x: currentWidth - w,
+          x: _currentWidth - w,
           width: w,
           line: lines,
           lineIndex,
         }
       }
     }
-    if (currentWidth) {
+    if (_currentWidth) {
       lines++
-      lineWidths.push(currentWidth)
+      lineWidths.push(_currentWidth)
       baselines.push(currentBaselineOffset)
       height += currentLineHeight
     }
@@ -416,7 +422,7 @@ export default async function* buildTextNodes(
     let extendedWidth = false
 
     if (lineWidths.length > 1) {
-      // Calculate alignment. Note that for flexbox, there is only text
+      // Calculate alignment. Note that for Flexbox, there is only text
       // alignment when the container is multi-line.
       const remainingWidth = containerWidth - lineWidths[line]
       if (textAlign === 'right' || textAlign === 'end') {
@@ -587,7 +593,7 @@ export default async function* buildTextNodes(
           })
         : ''
 
-    if (!!_inheritedBackgroundClipTextPath) {
+    if (_inheritedBackgroundClipTextPath) {
       backgroundClipDef = buildXMLString('path', {
         d: mergedPath,
         transform: matrix ? matrix : undefined,

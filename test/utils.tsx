@@ -4,7 +4,7 @@ import { join } from 'path'
 import { Resvg } from '@resvg/resvg-js'
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 
-import { SatoriOptions } from '../src'
+import type { SatoriOptions } from '../src'
 
 export function initFonts(callback: (fonts: SatoriOptions['fonts']) => void) {
   beforeAll(async () => {
@@ -21,7 +21,7 @@ export function initFonts(callback: (fonts: SatoriOptions['fonts']) => void) {
   })
 }
 
-export function toImage(svg: string, width: number = 100) {
+export function toImage(svg: string, width = 100) {
   const resvg = new Resvg(svg, {
     fitTo: {
       mode: 'width',
