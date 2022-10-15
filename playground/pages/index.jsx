@@ -7,7 +7,6 @@ import Editor, { useMonaco } from '@monaco-editor/react'
 import toast, { Toaster } from 'react-hot-toast'
 import copy from 'copy-to-clipboard'
 import packageJson from 'satori/package.json'
-import * as resvg from '@resvg/resvg-wasm'
 import * as fflate from 'fflate'
 import { Base64 } from 'js-base64'
 import PDFDocument from 'pdfkit/js/pdfkit.standalone.js'
@@ -116,14 +115,33 @@ const spinner = (
   </svg>
 )
 
-async function initResvg() {
+function initResvgWorker() {
   if (typeof window === 'undefined') return
-  if (globalThis.resvgInitialized) return
-  globalThis.resvgInitialized = true
 
-  // Can always be delayed a bit to unblock other resources.
-  await new Promise((resolve) => setTimeout(resolve, 500))
-  await fetch('/resvg.wasm').then((res) => resvg.initWasm(res))
+  const worker = new Worker(
+    new URL('../components/resvg_worker.ts', import.meta.url)
+  )
+
+  const pending = new Map()
+  worker.onmessage = (e) => {
+    const { _id, url } = e.data
+    const resolve = pending.get(_id)
+    if (resolve) {
+      resolve(url)
+      pending.delete(_id)
+    }
+  }
+
+  return async (msg) => {
+    const _id = Math.random()
+    worker.postMessage({
+      ...msg,
+      _id,
+    })
+    return new Promise((resolve) => {
+      pending.set(_id, resolve)
+    })
+  }
 }
 
 async function init() {
@@ -174,7 +192,7 @@ async function init() {
 }
 
 const loadFonts = init()
-const loadResvg = initResvg()
+const renderPNG = initResvgWorker()
 
 function Tabs({ options, onChange, children }) {
   const [active, setActive] = useState(options[0])
@@ -440,36 +458,27 @@ const LiveSatori = withLive(function ({ live }) {
                 loadDynamicAsset(emojiType, ...args),
             })
             if (renderType === 'png') {
-              await loadResvg
-              const renderer = new resvg.Resvg(_result, {
-                fitTo: {
-                  mode: 'width',
-                  value: width,
-                },
+              const url = await renderPNG({
+                svg: _result,
+                width,
               })
-              const pngData = renderer.render()
-              setObjectURL(
-                URL.createObjectURL(new Blob([pngData], { type: 'image/png' }))
-              )
-              // After rendering the PNG @1x quickly, we render the PNG @2x for
-              // the playground only to make it look less blurry.
-              // We only do that for images that are not too big (1200^2).
-              if (width * height <= 1440000) {
-                setTimeout(() => {
-                  if (cancelled) return
-                  const _renderer = new resvg.Resvg(_result, {
-                    fitTo: {
-                      mode: 'width',
-                      value: width * 2,
-                    },
-                  })
-                  const _pngData = _renderer.render()
-                  setObjectURL(
-                    URL.createObjectURL(
-                      new Blob([_pngData], { type: 'image/png' })
-                    )
-                  )
-                }, 20)
+              if (!cancelled) {
+                setObjectURL(url)
+
+                // After rendering the PNG @1x quickly, we render the PNG @2x for
+                // the playground only to make it look less blurry.
+                // We only do that for images that are not too big (1200^2).
+                if (width * height <= 1440000) {
+                  setTimeout(async () => {
+                    if (cancelled) return
+                    const _url = await renderPNG({
+                      svg: _result,
+                      width: width * 2,
+                    })
+                    if (cancelled) return
+                    setObjectURL(_url)
+                  }, 20)
+                }
               }
             }
             if (renderType === 'pdf') {
