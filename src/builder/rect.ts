@@ -16,6 +16,7 @@ export default async function rect(
     width,
     height,
     isInheritingTransform,
+    src,
     debug,
   }: {
     id: string
@@ -24,11 +25,14 @@ export default async function rect(
     width: number
     height: number
     isInheritingTransform: boolean
+    src?: string
     debug?: boolean
   },
   style: Record<string, number | string>
 ) {
   if (style.display === 'none') return ''
+
+  const isImage = !!src
 
   let type: 'rect' | 'path' = 'rect'
   let matrix = ''
@@ -96,10 +100,6 @@ export default async function rect(
     type = 'path'
   }
 
-  const clip = overflow(
-    { left, top, width, height, path, id, matrix },
-    style as Record<string, number>
-  )
   const clipPathId = style._inheritedClipPathId as number | undefined
   const overflowMaskId = style._inheritedMaskId as number | undefined
 
@@ -125,6 +125,11 @@ export default async function rect(
       : clipPathId
       ? `url(#${clipPathId})`
       : undefined
+
+  const clip = overflow(
+    { left, top, width, height, path, id, matrix, currentClipPath, src },
+    style as Record<string, number>
+  )
 
   // Each background generates a new rectangle.
   // @TODO: Not sure if this is the best way to do it, maybe <pattern> with
@@ -159,6 +164,43 @@ export default async function rect(
     },
     style
   )
+
+  // If it's an image (<img>) tag, we add an extra layer of the image itself.
+  if (isImage) {
+    // We need to subtract the border and padding sizes from the image size.
+    const offsetLeft =
+      ((style.borderLeftWidth as number) || 0) +
+      ((style.paddingLeft as number) || 0)
+    const offsetTop =
+      ((style.borderTopWidth as number) || 0) +
+      ((style.paddingTop as number) || 0)
+    const offsetRight =
+      ((style.borderRightWidth as number) || 0) +
+      ((style.paddingRight as number) || 0)
+    const offsetBottom =
+      ((style.borderBottomWidth as number) || 0) +
+      ((style.paddingBottom as number) || 0)
+
+    const preserveAspectRatio =
+      style.objectFit === 'contain'
+        ? 'xMidYMid'
+        : style.objectFit === 'cover'
+        ? 'xMidYMid slice'
+        : 'none'
+
+    shape += buildXMLString('image', {
+      x: left + offsetLeft,
+      y: top + offsetTop,
+      width: width - offsetLeft - offsetRight,
+      height: height - offsetTop - offsetBottom,
+      href: src,
+      preserveAspectRatio,
+      transform: matrix ? matrix : undefined,
+      style: cssFilter ? `filter:${cssFilter}` : undefined,
+      'clip-path': `url(#satori_cp-${id})`,
+      mask: `url(#satori_om-${id})`,
+    })
+  }
 
   if (borderClip) {
     defs += borderClip[0]
