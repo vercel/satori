@@ -453,21 +453,24 @@ const LiveSatori = withLive(function ({ live }) {
               )
               // After rendering the PNG @1x quickly, we render the PNG @2x for
               // the playground only to make it look less blurry.
-              setTimeout(() => {
-                if (cancelled) return
-                const _renderer = new resvg.Resvg(_result, {
-                  fitTo: {
-                    mode: 'width',
-                    value: width * 2,
-                  },
-                })
-                const _pngData = _renderer.render()
-                setObjectURL(
-                  URL.createObjectURL(
-                    new Blob([_pngData], { type: 'image/png' })
+              // We only do that for images that are not too big (1200^2).
+              if (width * height <= 1440000) {
+                setTimeout(() => {
+                  if (cancelled) return
+                  const _renderer = new resvg.Resvg(_result, {
+                    fitTo: {
+                      mode: 'width',
+                      value: width * 2,
+                    },
+                  })
+                  const _pngData = _renderer.render()
+                  setObjectURL(
+                    URL.createObjectURL(
+                      new Blob([_pngData], { type: 'image/png' })
+                    )
                   )
-                )
-              }, 20)
+                }, 20)
+              }
             }
             if (renderType === 'pdf') {
               const doc = new PDFDocument({
