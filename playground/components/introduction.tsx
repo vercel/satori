@@ -1,7 +1,11 @@
 import React from 'react'
 import styles from './introduction.module.css'
 
-export default function Introduction({ onClose }) {
+interface IProps {
+  onClose: React.MouseEventHandler<HTMLButtonElement>
+}
+
+export default function Introduction({ onClose }: IProps) {
   return (
     <div className={styles.container}>
       <p>👋 Welcome to the Vercel OG Image playground!</p>
