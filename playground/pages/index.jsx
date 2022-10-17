@@ -383,6 +383,14 @@ const LiveSatori = withLive(function ({ live }) {
     )
   }
 
+  function getAspectRatio(ratio, H_SIZE = 1000, V_SIZE = 1000) {
+    const [width, height] = ratio.split(':')
+    return {
+      w: width > height ? H_SIZE : (V_SIZE * width) / height,
+      h: height > width ? V_SIZE : (H_SIZE * height) / width,
+    }
+  }
+
   useEffect(() => {
     ;(async () => {
       setOptions({
@@ -553,8 +561,8 @@ const LiveSatori = withLive(function ({ live }) {
               renderType !== 'svg'
                 ? undefined
                 : {
-                    __html: `<div style="position:absolute;width:${width}px;height:${height}px;transform:scale(${scaleRatio});display:flex;align-items:center;justify-content:center">${result}</div>`,
-                  }
+                  __html: `<div style="position:absolute;width:${width}px;height:${height}px;transform:scale(${scaleRatio});display:flex;align-items:center;justify-content:center">${result}</div>`,
+                }
             }
           >
             {renderType === 'html' ? (
@@ -638,19 +646,6 @@ const LiveSatori = withLive(function ({ live }) {
         <h2 className='title'>Configurations</h2>
         <div className='content'>
           <div className='control'>
-            <label htmlFor='aspect-ratio'>Aspect Ratio</label>
-            <div>
-              <button type='button' onClick={() => {
-                setWidth(1000)
-                setHeight(1000)
-              }}>1:1</button>
-              <button type='button' onClick={() => {
-                setWidth(1000)
-                setHeight((1000 * 9) / 16)
-              }}>16:9</button>
-            </div>
-          </div>
-          <div className='control'>
             <label htmlFor='width'>Container Width</label>
             <div>
               <input
@@ -697,7 +692,7 @@ const LiveSatori = withLive(function ({ live }) {
             </div>
           </div>
           <div className='control'>
-            <label htmlFor='reset'>Reset Size</label>
+            <label htmlFor='reset'>Size</label>
             <button
               id='reset'
               onClick={() => {
@@ -707,6 +702,16 @@ const LiveSatori = withLive(function ({ live }) {
             >
               Reset
             </button>
+            <button type='button' onClick={() => {
+              const { w, h } = getAspectRatio('2:1')
+              setWidth(w)
+              setHeight(h)
+            }}>2:1</button>
+            <button type='button' onClick={() => {
+              const { w, h } = getAspectRatio('1.9:1')
+              setWidth(w)
+              setHeight(h)
+            }}>1.9:1</button>
           </div>
           <div className='control'>
             <label htmlFor='debug'>Debug Mode</label>
