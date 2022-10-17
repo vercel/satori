@@ -135,7 +135,13 @@ function normalizeStops(totalLength: number, colorStops: any[]) {
 }
 
 export default async function backgroundImage(
-  { id, width, height }: { id: string; width: number; height: number },
+  {
+    id,
+    width,
+    height,
+    left,
+    top,
+  }: { id: string; width: number; height: number; left: number; top: number },
   { image, size, position, repeat }: Background
 ): Promise<string[]> {
   // Default to `repeat`.
@@ -360,8 +366,8 @@ export default async function backgroundImage(
           id: `satori_bi${id}`,
           patternContentUnits: 'userSpaceOnUse',
           patternUnits: 'userSpaceOnUse',
-          x: offsets[0],
-          y: offsets[1],
+          x: offsets[0] + left,
+          y: offsets[1] + top,
           width: repeatX ? resolvedWidth : '100%',
           height: repeatY ? resolvedHeight : '100%',
         },
