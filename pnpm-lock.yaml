@@ -65,6 +65,10 @@ importers:
       '@monaco-editor/react': ^4.4.5
       '@resvg/resvg-js': ^1.4.0
       '@resvg/resvg-wasm': 2.0.0-alpha.4
+      '@types/blob-stream': ^0.1.30
+      '@types/pdfkit': ^0.12.7
+      '@types/react-dom': ^18.0.6
+      '@types/svg-to-pdfkit': ^0.1.0
       blob-stream: ^0.1.3
       copy-to-clipboard: ^3.3.2
       fflate: ^0.7.3
@@ -98,6 +102,11 @@ importers:
       satori: link:..
       svg-to-pdfkit: 0.1.8
       yoga-wasm-web: 0.1.2
+    devDependencies:
+      '@types/blob-stream': 0.1.30
+      '@types/pdfkit': 0.12.7
+      '@types/react-dom': 18.0.6
+      '@types/svg-to-pdfkit': 0.1.0
 
 packages:
 
@@ -599,6 +608,12 @@ packages:
       tslib: 2.4.0
     dev: false
 
+  /@types/blob-stream/0.1.30:
+    resolution: {integrity: sha512-Cyp7/3KZfpQXcUPhcb/+VPubLQE8YzFXbUh1/KNVzBH6sykr0AJohdIzX8YWSy0YZIg1yI75DULDeEfr7lESSg==}
+    dependencies:
+      '@types/node': 16.11.59
+    dev: true
+
   /@types/buble/0.20.1:
     resolution: {integrity: sha512-itmN3lGSTvXg9IImY5j290H+n0B3PpZST6AgEfJJDXfaMx2cdJJZro3/Ay+bZZdIAa25Z5rnoo9rHiPCbANZoQ==}
     dependencies:
@@ -627,8 +642,20 @@ packages:
     resolution: {integrity: sha512-6fbXi67I07ugNM+FExwJnfuui2hD7hraD6nqjr3UnqsbBpxSkrtmO6tBubPdNAjqRT9TVkquVkNS9IkgTtq6/w==}
     dev: true
 
+  /@types/pdfkit/0.12.7:
+    resolution: {integrity: sha512-SlUg2HLb9Cv06w/4GNmoqQoBgeP9BZO/GwDuwwzo9EnnCn5IrRXmokFULRUHeEkC/WQo5HtCYx+SRXHvYLdQMw==}
+    dependencies:
+      '@types/node': 16.11.59
+    dev: true
+
   /@types/prop-types/15.7.5:
     resolution: {integrity: sha512-JCB8C6SnDoQf0cNycqd/35A7MjcnK+ZTqE7judS6o7utxUCg6imJg3QK2qzHKszlTjcj2cn+NwMB2i96ubpj7w==}
+    dev: true
+
+  /@types/react-dom/18.0.6:
+    resolution: {integrity: sha512-/5OFZgfIPSwy+YuIBP/FgJnQnsxhZhjjrnxudMddeblOouIodEQ75X14Rr4wGSG/bknL+Omy9iWlLo1u/9GzAA==}
+    dependencies:
+      '@types/react': 17.0.50
     dev: true
 
   /@types/react/17.0.50:
@@ -641,6 +668,12 @@ packages:
 
   /@types/scheduler/0.16.2:
     resolution: {integrity: sha512-hppQEBDmlwhFAXKJX2KnWLYu5yMfi91yazPb2l+lbJiwW+wdo1gNeRA+3RgNSO39WYX2euey41KEwnqesU2Jew==}
+    dev: true
+
+  /@types/svg-to-pdfkit/0.1.0:
+    resolution: {integrity: sha512-zlsSPfZzGu/gbrTZQuiFqXswL1noRUjYXqQE4i5/fc2pMU5pkLsZtXeCQ1Bu05YIwswGF5XFwN3307RlQoioeQ==}
+    dependencies:
+      '@types/pdfkit': 0.12.7
     dev: true
 
   /@types/yoga-layout/1.9.2:

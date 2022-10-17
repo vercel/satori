@@ -1,4 +1,8 @@
-export default {
+export type Tabs = {
+  [x: string]: string
+}
+
+const playgroundTabs: Tabs = {
   helloworld: `<div
   style={{
     height: '100%',
@@ -234,3 +238,5 @@ export default {
 </div>
 `,
 }
+
+export default playgroundTabs

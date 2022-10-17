@@ -9,18 +9,19 @@ import copy from 'copy-to-clipboard'
 import packageJson from 'satori/package.json'
 import * as fflate from 'fflate'
 import { Base64 } from 'js-base64'
-import PDFDocument from 'pdfkit/js/pdfkit.standalone.js'
+import PDFDocument from 'pdfkit/js/pdfkit.standalone'
 import SVGtoPDF from 'svg-to-pdfkit'
 import blobStream from 'blob-stream'
 import { createIntlSegmenterPolyfill } from 'intl-segmenter-polyfill'
 
-import { loadEmoji, getIconCode } from '../utils/twemoji'
+import { loadEmoji, getIconCode, apis } from '../utils/twemoji'
 import Introduction from '../components/introduction'
 
-import cards from '../cards/data'
+import playgroundTabs, { Tabs } from '../cards/playground-data'
+import previewTabs from '../cards/preview-tabs'
 
-const cardNames = Object.keys(cards)
-const editedCards = { ...cards }
+const cardNames = Object.keys(playgroundTabs)
+const editedCards: Tabs = { ...playgroundTabs }
 
 // @TODO: Support font style and weights, and make this option extensible rather
 // than built-in.
@@ -40,9 +41,57 @@ const languageFontMap = {
   unknown: 'Noto+Sans',
 }
 
-function withCache(fn) {
+async function init() {
+  if (typeof window === 'undefined') return []
+
+  const [font, fontBold, fontIcon, Segmenter] =
+    window.__resource ||
+    (window.__resource = await Promise.all([
+      fetch('/inter-latin-ext-400-normal.woff').then((res) =>
+        res.arrayBuffer()
+      ),
+      fetch('/inter-latin-ext-700-normal.woff').then((res) =>
+        res.arrayBuffer()
+      ),
+      fetch('/material-icons-base-400-normal.woff').then((res) =>
+        res.arrayBuffer()
+      ),
+      !globalThis.Intl || !globalThis.Intl.Segmenter
+        ? createIntlSegmenterPolyfill(fetch('/break_iterator.wasm'))
+        : null,
+    ]))
+
+  if (Segmenter) {
+    globalThis.Intl = globalThis.Intl || {}
+    //@ts-expect-error
+    globalThis.Intl.Segmenter = Segmenter
+  }
+
+  return [
+    {
+      name: 'Inter',
+      data: font,
+      weight: 400,
+      style: 'normal',
+    },
+    {
+      name: 'Inter',
+      data: fontBold,
+      weight: 700,
+      style: 'normal',
+    },
+    {
+      name: 'Material Icons',
+      data: fontIcon,
+      weight: 400,
+      style: 'normal',
+    },
+  ]
+}
+
+function withCache(fn: Function) {
   const cache = new Map()
-  return async (...args) => {
+  return async (...args: string[]) => {
     const key = args.join('|')
     if (cache.has(key)) return cache.get(key)
     const result = await fn(...args)
@@ -51,39 +100,43 @@ function withCache(fn) {
   }
 }
 
-const loadDynamicAsset = withCache(async (emojiType, code, text) => {
-  if (code === 'emoji') {
-    // It's an emoji, load the image.
-    return (
-      `data:image/svg+xml;base64,` +
-      btoa(await (await loadEmoji(emojiType, getIconCode(text))).text())
-    )
-  }
+type LanguageCode = keyof typeof languageFontMap | 'emoji'
 
-  // Try to load from Google Fonts.
-  if (!languageFontMap[code]) code = 'unknown'
-
-  try {
-    const data = await (
-      await fetch(
-        `/api/font?font=${encodeURIComponent(
-          languageFontMap[code]
-        )}&text=${encodeURIComponent(text)}`
+const loadDynamicAsset = withCache(
+  async (emojiType: keyof typeof apis, code: LanguageCode, text: string) => {
+    if (code === 'emoji') {
+      // It's an emoji, load the image.
+      return (
+        `data:image/svg+xml;base64,` +
+        btoa(await (await loadEmoji(emojiType, getIconCode(text))).text())
       )
-    ).arrayBuffer()
-
-    if (data) {
-      return {
-        name: `satori_${code}_fallback_${text}`,
-        data,
-        weight: 400,
-        style: 'normal',
-      }
     }
-  } catch (e) {
-    console.error('Failed to load dynamic font for', text, '. Error:', e)
+
+    // Try to load from Google Fonts.
+    if (!languageFontMap[code]) code = 'unknown'
+
+    try {
+      const font = await (
+        await fetch(
+          `/api/font?font=${encodeURIComponent(
+            languageFontMap[code]
+          )}&text=${encodeURIComponent(text)}`
+        )
+      ).arrayBuffer()
+
+      if (font) {
+        return {
+          name: `satori_${code}_fallback_${text}`,
+          data: font,
+          weight: 400,
+          style: 'normal',
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load dynamic font for', text, '. Error:', e)
+    }
   }
-})
+)
 
 // https://raw.githubusercontent.com/n3r4zzurr0/svg-spinners/main/svg/90-ring.svg
 const spinner = (
@@ -132,7 +185,7 @@ function initResvgWorker() {
     }
   }
 
-  return async (msg) => {
+  return async (msg: object) => {
     const _id = Math.random()
     worker.postMessage({
       ...msg,
@@ -144,57 +197,16 @@ function initResvgWorker() {
   }
 }
 
-async function init() {
-  if (typeof window === 'undefined') return []
-
-  const [font, fontBold, fontIcon, Segmenter] =
-    window.__resource ||
-    (window.__resource = await Promise.all([
-      fetch('/inter-latin-ext-400-normal.woff').then((res) =>
-        res.arrayBuffer()
-      ),
-      fetch('/inter-latin-ext-700-normal.woff').then((res) =>
-        res.arrayBuffer()
-      ),
-      fetch('/material-icons-base-400-normal.woff').then((res) =>
-        res.arrayBuffer()
-      ),
-      !globalThis.Intl || !globalThis.Intl.Segmenter
-        ? createIntlSegmenterPolyfill(fetch('/break_iterator.wasm'))
-        : null,
-    ]))
-
-  if (Segmenter) {
-    globalThis.Intl = globalThis.Intl || {}
-    globalThis.Intl.Segmenter = Segmenter
-  }
-
-  return [
-    {
-      name: 'Inter',
-      data: font,
-      weight: 400,
-      style: 'normal',
-    },
-    {
-      name: 'Inter',
-      data: fontBold,
-      weight: 700,
-      style: 'normal',
-    },
-    {
-      name: 'Material Icons',
-      data: fontIcon,
-      weight: 400,
-      style: 'normal',
-    },
-  ]
-}
-
 const loadFonts = init()
 const renderPNG = initResvgWorker()
 
-function Tabs({ options, onChange, children }) {
+interface ITabs {
+  options: string[]
+  onChange: (value: string) => void
+  children: React.ReactNode
+}
+
+function Tabs({ options, onChange, children }: ITabs) {
   const [active, setActive] = useState(options[0])
 
   return (
@@ -219,8 +231,11 @@ function Tabs({ options, onChange, children }) {
   )
 }
 
-function LiveEditor({ id }) {
-  const { onChange } = useContext(LiveContext)
+function LiveEditor({ id }: { id: string }) {
+  const { onChange } = useContext(LiveContext) as unknown as {
+    onChange: (val: string) => void
+  }
+
   const monaco = useMonaco()
   useEffect(() => {
     if (monaco) {
@@ -324,8 +339,8 @@ function LiveEditor({ id }) {
       onChange={(newCode) => {
         // We also update the code in memory so switching tabs will preserve the
         // edited code (until refreshing).
-        editedCards[id] = newCode
-        onChange(newCode)
+        editedCards[id] = newCode ?? ''
+        onChange(newCode ?? '')
       }}
       onMount={async (editor, _monaco) => {
         const modelUri = _monaco.Uri.file('satori.tsx')
@@ -360,19 +375,29 @@ function LiveEditor({ id }) {
 
 // For sharing & resuming.
 const currentOptions = {}
-let overrideOptions
+let overrideOptions = {
+  width: 0,
+  height: 0,
+  debug: false,
+  emojiType: '',
+  fontEmbed: true,
+}
 
-const LiveSatori = withLive(function ({ live }) {
-  const [options, setOptions] = useState(null)
+const LiveSatori = withLive(function ({
+  live,
+}: {
+  live?: { element: React.ComponentType; error: string }
+}) {
+  const [options, setOptions] = useState<object | null>(null)
   const [debug, setDebug] = useState(false)
   const [fontEmbed, setFontEmbed] = useState(true)
   const [emojiType, setEmojiType] = useState('twemoji')
-  const [objectURL, setObjectURL] = useState(null)
+  const [objectURL, setObjectURL] = useState<string>('')
   const [renderType, setRenderType] = useState('svg')
   const [renderError, setRenderError] = useState(null)
   const [width, setWidth] = useState(400 * 2)
   const [height, setHeight] = useState(200 * 2)
-  const [iframeNode, setIframeNode] = useState(null)
+  const [iframeNode, setIframeNode] = useState<HTMLElement | undefined>()
   const [scaleRatio, setScaleRatio] = useState(1)
   const [loadingResources, setLoadingResources] = useState(true)
 
@@ -383,9 +408,15 @@ const LiveSatori = withLive(function ({ live }) {
       setDebug(!!overrideOptions.debug)
       setEmojiType(overrideOptions.emojiType || 'twemoji')
       setFontEmbed(!!overrideOptions.fontEmbed)
-      overrideOptions = null
+      overrideOptions = {
+        width: 0,
+        height: 0,
+        debug: false,
+        emojiType: '',
+        fontEmbed: true,
+      }
     }
-  }, [overrideOptions])
+  }, [])
 
   const sizeRef = useRef([width, height])
   sizeRef.current = [width, height]
@@ -401,11 +432,11 @@ const LiveSatori = withLive(function ({ live }) {
     )
   }
 
-  function getAspectRatio(ratio, H_SIZE = 1000, V_SIZE = 1000) {
+  function getAspectRatio(ratio: string, H_SIZE = 1000, V_SIZE = 1000) {
     const [w, h] = ratio.split(':')
     return {
-      w: w > h ? H_SIZE : (V_SIZE * w) / h,
-      h: h > w ? V_SIZE : (H_SIZE * h) / w,
+      w: w > h ? H_SIZE : (V_SIZE * Number(w)) / Number(h),
+      h: h > w ? V_SIZE : (H_SIZE * Number(h)) / Number(w),
     }
   }
 
@@ -419,7 +450,8 @@ const LiveSatori = withLive(function ({ live }) {
   }, [])
 
   useEffect(() => {
-    let timeout
+    let timeout: NodeJS.Timeout
+
     const onResize = () => {
       clearTimeout(timeout)
       timeout = setTimeout(() => {
@@ -435,7 +467,7 @@ const LiveSatori = withLive(function ({ live }) {
   }, [width, height])
 
   const [result, setResult] = useState('')
-  const [renderedTimeSpent, setRenderTime] = useState()
+  const [renderedTimeSpent, setRenderTime] = useState<number>(0)
 
   useEffect(() => {
     let cancelled = false
@@ -448,9 +480,9 @@ const LiveSatori = withLive(function ({ live }) {
       if (cancelled) return
 
       let _result = ''
-      let _renderedTimeSpent
+      let _renderedTimeSpent = 0
 
-      if (live.element && options) {
+      if (live?.element && options) {
         const start = (
           typeof performance !== 'undefined' ? performance : Date
         ).now()
@@ -462,14 +494,15 @@ const LiveSatori = withLive(function ({ live }) {
               width,
               height,
               debug,
-              loadAdditionalAsset: (...args) =>
+              loadAdditionalAsset: (...args: string[]) =>
                 loadDynamicAsset(emojiType, ...args),
             })
             if (renderType === 'png') {
-              const url = await renderPNG({
+              const url = (await renderPNG?.({
                 svg: _result,
                 width,
-              })
+              })) as string
+
               if (!cancelled) {
                 setObjectURL(url)
 
@@ -479,10 +512,11 @@ const LiveSatori = withLive(function ({ live }) {
                 if (width * height <= 1440000) {
                   setTimeout(async () => {
                     if (cancelled) return
-                    const _url = await renderPNG({
+                    const _url = (await renderPNG?.({
                       svg: _result,
                       width: width * 2,
-                    })
+                    })) as string
+
                     if (cancelled) return
                     setObjectURL(_url)
                   }, 20)
@@ -507,7 +541,7 @@ const LiveSatori = withLive(function ({ live }) {
               doc.end()
             }
             setRenderError(null)
-          } catch (e) {
+          } catch (e: any) {
             console.error(e)
             setRenderError(e.message)
             return null
@@ -534,7 +568,16 @@ const LiveSatori = withLive(function ({ live }) {
     return () => {
       cancelled = true
     }
-  }, [live.element, options, width, height, debug, emojiType, fontEmbed, renderType])
+  }, [
+    live?.element,
+    options,
+    width,
+    height,
+    debug,
+    emojiType,
+    fontEmbed,
+    renderType,
+  ])
 
   return (
     <>
@@ -548,12 +591,7 @@ const LiveSatori = withLive(function ({ live }) {
         }}
       />
       <Tabs
-        options={[
-          'SVG (Satori)',
-          'PNG (Satori + Resvg-js)',
-          'PDF (Satori + PDFKit)',
-          'HTML (Native)',
-        ]}
+        options={previewTabs}
         onChange={(text) => {
           const _renderType = text.split(' ')[0].toLowerCase()
           // 'svg' | 'png' | 'html' | 'pdf'
@@ -561,9 +599,9 @@ const LiveSatori = withLive(function ({ live }) {
         }}
       >
         <div className='preview-card'>
-          {live.error || renderError ? (
+          {live?.error || renderError ? (
             <div className='error'>
-              <pre>{live.error || renderError}</pre>
+              <pre>{live?.error || renderError}</pre>
             </div>
           ) : null}
           {loadingResources ? spinner : null}
@@ -573,8 +611,8 @@ const LiveSatori = withLive(function ({ live }) {
               renderType !== 'svg'
                 ? undefined
                 : {
-                  __html: `<div style="position:absolute;width:${width}px;height:${height}px;transform:scale(${scaleRatio});display:flex;align-items:center;justify-content:center">${result}</div>`,
-                }
+                    __html: `<div style="position:absolute;width:${width}px;height:${height}px;transform:scale(${scaleRatio});display:flex;align-items:center;justify-content:center">${result}</div>`,
+                  }
             }
           >
             {renderType === 'html' ? (
@@ -599,7 +637,7 @@ const LiveSatori = withLive(function ({ live }) {
                           __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');body{display:flex;height:100%;margin:0;font-family:Inter,sans-serif;overflow:hidden}body>div,body>div *{box-sizing:border-box;display:flex}`,
                         }}
                       />
-                      {live.element ? <live.element /> : null}
+                      {live?.element ? <live.element /> : null}
                     </>,
                     iframeNode
                   )}
@@ -642,7 +680,7 @@ const LiveSatori = withLive(function ({ live }) {
               {renderType === 'pdf' || renderType === 'png' ? (
                 <>
                   {' '}
-                  <a href={objectURL} target='_blank' rel='noreferrer'>
+                  <a href={objectURL ?? ''} target='_blank' rel='noreferrer'>
                     (View in New Tab ↗)
                   </a>
                 </>
@@ -663,7 +701,7 @@ const LiveSatori = withLive(function ({ live }) {
               <input
                 type='range'
                 value={width}
-                onChange={(e) => setWidth(e.target.value)}
+                onChange={(e) => setWidth(Number(e.target.value))}
                 min={100}
                 max={1000}
                 step={1}
@@ -672,7 +710,7 @@ const LiveSatori = withLive(function ({ live }) {
                 id='width'
                 type='number'
                 value={width}
-                onChange={(e) => setWidth(e.target.value)}
+                onChange={(e) => setWidth(Number(e.target.value))}
                 min={100}
                 max={1000}
                 step={1}
@@ -686,7 +724,7 @@ const LiveSatori = withLive(function ({ live }) {
               <input
                 type='range'
                 value={height}
-                onChange={(e) => setHeight(e.target.value)}
+                onChange={(e) => setHeight(Number(e.target.value))}
                 min={100}
                 max={1000}
                 step={1}
@@ -695,7 +733,7 @@ const LiveSatori = withLive(function ({ live }) {
                 id='height'
                 type='number'
                 value={height}
-                onChange={(e) => setHeight(e.target.value)}
+                onChange={(e) => setHeight(Number(e.target.value))}
                 min={100}
                 max={1000}
                 step={1}
@@ -714,16 +752,26 @@ const LiveSatori = withLive(function ({ live }) {
             >
               Reset
             </button>
-            <button type='button' onClick={() => {
-              const { w, h } = getAspectRatio('2:1')
-              setWidth(w)
-              setHeight(h)
-            }}>2:1</button>
-            <button type='button' onClick={() => {
-              const { w, h } = getAspectRatio('1.9:1')
-              setWidth(w)
-              setHeight(h)
-            }}>1.9:1</button>
+            <button
+              type='button'
+              onClick={() => {
+                const { w, h } = getAspectRatio('2:1')
+                setWidth(w)
+                setHeight(h)
+              }}
+            >
+              2:1
+            </button>
+            <button
+              type='button'
+              onClick={() => {
+                const { w, h } = getAspectRatio('1.9:1')
+                setWidth(w)
+                setHeight(h)
+              }}
+            >
+              1.9:1
+            </button>
           </div>
           <div className='control'>
             <label htmlFor='debug'>Debug Mode</label>
@@ -781,7 +829,7 @@ const LiveSatori = withLive(function ({ live }) {
               onClick={(e) => {
                 e.preventDefault()
                 if (!result) return false
-                window.open('').document.write(result)
+                window.open?.('')?.document.write(result)
               }}
             >
               (View in New Tab ↗)
@@ -803,25 +851,26 @@ const LiveSatori = withLive(function ({ live }) {
   )
 })
 
-function ResetCode({ activeCard }) {
-  const { onChange } = useContext(LiveContext)
+function ResetCode({ activeCard }: { activeCard: string }) {
+  const { onChange } = useContext(LiveContext) as unknown as {
+    onChange: (val: string) => void
+  }
 
   useEffect(() => {
-    const params = new URL(document.location).searchParams
+    const params = new URL(String(document.location)).searchParams
     const shared = params.get('share')
     if (shared) {
       try {
-        const data = fflate.strFromU8(
+        const decompressedData = fflate.strFromU8(
           fflate.decompressSync(Base64.toUint8Array(shared))
         )
-
         let card
         try {
-          const decoded = JSON.parse(data)
+          const decoded = JSON.parse(decompressedData)
           card = decoded.code
           overrideOptions = decoded.options
         } catch (e) {
-          card = data
+          card = decompressedData
         }
 
         editedCards[activeCard] = card
@@ -830,14 +879,14 @@ function ResetCode({ activeCard }) {
         console.error('Failed to parse shared card:', e)
       }
     }
-  }, [])
+  }, [activeCard])
 
   return (
     <button
       onClick={() => {
-        editedCards[activeCard] = cards[activeCard]
+        editedCards[activeCard] = playgroundTabs[activeCard]
         onChange(editedCards[activeCard])
-        window.history.replaceState(null, null, '/')
+        window.history.replaceState(null, '', '/')
         toast.success('Content reset')
       }}
     >
@@ -847,7 +896,7 @@ function ResetCode({ activeCard }) {
 }
 
 export default function Playground() {
-  const [activeCard, setActiveCard] = useState(cardNames[0])
+  const [activeCard, setActiveCard] = useState<string>('helloworld')
   const [showIntroduction, setShowIntroduction] = useState(false)
 
   useEffect(() => {
@@ -873,7 +922,8 @@ export default function Playground() {
       ) : null}
       <nav>
         <h1>
-          <svg viewBox='0 0 75 65' fill='#000' height='12' title='Vercel'>
+          <svg viewBox='0 0 75 65' fill='#000' height='12'>
+            <title>Vercel</title>
             <path d='M37.59.25l36.95 64H.64l36.95-64z'></path>
           </svg>
           OG Image Playground
@@ -896,7 +946,7 @@ export default function Playground() {
         <LiveProvider code={editedCards[activeCard]}>
           <Tabs
             options={cardNames}
-            onChange={(name) => {
+            onChange={(name: string) => {
               setActiveCard(name)
             }}
           >
@@ -920,7 +970,7 @@ export default function Playground() {
 
                     window.history.replaceState(
                       null,
-                      null,
+                      '',
                       '?share=' + compressed
                     )
                     copy(window.location.href)

@@ -31,7 +31,7 @@ function toCodePoint(unicodeSurrogates: string) {
   return r.join('-')
 }
 
-const apis = {
+export const apis = {
   twemoji: (code: string) =>
     'https://twemoji.maxcdn.com/v/latest/svg/' + code.toLowerCase() + '.svg',
   openmoji: 'https://cdn.jsdelivr.net/npm/@svgmoji/openmoji@2.0.0/svg/',
@@ -51,7 +51,7 @@ export function loadEmoji(type: keyof typeof apis, code: string) {
   if (!type || !apis[type]) {
     type = 'twemoji'
   }
-  
+
   const api = apis[type]
   if (typeof api === 'function') {
     return fetch(api(code))
