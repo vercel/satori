@@ -49,8 +49,7 @@ Under the hood, it handles layout calculation, font, typography and more, to gen
 ### JSX
 
 Satori only accepts JSX elements that are pure and stateless. You can use a subset of HTML
-elements (see section below), or custom React components, but React APIs such as `useState` and
-`useEffect` are not supported.
+elements (see section below), or custom React components, but React APIs such as `useState`, `useEffect`, `dangerouslySetInnerHTML` are not supported.
 
 #### Use without JSX
 
