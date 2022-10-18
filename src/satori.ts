@@ -37,6 +37,8 @@ export default async function satori(
     )
   }
 
+  options.fonts = options.fonts || []
+
   let font: FontLoader
   if (fontCache.has(options.fonts)) {
     font = fontCache.get(options.fonts)
