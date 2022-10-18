@@ -114,9 +114,9 @@ export async function resolveImageData(
             // Parse the SVG image size
             const svgTag = data.match(/<svg[^>]*>/)[0]
 
-            let viewBox = svgTag.match(/viewBox="0 0 (\d+) (\d+)"/)
-            const width = svgTag.match(/width="(\d+)"/)
-            const height = svgTag.match(/height="(\d+)"/)
+            let viewBox = svgTag.match(/viewBox="0 0 (\d*\.\d+|\d+) (\d*\.\d+|\d+)"/)
+            const width = svgTag.match(/width="(\d*\.\d+|\d+)"/)
+            const height = svgTag.match(/height="(\d*\.\d+|\d+)"/)
             if (!viewBox && width && height) {
               viewBox = [null, width[1], height[1]]
             }
