@@ -184,7 +184,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>textShadow</code></td><td>Support single shadow</td></tr>
 <tr><td><code>lineHeight</code></td><td>Supported</td></tr>
 <tr><td><code>letterSpacing</code></td><td>Supported</td></tr>
-<tr><td><code>whiteSpace</code></td><td><code>normal</code>, <code>pre</code>, <code>pre-wrap</code>, <code>nowrap</code>, defaults to <code>normal</code></td></tr>
+<tr><td><code>whiteSpace</code></td><td><code>normal</code>, <code>pre</code>, <code>pre-wrap</code>, <code>pre-line</code>, <code>nowrap</code>, defaults to <code>normal</code></td></tr>
 <tr><td><code>wordBreak</code></td><td><code>normal</code>, <code>break-all</code>, <code>break-word</code>, <code>keep-all</code>, defaults to <code>normal</code></td></tr>
 
 <tr><td rowspan="7">Background</td></tr>
