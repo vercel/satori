@@ -40,7 +40,7 @@ describe('Image', () => {
             get: () => 'image/svg+xml',
           },
           text: async () =>
-            '<svg width="116" height="100" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M57.5 0L115 100H0L57.5 0z"/></svg>',
+            '<svg width="116.15" height="100" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M57.5 0L115 100H0L57.5 0z"/></svg>',
         }
       }
 
