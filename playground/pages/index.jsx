@@ -402,10 +402,10 @@ const LiveSatori = withLive(function ({ live }) {
   }
 
   function getAspectRatio(ratio, H_SIZE = 1000, V_SIZE = 1000) {
-    const [width, height] = ratio.split(':')
+    const [w, h] = ratio.split(':')
     return {
-      w: width > height ? H_SIZE : (V_SIZE * width) / height,
-      h: height > width ? V_SIZE : (H_SIZE * height) / width,
+      w: w > h ? H_SIZE : (V_SIZE * w) / h,
+      h: h > w ? V_SIZE : (H_SIZE * h) / w,
     }
   }
 
