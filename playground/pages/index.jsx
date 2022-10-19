@@ -401,6 +401,14 @@ const LiveSatori = withLive(function ({ live }) {
     )
   }
 
+  function getAspectRatio(ratio, H_SIZE = 1000, V_SIZE = 1000) {
+    const [w, h] = ratio.split(':')
+    return {
+      w: w > h ? H_SIZE : (V_SIZE * w) / h,
+      h: h > w ? V_SIZE : (H_SIZE * h) / w,
+    }
+  }
+
   useEffect(() => {
     ;(async () => {
       setOptions({
@@ -565,8 +573,8 @@ const LiveSatori = withLive(function ({ live }) {
               renderType !== 'svg'
                 ? undefined
                 : {
-                    __html: `<div style="position:absolute;width:${width}px;height:${height}px;transform:scale(${scaleRatio});display:flex;align-items:center;justify-content:center">${result}</div>`,
-                  }
+                  __html: `<div style="position:absolute;width:${width}px;height:${height}px;transform:scale(${scaleRatio});display:flex;align-items:center;justify-content:center">${result}</div>`,
+                }
             }
           >
             {renderType === 'html' ? (
@@ -696,7 +704,7 @@ const LiveSatori = withLive(function ({ live }) {
             </div>
           </div>
           <div className='control'>
-            <label htmlFor='reset'>Reset Size</label>
+            <label htmlFor='reset'>Size</label>
             <button
               id='reset'
               onClick={() => {
@@ -706,6 +714,16 @@ const LiveSatori = withLive(function ({ live }) {
             >
               Reset
             </button>
+            <button type='button' onClick={() => {
+              const { w, h } = getAspectRatio('2:1')
+              setWidth(w)
+              setHeight(h)
+            }}>2:1</button>
+            <button type='button' onClick={() => {
+              const { w, h } = getAspectRatio('1.9:1')
+              setWidth(w)
+              setHeight(h)
+            }}>1.9:1</button>
           </div>
           <div className='control'>
             <label htmlFor='debug'>Debug Mode</label>

@@ -181,6 +181,27 @@ describe('white-space', () => {
     })
   })
 
+  describe('with `white-space: pre-line`', () => {
+    it('should always collapse spaces and preserve line breaks with `white-space: pre-line`', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            whiteSpace: 'pre-line',
+          }}
+        >
+          {'  hello \n world'}
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+          embedFont: false,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+  })
+
   describe('with `white-space: nowrap`', () => {
     it('should not wrap with `white-space: nowrap` and swallow extra spaces', async () => {
       const svg = await satori(

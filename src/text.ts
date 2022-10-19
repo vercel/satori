@@ -162,7 +162,7 @@ export default async function* buildTextNodes(
       // For `pre`, only break the line for `\n`.
       breakSegment = word[0] === '\n'
     } else if (whiteSpace !== 'nowrap') {
-      // For `normal`, `pre-wrap`, we can wrap with any word separators or
+      // For `normal`, `pre-wrap`, `pre-line` we can wrap with any word separators or
       // images.
       if (isImage || wordSeparators.includes(word[0])) {
         breakSegment = true
@@ -209,8 +209,12 @@ export default async function* buildTextNodes(
     parent.setFlexShrink(1)
   }
 
-  const shouldAlwaysBreakLine =
-    whiteSpace === 'pre-wrap' || whiteSpace === 'pre'
+  const shouldKeepLinebreak = ['pre', 'pre-wrap', 'pre-line'].includes(
+    whiteSpace as string
+  )
+  const shouldCollapseWhitespace = !['pre', 'pre-wrap'].includes(
+    whiteSpace as string
+  )
 
   textContainer.setMeasureFunc((width) => {
     let lines = 0
@@ -232,16 +236,19 @@ export default async function* buildTextNodes(
     for (let i = 0; i < words.length; i++) {
       const word = words[i]
 
+      const forceBreak = shouldKeepLinebreak && word === '\n'
+
       // A character is a word separator if `white-space` is not `pre`.
       if (
-        !shouldAlwaysBreakLine &&
+        shouldCollapseWhitespace &&
         wordSeparators.includes(
           // It's possible that the segment contains multiple separate words such
           // as `  `. We can just use the first character to detect.
           word[0]
-        )
+        ) &&
+        !forceBreak
       ) {
-        // Since `white-space` is not `pre`, multiple whitespaces are considered
+        // Multiple whitespaces are considered
         // as one.
         if (!remainingSpace) {
           remainingSpace = ' '
@@ -249,7 +256,6 @@ export default async function* buildTextNodes(
         remainingSpaceWidth = measureWithCache([remainingSpace])
         wordsInLayout[i] = null
       } else {
-        const forceBreak = shouldAlwaysBreakLine && word === '\n'
         const w = forceBreak
           ? 0
           : graphemeImages && graphemeImages[word]
