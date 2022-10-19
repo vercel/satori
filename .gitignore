@@ -3,6 +3,7 @@ node_modules
 .vercel
 .vscode
 .next
+.idea
 dist
 .pnpm-debug.log
 __diff_output__
