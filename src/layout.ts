@@ -12,6 +12,7 @@ import {
   buildXMLString,
   SVGNodeToImage,
   normalizeChildren,
+  hasDangerouslySetInnerHTMLProp,
 } from './utils'
 import handler from './handler'
 import FontLoader from './font'
@@ -83,6 +84,11 @@ export default async function* layout(
 
   // Process as element.
   const { type, props } = element
+  if (props && hasDangerouslySetInnerHTMLProp(props)) {
+    throw new Error(
+      'dangerouslySetInnerHTML property is not supported. See documentation for more information https://github.com/vercel/satori#jsx.'
+    )
+  }
   let { style, children, tw } = props || {}
 
   // Extend Tailwind styles.

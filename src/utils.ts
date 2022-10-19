@@ -19,6 +19,13 @@ export function isClass(f: Function) {
   return /^class\s/.test(f.toString())
 }
 
+export function hasDangerouslySetInnerHTMLProp(props: any) {
+  if ('dangerouslySetInnerHTML' in props) {
+    return true
+  }
+  return false
+}
+
 export function normalizeChildren(children: any) {
   const flattend =
     typeof children === 'undefined' ? [] : [].concat(children).flat(Infinity)
