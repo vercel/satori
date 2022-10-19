@@ -74,7 +74,7 @@ function handleWord(
   }
 }
 
-export default function parseTranformOrigin(
+export default function parseTransformOrigin(
   value: string | number,
   baseFontSize: number
 ): ParsedTransformOrigin {
