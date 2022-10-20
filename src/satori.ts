@@ -11,9 +11,18 @@ import getTw from './handler/tailwind'
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
 
-export interface SatoriOptions {
-  width: number
-  height: number
+export type SatoriOptions = (
+  | {
+      width: number
+      height: number
+    }
+  | {
+      width: number
+    }
+  | {
+      height: number
+    }
+) & {
   fonts: FontOptions[]
   embedFont?: boolean
   debug?: boolean
@@ -46,9 +55,12 @@ export default async function satori(
     fontCache.set(options.fonts, (font = new FontLoader(options.fonts)))
   }
 
+  const definedWidth = 'width' in options ? options.width : undefined
+  const definedHeight = 'height' in options ? options.height : undefined
+
   const root = Yoga.Node.create()
-  root.setWidth(options.width)
-  root.setHeight(options.height)
+  if (definedWidth) root.setWidth(definedWidth)
+  if (definedHeight) root.setHeight(definedHeight)
   root.setFlexDirection(Yoga.FLEX_DIRECTION_ROW)
   root.setFlexWrap(Yoga.WRAP_WRAP)
   root.setAlignContent(Yoga.ALIGN_AUTO)
@@ -72,8 +84,8 @@ export default async function satori(
       whiteSpace: 'normal',
 
       // Special style properties:
-      _viewportWidth: options.width,
-      _viewportHeight: options.height,
+      _viewportWidth: definedWidth,
+      _viewportHeight: definedHeight,
     },
     parent: root,
     font,
@@ -83,8 +95,8 @@ export default async function satori(
     canLoadAdditionalAssets: !!options.loadAdditionalAsset,
     getTwStyles: (tw, style) => {
       const twToStyles = getTw({
-        width: options.width,
-        height: options.height,
+        width: definedWidth,
+        height: definedHeight,
       })
       const twStyles = { ...twToStyles([tw] as any) }
       if (typeof twStyles.lineHeight === 'number') {
@@ -145,11 +157,14 @@ export default async function satori(
   }
 
   await handler.next()
-  root.calculateLayout(options.width, options.height, Yoga.DIRECTION_LTR)
+  root.calculateLayout(definedWidth, definedHeight, Yoga.DIRECTION_LTR)
 
   const content = (await handler.next([0, 0])).value as string
 
+  const computedWidth = root.getComputedWidth()
+  const computedHeight = root.getComputedHeight()
+
   root.freeRecursive()
 
-  return svg({ width: options.width, height: options.height, content })
+  return svg({ width: computedWidth, height: computedHeight, content })
 }
