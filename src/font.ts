@@ -14,7 +14,12 @@ export interface FontOptions {
   style?: Style
 }
 
-function compareFont(weight, style, [matchedWeight, matchedStyle], [nextWeight, nextStyle]) {
+function compareFont(
+  weight,
+  style,
+  [matchedWeight, matchedStyle],
+  [nextWeight, nextStyle]
+) {
   if (matchedWeight !== nextWeight) {
     // Put the defined weight first.
     if (!matchedWeight) return 1
@@ -32,14 +37,16 @@ function compareFont(weight, style, [matchedWeight, matchedStyle], [nextWeight, 
 
     // Less than 400.
     if (weight < 400) {
-      if (matchedWeight < weight && nextWeight < weight) return nextWeight - matchedWeight
+      if (matchedWeight < weight && nextWeight < weight)
+        return nextWeight - matchedWeight
       if (matchedWeight < weight) return -1
       if (nextWeight < weight) return 1
       return matchedWeight - nextWeight
     }
 
     // Greater than 500.
-    if (weight < matchedWeight && weight < nextWeight) return matchedWeight - nextWeight
+    if (weight < matchedWeight && weight < nextWeight)
+      return matchedWeight - nextWeight
     if (weight < matchedWeight) return -1
     if (weight < nextWeight) return 1
     return nextWeight - matchedWeight
@@ -77,7 +84,8 @@ export default class FontLoader {
 
     if (weight === 'normal') weight = 400
     if (weight === 'bold') weight = 700
-    if (typeof weight === 'string') weight = Number.parseInt(weight, 10) as Weight
+    if (typeof weight === 'string')
+      weight = Number.parseInt(weight, 10) as Weight
 
     const fonts = [...this.fonts.get(name)]
 
