@@ -77,6 +77,7 @@ export default class FontLoader {
 
     if (weight === 'normal') weight = 400
     if (weight === 'bold') weight = 700
+    if (typeof weight === 'string') weight = Number.parseInt(weight, 10) as Weight
 
     const fonts = [...this.fonts.get(name)]
 
