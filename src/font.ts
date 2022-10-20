@@ -4,7 +4,7 @@
 import opentype from '@shuding/opentype.js'
 
 type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
-type WeigthName = 'normal' | 'bold'
+type WeightName = 'normal' | 'bold'
 type Style = 'normal' | 'italic'
 
 export interface FontOptions {
@@ -68,7 +68,7 @@ export default class FontLoader {
     style,
   }: {
     name: string
-    weight: Weight | WeigthName
+    weight: Weight | WeightName
     style: Style
   }) {
     if (!this.fonts.has(name)) {
@@ -146,7 +146,7 @@ export default class FontLoader {
       fontStyle = 'normal',
     }: {
       fontFamily: string | string[]
-      fontWeight?: Weight | WeigthName
+      fontWeight?: Weight | WeightName
       fontStyle?: Style
     }
   ) {
