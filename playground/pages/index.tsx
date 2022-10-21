@@ -108,7 +108,7 @@ const loadDynamicAsset = withCache(
       // It's an emoji, load the image.
       return (
         `data:image/svg+xml;base64,` +
-        btoa(await (await loadEmoji(emojiType, getIconCode(text))).text())
+        btoa(await loadEmoji(emojiType, getIconCode(text)))
       )
     }
 

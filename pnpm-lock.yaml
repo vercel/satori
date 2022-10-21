@@ -17,6 +17,7 @@ importers:
       css-background-parser: ^0.1.0
       css-box-shadow: 1.0.0-3
       css-to-react-native: ^3.0.0
+      emoji-regex: ^10.2.1
       esbuild-plugin-replace: ^1.2.0
       eslint: ^8.25.0
       eslint-plugin-react: ^7.31.10
@@ -35,6 +36,7 @@ importers:
       css-background-parser: 0.1.0
       css-box-shadow: 1.0.0-3
       css-to-react-native: 3.0.0
+      emoji-regex: 10.2.1
       postcss-value-parser: 4.2.0
       yoga-layout-prebuilt: 1.10.0
     devDependencies:
@@ -1331,6 +1333,10 @@ packages:
     dependencies:
       component-props: 1.1.1
       component-xor: 0.0.4
+    dev: false
+
+  /emoji-regex/10.2.1:
+    resolution: {integrity: sha512-97g6QgOk8zlDRdgq1WxwgTMgEWGVAQvB5Fdpgc1MkNy56la5SKP9GsMXKDOdqwn90/41a8yPwIGk1Y6WVbeMQA==}
     dev: false
 
   /emoji-regex/8.0.0:

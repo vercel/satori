@@ -7,6 +7,11 @@
 // - https://unicode.org/reports/tr18/#General_Category_Property
 // - https://tc39.es/ecma262/multipage/text-processing.html#table-unicode-script-values
 
+import createEmojiRegex from 'emoji-regex'
+
+// Remove the "g" flag
+const emojiRegex = new RegExp(createEmojiRegex(), '')
+
 // Supported languages. The order matters.
 // Usually, this is only for "special cases" like CJKV languages as latin
 // characters are usually included in the base font, and can be safely fallback
@@ -14,10 +19,7 @@
 // found here (sort by popularity):
 // - https://fonts.google.com/noto/fonts?sort=popularity&noto.query=sans
 const code = {
-  emoji:
-    // https://stackoverflow.com/a/68146409
-    // U+E000–U+F8FF, U+F0000–U+FFFFD, U+100000–U+10FFFD is the Unicode Private Use Area (PUA). See https://en.wikipedia.org/wiki/Private_Use_Areas
-    /\p{RI}\p{RI}|\p{Emoji}(\p{EMod}+|\u{FE0F}\u{20E3}?|[\u{E0020}-\u{E007E}]+\u{E007F})?(\u{200D}\p{Emoji}(\p{EMod}+|\u{FE0F}\u{20E3}?|[\u{E0020}-\u{E007E}]+\u{E007F})?)+|\p{EPres}(\p{EMod}+|\u{FE0F}\u{20E3}?|[\u{E0020}-\u{E007E}]+\u{E007F})?|\p{Emoji}(\p{EMod}+|\u{FE0F}\u{20E3}?|[\u{E0020}-\u{E007E}]+\u{E007F})|[\u{E000}-\u{F8FF}]|[\u{F0000}-\u{FFFFD}]|[\u{100000}-\u{10FFFD}]/u,
+  emoji: emojiRegex,
   ja: /\p{scx=Hira}|\p{scx=Kana}|[，；：]/u,
   ko: /\p{scx=Hangul}/u,
   zh: /\p{scx=Han}/u,
