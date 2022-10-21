@@ -108,7 +108,7 @@ const loadDynamicAsset = withCache(
       // It's an emoji, load the image.
       return (
         `data:image/svg+xml;base64,` +
-        btoa(await (await loadEmoji(emojiType, getIconCode(text))).text())
+        btoa(await loadEmoji(emojiType, getIconCode(text)))
       )
     }
 
@@ -375,13 +375,7 @@ function LiveEditor({ id }: { id: string }) {
 
 // For sharing & resuming.
 const currentOptions = {}
-let overrideOptions = {
-  width: 0,
-  height: 0,
-  debug: false,
-  emojiType: '',
-  fontEmbed: true,
-}
+let overrideOptions: any = null
 
 const LiveSatori = withLive(function ({
   live,
@@ -408,15 +402,8 @@ const LiveSatori = withLive(function ({
       setDebug(!!overrideOptions.debug)
       setEmojiType(overrideOptions.emojiType || 'twemoji')
       setFontEmbed(!!overrideOptions.fontEmbed)
-      overrideOptions = {
-        width: 0,
-        height: 0,
-        debug: false,
-        emojiType: '',
-        fontEmbed: true,
-      }
     }
-  }, [])
+  }, [overrideOptions])
 
   const sizeRef = useRef([width, height])
   sizeRef.current = [width, height]
@@ -430,14 +417,6 @@ const LiveSatori = withLive(function ({
     setScaleRatio(
       Math.min(1, Math.min(containerWidth / w, containerHeight / h))
     )
-  }
-
-  function getAspectRatio(ratio: string, H_SIZE = 1000, V_SIZE = 1000) {
-    const [w, h] = ratio.split(':')
-    return {
-      w: w > h ? H_SIZE : (V_SIZE * Number(w)) / Number(h),
-      h: h > w ? V_SIZE : (H_SIZE * Number(h)) / Number(w),
-    }
   }
 
   useEffect(() => {
@@ -703,7 +682,7 @@ const LiveSatori = withLive(function ({
                 value={width}
                 onChange={(e) => setWidth(Number(e.target.value))}
                 min={100}
-                max={1000}
+                max={1200}
                 step={1}
               />
               <input
@@ -712,7 +691,7 @@ const LiveSatori = withLive(function ({
                 value={width}
                 onChange={(e) => setWidth(Number(e.target.value))}
                 min={100}
-                max={1000}
+                max={1200}
                 step={1}
               />
               px
@@ -726,7 +705,7 @@ const LiveSatori = withLive(function ({
                 value={height}
                 onChange={(e) => setHeight(Number(e.target.value))}
                 min={100}
-                max={1000}
+                max={1200}
                 step={1}
               />
               <input
@@ -735,7 +714,7 @@ const LiveSatori = withLive(function ({
                 value={height}
                 onChange={(e) => setHeight(Number(e.target.value))}
                 min={100}
-                max={1000}
+                max={1200}
                 step={1}
               />
               px
@@ -746,8 +725,8 @@ const LiveSatori = withLive(function ({
             <button
               id='reset'
               onClick={() => {
-                setWidth(400 * 2)
-                setHeight(200 * 2)
+                setWidth(800)
+                setHeight(400)
               }}
             >
               Reset
@@ -755,9 +734,8 @@ const LiveSatori = withLive(function ({
             <button
               type='button'
               onClick={() => {
-                const { w, h } = getAspectRatio('2:1')
-                setWidth(w)
-                setHeight(h)
+                setWidth(1200)
+                setHeight(600)
               }}
             >
               2:1
@@ -765,9 +743,8 @@ const LiveSatori = withLive(function ({
             <button
               type='button'
               onClick={() => {
-                const { w, h } = getAspectRatio('1.9:1')
-                setWidth(w)
-                setHeight(h)
+                setWidth(1200)
+                setHeight(630)
               }}
             >
               1.9:1
