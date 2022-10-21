@@ -50,7 +50,7 @@ function parsePNG(buf: ArrayBuffer) {
   return [v.getUint16(18, false), v.getUint16(22, false)] as [number, number]
 }
 
-import { createLRU } from '../utils'
+import { createLRU, parseViewBox } from '../utils'
 
 type ResolvedImageData = [string, number?, number?]
 const cache = createLRU<ResolvedImageData>(100)
@@ -114,14 +114,23 @@ export async function resolveImageData(
             // Parse the SVG image size
             const svgTag = data.match(/<svg[^>]*>/)[0]
 
-            let viewBox = svgTag.match(/viewBox="0 0 (\d*\.\d+|\d+) (\d*\.\d+|\d+)"/)
+            const viewBoxStr = svgTag.match(/viewBox=['"](.+)['"]/)
+            let viewBox = viewBoxStr ? parseViewBox(viewBoxStr[1]) : null
+
             const width = svgTag.match(/width="(\d*\.\d+|\d+)"/)
             const height = svgTag.match(/height="(\d*\.\d+|\d+)"/)
-            if (!viewBox && width && height) {
-              viewBox = [null, width[1], height[1]]
+
+            if (!viewBox && (!width || !height)) {
+              throw new Error(
+                `Failed to parse SVG from ${src}: missing "viewBox"`
+              )
             }
 
-            const ratio = +viewBox[1] / +viewBox[2]
+            const size = viewBox
+              ? [viewBox[2], viewBox[3]]
+              : [+width[1], +height[1]]
+
+            const ratio = size[0] / size[1]
             const imageSize: [number, number] =
               width && height
                 ? [+width[1], +height[1]]
@@ -129,7 +138,7 @@ export async function resolveImageData(
                 ? [+width[1], +width[1] / ratio]
                 : height
                 ? [+height[1] * ratio, +height[1]]
-                : [+viewBox[1], +viewBox[2]]
+                : [size[0], size[1]]
 
             cache.set(src, [newSrc, ...imageSize])
             resolve([newSrc, ...imageSize])

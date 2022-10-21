@@ -72,6 +72,9 @@ export function lengthToNumber(
     // Not length: `1px/2px`, `1px 2px`, `1px, 2px`, `calc(1px)`.
     if (/[ /\(,]/.test(length)) return
 
+    // Just a number as string: '100'
+    if (length === String(+length)) return +length
+
     const parsed = new CssDimension(length)
     if (parsed.type === 'length') {
       switch (parsed.unit) {
@@ -340,6 +343,10 @@ function translateSVGNodeToSVGString(
     .join('')}>${translateSVGNodeToSVGString(children)}</${type}>`
 }
 
+export function parseViewBox(viewBox: string) {
+  return viewBox.split(/[, ]/).filter(Boolean).map(Number)
+}
+
 export function SVGNodeToImage(node: ReactElement): string {
   let {
     viewBox,
@@ -353,7 +360,7 @@ export function SVGNodeToImage(node: ReactElement): string {
   } = node.props || {}
 
   viewBox ||= viewbox
-  const viewBoxSize = viewBox.split(' ').map((_v) => parseInt(_v, 10))
+  const viewBoxSize = parseViewBox(viewBox)
 
   // We directly assign the xmlns attribute here to deduplicate.
   restProps.xmlns = 'http://www.w3.org/2000/svg'
