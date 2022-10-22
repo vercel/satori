@@ -4,9 +4,15 @@ import { it, describe, expect } from 'vitest'
 import { initFonts, toImage } from './utils'
 import satori from '../src'
 
+// TODO: no support for 'text-decoration' or 'outline'
+
 describe('Color Models', () => {
   let fonts
   initFonts((f) => (fonts = f))
+
+  // TODO: test `background` shorthand?
+
+  // TODO: `filter` supported?
 
   describe('backgroundColor and color', () => {
     it('should support hexadecimal', async () => {
@@ -188,4 +194,10 @@ describe('Color Models', () => {
     //   expect(toImage(svg, 100)).toMatchImageSnapshot()
     // })
   })
+
+  // Borders: shorthand, border-bottom-color, border-color, border-left-color, border-right-color, border-top-color
+
+  // Box shadow
+
+  // Filter
 })

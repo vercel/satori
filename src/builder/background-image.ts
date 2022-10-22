@@ -166,11 +166,11 @@ export default async function backgroundImage(
   if (image.startsWith('linear-gradient(')) {
     const parsed = gradient.parse(image)[0]
     const [xDelta, yDelta] = dimensions
-
     // Calculate the direction.
     let x1, y1, x2, y2
     if (parsed.orientation.type === 'directional') {
       ;[x1, y1, x2, y2] = {
+        0: [0, 1, 0, 0],
         top: [0, 1, 0, 0],
         bottom: [0, 0, 0, 1],
         left: [1, 0, 0, 0],

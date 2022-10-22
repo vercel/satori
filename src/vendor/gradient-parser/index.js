@@ -25,6 +25,7 @@ GradientParser.parse = (function () {
     percentageValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))\%/,
     emValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))em/,
     angleValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))deg/,
+    zeroValue: /[0]/,
     startCall: /^\(/,
     endCall: /^\)/,
     comma: /^,/,
@@ -49,7 +50,7 @@ GradientParser.parse = (function () {
     if (input.length > 0) {
       error('Invalid input not EOF')
     }
-
+    
     return ast
   }
 
@@ -110,7 +111,6 @@ GradientParser.parse = (function () {
 
   function matchCall(pattern, callback) {
     var captures = scan(pattern)
-
     if (captures) {
       if (!scan(tokens.startCall)) {
         error('Missing (')
@@ -127,7 +127,7 @@ GradientParser.parse = (function () {
   }
 
   function matchLinearOrientation() {
-    return matchSideOrCorner() || matchAngle()
+    return matchSideOrCorner() || matchAngle() || matchZero();
   }
 
   function matchSideOrCorner() {
@@ -136,6 +136,11 @@ GradientParser.parse = (function () {
 
   function matchAngle() {
     return match('angular', tokens.angleValue, 1)
+  }
+
+  // For zero value passed into linear-gradient first arg:
+  function matchZero() {
+    return match('directional', tokens.zeroValue, 0)
   }
 
   function matchListRadialOrientations() {
