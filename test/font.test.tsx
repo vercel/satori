@@ -41,4 +41,18 @@ describe('Font', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
+
+  describe('kerning', () => {
+    it('should have kerning', async () => {
+      const svg = await satori(
+        <div style={{ fontSize: 32 }}>Faster. AWAY.</div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+  })
 })

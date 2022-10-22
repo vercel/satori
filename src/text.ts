@@ -13,6 +13,8 @@ import decoration from './builder/text-decoration'
 // @TODO: Support "lang" attribute to modify the locale
 const locale = undefined
 
+const NOT_ALLOWED_BEGINNING = ',;.!?:-@>)]}%#，；。：！？）］｝〉》』」”'
+
 export default async function* buildTextNodes(
   content: string,
   context: LayoutContext
@@ -64,6 +66,16 @@ export default async function* buildTextNodes(
   )
 
   const words = segment(content, segmenter)
+
+  // Merge characters that will always be connected:
+  // ['hello', ',', ' ', 'world'] -> ['hello,', ' ', 'world']
+  for (let i = 0; i < words.length - 1; i++) {
+    const nextWord = words[i + 1]
+    if (NOT_ALLOWED_BEGINNING.includes(nextWord)) {
+      words[i] += nextWord
+      words.splice(i + 1, 1)
+    }
+  }
 
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
@@ -275,7 +287,7 @@ export default async function* buildTextNodes(
         }
 
         const allowedToPutAtBeginning =
-          remainingSpaceWidth || ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
+          remainingSpaceWidth || NOT_ALLOWED_BEGINNING.indexOf(word[0]) < 0
         const allowedToJustify = !_currentWidth || !!remainingSpaceWidth
 
         if (
