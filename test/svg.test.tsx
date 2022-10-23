@@ -94,4 +94,66 @@ describe('SVG', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should parse viewBox correctly', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          background: 'blue',
+          display: 'flex',
+        }}
+      >
+        <svg
+          height='100'
+          viewBox='0, 0,10.5 20.5 '
+          fill='yellow'
+          xmlns='http://www.w3.org/2000/svg'
+        >
+          <circle
+            cx='5'
+            cy='5'
+            r='4'
+            stroke='black'
+            strokeWidth='3'
+            fill='red'
+          />
+        </svg>
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should support em in svg size', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          background: 'blue',
+          display: 'flex',
+        }}
+      >
+        <svg
+          height='5em'
+          viewBox='0, 0,10.5 20.5 '
+          fill='yellow'
+          xmlns='http://www.w3.org/2000/svg'
+        >
+          <circle
+            cx='5'
+            cy='5'
+            r='4'
+            stroke='black'
+            strokeWidth='3'
+            fill='red'
+          />
+        </svg>
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })

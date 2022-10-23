@@ -7,15 +7,16 @@
 const U200D = String.fromCharCode(8205)
 const UFE0Fg = /\uFE0F/g
 
-export function getIconCode(char) {
+export function getIconCode(char: string) {
   return toCodePoint(char.indexOf(U200D) < 0 ? char.replace(UFE0Fg, '') : char)
 }
 
-function toCodePoint(unicodeSurrogates) {
-  var r = [],
-    c = 0,
+function toCodePoint(unicodeSurrogates: string) {
+  const r = []
+  let c = 0,
     p = 0,
     i = 0
+
   while (i < unicodeSurrogates.length) {
     c = unicodeSurrogates.charCodeAt(i++)
     if (p) {
@@ -30,29 +31,37 @@ function toCodePoint(unicodeSurrogates) {
   return r.join('-')
 }
 
-const apis = {
-  twemoji: (code) =>
+export const apis = {
+  twemoji: (code: string) =>
     'https://twemoji.maxcdn.com/v/latest/svg/' + code.toLowerCase() + '.svg',
   openmoji: 'https://cdn.jsdelivr.net/npm/@svgmoji/openmoji@2.0.0/svg/',
   blobmoji: 'https://cdn.jsdelivr.net/npm/@svgmoji/blob@2.0.0/svg/',
   noto: 'https://cdn.jsdelivr.net/gh/svgmoji/svgmoji/packages/svgmoji__noto/svg/',
-  fluent: (code) =>
+  fluent: (code: string) =>
     'https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/' +
     code.toLowerCase() +
     '_color.svg',
-  fluentFlat: (code) =>
+  fluentFlat: (code: string) =>
     'https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/' +
     code.toLowerCase() +
     '_flat.svg',
 }
 
-export function loadEmoji(type, code) {
+const emojiCache: Record<string, Promise<any>> = {}
+
+export function loadEmoji(type: keyof typeof apis, code: string) {
+  const key = type + ':' + code
+  if (key in emojiCache) return emojiCache[key]
+
   if (!type || !apis[type]) {
     type = 'twemoji'
   }
+
   const api = apis[type]
   if (typeof api === 'function') {
-    return fetch(api(code))
+    return (emojiCache[key] = fetch(api(code)).then((r) => r.text()))
   }
-  return fetch(`${api}${code.toUpperCase()}.svg`)
+  return (emojiCache[key] = fetch(`${api}${code.toUpperCase()}.svg`).then((r) =>
+    r.text()
+  ))
 }

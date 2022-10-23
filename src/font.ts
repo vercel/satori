@@ -4,7 +4,7 @@
 import opentype from '@shuding/opentype.js'
 
 type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
-type WeigthName = 'normal' | 'bold'
+type WeightName = 'normal' | 'bold'
 type Style = 'normal' | 'italic'
 
 export interface FontOptions {
@@ -14,41 +14,48 @@ export interface FontOptions {
   style?: Style
 }
 
-function compareFont(weight, style, [weight1, style1], [weight2, style2]) {
-  if (weight1 !== weight2) {
+function compareFont(
+  weight,
+  style,
+  [matchedWeight, matchedStyle],
+  [nextWeight, nextStyle]
+) {
+  if (matchedWeight !== nextWeight) {
     // Put the defined weight first.
-    if (!weight1) return 1
-    if (!weight2) return -1
+    if (!matchedWeight) return 1
+    if (!nextWeight) return -1
 
     // Exact match.
-    if (weight1 === weight) return -1
-    if (weight2 === weight) return 1
+    if (matchedWeight === weight) return -1
+    if (nextWeight === weight) return 1
 
     // 400 and 500.
-    if (weight === 400 && weight1 === 500) return -1
-    if (weight === 500 && weight1 === 400) return -1
-    if (weight === 400 && weight2 === 500) return 1
-    if (weight === 500 && weight2 === 400) return 1
+    if (weight === 400 && matchedWeight === 500) return -1
+    if (weight === 500 && matchedWeight === 400) return -1
+    if (weight === 400 && nextWeight === 500) return 1
+    if (weight === 500 && nextWeight === 400) return 1
 
     // Less than 400.
     if (weight < 400) {
-      if (weight1 < weight && weight2 < weight) return weight2 - weight1
-      if (weight1 < weight) return -1
-      if (weight2 < weight) return 1
-      return weight1 - weight2
+      if (matchedWeight < weight && nextWeight < weight)
+        return nextWeight - matchedWeight
+      if (matchedWeight < weight) return -1
+      if (nextWeight < weight) return 1
+      return matchedWeight - nextWeight
     }
 
     // Greater than 500.
-    if (weight < weight1 && weight < weight2) return weight1 - weight2
-    if (weight < weight1) return -1
-    if (weight < weight2) return 1
-    return weight2 - weight1
+    if (weight < matchedWeight && weight < nextWeight)
+      return matchedWeight - nextWeight
+    if (weight < matchedWeight) return -1
+    if (weight < nextWeight) return 1
+    return nextWeight - matchedWeight
   }
 
-  if (style1 !== style2) {
+  if (matchedStyle !== nextStyle) {
     // Exact match.
-    if (style1 === style) return -1
-    if (style2 === style) return 1
+    if (matchedStyle === style) return -1
+    if (nextStyle === style) return 1
   }
 
   return -1
@@ -68,7 +75,7 @@ export default class FontLoader {
     style,
   }: {
     name: string
-    weight: Weight | WeigthName
+    weight: Weight | WeightName
     style: Style
   }) {
     if (!this.fonts.has(name)) {
@@ -77,6 +84,8 @@ export default class FontLoader {
 
     if (weight === 'normal') weight = 400
     if (weight === 'bold') weight = 700
+    if (typeof weight === 'string')
+      weight = Number.parseInt(weight, 10) as Weight
 
     const fonts = [...this.fonts.get(name)]
 
@@ -146,7 +155,7 @@ export default class FontLoader {
       fontStyle = 'normal',
     }: {
       fontFamily: string | string[]
-      fontWeight?: Weight | WeigthName
+      fontWeight?: Weight | WeightName
       fontStyle?: Style
     }
   ) {

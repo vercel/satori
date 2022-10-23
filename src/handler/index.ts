@@ -10,7 +10,7 @@ import getYoga from '../yoga'
 import presets from './presets'
 import inheritable from './inheritable'
 import expand from './expand'
-import { v } from '../utils'
+import { lengthToNumber, parseViewBox, v } from '../utils'
 import { resolveImageData } from './image'
 
 type SatoriElement = keyof typeof presets
@@ -111,7 +111,7 @@ export default async function handler(
 
   if (type === 'svg') {
     const viewBox = props.viewBox || props.viewbox
-    const viewBoxSize = viewBox.split(' ').map((_v) => parseInt(_v, 10))
+    const viewBoxSize = parseViewBox(viewBox)
     const ratio = viewBoxSize[3] / viewBoxSize[2]
 
     let { width, height } = props
@@ -119,15 +119,45 @@ export default async function handler(
       if (typeof height === 'string' && height.endsWith('%')) {
         width = parseInt(height) / ratio + '%'
       } else {
-        width = parseInt(height) / ratio
+        height = lengthToNumber(
+          height,
+          inheritedStyle.fontSize as number,
+          1,
+          inheritedStyle
+        )
+        width = height / ratio
       }
     } else if (typeof height === 'undefined' && width) {
       if (typeof width === 'string' && width.endsWith('%')) {
         height = parseInt(width) * ratio + '%'
       } else {
-        height = parseInt(width) * ratio
+        width = lengthToNumber(
+          width,
+          inheritedStyle.fontSize as number,
+          1,
+          inheritedStyle
+        )
+        height = width * ratio
       }
     } else {
+      if (typeof width !== 'undefined') {
+        width =
+          lengthToNumber(
+            width,
+            inheritedStyle.fontSize as number,
+            1,
+            inheritedStyle
+          ) || width
+      }
+      if (typeof height !== 'undefined') {
+        height =
+          lengthToNumber(
+            height,
+            inheritedStyle.fontSize as number,
+            1,
+            inheritedStyle
+          ) || height
+      }
       width ||= viewBoxSize[2]
       height ||= viewBoxSize[3]
     }

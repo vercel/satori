@@ -1,8 +1,10 @@
+import type { NextRequest } from 'next/server'
+
 export const config = {
   runtime: 'experimental-edge',
 }
 
-export default async function loadGoogleFont(req) {
+export default async function loadGoogleFont(req: NextRequest) {
   if (req.nextUrl.pathname !== '/api/font') return
   const { searchParams, hostname } = new URL(req.url)
 
