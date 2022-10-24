@@ -290,6 +290,43 @@ describe('Image', () => {
       expect(requests).toEqual(['https://via.placeholder.com/300'])
     })
 
+    it('should support single quotes inside url()', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            border: '1px solid',
+            width: '50%',
+            height: '50%',
+            display: 'flex',
+            backgroundImage: "url('https://via.placeholder.com/301')",
+          }}
+        ></div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+
+      expect(requests).toEqual(['https://via.placeholder.com/301'])
+    })
+
+    it('should support double quotes inside url()', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            border: '1px solid',
+            width: '50%',
+            height: '50%',
+            display: 'flex',
+            backgroundImage: 'url("https://via.placeholder.com/302")',
+          }}
+        ></div>,
+        { width: 100, height: 100, fonts }
+      )
+
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+
+      expect(requests).toEqual(['https://via.placeholder.com/302'])
+    })
+
     it('should support stretched backgroundSize', async () => {
       const svg = await satori(
         <div
