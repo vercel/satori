@@ -79,6 +79,10 @@ export async function resolveImageData(
     throw new Error('Image source is not provided.')
   }
 
+  if (/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/.test(src)) {
+    src = src.slice(1, -1);
+  }
+
   if (src.startsWith('data:')) {
     return [src]
   }
