@@ -404,6 +404,8 @@ export default async function* buildTextNodes(
   let ellipsisWidth = textOverflow === 'ellipsis' ? measureWithCache(['…']) : 0
   let spaceWidth = textOverflow === 'ellipsis' ? measureWithCache([' ']) : 0
   let decorationLines: Record<number, null | number[]> = {}
+  let wordBuffer: string | null = null
+  let bufferedOffset = 0
 
   for (let i = 0; i < words.length; i++) {
     // Skip whitespace.
@@ -493,21 +495,40 @@ export default async function* buildTextNodes(
       // For images, we remove the baseline offset.
       topOffset += 0
     } else if (embedFont) {
-      path = engine.getSVG(word, {
+      if (
+        words[i + 1] &&
+        wordsInLayout[i + 1] &&
+        topOffset === wordsInLayout[i + 1].y
+      ) {
+        if (wordBuffer === null) {
+          bufferedOffset = leftOffset
+        }
+        wordBuffer = wordBuffer === null ? word : wordBuffer + word
+        continue
+      }
+
+      const finalizedSegment = wordBuffer === null ? word : wordBuffer + word
+      const finalizedLeftOffset =
+        wordBuffer === null ? leftOffset : bufferedOffset
+      const finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
+
+      path = engine.getSVG(finalizedSegment, {
         ...parentStyle,
-        left: left + leftOffset,
+        left: left + finalizedLeftOffset,
         // Since we need to pass the baseline position, add the ascender to the top.
         top: top + topOffset + baselineOfWord + baselineDelta,
         letterSpacing: parentStyle.letterSpacing,
       } as any)
 
+      wordBuffer = null
+
       if (debug) {
         extra +=
           // Glyph
           buildXMLString('rect', {
-            x: left + leftOffset,
+            x: left + finalizedLeftOffset,
             y: top + topOffset + baselineDelta,
-            width: layout.width,
+            width: finalizedWidth,
             height: heightOfWord,
             fill: 'transparent',
             stroke: '#575eff',
