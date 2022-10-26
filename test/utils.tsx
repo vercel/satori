@@ -1,15 +1,27 @@
 import { beforeAll, expect } from 'vitest'
-import fs from 'fs/promises'
 import { join } from 'path'
 import { Resvg } from '@resvg/resvg-js'
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
+import { readFile } from 'node:fs/promises'
+import initYoga from 'yoga-wasm-web'
 
+import { init } from '../src'
 import type { SatoriOptions } from '../src'
+
+
+export function initYogaWasm() {
+  beforeAll(async () => {
+    const yoga = await initYoga(
+      await readFile('yoga-wasm-web/dist/yoga.wasm')
+    )
+    init(yoga)
+  })
+}
 
 export function initFonts(callback: (fonts: SatoriOptions['fonts']) => void) {
   beforeAll(async () => {
     const fontPath = join(process.cwd(), 'test', 'assets', 'Roboto-Regular.ttf')
-    const fontData = await fs.readFile(fontPath)
+    const fontData = await readFile(fontPath)
     callback([
       {
         name: 'Roboto',
