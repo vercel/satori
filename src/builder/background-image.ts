@@ -241,27 +241,48 @@ export default async function backgroundImage(
 
   if (image.startsWith('radial-gradient(')) {
     const parsed = gradient.parse(image)[0]
-    const orientation = parsed.orientation[0]
+    let orientation = parsed.orientation?.[0]
     const [xDelta, yDelta] = dimensions
 
-    let shape = 'circle'
+    console.log(parsed);
+
+    let shape: 'circle' | 'ellipse' = 'ellipse'
     let cx: number = xDelta / 2
     let cy: number = yDelta / 2
 
-    if (orientation.type === 'shape') {
-      shape = orientation.value
+    let extendKeyword: 'closest-side' | 'closest-corner' | 'farthest-side' | 'farthest-corner' = 'farthest-corner'
+
+    if (orientation) {
+      if (orientation.type === 'shape') {
+        shape = orientation.value
+        orientation = { ...orientation, ...orientation.style };
+      }
+
+      if (orientation.type === 'extent-keyword') {
+        if (orientation.value === 'contain') {
+          extendKeyword = 'closest-side';
+        } else if (orientation.value === 'cover') {
+          extendKeyword = 'farthest-corner';
+        } else {
+          extendKeyword = orientation.value
+        }
+      }
+
       if (!orientation.at) {
         // Defaults to center.
       } else if (orientation.at.type === 'position') {
-        cx = orientation.at.value.x.value
-        cy = orientation.at.value.y.value
+        if (orientation.at.value.x.type === '%') {
+          cx = orientation.at.value.x.value / 100 * xDelta
+          cy = orientation.at.value.y.value / 100 * yDelta
+        } else if (orientation.at.value.x.type === 'px') {
+          cx = orientation.at.value.x.value
+          cy = orientation.at.value.y.value
+        }
       } else {
         throw new Error(
           'orientation.at.type not implemented: ' + orientation.at.type
         )
       }
-    } else {
-      throw new Error('orientation.type not implemented: ' + orientation.type)
     }
 
     const stops = normalizeStops(width, parsed.colorStops)
@@ -270,26 +291,35 @@ export default async function backgroundImage(
     const patternId = `satori_pattern_${id}`
     const maskId = `satori_mask_${id}`
 
-    // We currently only support `farthest-corner`:
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/radial-gradient()#values
     const spread: Record<string, number> = {}
 
-    // Farest corner.
-    const fx = Math.max(Math.abs(xDelta - cx), Math.abs(cx))
-    const fy = Math.max(Math.abs(yDelta - cy), Math.abs(cy))
-    if (shape === 'circle') {
-      spread.r = Math.sqrt(fx * fx + fy * fy)
-    } else if (shape === 'ellipse') {
-      // Spec: https://drafts.csswg.org/css-images/#typedef-size
-      // Get the aspect ratio of the closest-side size.
-      const ratio = fy !== 0 ? fx / fy : 1
+    let extreme = Math.max;
+    if (extendKeyword.startsWith('closest-')) {
+      extreme = Math.min;
+    }
 
-      // fx^2/a^2 + fy^2/b^2 = 1
-      // fx^2/(b*ratio)^2 + fy^2/b^2 = 1
-      // (fx^2+fy^2*ratio^2) = (b*ratio)^2
-      // b = sqrt(fx^2+fy^2*ratio^2)/ratio
-      spread.ry = Math.sqrt(fx * fx + fy * fy * ratio * ratio) / ratio
-      spread.rx = spread.ry * ratio
+    const extremeInset = {
+      x: extreme(Math.abs(cx), Math.abs(xDelta - cx)),
+      y: extreme(Math.abs(cy), Math.abs(yDelta - cy))
+    }
+
+    if (extendKeyword.endsWith('-side')) {
+      if (shape === 'circle') {
+        spread.r = extreme(extremeInset.x, extremeInset.y)
+      } else if (shape === 'ellipse') {
+        spread.rx = extremeInset.x
+        spread.ry = extremeInset.y
+      }
+    } else {
+      // corner
+      if (shape === 'circle') {
+        spread.r = Math.sqrt(extremeInset.x * extremeInset.x + extremeInset.y * extremeInset.y)
+      } else if (shape === 'ellipse') {
+        const ratio = extremeInset.y !== 0 ? extremeInset.x / extremeInset.y : 1
+
+        spread.ry = Math.sqrt(extremeInset.x * extremeInset.x + extremeInset.y * extremeInset.y * ratio * ratio) / ratio
+        spread.rx = spread.ry * ratio
+      }
     }
 
     // TODO: check for repeat-x/repeat-y
