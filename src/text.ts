@@ -10,13 +10,10 @@ import text, { container } from './builder/text'
 import { dropShadow } from './builder/shadow'
 import decoration from './builder/text-decoration'
 
-// @TODO: Support "lang" attribute to modify the locale
-const locale = undefined
-
 export default async function* buildTextNodes(
   content: string,
   context: LayoutContext
-) {
+): AsyncGenerator<{word: string, locale: string}[], string, [any, any]> {
   const Yoga = getYoga()
 
   const {
@@ -29,6 +26,7 @@ export default async function* buildTextNodes(
     debug,
     embedFont,
     graphemeImages,
+    locale,
     canLoadAdditionalAssets,
   } = context
 
@@ -37,11 +35,11 @@ export default async function* buildTextNodes(
   } else if (parentStyle.textTransform === 'lowercase') {
     content = content.toLocaleLowerCase(locale)
   } else if (parentStyle.textTransform === 'capitalize') {
-    content = segment(content, 'word')
+    content = segment(content, 'word', locale)
       // For each word...
       .map((word) => {
         // ...split into graphemes...
-        return segment(word, 'grapheme')
+        return segment(word, 'grapheme', locale)
           .map((grapheme, index) => {
             // ...and make the first grapheme uppercase
             return index === 0 ? grapheme.toLocaleUpperCase(locale) : grapheme
@@ -64,7 +62,7 @@ export default async function* buildTextNodes(
     'wordBreak'
   )
 
-  const words = segment(content, segmenter)
+  const words = segment(content, segmenter, locale)
 
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
@@ -103,20 +101,29 @@ export default async function* buildTextNodes(
   let engine = font.getEngine(
     baseFontSize,
     lineHeight as number,
-    parentStyle as any
+    parentStyle as any,
+    locale
   )
 
   // Yield segments that are missing a font.
   const wordsMissingFont = canLoadAdditionalAssets
     ? words.filter((word) => !engine.has(word))
     : []
-  yield wordsMissingFont
+
+  yield wordsMissingFont.map(word => {
+    return {
+      word,
+      locale
+    }
+  })
+
   if (wordsMissingFont.length) {
     // Reload the engine with additional fonts.
     engine = font.getEngine(
       baseFontSize,
       lineHeight as number,
-      parentStyle as any
+      parentStyle as any,
+      locale
     )
   }
 
@@ -487,7 +494,7 @@ export default async function* buildTextNodes(
           layout.x + width + ellipsisWidth + spaceWidth >
           parentContainerInnerWidth
         ) {
-          const chars = segment(word, 'grapheme')
+          const chars = segment(word, 'grapheme', locale)
           let subset = ''
           let resolvedWidth = 0
           for (const char of chars) {

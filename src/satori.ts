@@ -45,7 +45,6 @@ export default async function satori(
       'Satori is not initialized: expect `yoga` to be loaded, got ' + Yoga
     )
   }
-
   options.fonts = options.fonts || []
 
   let font: FontLoader
@@ -113,24 +112,25 @@ export default async function satori(
     },
   })
 
-  let segmentsMissingFont = (await handler.next()).value as string[]
+  const _segmentsMissingFont = (await handler.next()).value as {word: string, locale?: string}[]
+
+  let segmentsMissingFont: { words: string[], locale: string }[] = []
 
   if (options.loadAdditionalAsset) {
-    if (segmentsMissingFont.length) {
-      // Potentially CJK fonts are missing.
-      segmentsMissingFont = Array.from(
-        new Set(segment(segmentsMissingFont.join(''), 'grapheme'))
-      )
+    if (_segmentsMissingFont.length) {
+      segmentsMissingFont = helper(_segmentsMissingFont)
 
       const languageCodes: Record<string, string[]> = {}
-      segmentsMissingFont.forEach((seg) => {
-        const code = detectLanguageCode(seg)
-        languageCodes[code] = languageCodes[code] || []
-        if (code === 'emoji') {
-          languageCodes[code].push(seg)
-        } else {
-          languageCodes[code][0] = (languageCodes[code][0] || '') + seg
-        }
+      segmentsMissingFont.forEach(({words, locale }) => {
+          words.forEach(seg => {
+            const code = locale ? locale : detectLanguageCode(seg)
+            languageCodes[code] = languageCodes[code] || []
+            if (code === 'emoji') {
+              languageCodes[code].push(seg)
+            } else {
+              languageCodes[code][0] = (languageCodes[code][0] || '') + seg
+            }
+          })
       })
 
       const fonts: FontOptions[] = []
@@ -167,4 +167,28 @@ export default async function satori(
   root.freeRecursive()
 
   return svg({ width: computedWidth, height: computedHeight, content })
+}
+
+function helper(_segmentsMissingFont): { words: string[], locale: string }[] {
+  const graphemeArray = []
+  let lastLocale = undefined
+  let tempWords = ''
+
+  for (const { word, locale } of _segmentsMissingFont) {
+    if (lastLocale === locale) {
+      tempWords += word
+    } else {
+      if (tempWords !== '') {
+        graphemeArray.push({ words: segment(tempWords, 'grapheme', lastLocale), locale: lastLocale })
+      }
+      tempWords = word
+      lastLocale = locale
+    }
+  }
+
+  if (tempWords !== '') {
+    graphemeArray.push({ words: segment(tempWords, 'grapheme', lastLocale), locale: lastLocale })
+  }
+
+  return graphemeArray
 }

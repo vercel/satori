@@ -14,6 +14,8 @@ export interface FontOptions {
   style?: Style
 }
 
+const PREFIX = 'satori'
+
 function compareFont(
   weight,
   style,
@@ -157,7 +159,8 @@ export default class FontLoader {
       fontFamily: string | string[]
       fontWeight?: Weight | WeightName
       fontStyle?: Style
-    }
+    },
+    locale: string | undefined
   ) {
     if (!this.fonts.size) {
       throw new Error(
@@ -182,13 +185,25 @@ export default class FontLoader {
     const keys = Array.from(this.fonts.keys())
     for (const name of keys) {
       if (fontFamily.includes(name)) continue
-      fonts.push(
-        this.get({
-          name,
-          weight: fontWeight,
-          style: fontStyle,
-        })
-      )
+      if (locale) {
+        if (getLangFromFontName(name) === locale) {
+          fonts.push(
+            this.get({
+              name,
+              weight: fontWeight,
+              style: fontStyle
+            })
+          )
+        }
+      } else {
+        fonts.push(
+          this.get({
+            name,
+            weight: fontWeight,
+            style: fontStyle
+          })
+        )
+      }
     }
 
     const cachedFontResolver = new Map<number, opentype.Font | undefined>()
@@ -206,6 +221,7 @@ export default class FontLoader {
       if (font) {
         cachedFontResolver.set(code, font)
       }
+
       return font
     }
 
@@ -389,4 +405,12 @@ export default class FontLoader {
       unpatch()
     }
   }
+}
+
+function getLangFromFontName(name: string): string | undefined {
+  if (!name.startsWith(PREFIX)) {
+    return undefined
+  }
+
+  return name.split('_')[1] ?? undefined
 }
