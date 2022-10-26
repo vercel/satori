@@ -31,6 +31,7 @@ importers:
       typescript: ^4.5.5
       vitest: 0.23.4
       yoga-layout-prebuilt: ^1.10.0
+      yoga-wasm-web: ^0.1.2
     dependencies:
       '@shuding/opentype.js': 1.4.0-beta.0
       css-background-parser: 0.1.0
@@ -60,6 +61,7 @@ importers:
       twrnc: 3.4.0
       typescript: 4.8.3
       vitest: 0.23.4_@vitest+ui@0.7.13
+      yoga-wasm-web: 0.1.2
 
   playground:
     specifiers:
@@ -3708,4 +3710,3 @@ packages:
 
   /yoga-wasm-web/0.1.2:
     resolution: {integrity: sha512-8SkgawHcA0RUbMrnhxbaQkZDBi8rMed8pQHixkFF9w32zGhAwZ9/cOHWlpYfr6RCx42Yp3siV45/jPEkJxsk6w==}
-    dev: false
