@@ -337,7 +337,7 @@ await satori(...)
 
 When running in the browser, WASM files need to be hosted and fetched before initializing. asm.js can be bundled together with the lib. In this case WASM should be faster.
 
-When running on the Node.js server, native should be faster. However there are Node.js environments where native modules are not supported (e.g. StackBlitz's WebContainers), or other JS runtimes that support WASM (e.g. Vercel's Edge Runtime, CloudFlare's worker, or Deno).
+When running on the Node.js server, native should be faster. However there are Node.js environments where native modules are not supported (e.g. StackBlitz's WebContainers), or other JS runtimes that support WASM (e.g. Vercel's Edge Runtime, Cloudflare Workers, or Deno).
 
 Additionally, there are other difference between asm.js, native and WASM, such as security and compatibility.
 
