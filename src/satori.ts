@@ -5,7 +5,7 @@ import layout from './layout'
 import FontLoader, { FontOptions } from './font'
 import svg from './builder/svg'
 import { segment } from './utils'
-import { detectLanguageCode } from './language'
+import {detectLanguageCode, Locale} from './language'
 import getTw from './handler/tailwind'
 
 // We don't need to initialize the opentype instances every time.
@@ -112,7 +112,7 @@ export default async function satori(
     },
   })
 
-  const _segmentsMissingFont = (await handler.next()).value as {word: string, locale?: string}[]
+  const _segmentsMissingFont = (await handler.next()).value as {word: string, locale?: Locale}[]
 
   let segmentsMissingFont: { words: string[], locale: string }[] = []
 
@@ -123,7 +123,7 @@ export default async function satori(
       const languageCodes: Record<string, string[]> = {}
       segmentsMissingFont.forEach(({words, locale }) => {
         words.forEach(seg => {
-          const code = detectLanguageCode(seg, locale)
+          const code = detectLanguageCode(seg, locale as Locale)
           languageCodes[code] = languageCodes[code] || []
           if (code === 'emoji') {
             languageCodes[code].push(seg)
@@ -169,7 +169,7 @@ export default async function satori(
   return svg({ width: computedWidth, height: computedHeight, content })
 }
 
-function helper(_segmentsMissingFont): { words: string[], locale: string }[] {
+function helper(_segmentsMissingFont: {word: string, locale?: Locale}[]): { words: string[], locale: Locale }[] {
   const graphemeArray = []
   let lastLocale = undefined
   let tempWords = ''

@@ -35,14 +35,18 @@ const code = {
   kannada: /\p{scx=Kannada}/u,
   symbol: /\p{Symbol}/u,
   math: /\p{Math}/u,
-}
+} as const
+
+export type Locale = Exclude<keyof typeof code, 'emoji'>
+
+const locales = Object.keys(code).splice(1) as Locale[]
 
 // Here we assume all characters from the passed in "segment" is in the same
 // written language. So if the string contains at least one matched character,
 // we determine it as the matched language.
 // Since some characters may belong to multiple languages simultaneously,
 // we adjust the order of the languages by locale.
-export function detectLanguageCode(segment: string, locale?: string): string {
+export function detectLanguageCode(segment: string, locale?: Locale): string {
   const order = Object.keys(code)
   if (locale) {
     const index = order.indexOf(locale)
@@ -59,4 +63,8 @@ export function detectLanguageCode(segment: string, locale?: string): string {
     }
   }
   return 'unknown'
+}
+
+export function normalizeLocale(lang?: string): Locale | undefined {
+  return locales.find(_locale => lang && lang.startsWith(_locale))
 }

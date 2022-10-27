@@ -9,11 +9,12 @@ import { v, segment, wordSeparators, buildXMLString } from './utils'
 import text, { container } from './builder/text'
 import { dropShadow } from './builder/shadow'
 import decoration from './builder/text-decoration'
+import {Locale} from "./language";
 
 export default async function* buildTextNodes(
   content: string,
   context: LayoutContext
-): AsyncGenerator<{word: string, locale: string}[], string, [any, any]> {
+): AsyncGenerator<{word: string, locale?: Locale}[], string, [any, any]> {
   const Yoga = getYoga()
 
   const {
