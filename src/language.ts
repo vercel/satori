@@ -40,6 +40,8 @@ const code = {
 // Here we assume all characters from the passed in "segment" is in the same
 // written language. So if the string contains at least one matched character,
 // we determine it as the matched language.
+// Since some characters may belong to multiple languages simultaneously,
+// we adjust the order of the languages by locale.
 export function detectLanguageCode(segment: string, locale?: string): string {
   const order = Object.keys(code)
   if (locale) {
