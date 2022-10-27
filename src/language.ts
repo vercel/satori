@@ -20,7 +20,7 @@ const emojiRegex = new RegExp(createEmojiRegex(), '')
 // - https://fonts.google.com/noto/fonts?sort=popularity&noto.query=sans
 const code = {
   emoji: emojiRegex,
-  ja: /\p{scx=Hira}|\p{scx=Kana}|[\u3000]|[\uFF00-\uFFEF]/u,
+  ja: /\p{scx=Hira}|\p{scx=Kana}|\p{scx=Han}|[，；：]|[\u3000]|[\uFF00-\uFFEF]/u,
   ko: /\p{scx=Hangul}/u,
   zh: /\p{scx=Han}/u,
   th: /\p{scx=Thai}/u,
@@ -39,8 +39,18 @@ const code = {
 // Here we assume all characters from the passed in "segment" is in the same
 // written language. So if the string contains at least one matched character,
 // we determine it as the matched language.
-export function detectLanguageCode(segment: string): string {
-  for (const c in code) {
+export function detectLanguageCode(segment: string, locale?: string): string {
+  const order = Object.keys(code)
+  if (locale) {
+    const index = order.indexOf(locale)
+    if (index === -1) {
+      throw new Error('locale is invalid')
+    }
+    order.splice(index, 1)
+    order.unshift(locale)
+  }
+
+  for (const c of order) {
     if (code[c].test(segment)) {
       return c
     }

@@ -183,11 +183,33 @@ export default class FontLoader {
 
     // Add additional fonts as the fallback.
     const keys = Array.from(this.fonts.keys())
+    const specifiedLangFonts = []
+    const nonSpecifiedLangFonts = []
+    const additionalFonts = []
     for (const name of keys) {
       if (fontFamily.includes(name)) continue
       if (locale) {
-        if (getLangFromFontName(name) === locale) {
-          fonts.push(
+        const langName = getLangFromFontName(name)
+        if (langName) {
+          if (getLangFromFontName(name) === locale) {
+            specifiedLangFonts.push(
+              this.get({
+                name,
+                weight: fontWeight,
+                style: fontStyle
+              })
+            )
+          } else {
+            nonSpecifiedLangFonts.push(
+              this.get({
+                name,
+                weight: fontWeight,
+                style: fontStyle
+              })
+            )
+          }
+        } else {
+          additionalFonts.push(
             this.get({
               name,
               weight: fontWeight,
@@ -196,7 +218,7 @@ export default class FontLoader {
           )
         }
       } else {
-        fonts.push(
+        additionalFonts.push(
           this.get({
             name,
             weight: fontWeight,
@@ -206,15 +228,25 @@ export default class FontLoader {
       }
     }
 
+    console.log('this.fonts', this.fonts)
+    console.log('fonts', fonts)
+
     const cachedFontResolver = new Map<number, opentype.Font | undefined>()
     const resolveFont = (word: string, fallback = true) => {
       const code = word.charCodeAt(0)
       if (cachedFontResolver.has(code)) return cachedFontResolver.get(code)
 
-      const font = fonts.find((_font, index) => {
+      const _fonts = [
+        ...fonts,
+        ...specifiedLangFonts,
+        ...(fallback ? nonSpecifiedLangFonts : []),
+        ...additionalFonts
+      ]
+
+      const font = _fonts.find((_font, index) => {
         return (
           !!_font.charToGlyphIndex(word) ||
-          (fallback && index === fonts.length - 1)
+          (fallback && index === _fonts.length - 1)
         )
       })
 

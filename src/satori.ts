@@ -122,15 +122,15 @@ export default async function satori(
 
       const languageCodes: Record<string, string[]> = {}
       segmentsMissingFont.forEach(({words, locale }) => {
-          words.forEach(seg => {
-            const code = locale ? locale : detectLanguageCode(seg)
-            languageCodes[code] = languageCodes[code] || []
-            if (code === 'emoji') {
-              languageCodes[code].push(seg)
-            } else {
-              languageCodes[code][0] = (languageCodes[code][0] || '') + seg
-            }
-          })
+        words.forEach(seg => {
+          const code = detectLanguageCode(seg, locale)
+          languageCodes[code] = languageCodes[code] || []
+          if (code === 'emoji') {
+            languageCodes[code].push(seg)
+          } else {
+            languageCodes[code][0] = (languageCodes[code][0] || '') + seg
+          }
+        })
       })
 
       const fonts: FontOptions[] = []
