@@ -18,7 +18,9 @@ const emojiRegex = new RegExp(createEmojiRegex(), '')
 // to the Noto Sans font. A list of special cases we want to support can be
 // found here (sort by popularity):
 // - https://fonts.google.com/noto/fonts?sort=popularity&noto.query=sans
+//
 // We can't tell if a hanzi(kanji) is Chinese or Japanese by regular expressions.
+// - https://unicode.org/faq/han_cjk.html
 const code = {
   emoji: emojiRegex,
   ja: /\p{scx=Hira}|\p{scx=Kana}|\p{scx=Han}|[，；：]|[\u3000]|[\uFF00-\uFFEF]/u,

@@ -109,6 +109,7 @@ export default class FontLoader {
   }
 
   public addFonts(fontOptions: FontOptions[]) {
+    console.log('fontOptions', fontOptions)
     for (const fontOption of fontOptions) {
       const data = fontOption.data
       const font = opentype.parse(
