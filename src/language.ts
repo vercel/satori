@@ -37,7 +37,9 @@ const code = {
   math: /\p{Math}/u,
 } as const
 
-export type Locale = Exclude<keyof typeof code, 'emoji'>
+type CodeKey = keyof typeof code
+export type Locale = Exclude<CodeKey, 'emoji'>
+export type LangCode = CodeKey | 'unknown'
 
 const locales = Object.keys(code).splice(1) as Locale[]
 
@@ -46,8 +48,8 @@ const locales = Object.keys(code).splice(1) as Locale[]
 // we determine it as the matched language.
 // Since some characters may belong to multiple languages simultaneously,
 // we adjust the order of the languages by locale.
-export function detectLanguageCode(segment: string, locale?: Locale): string {
-  const order = Object.keys(code)
+export function detectLanguageCode(segment: string, locale?: Locale): LangCode {
+  const order = Object.keys(code) as CodeKey[]
   if (locale) {
     const index = order.indexOf(locale)
     if (index === -1) {

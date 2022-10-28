@@ -5,7 +5,7 @@ import layout from './layout'
 import FontLoader, { FontOptions } from './font'
 import svg from './builder/svg'
 import { segment } from './utils'
-import {detectLanguageCode, Locale} from './language'
+import {detectLanguageCode, LangCode, Locale} from './language'
 import getTw from './handler/tailwind'
 
 // We don't need to initialize the opentype instances every time.
@@ -112,41 +112,29 @@ export default async function satori(
     },
   })
 
-  const _segmentsMissingFont = (await handler.next()).value as {word: string, locale?: Locale}[]
+  const segmentsMissingFont = (await handler.next()).value as {word: string, locale?: Locale}[]
 
-  let segmentsMissingFont: { words: string[], locale: string }[] = []
+  console.log('segmentsMissingFont', segmentsMissingFont)
 
   if (options.loadAdditionalAsset) {
-    if (_segmentsMissingFont.length) {
-      segmentsMissingFont = helper(_segmentsMissingFont)
-
-      const languageCodes: Record<string, string[]> = {}
-      segmentsMissingFont.forEach(({words, locale }) => {
-        words.forEach(seg => {
-          const code = detectLanguageCode(seg, locale as Locale)
-          languageCodes[code] = languageCodes[code] || []
-          if (code === 'emoji') {
-            languageCodes[code].push(seg)
-          } else {
-            languageCodes[code][0] = (languageCodes[code][0] || '') + seg
-          }
-        })
-      })
-
+    if (segmentsMissingFont.length) {
+      const languageCodes = convertToLanguageCodes(segmentsMissingFont)
       const fonts: FontOptions[] = []
       const images: Record<string, string> = {}
+      console.log('languageCodes', languageCodes)
 
       await Promise.all(
         Object.entries(languageCodes).flatMap(([code, segments]) =>
-          segments.map((_segment) =>
-            options.loadAdditionalAsset(code, _segment).then((asset) => {
+          segments.map((_segment) => {
+            console.log('code, _segment', code, _segment)
+            return options.loadAdditionalAsset(code, _segment).then((asset) => {
               if (typeof asset === 'string') {
                 images[_segment] = asset
               } else if (asset) {
                 fonts.push(asset)
               }
             })
-          )
+          })
         )
       )
 
@@ -169,26 +157,33 @@ export default async function satori(
   return svg({ width: computedWidth, height: computedHeight, content })
 }
 
-function helper(_segmentsMissingFont: {word: string, locale?: Locale}[]): { words: string[], locale: Locale }[] {
-  const graphemeArray = []
-  let lastLocale = undefined
-  let tempWords = ''
+function convertToLanguageCodes(segmentsMissingFont: {word: string, locale?: Locale}[]): Partial<Record<LangCode, string[]>> {
+  const languageCodes = {}
+  let wordsByCode = {}
 
-  for (const { word, locale } of _segmentsMissingFont) {
-    if (lastLocale === locale) {
-      tempWords += word
+  for (let { word, locale } of segmentsMissingFont) {
+    const code = detectLanguageCode(word, locale)
+    wordsByCode[code] = wordsByCode[code] || ''
+    wordsByCode[code] += word
+  }
+
+  console.log('wordsByCode', wordsByCode)
+
+  Object.keys(wordsByCode).forEach((code: LangCode) => {
+    languageCodes[code] = languageCodes[code] || []
+    if (code === 'emoji') {
+      languageCodes[code].push(...unique(segment(wordsByCode[code], 'grapheme')))
     } else {
-      if (tempWords !== '') {
-        graphemeArray.push({ words: segment(tempWords, 'grapheme', lastLocale), locale: lastLocale })
-      }
-      tempWords = word
-      lastLocale = locale
+      languageCodes[code][0] = languageCodes[code][0] || ''
+      languageCodes[code][0] += unique(segment(wordsByCode[code], 'grapheme', code === 'unknown' ? undefined : code)).join('')
     }
-  }
+  })
 
-  if (tempWords !== '') {
-    graphemeArray.push({ words: segment(tempWords, 'grapheme', lastLocale), locale: lastLocale })
-  }
+  console.log('languageCodes', languageCodes)
 
-  return graphemeArray
+  return languageCodes
+}
+
+function unique<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr))
 }
