@@ -335,6 +335,14 @@ init(yoga)
 await satori(...)
 ```
 
+When running in the browser or in the Node.js environment, WASM files need to be hosted and fetched before initializing. asm.js can be bundled together with the lib. In this case WASM should be faster.
+
+When running on the Node.js server, native modules should be faster. However there are Node.js environments where native modules are not supported (e.g. StackBlitz's WebContainers), or other JS runtimes that support WASM (e.g. Vercel's Edge Runtime, Cloudflare Workers, or Deno).
+
+Additionally, there are other difference between asm.js, native and WASM, such as security and compatibility.
+
+Overall there are many trade-offs between each choice, and it's better to pick the one that works the best for your use case.
+
 ### Font Embedding
 
 By default, Satori renders the text as `<path>` in SVG, instead of `<text>`. That means it embeds the font path data as inlined information, so succeeding processes (e.g. render the SVG on another platform) don’t need to deal with font files anymore.
