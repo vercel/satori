@@ -239,9 +239,9 @@ export default class FontLoader {
 
       const _fonts = [
         ...fonts,
+        ...additionalFonts,
         ...specifiedLangFonts,
         ...(fallback ? nonSpecifiedLangFonts : []),
-        ...additionalFonts
       ]
 
       const font = _fonts.find((_font, index) => {
