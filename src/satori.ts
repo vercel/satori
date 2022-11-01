@@ -68,6 +68,19 @@ export default async function satori(
   root.setOverflow(Yoga.OVERFLOW_HIDDEN)
 
   const graphemeImages = { ...options.graphemeImages }
+  // Some Chinese characters have different glyphs in Chinese and
+  // Japanese, but their Unicode is the same. If the user needs to display
+  // the Chinese and Japanese characters simultaneously correctly, the user
+  // needs to download the Chinese and Japanese fonts, respectively.
+  // Assuming that the user has downloaded the corresponding Japanese font,
+  // to let the program realize that the font has not been downloaded in Chinese,
+  // we need to prohibit Japanese as the fallback when executing `engine.has`.
+  //
+  // This causes a problem. Consider a scenario where we need to display Chinese
+  // correctly under tags with `lang="ja"` set. `engine.has` will repeatedly treat
+  // the Chinese as missing font because we have removed the Chinese as a fallback.
+  // To address this situation, we may need to add `processedWordsMissingFont`
+  const processedWordsMissingFonts = new Set()
 
   const handler = layout(element, {
     id: 'id',
@@ -127,6 +140,11 @@ export default async function satori(
         Object.entries(languageCodes).flatMap(([code, segments]) =>
           segments.map((_segment) => {
             console.log('code, _segment', code, _segment)
+            const key = `${code}_${_segment}`
+            if (processedWordsMissingFonts.has(key)) {
+              return null
+            }
+            processedWordsMissingFonts.add(key)
             return options.loadAdditionalAsset(code, _segment).then((asset) => {
               if (typeof asset === 'string') {
                 images[_segment] = asset
