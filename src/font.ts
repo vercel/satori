@@ -109,7 +109,6 @@ export default class FontLoader {
   }
 
   public addFonts(fontOptions: FontOptions[]) {
-    console.log('fontOptions', fontOptions)
     for (const fontOption of fontOptions) {
       const data = fontOption.data
       const font = opentype.parse(
@@ -228,9 +227,6 @@ export default class FontLoader {
         )
       }
     }
-
-    console.log('this.fonts', this.fonts)
-    console.log('fonts', fonts)
 
     const cachedFontResolver = new Map<number, opentype.Font | undefined>()
     const resolveFont = (word: string, fallback = true) => {

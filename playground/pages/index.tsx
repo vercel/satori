@@ -109,7 +109,6 @@ type LanguageCode = keyof typeof languageFontMap | 'emoji'
 
 const loadDynamicAsset = withCache(
   async (emojiType: keyof typeof apis, code: LanguageCode, text: string) => {
-    console.log('text', text)
     if (code === 'emoji') {
       // It's an emoji, load the image.
       return (

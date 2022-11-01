@@ -127,19 +127,15 @@ export default async function satori(
 
   const segmentsMissingFont = (await handler.next()).value as {word: string, locale?: Locale}[]
 
-  console.log('segmentsMissingFont', segmentsMissingFont)
-
   if (options.loadAdditionalAsset) {
     if (segmentsMissingFont.length) {
       const languageCodes = convertToLanguageCodes(segmentsMissingFont)
       const fonts: FontOptions[] = []
       const images: Record<string, string> = {}
-      console.log('languageCodes', languageCodes)
 
       await Promise.all(
         Object.entries(languageCodes).flatMap(([code, segments]) =>
           segments.map((_segment) => {
-            console.log('code, _segment', code, _segment)
             const key = `${code}_${_segment}`
             if (processedWordsMissingFonts.has(key)) {
               return null
@@ -185,8 +181,6 @@ function convertToLanguageCodes(segmentsMissingFont: {word: string, locale?: Loc
     wordsByCode[code] += word
   }
 
-  console.log('wordsByCode', wordsByCode)
-
   Object.keys(wordsByCode).forEach((code: LangCode) => {
     languageCodes[code] = languageCodes[code] || []
     if (code === 'emoji') {
@@ -196,8 +190,6 @@ function convertToLanguageCodes(segmentsMissingFont: {word: string, locale?: Loc
       languageCodes[code][0] += unique(segment(wordsByCode[code], 'grapheme', code === 'unknown' ? undefined : code)).join('')
     }
   })
-
-  console.log('languageCodes', languageCodes)
 
   return languageCodes
 }
