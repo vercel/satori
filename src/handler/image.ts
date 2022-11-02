@@ -155,10 +155,8 @@ export async function resolveImageData(
         let imageType: string
         let imageSize: [number, number]
 
-        const magicBytes = new Uint8Array(data.slice(0, 4))
-        const magicString = [...magicBytes]
-          .map((byte) => byte.toString(16))
-          .join('')
+        const magicString = convert2MagicString(data, 0, 4)
+
         switch (magicString) {
           case '89504e47':
             imageType = 'image/png'
@@ -178,6 +176,15 @@ export async function resolveImageData(
             imageType = 'image/jpeg'
             imageSize = parseJPEG(data)
             break
+          case '49492a00':
+          case '4d4d002a':
+            imageType = 'image/tiff'
+            break
+          case '52494646':
+            if (convert2MagicString(data, 8, 12) === '57454250') {
+              imageType = 'image/webp'
+            }
+            break
         }
 
         if (!ALLOWED_IMAGE_TYPES.includes(imageType)) {
@@ -193,4 +200,11 @@ export async function resolveImageData(
   })
   inflightRequests.set(src, promise)
   return promise
+}
+
+function convert2MagicString(data: ArrayBuffer, begin: number, end: number) {
+  const magicBytes = new Uint8Array(data.slice(begin, end))
+  return [...magicBytes]
+    .map((byte) => byte.toString(16))
+    .join('')
 }
