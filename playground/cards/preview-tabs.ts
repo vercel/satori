@@ -1,6 +1,6 @@
 const previewTabs = [
   'SVG (Satori)',
-  'PNG (Satori + Resvg-js)',
+  'PNG (Satori + resvg-js)', // https://github.com/yisibl/resvg-js
   'PDF (Satori + PDFKit)',
   'HTML (Native)',
 ]
