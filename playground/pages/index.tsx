@@ -458,7 +458,6 @@ const LiveSatori = withLive(function ({
   }, [width, height])
 
   useEffect(() => {
-    console.log('run')
     const replaceFavicon = (href = '/favicon.ico') => {
       const favicon: HTMLLinkElement =
         document.querySelector('[rel=icon]') || document.createElement('link')
