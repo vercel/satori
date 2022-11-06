@@ -1,8 +1,4 @@
-export type Tabs = {
-  [x: string]: string
-}
-
-const playgroundTabs: Tabs = {
+const playgroundTabs = {
   helloworld: `<div
   style={{
     height: '100%',
@@ -291,5 +287,8 @@ const playgroundTabs: Tabs = {
   </div>
 </div>`,
 }
+
+export type PlaygroundTabKeys = keyof typeof playgroundTabs
+export type PlaygroundTabs = typeof playgroundTabs
 
 export default playgroundTabs

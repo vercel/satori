@@ -17,11 +17,12 @@ import { createIntlSegmenterPolyfill } from 'intl-segmenter-polyfill'
 import { loadEmoji, getIconCode, apis } from '../utils/twemoji'
 import Introduction from '../components/introduction'
 
-import playgroundTabs, { Tabs } from '../cards/playground-data'
+import playgroundTabs, { PlaygroundTabKeys } from '../cards/playground-data'
 import previewTabs from '../cards/preview-tabs'
+import tabFavicons from '../cards/favicons'
 
 const cardNames = Object.keys(playgroundTabs)
-const editedCards: Tabs = { ...playgroundTabs }
+const editedCards = { ...playgroundTabs }
 
 // @TODO: Support font style and weights, and make this option extensible rather
 // than built-in.
@@ -238,7 +239,7 @@ function Tabs({ options, onChange, children }: ITabs) {
   )
 }
 
-function LiveEditor({ id }: { id: string }) {
+function LiveEditor({ id }: { id: PlaygroundTabKeys }) {
   const { onChange } = useContext(LiveContext) as unknown as {
     onChange: (val: string) => void
   }
@@ -386,8 +387,10 @@ let overrideOptions: any = null
 
 const LiveSatori = withLive(function ({
   live,
+  activeCard,
 }: {
   live?: { element: React.ComponentType; error: string }
+  activeCard: PlaygroundTabKeys
 }) {
   const [options, setOptions] = useState<object | null>(null)
   const [debug, setDebug] = useState(false)
@@ -401,6 +404,8 @@ const LiveSatori = withLive(function ({
   const [iframeNode, setIframeNode] = useState<HTMLElement | undefined>()
   const [scaleRatio, setScaleRatio] = useState(1)
   const [loadingResources, setLoadingResources] = useState(true)
+
+  const faviconCache: Record<string, string> = {}
 
   useEffect(() => {
     if (overrideOptions) {
@@ -451,6 +456,45 @@ const LiveSatori = withLive(function ({
   useEffect(() => {
     updateScaleRatio()
   }, [width, height])
+
+  useEffect(() => {
+    if (faviconCache[activeCard]) {
+      const favicon = document.querySelector('[rel=icon]')
+      if (favicon) (favicon as HTMLLinkElement).href = faviconCache[activeCard]
+    } else {
+      ;(async () => {
+        // await new Promise((resolve) => setTimeout(resolve, 15))
+
+        if (tabFavicons[activeCard] && options) {
+          try {
+            const svg = await satori(tabFavicons[activeCard], {
+              ...options,
+              embedFont: fontEmbed,
+              width: 32,
+              height: 32,
+              debug,
+              loadAdditionalAsset: (...args: string[]) =>
+                loadDynamicAsset(emojiType, ...args),
+            })
+            const png = (await renderPNG?.({
+              svg,
+              width: 32,
+            })) as string
+
+            const favicon = document.querySelector('[rel=icon]')
+            if (favicon) (favicon as HTMLLinkElement).href = png
+
+            faviconCache[activeCard] = png
+          } catch (e: any) {
+            console.error(e)
+            setRenderError(e.message)
+            return null
+          }
+        }
+      })()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCard, debug, emojiType, fontEmbed, height, options, width])
 
   const [result, setResult] = useState('')
   const [renderedTimeSpent, setRenderTime] = useState<number>(0)
@@ -835,7 +879,7 @@ const LiveSatori = withLive(function ({
   )
 })
 
-function ResetCode({ activeCard }: { activeCard: string }) {
+function ResetCode({ activeCard }: { activeCard: PlaygroundTabKeys }) {
   const { onChange } = useContext(LiveContext) as unknown as {
     onChange: (val: string) => void
   }
@@ -880,7 +924,7 @@ function ResetCode({ activeCard }: { activeCard: string }) {
 }
 
 export default function Playground() {
-  const [activeCard, setActiveCard] = useState<string>('helloworld')
+  const [activeCard, setActiveCard] = useState<PlaygroundTabKeys>('helloworld')
   const [showIntroduction, setShowIntroduction] = useState(false)
 
   useEffect(() => {
@@ -931,7 +975,7 @@ export default function Playground() {
           <Tabs
             options={cardNames}
             onChange={(name: string) => {
-              setActiveCard(name)
+              setActiveCard(name as PlaygroundTabKeys)
             }}
           >
             <div className='editor'>
@@ -970,7 +1014,7 @@ export default function Playground() {
             </div>
           </Tabs>
           <div className='preview'>
-            <LiveSatori />
+            <LiveSatori activeCard={activeCard} />
           </div>
         </LiveProvider>
       </div>

@@ -4,7 +4,7 @@ import { AppProps } from 'next/app'
 
 import '../styles.css'
 
-export default function App({ Component, pageProps } : AppProps) {
+export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
@@ -68,8 +68,7 @@ export default function App({ Component, pageProps } : AppProps) {
           as='fetch'
           crossOrigin='anonymous'
         />
-        <link rel='shortcut icon' href='/favicon.ico' type='image/x-icon' />
-        <link rel='icon' href='/favicon.ico' type='image/x-icon' />
+        <link rel='icon' href='/favicon.ico' type='image/png' />
       </Head>
       <Component {...pageProps} />
     </>
