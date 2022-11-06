@@ -458,9 +458,16 @@ const LiveSatori = withLive(function ({
   }, [width, height])
 
   useEffect(() => {
+    const replaceFavicon = (href = '/favicon.ico') => {
+      const favicon: HTMLLinkElement =
+        document.querySelector('[rel=icon]') || document.createElement('link')
+      favicon.href = href
+      favicon.type = 'image/png'
+      favicon.rel = 'icon'
+    }
+
     if (faviconCache[activeCard]) {
-      const favicon = document.querySelector('[rel=icon]')
-      if (favicon) (favicon as HTMLLinkElement).href = faviconCache[activeCard]
+      replaceFavicon(faviconCache[activeCard])
     } else {
       ;(async () => {
         // await new Promise((resolve) => setTimeout(resolve, 15))
@@ -480,11 +487,7 @@ const LiveSatori = withLive(function ({
               svg,
               width: 32,
             })) as string
-
-            const favicon = document.querySelector('[rel=icon]')
-            if (favicon) (favicon as HTMLLinkElement).href = png
-
-            faviconCache[activeCard] = png
+            replaceFavicon(png)
           } catch (e: any) {
             console.error(e)
             setRenderError(e.message)
