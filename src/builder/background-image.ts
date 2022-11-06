@@ -23,6 +23,31 @@ function resolveColorFromStop(stop) {
   return 'transparent'
 }
 
+function resolveXYFromDirection(dir: string) {
+  let x1 = 0,
+    y1 = 0,
+    x2 = 0,
+    y2 = 0
+
+  if (dir.includes('top')) {
+    y1 = 1
+  } else if (dir.includes('bottom')) {
+    y2 = 1
+  }
+
+  if (dir.includes('left')) {
+    x1 = 1
+  } else if (dir.includes('right')) {
+    x2 = 1
+  }
+
+  if (!x1 && !x2 && !y1 && !y2) {
+    y1 = 1
+  }
+
+  return [x1, y1, x2, y2]
+}
+
 function toAbsoluteValue(v: string | number, base: number) {
   if (typeof v === 'string' && v.endsWith('%')) {
     return (base * parseFloat(v)) / 100
@@ -169,13 +194,7 @@ export default async function backgroundImage(
     // Calculate the direction.
     let x1, y1, x2, y2
     if (parsed.orientation.type === 'directional') {
-      ;[x1, y1, x2, y2] = {
-        0: [0, 1, 0, 0],
-        top: [0, 1, 0, 0],
-        bottom: [0, 0, 0, 1],
-        left: [1, 0, 0, 0],
-        right: [0, 0, 1, 0],
-      }[parsed.orientation.value]
+      ;[x1, y1, x2, y2] = resolveXYFromDirection(parsed.orientation.value)
     } else if (parsed.orientation.type === 'angular') {
       const angle = (+parsed.orientation.value / 180) * Math.PI - Math.PI / 2
       const c = Math.cos(angle)
