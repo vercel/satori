@@ -38,6 +38,8 @@ const languageFontMap = {
   te: 'Noto+Sans+Telugu',
   ml: 'Noto+Sans+Malayalam',
   devanagari: 'Noto+Sans+Devanagari',
+  symbol: ['Noto+Sans+Symbols', 'Noto+Sans+Symbols+2'],
+  math: 'Noto+Sans+Math',
   unknown: 'Noto+Sans',
 }
 
@@ -113,23 +115,28 @@ const loadDynamicAsset = withCache(
     }
 
     // Try to load from Google Fonts.
-    if (!languageFontMap[code]) code = 'unknown'
+    let names = languageFontMap[code]
+    if (!names) code = 'unknown'
 
     try {
-      const font = await (
-        await fetch(
-          `/api/font?font=${encodeURIComponent(
-            languageFontMap[code]
-          )}&text=${encodeURIComponent(text)}`
-        )
-      ).arrayBuffer()
+      if (typeof names === 'string') {
+        names = [names]
+      }
 
-      if (font) {
-        return {
-          name: `satori_${code}_fallback_${text}`,
-          data: font,
-          weight: 400,
-          style: 'normal',
+      for (const name of names) {
+        const res = await fetch(
+          `/api/font?font=${encodeURIComponent(name)}&text=${encodeURIComponent(
+            text
+          )}`
+        )
+        if (res.status === 200) {
+          const font = await res.arrayBuffer()
+          return {
+            name: `satori_${code}_fallback_${text}`,
+            data: font,
+            weight: 400,
+            style: 'normal',
+          }
         }
       }
     } catch (e) {

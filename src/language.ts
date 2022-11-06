@@ -31,6 +31,8 @@ const code = {
   he: /\p{scx=Hebrew}/u,
   te: /\p{scx=Telugu}/u,
   devanagari: /\p{scx=Devanagari}/u,
+  symbol: /\p{Symbol}/u,
+  math: /\p{Math}/u,
 }
 
 // Here we assume all characters from the passed in "segment" is in the same
