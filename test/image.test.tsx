@@ -134,6 +134,22 @@ describe('Image', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
+    it('should resolve non-square image size correctly', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+          }}
+        >
+          <img width={100} height={50} src='https://via.placeholder.com/200' />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
     it('should support styles', async () => {
       const svg = await satori(
         <div
