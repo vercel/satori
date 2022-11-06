@@ -64,6 +64,7 @@ export default async function handler(
 
     let contentBoxWidth = style.width || props.width
     let contentBoxHeight = style.height || props.height
+
     const isAbsoluteContentSize =
       typeof contentBoxWidth !== 'string' &&
       typeof contentBoxHeight !== 'string'
@@ -104,7 +105,7 @@ export default async function handler(
       ? (contentBoxWidth as number) + extraHorizontal
       : contentBoxWidth
     style.height = isAbsoluteContentSize
-      ? (contentBoxWidth as number) + extraVertical
+      ? (contentBoxHeight as number) + extraVertical
       : contentBoxHeight
     style.__src = resolvedSrc
   }
