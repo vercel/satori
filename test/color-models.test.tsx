@@ -169,6 +169,56 @@ describe('Color Models', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
+    it('should support inherit color', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            backgroundColor: 'pink',
+            color: 'red',
+            height: '100%',
+            width: '100%',
+          }}
+        >
+          <div style={{ display: 'flex' }}>
+            red
+            <div>red</div>
+          </div>
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support currentcolor when inherit', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            backgroundColor: 'pink',
+            color: 'red',
+            height: '100%',
+            width: '100%',
+          }}
+        >
+          <div style={{ display: 'flex', color: 'currentcolor' }}>
+            red
+            <div>red</div>
+          </div>
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
     // TODO: add `currentcolor` support to css-to-react-native lib
     // it('should support currentcolor', async () => {
     //   const svg = await satori(
