@@ -199,43 +199,52 @@ function normalizeColor(value: string | object) {
 }
 
 export default function expand(
-  style: Record<string, string | number>,
+  style: Record<string, string | number> | undefined,
   inheritedStyle: Record<string, string | number>
 ): Record<string, string | number> {
   const transformedStyle = {} as any
 
-  for (const prop in style) {
-    // Internal properties.
-    if (prop.startsWith('_')) {
-      transformedStyle[prop] = style[prop]
-      continue
-    }
+  if (style) {
+    const currentColor = getCurrentColor(style.color as string, inheritedStyle.color as string)
 
-    const name = getPropertyName(prop)
-    const currentColor = (style.color || inheritedStyle.color) as string
+    transformedStyle.color = currentColor
 
-    try {
-      const resolvedStyle =
-        handleSpecialCase(name, style[prop], currentColor) ||
-        handleFallbackColor(
-          name,
-          getStylesForProperty(name, purify(name, style[prop]), true),
-          style[prop] as string,
-          currentColor
-        )
+    for (const prop in style) {
+      // Internal properties.
+      if (prop.startsWith('_')) {
+        transformedStyle[prop] = style[prop]
+        continue
+      }
 
-      Object.assign(transformedStyle, resolvedStyle)
-    } catch (err) {
-      throw new Error(
-        err.message +
+      if (prop === 'color') {
+        continue
+      }
+
+      const name = getPropertyName(prop)
+
+      try {
+        const resolvedStyle =
+          handleSpecialCase(name, style[prop], currentColor) ||
+          handleFallbackColor(
+            name,
+            getStylesForProperty(name, purify(name, style[prop]), true),
+            style[prop] as string,
+            currentColor
+          )
+
+        Object.assign(transformedStyle, resolvedStyle)
+      } catch (err) {
+        throw new Error(
+          err.message +
           // Attach the extra information of the rule itself if it's not included in
           // the error message.
           (err.message.includes(style[prop])
             ? '\n  ' + getErrorHint(name)
             : `\n  in CSS rule \`${name}: ${style[prop]}\`.${getErrorHint(
-                name
-              )}`)
-      )
+              name
+            )}`)
+        )
+      }
     }
   }
 
@@ -336,4 +345,12 @@ export default function expand(
   }
 
   return transformedStyle
+}
+
+function getCurrentColor(color: string | undefined, inheritedColor: string) {
+  if (color && color.toLowerCase() !== 'currentcolor') {
+    return color
+  }
+
+  return inheritedColor
 }
