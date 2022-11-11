@@ -458,9 +458,12 @@ const LiveSatori = withLive(function ({
   }, [width, height])
 
   useEffect(() => {
-    const replaceFavicon = (href = '/favicon.ico') => {
-      const favicon: HTMLLinkElement =
-        document.querySelector('[rel=icon]') || document.createElement('link')
+    const replaceFavicon = (href: string) => {
+      let favicon: HTMLLinkElement | null = document.querySelector('[rel=icon]')
+      if (!favicon) {
+        favicon = document.createElement('link')
+        document.head.appendChild(favicon)
+      }
       favicon.href = href
       favicon.type = 'image/png'
       favicon.rel = 'icon'
@@ -470,7 +473,7 @@ const LiveSatori = withLive(function ({
       replaceFavicon(faviconCache[activeCard])
     } else {
       ;(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 15))
+        await new Promise((resolve) => setTimeout(resolve, 25))
 
         if (tabFavicons[activeCard] && options) {
           try {
