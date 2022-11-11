@@ -347,7 +347,10 @@ export function parseViewBox(viewBox: string) {
   return viewBox.split(/[, ]/).filter(Boolean).map(Number)
 }
 
-export function SVGNodeToImage(node: ReactElement): string {
+export function SVGNodeToImage(
+  node: ReactElement,
+  currentColor: string | number
+): string {
   let {
     viewBox,
     viewbox,
@@ -370,6 +373,7 @@ export function SVGNodeToImage(node: ReactElement): string {
 
   return `data:image/svg+xml;utf8,${`<svg${Object.entries(restProps)
     .map(([k, _v]) => {
+      if (_v === 'currentColor') _v = currentColor
       return ` ${ATTRIBUTE_MAPPING[k] || k}="${_v}"`
     })
     .join('')}>${translateSVGNodeToSVGString(children)}</svg>`.replace(
