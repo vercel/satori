@@ -68,7 +68,6 @@ export default function App({ Component, pageProps }: AppProps) {
           as='fetch'
           crossOrigin='anonymous'
         />
-        <link rel='icon' type='image/png' />
       </Head>
       <Component {...pageProps} />
     </>

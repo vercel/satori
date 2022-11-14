@@ -459,14 +459,17 @@ const LiveSatori = withLive(function ({
 
   useEffect(() => {
     const replaceFavicon = (href: string) => {
+      console.log('replace favicon')
       let favicon: HTMLLinkElement | null = document.querySelector('[rel=icon]')
       if (!favicon) {
         favicon = document.createElement('link')
+        favicon.setAttribute('type', 'image/png')
+        favicon.setAttribute('rel', 'icon')
+        favicon.setAttribute('href', href)
         document.head.appendChild(favicon)
+      } else {
+        favicon.setAttribute('href', href)
       }
-      favicon.href = href
-      favicon.type = 'image/png'
-      favicon.rel = 'icon'
     }
 
     if (faviconCache[activeCard]) {
@@ -474,7 +477,7 @@ const LiveSatori = withLive(function ({
     } else {
       console.log('generate favicon and replace')
       ;(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 25))
+        // await new Promise((resolve) => setTimeout(resolve, 25))
 
         if (tabFavicons[activeCard] && options) {
           try {
@@ -499,6 +502,7 @@ const LiveSatori = withLive(function ({
           }
         }
       })()
+      console.log('done')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCard, debug, emojiType, fontEmbed, height, options, width])
