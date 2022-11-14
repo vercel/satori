@@ -405,7 +405,7 @@ const LiveSatori = withLive(function ({
   const [scaleRatio, setScaleRatio] = useState(1)
   const [loadingResources, setLoadingResources] = useState(true)
 
-  const faviconCache: Record<string, string> = {}
+  const faviconCache = useRef<Record<string, string>>({})
 
   useEffect(() => {
     if (overrideOptions) {
@@ -491,8 +491,8 @@ const LiveSatori = withLive(function ({
       return png
     }
 
-    if (faviconCache[activeCard]) {
-      replaceFavicon(faviconCache[activeCard])
+    if (faviconCache.current[activeCard]) {
+      replaceFavicon(faviconCache.current[activeCard])
     } else {
       if (tabFavicons[activeCard] && options) {
         generateFavicon(tabFavicons[activeCard]).then((href) =>
