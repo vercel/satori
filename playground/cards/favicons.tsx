@@ -33,7 +33,7 @@ const tabFavicons: Favicons = {
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'transparent',
-        fontSize: '30px',
+        fontSize: 30,
       }}
     >
       ▲
