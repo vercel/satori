@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react'
+import React, { ReactNode, useLayoutEffect } from 'react'
 import satori from 'satori'
 import { LiveProvider, LiveContext, withLive } from 'react-live'
 import { useEffect, useState, useRef, useContext } from 'react'
@@ -459,7 +459,6 @@ const LiveSatori = withLive(function ({
 
   useEffect(() => {
     const replaceFavicon = (href: string) => {
-      console.log('replace favicon')
       let favicon: HTMLLinkElement | null = document.querySelector('[rel=icon]')
       if (!favicon) {
         favicon = document.createElement('link')
@@ -473,6 +472,8 @@ const LiveSatori = withLive(function ({
     }
 
     const generateFavicon = async (html: ReactNode) => {
+      await new Promise((resolve) => setTimeout(resolve, 15))
+
       const svg = await satori(html, {
         ...options,
         embedFont: fontEmbed,
@@ -495,9 +496,10 @@ const LiveSatori = withLive(function ({
       replaceFavicon(faviconCache.current[activeCard])
     } else {
       if (tabFavicons[activeCard] && options) {
-        generateFavicon(tabFavicons[activeCard]).then((href) =>
+        generateFavicon(tabFavicons[activeCard]).then((href) => {
           replaceFavicon(href)
-        )
+          faviconCache.current[activeCard] = href
+        })
       }
     }
   }, [
