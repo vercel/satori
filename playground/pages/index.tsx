@@ -472,6 +472,7 @@ const LiveSatori = withLive(function ({
     if (faviconCache[activeCard]) {
       replaceFavicon(faviconCache[activeCard])
     } else {
+      console.log('generate favicon and replace')
       ;(async () => {
         await new Promise((resolve) => setTimeout(resolve, 25))
 
