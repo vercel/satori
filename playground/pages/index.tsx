@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { ReactNode } from 'react'
 import satori from 'satori'
 import { LiveProvider, LiveContext, withLive } from 'react-live'
 import { useEffect, useState, useRef, useContext } from 'react'
@@ -472,40 +472,44 @@ const LiveSatori = withLive(function ({
       }
     }
 
+    const generateFavicon = async (html: ReactNode) => {
+      const svg = await satori(html, {
+        ...options,
+        embedFont: fontEmbed,
+        width: 32,
+        height: 32,
+        debug,
+        loadAdditionalAsset: (...args: string[]) =>
+          loadDynamicAsset(emojiType, ...args),
+      })
+
+      const png = (await renderPNG?.({
+        svg,
+        width: 32,
+      })) as string
+
+      return png
+    }
+
     if (faviconCache[activeCard]) {
       replaceFavicon(faviconCache[activeCard])
     } else {
-      console.log('generate favicon and replace')
-      ;(async () => {
-        // await new Promise((resolve) => setTimeout(resolve, 25))
-
-        if (tabFavicons[activeCard] && options) {
-          try {
-            const svg = await satori(tabFavicons[activeCard], {
-              ...options,
-              embedFont: fontEmbed,
-              width: 32,
-              height: 32,
-              debug,
-              loadAdditionalAsset: (...args: string[]) =>
-                loadDynamicAsset(emojiType, ...args),
-            })
-            const png = (await renderPNG?.({
-              svg,
-              width: 32,
-            })) as string
-            replaceFavicon(png)
-          } catch (e: any) {
-            console.error(e)
-            setRenderError(e.message)
-            return null
-          }
-        }
-      })()
-      console.log('done')
+      if (tabFavicons[activeCard] && options) {
+        generateFavicon(tabFavicons[activeCard]).then((href) =>
+          replaceFavicon(href)
+        )
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCard, debug, emojiType, fontEmbed, height, options, width])
+  }, [
+    activeCard,
+    debug,
+    emojiType,
+    fontEmbed,
+    height,
+    options,
+    width,
+    faviconCache,
+  ])
 
   const [result, setResult] = useState('')
   const [renderedTimeSpent, setRenderTime] = useState<number>(0)
