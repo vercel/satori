@@ -9,7 +9,7 @@ import { parse as parseBoxShadow } from 'css-box-shadow'
 
 import CssDimension from '../vendor/parse-css-dimension'
 import parseTransformOrigin from '../transform-origin'
-import { lengthToNumber, v } from '../utils'
+import {isString, lengthToNumber, v} from '../utils'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
@@ -221,14 +221,15 @@ export default function expand(
       }
 
       const name = getPropertyName(prop)
+      const value = preprocess(style[prop], currentColor)
 
       try {
         const resolvedStyle =
-          handleSpecialCase(name, style[prop], currentColor) ||
+          handleSpecialCase(name, value, currentColor) ||
           handleFallbackColor(
             name,
-            getStylesForProperty(name, purify(name, style[prop]), true),
-            style[prop] as string,
+            getStylesForProperty(name, purify(name, value), true),
+            value as string,
             currentColor
           )
 
@@ -238,9 +239,9 @@ export default function expand(
           err.message +
           // Attach the extra information of the rule itself if it's not included in
           // the error message.
-          (err.message.includes(style[prop])
+          (err.message.includes(value)
             ? '\n  ' + getErrorHint(name)
-            : `\n  in CSS rule \`${name}: ${style[prop]}\`.${getErrorHint(
+            : `\n  in CSS rule \`${name}: ${value}\`.${getErrorHint(
               name
             )}`)
         )
@@ -353,4 +354,16 @@ function getCurrentColor(color: string | undefined, inheritedColor: string) {
   }
 
   return inheritedColor
+}
+
+function convertCurrentColorToActualValue(value: string, currentColor: string): string {
+  return value.replace(/currentcolor/ig, currentColor)
+}
+
+function preprocess(value: string | number, currentColor: string): string | number {
+  if (isString(value)) {
+    value = convertCurrentColorToActualValue(value, currentColor)
+  }
+
+  return value
 }
