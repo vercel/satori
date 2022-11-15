@@ -137,7 +137,7 @@ export async function resolveImageData(
 
     switch (imageType) {
       case SVG:
-        imageSize = parseSvgImageSize(src, imageData)
+        imageSize = parseSvgImageSize(src, atob(imageData))
         break
       case PNG:
         imageSize = parsePNG(data)
