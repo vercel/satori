@@ -130,29 +130,47 @@ export async function resolveImageData(
   }
 
   if (src.startsWith('data:')) {
-    const imageType = src.replace('data:', '').split(';')[0]
-    const imageData = src.split(',')[1]
-    const data = base64ToArrayBuffer(imageData)
-    let imageSize: [number, number]
+    let decodedURI: { imageType; encodingType; dataString }
 
-    switch (imageType) {
-      case SVG:
-        imageSize = parseSvgImageSize(src, atob(imageData))
-        break
-      case PNG:
-        imageSize = parsePNG(data)
-        break
-      case GIF:
-        imageSize = parseGIF(data)
-        break
-      case JPEG:
-        imageSize = parseJPEG(data)
-        break
+    try {
+      decodedURI =
+        /data:(?<imageType>[a-z\/\+]+)(;(?<encodingType>base64))?,(?<dataString>.*)/g.exec(
+          src
+        ).groups as typeof decodedURI
+    } catch (err) {
+      console.warn('Image data URI resolved without size:' + src)
+      return [src]
     }
-    if (!ALLOWED_IMAGE_TYPES.includes(imageType)) {
-      throw new Error(`Unsupported image type: ${imageType || 'unknown'}`)
+
+    const { imageType, encodingType, dataString } = decodedURI
+    if (imageType === SVG) {
+      let imageSize = parseSvgImageSize(
+        src,
+        encodingType === 'base64'
+          ? atob(dataString)
+          : decodeURIComponent(dataString)
+      )
+
+      return [src, ...imageSize]
+    } else if (encodingType === 'base64') {
+      let imageSize: [number, number]
+      const data = base64ToArrayBuffer(dataString)
+      switch (imageType) {
+        case PNG:
+          imageSize = parsePNG(data)
+          break
+        case GIF:
+          imageSize = parseGIF(data)
+          break
+        case JPEG:
+          imageSize = parseJPEG(data)
+          break
+      }
+      return [src, ...imageSize]
+    } else {
+      console.warn('Image data URI resolved without size:' + src)
+      return [src]
     }
-    return [src, ...imageSize]
   }
 
   if (!globalThis.fetch) {
