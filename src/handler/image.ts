@@ -79,6 +79,16 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary)
 }
 
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  let binaryString = atob(base64)
+  let len = binaryString.length
+  let bytes = new Uint8Array(len)
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
+  }
+  return bytes.buffer
+}
+
 function parseSvgImageSize(src: string, data: string) {
   // Parse the SVG image size
   const svgTag = data.match(/<svg[^>]*>/)[0]
@@ -120,12 +130,29 @@ export async function resolveImageData(
   }
 
   if (src.startsWith('data:')) {
-    if (src.startsWith('data:image/svg+xml')) {
-      const data = atob(src.replace('data:image/svg+xml;base64,', ''))
-      const imageSize = parseSvgImageSize(src, data)
-      return [src, ...imageSize]
+    const imageType = src.replace('data:', '').split(';')[0]
+    const imageData = src.split(',')[1]
+    const data = base64ToArrayBuffer(imageData)
+    let imageSize: [number, number]
+
+    switch (imageType) {
+      case SVG:
+        imageSize = parseSvgImageSize(src, imageData)
+        break
+      case PNG:
+        imageSize = parsePNG(data)
+        break
+      case GIF:
+        imageSize = parseGIF(data)
+        break
+      case JPEG:
+        imageSize = parseJPEG(data)
+        break
     }
-    return [src]
+    if (!ALLOWED_IMAGE_TYPES.includes(imageType)) {
+      throw new Error(`Unsupported image type: ${imageType || 'unknown'}`)
+    }
+    return [src, ...imageSize]
   }
 
   if (!globalThis.fetch) {
