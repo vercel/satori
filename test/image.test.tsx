@@ -342,6 +342,24 @@ describe('Image', () => {
 
       expect(requests).toEqual(['https://via.placeholder.com/302'])
     })
+    
+    it('should resolve data uris with size for supported image formats', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            border: '1px solid',
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            backgroundImage:
+              'url(data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2036%2036%22%3E%3Cpath%20fill%3D%22%23FFCC4D%22%20d%3D%22M36%2018c0%209.941-8.059%2018-18%2018-9.94%200-18-8.059-18-18C0%208.06%208.06%200%2018%200c9.941%200%2018%208.06%2018%2018%22%2F%3E%3Cellipse%20fill%3D%22%23664500%22%20cx%3D%2211.5%22%20cy%3D%2212.5%22%20rx%3D%222.5%22%20ry%3D%225.5%22%2F%3E%3Cellipse%20fill%3D%22%23664500%22%20cx%3D%2224.5%22%20cy%3D%2212.5%22%20rx%3D%222.5%22%20ry%3D%225.5%22%2F%3E%3Cpath%20fill%3D%22%23664500%22%20d%3D%22M18%2022c-3.623%200-6.027-.422-9-1-.679-.131-2%200-2%202%200%204%204.595%209%2011%209%206.404%200%2011-5%2011-9%200-2-1.321-2.132-2-2-2.973.578-5.377%201-9%201z%22%2F%3E%3Cpath%20fill%3D%22%23FFF%22%20d%3D%22M9%2023s3%201%209%201%209-1%209-1-2%204-9%204-9-4-9-4z%22%2F%3E%3C%2Fsvg%3E)',
+          }}
+        ></div>,
+        { width: 100, height: 100, fonts }
+      )
+
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
 
     it('should support stretched backgroundSize', async () => {
       const svg = await satori(
