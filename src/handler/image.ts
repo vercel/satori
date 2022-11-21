@@ -79,6 +79,45 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary)
 }
 
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  let binaryString = atob(base64)
+  let len = binaryString.length
+  let bytes = new Uint8Array(len)
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
+  }
+  return bytes.buffer
+}
+
+function parseSvgImageSize(src: string, data: string) {
+  // Parse the SVG image size
+  const svgTag = data.match(/<svg[^>]*>/)[0]
+
+  const viewBoxStr = svgTag.match(/viewBox=['"](.+)['"]/)
+  let viewBox = viewBoxStr ? parseViewBox(viewBoxStr[1]) : null
+
+  const width = svgTag.match(/width="(\d*\.\d+|\d+)"/)
+  const height = svgTag.match(/height="(\d*\.\d+|\d+)"/)
+
+  if (!viewBox && (!width || !height)) {
+    throw new Error(`Failed to parse SVG from ${src}: missing "viewBox"`)
+  }
+
+  const size = viewBox ? [viewBox[2], viewBox[3]] : [+width[1], +height[1]]
+
+  const ratio = size[0] / size[1]
+  const imageSize: [number, number] =
+    width && height
+      ? [+width[1], +height[1]]
+      : width
+      ? [+width[1], +width[1] / ratio]
+      : height
+      ? [+height[1] * ratio, +height[1]]
+      : [size[0], size[1]]
+
+  return imageSize
+}
+
 export async function resolveImageData(
   src: string
 ): Promise<ResolvedImageData> {
@@ -87,11 +126,51 @@ export async function resolveImageData(
   }
 
   if (/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/.test(src)) {
-    src = src.slice(1, -1);
+    src = src.slice(1, -1)
   }
 
   if (src.startsWith('data:')) {
-    return [src]
+    let decodedURI: { imageType; encodingType; dataString }
+
+    try {
+      decodedURI =
+        /data:(?<imageType>[a-z\/\+]+)(;(?<encodingType>base64))?,(?<dataString>.*)/g.exec(
+          src
+        ).groups as typeof decodedURI
+    } catch (err) {
+      console.warn('Image data URI resolved without size:' + src)
+      return [src]
+    }
+
+    const { imageType, encodingType, dataString } = decodedURI
+    if (imageType === SVG) {
+      let imageSize = parseSvgImageSize(
+        src,
+        encodingType === 'base64'
+          ? atob(dataString)
+          : decodeURIComponent(dataString)
+      )
+
+      return [src, ...imageSize]
+    } else if (encodingType === 'base64') {
+      let imageSize: [number, number]
+      const data = base64ToArrayBuffer(dataString)
+      switch (imageType) {
+        case PNG:
+          imageSize = parsePNG(data)
+          break
+        case GIF:
+          imageSize = parseGIF(data)
+          break
+        case JPEG:
+          imageSize = parseJPEG(data)
+          break
+      }
+      return [src, ...imageSize]
+    } else {
+      console.warn('Image data URI resolved without size:' + src)
+      return [src]
+    }
   }
 
   if (!globalThis.fetch) {
@@ -123,33 +202,7 @@ export async function resolveImageData(
           try {
             const newSrc = `data:image/svg+xml;base64,${btoa(data)}`
             // Parse the SVG image size
-            const svgTag = data.match(/<svg[^>]*>/)[0]
-
-            const viewBoxStr = svgTag.match(/viewBox=['"](.+)['"]/)
-            let viewBox = viewBoxStr ? parseViewBox(viewBoxStr[1]) : null
-
-            const width = svgTag.match(/width="(\d*\.\d+|\d+)"/)
-            const height = svgTag.match(/height="(\d*\.\d+|\d+)"/)
-
-            if (!viewBox && (!width || !height)) {
-              throw new Error(
-                `Failed to parse SVG from ${src}: missing "viewBox"`
-              )
-            }
-
-            const size = viewBox
-              ? [viewBox[2], viewBox[3]]
-              : [+width[1], +height[1]]
-
-            const ratio = size[0] / size[1]
-            const imageSize: [number, number] =
-              width && height
-                ? [+width[1], +height[1]]
-                : width
-                ? [+width[1], +width[1] / ratio]
-                : height
-                ? [+height[1] * ratio, +height[1]]
-                : [size[0], size[1]]
+            const imageSize = parseSvgImageSize(src, data)
 
             cache.set(src, [newSrc, ...imageSize])
             resolve([newSrc, ...imageSize])
