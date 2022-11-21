@@ -31,6 +31,7 @@ const code = {
   he: /\p{scx=Hebrew}/u,
   te: /\p{scx=Telugu}/u,
   devanagari: /\p{scx=Devanagari}/u,
+  kannada: /\p{scx=Kannada}/u,
   symbol: /\p{Symbol}/u,
   math: /\p{Math}/u,
 }
