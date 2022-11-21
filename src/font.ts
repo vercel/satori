@@ -3,9 +3,9 @@
  */
 import opentype from '@shuding/opentype.js'
 
-type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
+export type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
 type WeightName = 'normal' | 'bold'
-type Style = 'normal' | 'italic'
+export type Style = 'normal' | 'italic'
 
 export interface FontOptions {
   data: Buffer | ArrayBuffer
