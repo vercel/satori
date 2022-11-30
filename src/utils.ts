@@ -321,7 +321,7 @@ const SVGSymbols = /[\r\n%#()<>?[\\\]^`{|}"']/g
 
 function translateSVGNodeToSVGString(
   node: ReactElement | string | (ReactElement | string)[],
-  inheritedColor?: string | undefined
+  inheritedColor: string
 ): string {
   if (!node) return ''
   if (Array.isArray(node)) {
@@ -339,13 +339,13 @@ function translateSVGNodeToSVGString(
   }
 
   const { children, style, ...restProps } = node.props || {}
-  const currentColor = style?.color || inheritedColor || 'inherit'
+  const currentColor = style?.color || inheritedColor
   return `<${type}${Object.entries(restProps)
     .map(([k, _v]) => {
       if (_v === 'currentColor') _v = currentColor
       return ` ${ATTRIBUTE_MAPPING[k] || k}="${_v}"`
     })
-    .join('')}>${translateSVGNodeToSVGString(children)}</${type}>`
+    .join('')}>${translateSVGNodeToSVGString(children, currentColor)}</${type}>`
 }
 
 export function parseViewBox(viewBox: string) {
@@ -354,7 +354,7 @@ export function parseViewBox(viewBox: string) {
 
 export function SVGNodeToImage(
   node: ReactElement,
-  inheritedColor?: string
+  inheritedColor: string
 ): string {
   let {
     viewBox,
@@ -376,7 +376,7 @@ export function SVGNodeToImage(
   restProps.width = viewBoxSize[2]
   restProps.height = viewBoxSize[3]
 
-  const currentColor = style?.color || inheritedColor || 'inherit'
+  const currentColor = style?.color || inheritedColor
 
   return `data:image/svg+xml;utf8,${`<svg${Object.entries(restProps)
     .map(([k, _v]) => {
