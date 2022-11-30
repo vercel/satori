@@ -192,4 +192,65 @@ describe('SVG', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should support currentColor when color is set on parent element', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 32,
+          fontWeight: 600,
+          color: 'red',
+        }}
+      >
+        <svg
+          width='75'
+          viewBox='0 0 75 65'
+          fill='currentColor'
+          style={{ margin: '0 75px' }}
+        >
+          <path d='M37.59.25l36.95 64H.64l36.95-64z'></path>
+        </svg>
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should support currentColor when used on svg nodes', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          color: 'red',
+        }}
+      >
+        <svg
+          width='75'
+          viewBox='0 0 75 65'
+          fill='#000'
+          style={{ margin: '0 75px' }}
+        >
+          <path
+            stroke='currentColor'
+            d='M37.59.25l36.95 64H.64l36.95-64z'
+          ></path>
+        </svg>
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })
