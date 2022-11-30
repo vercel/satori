@@ -38,6 +38,7 @@ const languageFontMap = {
   te: 'Noto+Sans+Telugu',
   ml: 'Noto+Sans+Malayalam',
   devanagari: 'Noto+Sans+Devanagari',
+  kannada: 'Noto+Sans+Kannada',
   symbol: ['Noto+Sans+Symbols', 'Noto+Sans+Symbols+2'],
   math: 'Noto+Sans+Math',
   unknown: 'Noto+Sans',

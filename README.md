@@ -3,9 +3,9 @@
 **Satori**: Enlightened library to convert HTML and CSS to SVG.
 
 > **Note**
-> 
-> To use Satori in your project to generate PNG images like Open Graph images and social cards, check out our [announcement](https://vercel.com/blog/introducing-vercel-og-image-generation-fast-dynamic-social-card-images) and [Vercel’s Open Graph Image Generation →](https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation)   
-> 
+>
+> To use Satori in your project to generate PNG images like Open Graph images and social cards, check out our [announcement](https://vercel.com/blog/introducing-vercel-og-image-generation-fast-dynamic-social-card-images) and [Vercel’s Open Graph Image Generation →](https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation)
+>
 > To use it in Next.js, take a look at the [Next.js Open Graph Image Generation template →](https://vercel.com/templates/next.js/og-image-generation)
 
 ## Overview
@@ -70,7 +70,7 @@ await satori(
 
 ### HTML Elements
 
-Satori supports a limited subset of HTML and CSS features, due to its special use cases. In general, only these static and visible elements and properties that are implemented. 
+Satori supports a limited subset of HTML and CSS features, due to its special use cases. In general, only these static and visible elements and properties that are implemented.
 
 For example, the `<input>` HTML element, the `cursor` CSS property are not in consideration. And you can't use `<style>` tags or external resources via `<link>` or `<script>`.
 
@@ -241,10 +241,11 @@ Note:
 3. `box-sizing` is set to `border-box` for all elements.
 4. `calc` isn't supported.
 5. `overflow: hidden` and `transform` can't be used together.
+6. `currentcolor` support is only available for the `color` property.
 
 ### Language and Typography
 
-Advanced typography features such as kerning, ligatures and other OpenType features are not currently supported. 
+Advanced typography features such as kerning, ligatures and other OpenType features are not currently supported.
 
 RTL languages are not supported either.
 
