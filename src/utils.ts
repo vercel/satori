@@ -344,6 +344,9 @@ function translateSVGNodeToSVGString(
 }
 
 export function parseViewBox(viewBox: string) {
+  if (!viewBox) {
+    throw new Error('`viewBox` is required to be provided for SVG')
+  }
   return viewBox.split(/[, ]/).filter(Boolean).map(Number)
 }
 

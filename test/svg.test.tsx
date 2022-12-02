@@ -156,4 +156,26 @@ describe('SVG', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should error for svg without viewBox', async () => {
+    let error
+    try {
+      await satori(
+        <div>
+          <svg xmlns='http://www.w3.org/2000/svg'>
+            <circle
+              cx='5'
+              cy='5'
+              r='4'
+              fill='red'
+            />
+          </svg>
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+    } catch (err) {
+      error = err
+    }
+    expect(error.message).toBe('`viewBox` is required to be provided for SVG')
+  })
 })
