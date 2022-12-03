@@ -94,7 +94,7 @@ function parseSvgImageSize(src: string, data: string) {
   const svgTag = data.match(/<svg[^>]*>/)[0]
 
   const viewBoxStr = svgTag.match(/viewBox=['"](.+)['"]/)
-  let viewBox = viewBoxStr ? parseViewBox(viewBoxStr[1]) : null
+  let viewBox = parseViewBox(viewBoxStr[1])
 
   const width = svgTag.match(/width="(\d*\.\d+|\d+)"/)
   const height = svgTag.match(/height="(\d*\.\d+|\d+)"/)
