@@ -343,9 +343,8 @@ function translateSVGNodeToSVGString(
     .join('')}>${translateSVGNodeToSVGString(children)}</${type}>`
 }
 
-export function parseViewBox(viewBox: string | undefined): number[] | null {
-  if (viewBox == null) return null
-  return viewBox.split(/[, ]/).filter(Boolean).map(Number)
+export function parseViewBox(viewBox?: string | null | undefined) {
+  return viewBox ? viewBox.split(/[, ]/).filter(Boolean).map(Number) : null
 }
 
 export function SVGNodeToImage(node: ReactElement): string {
