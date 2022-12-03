@@ -342,7 +342,9 @@ function translateSVGNodeToSVGString(
   const currentColor = style?.color || inheritedColor
   return `<${type}${Object.entries(restProps)
     .map(([k, _v]) => {
-      if (_v === 'currentColor') _v = currentColor
+      if (typeof _v === 'string' && _v.toLowerCase() === 'currentcolor') {
+        _v = currentColor
+      }
       return ` ${ATTRIBUTE_MAPPING[k] || k}="${_v}"`
     })
     .join('')}>${translateSVGNodeToSVGString(children, currentColor)}</${type}>`
@@ -380,7 +382,9 @@ export function SVGNodeToImage(
 
   return `data:image/svg+xml;utf8,${`<svg${Object.entries(restProps)
     .map(([k, _v]) => {
-      if (_v === 'currentColor') _v = currentColor
+      if (typeof _v === 'string' && _v.toLowerCase() === 'currentcolor') {
+        _v = currentColor
+      }
       return ` ${ATTRIBUTE_MAPPING[k] || k}="${_v}"`
     })
     .join('')}>${translateSVGNodeToSVGString(
