@@ -424,9 +424,15 @@ const LiveSatori = withLive(function ({
           const configScript = doc.createElement('script')
           configScript.text = `
             tailwind.config = {
-              corePlugins: {
-                preflight: false,
-              }
+              plugins: [{
+                handler({ addBase }) {
+                  addBase({
+                    'html': {
+                      'line-height': 1.2,
+                    }
+                  })
+                }
+              }]
             }
           `
           doc.head.appendChild(configScript)
