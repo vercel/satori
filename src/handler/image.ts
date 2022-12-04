@@ -96,8 +96,8 @@ function parseSvgImageSize(src: string, data: string) {
   const viewBoxStr = svgTag.match(/viewBox=['"](.+)['"]/)
   let viewBox = viewBoxStr ? parseViewBox(viewBoxStr[1]) : null
 
-  const width = svgTag.match(/width="(\d*\.\d+|\d+)"/)
-  const height = svgTag.match(/height="(\d*\.\d+|\d+)"/)
+  const width = svgTag.match(/width=['"](\d*\.\d+|\d+)['"]/)
+  const height = svgTag.match(/height=['"](\d*\.\d+|\d+)['"]/)
 
   if (!viewBox && (!width || !height)) {
     throw new Error(`Failed to parse SVG from ${src}: missing "viewBox"`)
@@ -125,7 +125,10 @@ export async function resolveImageData(
     throw new Error('Image source is not provided.')
   }
 
-  if (/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/.test(src)) {
+  if (
+    (src.startsWith('"') && src.endsWith('"')) ||
+    (src.startsWith('\'') && src.endsWith('\''))
+  ) {
     src = src.slice(1, -1)
   }
 
@@ -134,7 +137,7 @@ export async function resolveImageData(
 
     try {
       decodedURI =
-        /data:(?<imageType>[a-z\/\+]+)(;(?<encodingType>base64))?,(?<dataString>.*)/g.exec(
+        /data:(?<imageType>[a-z/+]+)(;(?<encodingType>base64|utf8))?,(?<dataString>.*)/g.exec(
           src
         ).groups as typeof decodedURI
     } catch (err) {
@@ -144,14 +147,10 @@ export async function resolveImageData(
 
     const { imageType, encodingType, dataString } = decodedURI
     if (imageType === SVG) {
-      let imageSize = parseSvgImageSize(
-        src,
-        encodingType === 'base64'
-          ? atob(dataString)
-          : decodeURIComponent(dataString)
-      )
-
-      return [src, ...imageSize]
+      const utf8Src = encodingType === 'base64' ? atob(dataString) : decodeURIComponent(dataString.replace(/ /g, '%20'))
+      const base64Src = encodingType === 'base64' ? src : `data:image/svg+xml;base64,${btoa(utf8Src)}`
+      let imageSize = parseSvgImageSize(src, utf8Src)
+      return [base64Src, ...imageSize]
     } else if (encodingType === 'base64') {
       let imageSize: [number, number]
       const data = base64ToArrayBuffer(dataString)
