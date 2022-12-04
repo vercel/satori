@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import satori from 'satori'
 import { LiveProvider, LiveContext, withLive } from 'react-live'
 import { useEffect, useState, useRef, useContext, useCallback } from 'react'
@@ -405,6 +405,17 @@ const LiveSatori = withLive(function ({
   const updateIframeRef = useCallback((node: HTMLIFrameElement) => {
     if (node) {
       if (node.contentWindow?.document) {
+        /* Force tailwindcss to create stylesheets on first render */
+        const forceUpdate = () => {
+          return setTimeout(() => {
+            const div = doc.createElement('div')
+            div.classList.add('hidden')
+            doc.body.appendChild(div)
+            setTimeout(() => {
+              doc.body.removeChild(div)
+            }, 300)
+          }, 200)
+        }
         const doc = node.contentWindow.document
         const script = doc.createElement('script')
         script.src = 'https://cdn.tailwindcss.com'
@@ -418,6 +429,7 @@ const LiveSatori = withLive(function ({
             }
           })
         }
+        forceUpdate()
         const observer = new MutationObserver(updateClass)
         observer.observe(doc.body, { childList: true, subtree: true })
         setIframeNode(doc.body)
