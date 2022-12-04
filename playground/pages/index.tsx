@@ -420,6 +420,17 @@ const LiveSatori = withLive(function ({
         const script = doc.createElement('script')
         script.src = 'https://cdn.tailwindcss.com'
         doc.head.appendChild(script)
+        script.addEventListener('load', () => {
+          const configScript = doc.createElement('script')
+          configScript.text = `
+            tailwind.config = {
+              corePlugins: {
+                preflight: false,
+              }
+            }
+          `
+          doc.head.appendChild(configScript)
+        })
         const updateClass = () => {
           Array.from(doc.querySelectorAll("[tw]")).forEach((v) => {
             const tw = v.getAttribute('tw')
