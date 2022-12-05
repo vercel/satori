@@ -320,11 +320,14 @@ const ATTRIBUTE_MAPPING = {
 const SVGSymbols = /[\r\n%#()<>?[\\\]^`{|}"']/g
 
 function translateSVGNodeToSVGString(
-  node: ReactElement | string | (ReactElement | string)[]
+  node: ReactElement | string | (ReactElement | string)[],
+  inheritedColor: string
 ): string {
   if (!node) return ''
   if (Array.isArray(node)) {
-    return node.map(translateSVGNodeToSVGString).join('')
+    return node
+      .map((n) => translateSVGNodeToSVGString(n, inheritedColor))
+      .join('')
   }
   if (typeof node !== 'object') return String(node)
 
@@ -335,19 +338,26 @@ function translateSVGNodeToSVGString(
     )
   }
 
-  const { children, ...restProps } = node.props || {}
+  const { children, style, ...restProps } = node.props || {}
+  const currentColor = style?.color || inheritedColor
   return `<${type}${Object.entries(restProps)
     .map(([k, _v]) => {
+      if (typeof _v === 'string' && _v.toLowerCase() === 'currentcolor') {
+        _v = currentColor
+      }
       return ` ${ATTRIBUTE_MAPPING[k] || k}="${_v}"`
     })
-    .join('')}>${translateSVGNodeToSVGString(children)}</${type}>`
+    .join('')}>${translateSVGNodeToSVGString(children, currentColor)}</${type}>`
 }
 
 export function parseViewBox(viewBox?: string | null | undefined) {
   return viewBox ? viewBox.split(/[, ]/).filter(Boolean).map(Number) : null
 }
 
-export function SVGNodeToImage(node: ReactElement): string {
+export function SVGNodeToImage(
+  node: ReactElement,
+  inheritedColor: string
+): string {
   let {
     viewBox,
     viewbox,
@@ -364,6 +374,7 @@ export function SVGNodeToImage(node: ReactElement): string {
   // We directly assign the xmlns attribute here to deduplicate.
   restProps.xmlns = 'http://www.w3.org/2000/svg'
 
+  const currentColor = style?.color || inheritedColor
   const viewBoxSize = parseViewBox(viewBox)
 
   // ratio = height / width
@@ -377,12 +388,15 @@ export function SVGNodeToImage(node: ReactElement): string {
 
   return `data:image/svg+xml;utf8,${`<svg ${Object.entries(restProps)
     .map(([k, _v]) => {
+      if (typeof _v === 'string' && _v.toLowerCase() === 'currentcolor') {
+        _v = currentColor
+      }
       return ` ${ATTRIBUTE_MAPPING[k] || k}="${_v}"`
     })
-    .join(' ')}>${translateSVGNodeToSVGString(children)}</svg>`.replace(
-    SVGSymbols,
-    encodeURIComponent
-  )}`
+    .join('')}>${translateSVGNodeToSVGString(
+    children,
+    currentColor
+  )}</svg>`.replace(SVGSymbols, encodeURIComponent)}`
 }
 
 export function isString(x: unknown): x is string {
