@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { Fragment } from 'react'
 import satori from 'satori'
 import { LiveProvider, LiveContext, withLive } from 'react-live'
-import { useEffect, useState, useRef, useContext } from 'react'
+import { useEffect, useState, useRef, useContext, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Editor, { useMonaco } from '@monaco-editor/react'
 import toast, { Toaster } from 'react-hot-toast'
@@ -402,7 +402,57 @@ const LiveSatori = withLive(function ({
   const [iframeNode, setIframeNode] = useState<HTMLElement | undefined>()
   const [scaleRatio, setScaleRatio] = useState(1)
   const [loadingResources, setLoadingResources] = useState(true)
-
+  const updateIframeRef = useCallback((node: HTMLIFrameElement) => {
+    if (node) {
+      if (node.contentWindow?.document) {
+        /* Force tailwindcss to create stylesheets on first render */
+        const forceUpdate = () => {
+          return setTimeout(() => {
+            const div = doc.createElement('div')
+            div.classList.add('hidden')
+            doc.body.appendChild(div)
+            setTimeout(() => {
+              doc.body.removeChild(div)
+            }, 300)
+          }, 200)
+        }
+        const doc = node.contentWindow.document
+        const script = doc.createElement('script')
+        script.src = 'https://cdn.tailwindcss.com'
+        doc.head.appendChild(script)
+        script.addEventListener('load', () => {
+          const configScript = doc.createElement('script')
+          configScript.text = `
+            tailwind.config = {
+              plugins: [{
+                handler({ addBase }) {
+                  addBase({
+                    'html': {
+                      'line-height': 1.2,
+                    }
+                  })
+                }
+              }]
+            }
+          `
+          doc.head.appendChild(configScript)
+        })
+        const updateClass = () => {
+          Array.from(doc.querySelectorAll("[tw]")).forEach((v) => {
+            const tw = v.getAttribute('tw')
+            if (tw) {
+              v.setAttribute('class', tw)
+              v.removeAttribute('tw')
+            }
+          })
+        }
+        forceUpdate()
+        const observer = new MutationObserver(updateClass)
+        observer.observe(doc.body, { childList: true, subtree: true })
+        setIframeNode(doc.body)
+      }
+    }
+  }, [setIframeNode]) // eslint-disable-line]
   useEffect(() => {
     if (overrideOptions) {
       setWidth(Math.min(overrideOptions.width || 800, 2000))
@@ -428,7 +478,7 @@ const LiveSatori = withLive(function ({
   }
 
   useEffect(() => {
-    ;(async () => {
+    ; (async () => {
       setOptions({
         fonts: await loadFonts,
       })
@@ -459,98 +509,98 @@ const LiveSatori = withLive(function ({
   useEffect(() => {
     let cancelled = false
 
-    ;(async () => {
-      // We leave a small buffer here to debounce if it's PNG.
-      if (renderType === 'png') {
-        await new Promise((resolve) => setTimeout(resolve, 15))
-      }
-      if (cancelled) return
+      ; (async () => {
+        // We leave a small buffer here to debounce if it's PNG.
+        if (renderType === 'png') {
+          await new Promise((resolve) => setTimeout(resolve, 15))
+        }
+        if (cancelled) return
 
-      let _result = ''
-      let _renderedTimeSpent = 0
+        let _result = ''
+        let _renderedTimeSpent = 0
 
-      if (live?.element && options) {
-        const start = (
-          typeof performance !== 'undefined' ? performance : Date
-        ).now()
-        if (renderType !== 'html') {
-          try {
-            _result = await satori(live.element.prototype.render(), {
-              ...options,
-              embedFont: fontEmbed,
-              width,
-              height,
-              debug,
-              loadAdditionalAsset: (...args: string[]) =>
-                loadDynamicAsset(emojiType, ...args),
-            })
-            if (renderType === 'png') {
-              const url = (await renderPNG?.({
-                svg: _result,
-                width,
-              })) as string
-
-              if (!cancelled) {
-                setObjectURL(url)
-
-                // After rendering the PNG @1x quickly, we render the PNG @2x for
-                // the playground only to make it look less blurry.
-                // We only do that for images that are not too big (1200^2).
-                if (width * height <= 1440000) {
-                  setTimeout(async () => {
-                    if (cancelled) return
-                    const _url = (await renderPNG?.({
-                      svg: _result,
-                      width: width * 2,
-                    })) as string
-
-                    if (cancelled) return
-                    setObjectURL(_url)
-                  }, 20)
-                }
-              }
-            }
-            if (renderType === 'pdf') {
-              const doc = new PDFDocument({
-                compress: false,
-                size: [width, height],
-              })
-              SVGtoPDF(doc, _result, 0, 0, {
+        if (live?.element && options) {
+          const start = (
+            typeof performance !== 'undefined' ? performance : Date
+          ).now()
+          if (renderType !== 'html') {
+            try {
+              _result = await satori(live.element.prototype.render(), {
+                ...options,
+                embedFont: fontEmbed,
                 width,
                 height,
-                preserveAspectRatio: `xMidYMid meet`,
+                debug,
+                loadAdditionalAsset: (...args: string[]) =>
+                  loadDynamicAsset(emojiType, ...args),
               })
-              const stream = doc.pipe(blobStream())
-              stream.on('finish', () => {
-                const blob = stream.toBlob('application/pdf')
-                setObjectURL(URL.createObjectURL(blob))
-              })
-              doc.end()
-            }
-            setRenderError(null)
-          } catch (e: any) {
-            console.error(e)
-            setRenderError(e.message)
-            return null
-          }
-        } else {
-          setRenderError(null)
-        }
-        _renderedTimeSpent =
-          (typeof performance !== 'undefined' ? performance : Date).now() -
-          start
-      }
+              if (renderType === 'png') {
+                const url = (await renderPNG?.({
+                  svg: _result,
+                  width,
+                })) as string
 
-      Object.assign(currentOptions, {
-        width,
-        height,
-        debug,
-        emojiType,
-        fontEmbed,
-      })
-      setResult(_result)
-      setRenderTime(_renderedTimeSpent)
-    })()
+                if (!cancelled) {
+                  setObjectURL(url)
+
+                  // After rendering the PNG @1x quickly, we render the PNG @2x for
+                  // the playground only to make it look less blurry.
+                  // We only do that for images that are not too big (1200^2).
+                  if (width * height <= 1440000) {
+                    setTimeout(async () => {
+                      if (cancelled) return
+                      const _url = (await renderPNG?.({
+                        svg: _result,
+                        width: width * 2,
+                      })) as string
+
+                      if (cancelled) return
+                      setObjectURL(_url)
+                    }, 20)
+                  }
+                }
+              }
+              if (renderType === 'pdf') {
+                const doc = new PDFDocument({
+                  compress: false,
+                  size: [width, height],
+                })
+                SVGtoPDF(doc, _result, 0, 0, {
+                  width,
+                  height,
+                  preserveAspectRatio: `xMidYMid meet`,
+                })
+                const stream = doc.pipe(blobStream())
+                stream.on('finish', () => {
+                  const blob = stream.toBlob('application/pdf')
+                  setObjectURL(URL.createObjectURL(blob))
+                })
+                doc.end()
+              }
+              setRenderError(null)
+            } catch (e: any) {
+              console.error(e)
+              setRenderError(e.message)
+              return null
+            }
+          } else {
+            setRenderError(null)
+          }
+          _renderedTimeSpent =
+            (typeof performance !== 'undefined' ? performance : Date).now() -
+            start
+        }
+
+        Object.assign(currentOptions, {
+          width,
+          height,
+          debug,
+          emojiType,
+          fontEmbed,
+        })
+        setResult(_result)
+        setRenderTime(_renderedTimeSpent)
+      })()
 
     return () => {
       cancelled = true
@@ -598,18 +648,14 @@ const LiveSatori = withLive(function ({
               renderType !== 'svg'
                 ? undefined
                 : {
-                    __html: `<div style="position:absolute;width:${width}px;height:${height}px;transform:scale(${scaleRatio});display:flex;align-items:center;justify-content:center">${result}</div>`,
-                  }
+                  __html: `<div style="position:absolute;width:${width}px;height:${height}px;transform:scale(${scaleRatio});display:flex;align-items:center;justify-content:center">${result}</div>`,
+                }
             }
           >
             {renderType === 'html' ? (
               <iframe
-                key='html'
-                ref={(node) => {
-                  if (node) {
-                    setIframeNode(node.contentWindow?.document?.body)
-                  }
-                }}
+                key="html"
+                ref={updateIframeRef}
                 width={width}
                 height={height}
                 style={{
@@ -798,8 +844,8 @@ const LiveSatori = withLive(function ({
               href={
                 result
                   ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-                      result
-                    )}`
+                    result
+                  )}`
                   : undefined
               }
               target={result ? '_blank' : ''}

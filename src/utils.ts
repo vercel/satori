@@ -314,7 +314,7 @@ const ATTRIBUTE_MAPPING = {
   xmlLang: 'xml:lang',
   xmlSpace: 'xml:space',
   xmlnsXlink: 'xmlns:xlink',
-}
+} as const
 
 // From https://github.com/yoksel/url-encoder/blob/master/src/js/script.js
 const SVGSymbols = /[\r\n%#()<>?[\\\]^`{|}"']/g
@@ -350,8 +350,8 @@ function translateSVGNodeToSVGString(
     .join('')}>${translateSVGNodeToSVGString(children, currentColor)}</${type}>`
 }
 
-export function parseViewBox(viewBox: string) {
-  return viewBox.split(/[, ]/).filter(Boolean).map(Number)
+export function parseViewBox(viewBox?: string | null | undefined) {
+  return viewBox ? viewBox.split(/[, ]/).filter(Boolean).map(Number) : null
 }
 
 export function SVGNodeToImage(
@@ -370,17 +370,23 @@ export function SVGNodeToImage(
   } = node.props || {}
 
   viewBox ||= viewbox
-  const viewBoxSize = parseViewBox(viewBox)
 
   // We directly assign the xmlns attribute here to deduplicate.
   restProps.xmlns = 'http://www.w3.org/2000/svg'
-  restProps.viewBox = viewBox
-  restProps.width = viewBoxSize[2]
-  restProps.height = viewBoxSize[3]
 
   const currentColor = style?.color || inheritedColor
+  const viewBoxSize = parseViewBox(viewBox)
 
-  return `data:image/svg+xml;utf8,${`<svg${Object.entries(restProps)
+  // ratio = height / width
+  const ratio = viewBoxSize ? viewBoxSize[3] / viewBoxSize[2] : null
+  width = width || (ratio && height) ? height / ratio : null
+  height = height || (ratio && width) ? width * ratio : null
+
+  restProps.width = width
+  restProps.height = height
+  if (viewBox) restProps.viewBox = viewBox
+
+  return `data:image/svg+xml;utf8,${`<svg ${Object.entries(restProps)
     .map(([k, _v]) => {
       if (typeof _v === 'string' && _v.toLowerCase() === 'currentcolor') {
         _v = currentColor

@@ -113,11 +113,13 @@ export default async function handler(
   if (type === 'svg') {
     const viewBox = props.viewBox || props.viewbox
     const viewBoxSize = parseViewBox(viewBox)
-    const ratio = viewBoxSize[3] / viewBoxSize[2]
+    const ratio = viewBoxSize ? (viewBoxSize[3] / viewBoxSize[2]) : null
 
     let { width, height } = props
     if (typeof width === 'undefined' && height) {
-      if (typeof height === 'string' && height.endsWith('%')) {
+      if (ratio == null) {
+        width = 0
+      } else if (typeof height === 'string' && height.endsWith('%')) {
         width = parseInt(height) / ratio + '%'
       } else {
         height = lengthToNumber(
@@ -129,7 +131,9 @@ export default async function handler(
         width = height / ratio
       }
     } else if (typeof height === 'undefined' && width) {
-      if (typeof width === 'string' && width.endsWith('%')) {
+      if (ratio == null) {
+        width = 0
+      } else if (typeof width === 'string' && width.endsWith('%')) {
         height = parseInt(width) * ratio + '%'
       } else {
         width = lengthToNumber(
@@ -159,12 +163,12 @@ export default async function handler(
             inheritedStyle
           ) || height
       }
-      width ||= viewBoxSize[2]
-      height ||= viewBoxSize[3]
+      width ||= viewBoxSize?.[2]
+      height ||= viewBoxSize?.[3]
     }
 
-    if (!style.width) style.width = width
-    if (!style.height) style.height = height
+    if (!style.width && width) style.width = width
+    if (!style.height && height) style.height = height
   }
 
   // Set properties for Yoga.

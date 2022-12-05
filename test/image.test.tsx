@@ -342,7 +342,63 @@ describe('Image', () => {
 
       expect(requests).toEqual(['https://via.placeholder.com/302'])
     })
-    
+
+    it('should support SVG data uris with various quotes inside url()', async () => {
+
+      const backgroundImagesWithDoubleQuotes = [
+        `url(data:image/svg+xml,<svg width="116" height="100" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M57.5 0L115 100H0L57.5 0z" /></svg>)`,
+        `url(data:image/svg+xml;utf8,<svg width="116" height="100" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M57.5 0L115 100H0L57.5 0z" /></svg>)`,
+        `url(data:image/svg+xml,%3Csvg width="116" height="100" fill="white" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M57.5 0L115 100H0L57.5 0z" /%3E%3C/svg%3E)`,
+        `url(data:image/svg+xml;utf8,%3Csvg width="116" height="100" fill="white" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M57.5 0L115 100H0L57.5 0z" /%3E%3C/svg%3E)`,
+        `url(data:image/svg+xml,%3Csvg%20width%3D%22116%22%20height%3D%22100%22%20fill%3D%22white%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M57.5%200L115%20100H0L57.5%200z%22%20%2F%3E%3C%2Fsvg%3E)`,
+        `url(data:image/svg+xml;utf8,%3Csvg%20width%3D%22116%22%20height%3D%22100%22%20fill%3D%22white%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M57.5%200L115%20100H0L57.5%200z%22%20%2F%3E%3C%2Fsvg%3E)`,
+        `url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTE2IiBoZWlnaHQ9IjEwMCIgZmlsbD0id2hpdGUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTU3LjUgMEwxMTUgMTAwSDBMNTcuNSAweiIgLz48L3N2Zz4=)`,
+      ]
+
+      const backgroundImagesWithSingleQuotes = [
+        `url(data:image/svg+xml,<svg width='116' height='100' fill='white' xmlns='http://www.w3.org/2000/svg'><path d='M57.5 0L115 100H0L57.5 0z' /></svg>)`,
+        `url(data:image/svg+xml;utf8,<svg width='116' height='100' fill='white' xmlns='http://www.w3.org/2000/svg'><path d='M57.5 0L115 100H0L57.5 0z' /></svg>)`,
+        `url(data:image/svg+xml,%3Csvg width='116' height='100' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M57.5 0L115 100H0L57.5 0z' /%3E%3C/svg%3E)`,
+        `url(data:image/svg+xml;utf8,%3Csvg width='116' height='100' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M57.5 0L115 100H0L57.5 0z' /%3E%3C/svg%3E)`,
+        `url(data:image/svg+xml,%3Csvg%20width%3D%27116%27%20height%3D%27100%27%20fill%3D%27white%27%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%3E%3Cpath%20d%3D%27M57.5%200L115%20100H0L57.5%200z%27%20%2F%3E%3C%2Fsvg%3E)`,
+        `url(data:image/svg+xml;utf8,%3Csvg%20width%3D%27116%27%20height%3D%27100%27%20fill%3D%27white%27%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%3E%3Cpath%20d%3D%27M57.5%200L115%20100H0L57.5%200z%27%20%2F%3E%3C%2Fsvg%3E)`,
+        `url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTE2JyBoZWlnaHQ9JzEwMCcgZmlsbD0nd2hpdGUnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zyc+PHBhdGggZD0nTTU3LjUgMEwxMTUgMTAwSDBMNTcuNSAweicgLz48L3N2Zz4=)`,
+      ]
+
+      const backgroundImagesWithDoubleQuotesWrappedInSingleQuotes = backgroundImagesWithDoubleQuotes.map(b => b.replace(/^url\(/, `url('`).replace(/\)$/, `')`))
+      const backgroundImagesWithSingleQuotesWrappedInDoubleQuotes = backgroundImagesWithDoubleQuotes.map(b => b.replace(/^url\(/, `url("`).replace(/\)$/, `")`))
+
+      const backgroundImages = [
+        ...backgroundImagesWithDoubleQuotes,
+        ...backgroundImagesWithSingleQuotes,
+        ...backgroundImagesWithDoubleQuotesWrappedInSingleQuotes,
+        ...backgroundImagesWithSingleQuotesWrappedInDoubleQuotes,
+      ]
+
+      let lastImageBuffer = null
+      for (const backgroundImage of backgroundImages) {
+        const svg = await satori(
+          <div
+            style={{
+              border: '1px solid',
+              width: '50%',
+              height: '50%',
+              display: 'flex',
+              backgroundImage,
+              backgroundSize: '50px 50px',
+            }}
+          ></div>,
+          { width: 100, height: 100, fonts }
+        )
+
+        const newImageBuffer = toImage(svg, 100)
+        if (lastImageBuffer) {
+          expect(newImageBuffer.equals(lastImageBuffer)).toBe(true)
+        }
+        lastImageBuffer = newImageBuffer
+      }
+    })
+
     it('should resolve data uris with size for supported image formats', async () => {
       // tests with all the supported image data uri formats.
       const renderSvg = (imageUri) =>
