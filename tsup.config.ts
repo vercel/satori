@@ -11,14 +11,16 @@ export default defineConfig({
   entry: ['src/index.ts'],
   splitting: false,
   sourcemap: true,
-  dts: process.env.NODE_ENV !== 'development',
+  dts: process.env.NODE_ENV !== 'development' && {
+    resolve: ['twrnc', './tw-config', './types'],
+  },
   minify: process.env.NODE_ENV !== 'development',
   format: ['esm', 'cjs'],
   noExternal: ['twrnc'],
   esbuildOptions(options) {
     if (process.env.WASM) {
       options.outExtension = {
-        '.js': `.wasm.${options.format === "cjs" ? 'cjs' : 'js'}`,
+        '.js': `.wasm.${options.format === 'cjs' ? 'cjs' : 'js'}`,
       }
     }
     options.tsconfig = process.env.WASM ? 'tsconfig.wasm.json' : 'tsconfig.json'
