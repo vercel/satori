@@ -20,7 +20,7 @@ const emojiRegex = new RegExp(createEmojiRegex(), '')
 // - https://fonts.google.com/noto/fonts?sort=popularity&noto.query=sans
 const code = {
   emoji: emojiRegex,
-  ja: /\p{scx=Hira}|\p{scx=Kana}|[，；：]/u,
+  ja: /\p{scx=Hira}|\p{scx=Kana}|[\u3000]|[\uFF00-\uFFEF]/u,
   ko: /\p{scx=Hangul}/u,
   zh: /\p{scx=Han}/u,
   th: /\p{scx=Thai}/u,
