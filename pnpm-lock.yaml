@@ -27,6 +27,7 @@ importers:
       prettier: ^2.7.1
       react: ^17.0.2
       tsup: ^5.11.13
+      turbo: ^1.6.3
       twrnc: ^3.4.0
       typescript: ^4.5.5
       vitest: 0.23.4
@@ -57,6 +58,7 @@ importers:
       prettier: 2.7.1
       react: 17.0.2
       tsup: 5.12.9_typescript@4.8.3
+      turbo: 1.6.3
       twrnc: 3.4.0
       typescript: 4.8.3
       vitest: 0.23.4_@vitest+ui@0.7.13
@@ -82,6 +84,8 @@ importers:
       react-dom: ^17.0.2
       react-hot-toast: ^2.3.0
       react-live: ^2.4.1
+      react-resizable-panels: ^0.0.30
+      regenerator: link:@babel/runtime/regenerator
       satori: workspace:*
       svg-to-pdfkit: ^0.1.8
       yoga-wasm-web: 0.1.2
@@ -101,6 +105,7 @@ importers:
       react-dom: 17.0.2_react@17.0.2
       react-hot-toast: 2.3.0_sfoxds7t5ydpegc3knd667wn6m
       react-live: 2.4.1_sfoxds7t5ydpegc3knd667wn6m
+      react-resizable-panels: 0.0.30_sfoxds7t5ydpegc3knd667wn6m
       satori: link:..
       svg-to-pdfkit: 0.1.8
       yoga-wasm-web: 0.1.2
@@ -109,6 +114,7 @@ importers:
       '@types/pdfkit': 0.12.7
       '@types/react-dom': 18.0.6
       '@types/svg-to-pdfkit': 0.1.0
+      regenerator: link:@babel/runtime/regenerator
 
 packages:
 
@@ -2880,6 +2886,16 @@ packages:
       unescape: 1.0.1
     dev: false
 
+  /react-resizable-panels/0.0.30_sfoxds7t5ydpegc3knd667wn6m:
+    resolution: {integrity: sha512-VvyPqYJ/+pDkWLUf+XdLlvSyV4p1NFVXB3PP7oZ9l5bUOE6Voe0nADzIKOuSdeTvQ15Fnsv7AKGmRA8WJw+AuA==}
+    peerDependencies:
+      react: ^16.14.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.14.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      react: 17.0.2
+      react-dom: 17.0.2_react@17.0.2
+    dev: false
+
   /react-simple-code-editor/0.11.2_sfoxds7t5ydpegc3knd667wn6m:
     resolution: {integrity: sha512-vLMEDj+qLrZ88zK/8bhRdqM2Mp0cQJCUbHPc/QIfxlIYHzAclaAzPX0TQ4ZI5LTYSP3hsYYOT3EciV2dCG4o0Q==}
     peerDependencies:
@@ -3415,6 +3431,67 @@ packages:
     dependencies:
       tslib: 1.14.1
       typescript: 4.8.3
+    dev: true
+
+  /turbo-darwin-64/1.6.3:
+    resolution: {integrity: sha512-QmDIX0Yh1wYQl0bUS0gGWwNxpJwrzZU2GIAYt3aOKoirWA2ecnyb3R6ludcS1znfNV2MfunP+l8E3ncxUHwtjA==}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /turbo-darwin-arm64/1.6.3:
+    resolution: {integrity: sha512-75DXhFpwE7CinBbtxTxH08EcWrxYSPFow3NaeFwsG8aymkWXF+U2aukYHJA6I12n9/dGqf7yRXzkF0S/9UtdyQ==}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /turbo-linux-64/1.6.3:
+    resolution: {integrity: sha512-O9uc6J0yoRPWdPg9THRQi69K6E2iZ98cRHNvus05lZbcPzZTxJYkYGb5iagCmCW/pq6fL4T4oLWAd6evg2LGQA==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /turbo-linux-arm64/1.6.3:
+    resolution: {integrity: sha512-dCy667qqEtZIhulsRTe8hhWQNCJO0i20uHXv7KjLHuFZGCeMbWxB8rsneRoY+blf8+QNqGuXQJxak7ayjHLxiA==}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /turbo-windows-64/1.6.3:
+    resolution: {integrity: sha512-lKRqwL3mrVF09b9KySSaOwetehmGknV9EcQTF7d2dxngGYYX1WXoQLjFP9YYH8ZV07oPm+RUOAKSCQuDuMNhiA==}
+    cpu: [x64]
+    os: [win32]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /turbo-windows-arm64/1.6.3:
+    resolution: {integrity: sha512-BXY1sDPEA1DgPwuENvDCD8B7Hb0toscjus941WpL8CVd10hg9pk/MWn9CNgwDO5Q9ks0mw+liDv2EMnleEjeNA==}
+    cpu: [arm64]
+    os: [win32]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /turbo/1.6.3:
+    resolution: {integrity: sha512-FtfhJLmEEtHveGxW4Ye/QuY85AnZ2ZNVgkTBswoap7UMHB1+oI4diHPNyqrQLG4K1UFtCkjOlVoLsllUh/9QRw==}
+    hasBin: true
+    requiresBuild: true
+    optionalDependencies:
+      turbo-darwin-64: 1.6.3
+      turbo-darwin-arm64: 1.6.3
+      turbo-linux-64: 1.6.3
+      turbo-linux-arm64: 1.6.3
+      turbo-windows-64: 1.6.3
+      turbo-windows-arm64: 1.6.3
     dev: true
 
   /twrnc/3.4.0:

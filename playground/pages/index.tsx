@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react'
+import React from 'react'
 import satori from 'satori'
 import { LiveProvider, LiveContext, withLive } from 'react-live'
 import { useEffect, useState, useRef, useContext, useCallback } from 'react'
@@ -13,9 +13,11 @@ import PDFDocument from 'pdfkit/js/pdfkit.standalone'
 import SVGtoPDF from 'svg-to-pdfkit'
 import blobStream from 'blob-stream'
 import { createIntlSegmenterPolyfill } from 'intl-segmenter-polyfill'
+import { Panel, PanelGroup } from 'react-resizable-panels'
 
 import { loadEmoji, getIconCode, apis } from '../utils/twemoji'
 import Introduction from '../components/introduction'
+import PanelResizeHandle from '../components/panel-resize-handle'
 
 import playgroundTabs, { Tabs } from '../cards/playground-data'
 import previewTabs from '../cards/preview-tabs'
@@ -338,46 +340,50 @@ function LiveEditor({ id }: { id: string }) {
     }
   }, [monaco])
 
+  const ref = useRef<HTMLDivElement>(null)
+
   return (
-    <Editor
-      height='100%'
-      theme='IDLE'
-      defaultLanguage='typescript'
-      value={editedCards[id]}
-      onChange={(newCode) => {
-        // We also update the code in memory so switching tabs will preserve the
-        // edited code (until refreshing).
-        editedCards[id] = newCode ?? ''
-        onChange(newCode ?? '')
-      }}
-      onMount={async (editor, _monaco) => {
-        const modelUri = _monaco.Uri.file('satori.tsx')
-        const codeModel = _monaco.editor.createModel(
-          editedCards[id],
-          'typescript',
-          modelUri // Pass the file name to the model here.
-        )
-        _monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-          jsx: 'react',
-        })
-        _monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions(
-          {}
-        )
-        editor.setModel(codeModel)
-      }}
-      options={{
-        fontFamily: 'iaw-mono-var',
-        fontSize: 14,
-        wordWrap: 'on',
-        tabSize: 2,
-        minimap: {
-          enabled: false,
-        },
-        smoothScrolling: true,
-        cursorSmoothCaretAnimation: true,
-        contextmenu: false,
-      }}
-    />
+    <div ref={ref} style={{ height: '100%', position: 'relative' }}>
+      <div style={{ position: 'absolute' }}>
+        <Editor
+          height='100%'
+          theme='IDLE'
+          defaultLanguage='javascript'
+          value={editedCards[id]}
+          onChange={(newCode) => {
+            // We also update the code in memory so switching tabs will preserve the
+            // edited code (until refreshing).
+            editedCards[id] = newCode ?? ''
+            onChange(newCode ?? '')
+          }}
+          onMount={async (editor, _monaco) => {
+            if (ref.current) {
+              const relayout = ([e]: any) => {
+                editor.layout({
+                  width: e.borderBoxSize[0].inlineSize,
+                  height: e.borderBoxSize[0].blockSize,
+                })
+              }
+              const resizeObserver = new ResizeObserver(relayout)
+              resizeObserver.observe(ref.current)
+            }
+          }}
+          options={{
+            fontFamily: 'iaw-mono-var',
+            fontSize: 14,
+            wordWrap: 'on',
+            tabSize: 2,
+            minimap: {
+              enabled: false,
+            },
+            smoothScrolling: true,
+            cursorSmoothCaretAnimation: true,
+            contextmenu: false,
+            automaticLayout: true,
+          }}
+        />
+      </div>
+    </div>
   )
 }
 
@@ -400,29 +406,31 @@ const LiveSatori = withLive(function ({
   const [width, setWidth] = useState(400 * 2)
   const [height, setHeight] = useState(200 * 2)
   const [iframeNode, setIframeNode] = useState<HTMLElement | undefined>()
+  const previewContainerRef = useRef<HTMLDivElement>(null)
   const [scaleRatio, setScaleRatio] = useState(1)
   const [loadingResources, setLoadingResources] = useState(true)
-  const updateIframeRef = useCallback((node: HTMLIFrameElement) => {
-    if (node) {
-      if (node.contentWindow?.document) {
-        /* Force tailwindcss to create stylesheets on first render */
-        const forceUpdate = () => {
-          return setTimeout(() => {
-            const div = doc.createElement('div')
-            div.classList.add('hidden')
-            doc.body.appendChild(div)
-            setTimeout(() => {
-              doc.body.removeChild(div)
-            }, 300)
-          }, 200)
-        }
-        const doc = node.contentWindow.document
-        const script = doc.createElement('script')
-        script.src = 'https://cdn.tailwindcss.com'
-        doc.head.appendChild(script)
-        script.addEventListener('load', () => {
-          const configScript = doc.createElement('script')
-          configScript.text = `
+  const updateIframeRef = useCallback(
+    (node: HTMLIFrameElement) => {
+      if (node) {
+        if (node.contentWindow?.document) {
+          /* Force tailwindcss to create stylesheets on first render */
+          const forceUpdate = () => {
+            return setTimeout(() => {
+              const div = doc.createElement('div')
+              div.classList.add('hidden')
+              doc.body.appendChild(div)
+              setTimeout(() => {
+                doc.body.removeChild(div)
+              }, 300)
+            }, 200)
+          }
+          const doc = node.contentWindow.document
+          const script = doc.createElement('script')
+          script.src = 'https://cdn.tailwindcss.com'
+          doc.head.appendChild(script)
+          script.addEventListener('load', () => {
+            const configScript = doc.createElement('script')
+            configScript.text = `
             tailwind.config = {
               plugins: [{
                 handler({ addBase }) {
@@ -435,24 +443,26 @@ const LiveSatori = withLive(function ({
               }]
             }
           `
-          doc.head.appendChild(configScript)
-        })
-        const updateClass = () => {
-          Array.from(doc.querySelectorAll("[tw]")).forEach((v) => {
-            const tw = v.getAttribute('tw')
-            if (tw) {
-              v.setAttribute('class', tw)
-              v.removeAttribute('tw')
-            }
+            doc.head.appendChild(configScript)
           })
+          const updateClass = () => {
+            Array.from(doc.querySelectorAll('[tw]')).forEach((v) => {
+              const tw = v.getAttribute('tw')
+              if (tw) {
+                v.setAttribute('class', tw)
+                v.removeAttribute('tw')
+              }
+            })
+          }
+          forceUpdate()
+          const observer = new MutationObserver(updateClass)
+          observer.observe(doc.body, { childList: true, subtree: true })
+          setIframeNode(doc.body)
         }
-        forceUpdate()
-        const observer = new MutationObserver(updateClass)
-        observer.observe(doc.body, { childList: true, subtree: true })
-        setIframeNode(doc.body)
       }
-    }
-  }, [setIframeNode]) // eslint-disable-line]
+    },
+    [setIframeNode]
+  ) // eslint-disable-line]
   useEffect(() => {
     if (overrideOptions) {
       setWidth(Math.min(overrideOptions.width || 800, 2000))
@@ -467,18 +477,18 @@ const LiveSatori = withLive(function ({
   sizeRef.current = [width, height]
 
   function updateScaleRatio() {
+    if (!previewContainerRef.current) return
+
     const [w, h] = sizeRef.current
-    const innerWidth = window.innerWidth
-    const containerWidth =
-      innerWidth < 600 ? innerWidth - 20 : innerWidth / 2 - 15
-    const containerHeight = (containerWidth * 9) / 16
+    const containerWidth = previewContainerRef.current.clientWidth
+    const containerHeight = previewContainerRef.current.clientHeight
     setScaleRatio(
       Math.min(1, Math.min(containerWidth / w, containerHeight / h))
     )
   }
 
   useEffect(() => {
-    ; (async () => {
+    ;(async () => {
       setOptions({
         fonts: await loadFonts,
       })
@@ -487,16 +497,14 @@ const LiveSatori = withLive(function ({
   }, [])
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout
+    if (!previewContainerRef.current) return
 
-    const onResize = () => {
-      clearTimeout(timeout)
-      timeout = setTimeout(() => {
-        updateScaleRatio()
-      }, 50)
+    const observer = new ResizeObserver(updateScaleRatio)
+    observer.observe(previewContainerRef.current)
+
+    return () => {
+      observer.disconnect()
     }
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
   }, [])
 
   useEffect(() => {
@@ -509,98 +517,98 @@ const LiveSatori = withLive(function ({
   useEffect(() => {
     let cancelled = false
 
-      ; (async () => {
-        // We leave a small buffer here to debounce if it's PNG.
-        if (renderType === 'png') {
-          await new Promise((resolve) => setTimeout(resolve, 15))
-        }
-        if (cancelled) return
+    ;(async () => {
+      // We leave a small buffer here to debounce if it's PNG.
+      if (renderType === 'png') {
+        await new Promise((resolve) => setTimeout(resolve, 15))
+      }
+      if (cancelled) return
 
-        let _result = ''
-        let _renderedTimeSpent = 0
+      let _result = ''
+      let _renderedTimeSpent = 0
 
-        if (live?.element && options) {
-          const start = (
-            typeof performance !== 'undefined' ? performance : Date
-          ).now()
-          if (renderType !== 'html') {
-            try {
-              _result = await satori(live.element.prototype.render(), {
-                ...options,
-                embedFont: fontEmbed,
+      if (live?.element && options) {
+        const start = (
+          typeof performance !== 'undefined' ? performance : Date
+        ).now()
+        if (renderType !== 'html') {
+          try {
+            _result = await satori(live.element.prototype.render(), {
+              ...options,
+              embedFont: fontEmbed,
+              width,
+              height,
+              debug,
+              loadAdditionalAsset: (...args: string[]) =>
+                loadDynamicAsset(emojiType, ...args),
+            })
+            if (renderType === 'png') {
+              const url = (await renderPNG?.({
+                svg: _result,
                 width,
-                height,
-                debug,
-                loadAdditionalAsset: (...args: string[]) =>
-                  loadDynamicAsset(emojiType, ...args),
-              })
-              if (renderType === 'png') {
-                const url = (await renderPNG?.({
-                  svg: _result,
-                  width,
-                })) as string
+              })) as string
 
-                if (!cancelled) {
-                  setObjectURL(url)
+              if (!cancelled) {
+                setObjectURL(url)
 
-                  // After rendering the PNG @1x quickly, we render the PNG @2x for
-                  // the playground only to make it look less blurry.
-                  // We only do that for images that are not too big (1200^2).
-                  if (width * height <= 1440000) {
-                    setTimeout(async () => {
-                      if (cancelled) return
-                      const _url = (await renderPNG?.({
-                        svg: _result,
-                        width: width * 2,
-                      })) as string
+                // After rendering the PNG @1x quickly, we render the PNG @2x for
+                // the playground only to make it look less blurry.
+                // We only do that for images that are not too big (1200^2).
+                if (width * height <= 1440000) {
+                  setTimeout(async () => {
+                    if (cancelled) return
+                    const _url = (await renderPNG?.({
+                      svg: _result,
+                      width: width * 2,
+                    })) as string
 
-                      if (cancelled) return
-                      setObjectURL(_url)
-                    }, 20)
-                  }
+                    if (cancelled) return
+                    setObjectURL(_url)
+                  }, 20)
                 }
               }
-              if (renderType === 'pdf') {
-                const doc = new PDFDocument({
-                  compress: false,
-                  size: [width, height],
-                })
-                SVGtoPDF(doc, _result, 0, 0, {
-                  width,
-                  height,
-                  preserveAspectRatio: `xMidYMid meet`,
-                })
-                const stream = doc.pipe(blobStream())
-                stream.on('finish', () => {
-                  const blob = stream.toBlob('application/pdf')
-                  setObjectURL(URL.createObjectURL(blob))
-                })
-                doc.end()
-              }
-              setRenderError(null)
-            } catch (e: any) {
-              console.error(e)
-              setRenderError(e.message)
-              return null
             }
-          } else {
+            if (renderType === 'pdf') {
+              const doc = new PDFDocument({
+                compress: false,
+                size: [width, height],
+              })
+              SVGtoPDF(doc, _result, 0, 0, {
+                width,
+                height,
+                preserveAspectRatio: `xMidYMid meet`,
+              })
+              const stream = doc.pipe(blobStream())
+              stream.on('finish', () => {
+                const blob = stream.toBlob('application/pdf')
+                setObjectURL(URL.createObjectURL(blob))
+              })
+              doc.end()
+            }
             setRenderError(null)
+          } catch (e: any) {
+            console.error(e)
+            setRenderError(e.message)
+            return null
           }
-          _renderedTimeSpent =
-            (typeof performance !== 'undefined' ? performance : Date).now() -
-            start
+        } else {
+          setRenderError(null)
         }
+        _renderedTimeSpent =
+          (typeof performance !== 'undefined' ? performance : Date).now() -
+          start
+      }
 
-        Object.assign(currentOptions, {
-          width,
-          height,
-          debug,
-          emojiType,
-          fontEmbed,
-        })
-        setResult(_result)
-        setRenderTime(_renderedTimeSpent)
-      })()
+      Object.assign(currentOptions, {
+        width,
+        height,
+        debug,
+        emojiType,
+        fontEmbed,
+      })
+      setResult(_result)
+      setRenderTime(_renderedTimeSpent)
+    })()
 
     return () => {
       cancelled = true
@@ -618,266 +626,265 @@ const LiveSatori = withLive(function ({
 
   return (
     <>
-      <Toaster
-        toastOptions={{
-          style: {
-            fontSize: 13,
-            borderRadius: 6,
-            padding: '2px 4px 2px 12px',
-          },
-        }}
-      />
-      <Tabs
-        options={previewTabs}
-        onChange={(text) => {
-          const _renderType = text.split(' ')[0].toLowerCase()
-          // 'svg' | 'png' | 'html' | 'pdf'
-          setRenderType(_renderType)
-        }}
-      >
-        <div className='preview-card'>
-          {live?.error || renderError ? (
-            <div className='error'>
-              <pre>{live?.error || renderError}</pre>
+      <Panel>
+        <Tabs
+          options={previewTabs}
+          onChange={(text) => {
+            const _renderType = text.split(' ')[0].toLowerCase()
+            // 'svg' | 'png' | 'html' | 'pdf'
+            setRenderType(_renderType)
+          }}
+        >
+          <div className='preview-card'>
+            {live?.error || renderError ? (
+              <div className='error'>
+                <pre>{live?.error || renderError}</pre>
+              </div>
+            ) : null}
+            {loadingResources ? spinner : null}
+            <div
+              className='result-container'
+              ref={previewContainerRef}
+              dangerouslySetInnerHTML={
+                renderType !== 'svg'
+                  ? undefined
+                  : {
+                      __html: `<div class="content-wrapper" style="position:absolute;width:100%;height:100%;max-width:${width}px;max-height:${height}px;display:flex;align-items:center;justify-content:center">${result}</div>`,
+                    }
+              }
+            >
+              {renderType === 'html' ? (
+                <iframe
+                  key='html'
+                  ref={updateIframeRef}
+                  width={width}
+                  height={height}
+                  style={{
+                    transform: `scale(${scaleRatio})`,
+                  }}
+                >
+                  {iframeNode &&
+                    createPortal(
+                      <>
+                        <style
+                          dangerouslySetInnerHTML={{
+                            __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');body{display:flex;height:100%;margin:0;font-family:Inter,sans-serif;overflow:hidden}body>div,body>div *{box-sizing:border-box;display:flex}`,
+                          }}
+                        />
+                        {live?.element ? <live.element /> : null}
+                      </>,
+                      iframeNode
+                    )}
+                </iframe>
+              ) : renderType === 'png' && objectURL ? (
+                <img
+                  src={objectURL}
+                  width={width}
+                  height={height}
+                  style={{
+                    maxHeight: '100%',
+                    maxWidth: '100%',
+                    objectFit: 'contain',
+                  }}
+                  alt='Preview'
+                />
+              ) : renderType === 'pdf' && objectURL ? (
+                <iframe
+                  key='pdf'
+                  width={width}
+                  height={height}
+                  src={
+                    objectURL +
+                    '#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&scrollbar=0'
+                  }
+                  style={{
+                    transform: `scale(${scaleRatio})`,
+                  }}
+                />
+              ) : null}
             </div>
-          ) : null}
-          {loadingResources ? spinner : null}
-          <div
-            className='svg-container'
-            dangerouslySetInnerHTML={
-              renderType !== 'svg'
-                ? undefined
-                : {
-                  __html: `<div style="position:absolute;width:${width}px;height:${height}px;transform:scale(${scaleRatio});display:flex;align-items:center;justify-content:center">${result}</div>`,
-                }
-            }
-          >
-            {renderType === 'html' ? (
-              <iframe
-                key="html"
-                ref={updateIframeRef}
-                width={width}
-                height={height}
-                style={{
-                  transform: `scale(${scaleRatio})`,
+            <footer>
+              <span className='ellipsis'>
+                {renderType === 'html'
+                  ? '[HTML] Rendered.'
+                  : `[${renderType.toUpperCase()}] Generated in `}
+              </span>
+              <span className='data'>
+                {renderType === 'html'
+                  ? ''
+                  : `${~~(renderedTimeSpent * 100) / 100}ms.`}
+                {renderType === 'pdf' || renderType === 'png' ? (
+                  <>
+                    {' '}
+                    <a href={objectURL ?? ''} target='_blank' rel='noreferrer'>
+                      (View in New Tab ↗)
+                    </a>
+                  </>
+                ) : (
+                  ''
+                )}
+              </span>
+              <span>{`[${width}×${height}]`}</span>
+            </footer>
+          </div>
+        </Tabs>
+      </Panel>
+      <PanelResizeHandle />
+      <Panel>
+        <div className='controller'>
+          <h2 className='title'>Configurations</h2>
+          <div className='content'>
+            <div className='control'>
+              <label htmlFor='width'>Container Width</label>
+              <div>
+                <input
+                  type='range'
+                  value={width}
+                  onChange={(e) => setWidth(Number(e.target.value))}
+                  min={100}
+                  max={1200}
+                  step={1}
+                />
+                <input
+                  id='width'
+                  type='number'
+                  value={width}
+                  onChange={(e) => setWidth(Number(e.target.value))}
+                  min={100}
+                  max={1200}
+                  step={1}
+                />
+                px
+              </div>
+            </div>
+            <div className='control'>
+              <label htmlFor='height'>Container Height</label>
+              <div>
+                <input
+                  type='range'
+                  value={height}
+                  onChange={(e) => setHeight(Number(e.target.value))}
+                  min={100}
+                  max={1200}
+                  step={1}
+                />
+                <input
+                  id='height'
+                  type='number'
+                  value={height}
+                  onChange={(e) => setHeight(Number(e.target.value))}
+                  min={100}
+                  max={1200}
+                  step={1}
+                />
+                px
+              </div>
+            </div>
+            <div className='control'>
+              <label htmlFor='reset'>Size</label>
+              <button
+                id='reset'
+                onClick={() => {
+                  setWidth(800)
+                  setHeight(400)
                 }}
               >
-                {iframeNode &&
-                  createPortal(
-                    <>
-                      <style
-                        dangerouslySetInnerHTML={{
-                          __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');body{display:flex;height:100%;margin:0;font-family:Inter,sans-serif;overflow:hidden}body>div,body>div *{box-sizing:border-box;display:flex}`,
-                        }}
-                      />
-                      {live?.element ? <live.element /> : null}
-                    </>,
-                    iframeNode
-                  )}
-              </iframe>
-            ) : renderType === 'png' && objectURL ? (
-              <img
-                src={objectURL}
-                width={width}
-                height={height}
-                style={{
-                  transform: `scale(${scaleRatio})`,
+                Reset
+              </button>
+              <button
+                type='button'
+                onClick={() => {
+                  setWidth(1200)
+                  setHeight(600)
                 }}
-                alt='Preview'
+              >
+                2:1
+              </button>
+              <button
+                type='button'
+                onClick={() => {
+                  setWidth(1200)
+                  setHeight(630)
+                }}
+              >
+                1.9:1
+              </button>
+            </div>
+            <div className='control'>
+              <label htmlFor='debug'>Debug Mode</label>
+              <input
+                id='debug'
+                type='checkbox'
+                checked={debug}
+                onChange={() => setDebug(!debug)}
               />
-            ) : renderType === 'pdf' && objectURL ? (
-              <iframe
-                key='pdf'
-                width={width}
-                height={height}
-                src={
-                  objectURL +
-                  '#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&scrollbar=0'
+            </div>
+            <div className='control'>
+              <label htmlFor='font'>Embed Font</label>
+              <input
+                id='font'
+                type='checkbox'
+                checked={fontEmbed}
+                onChange={() => setFontEmbed(!fontEmbed)}
+              />
+            </div>
+            <div className='control'>
+              <label htmlFor='emoji'>Emoji Provider</label>
+              <select
+                id='emoji'
+                onChange={(e) => setEmojiType(e.target.value)}
+                value={emojiType}
+              >
+                <option value='twemoji'>Twemoji</option>
+                <option value='fluent'>Fluent Emoji</option>
+                <option value='fluentFlat'>Fluent Emoji Flat</option>
+                <option value='noto'>Noto Emoji</option>
+                <option value='blobmoji'>Blobmoji</option>
+                <option value='openmoji'>OpenMoji</option>
+              </select>
+            </div>
+            <div className='control'>
+              <label htmlFor='export'>Export</label>
+              <a
+                className={!result || renderType === 'html' ? 'disabled' : ''}
+                href={
+                  result
+                    ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+                        result
+                      )}`
+                    : undefined
                 }
-                style={{
-                  transform: `scale(${scaleRatio})`,
+                target={result ? '_blank' : ''}
+                download={result ? 'image.svg' : false}
+                rel='noreferrer'
+              >
+                Export SVG
+              </a>
+              <a
+                className={!result || renderType === 'html' ? 'disabled' : ''}
+                href='#'
+                onClick={(e) => {
+                  e.preventDefault()
+                  if (!result) return false
+                  window.open?.('')?.document.write(result)
                 }}
-              />
-            ) : null}
-          </div>
-          <footer>
-            <span className='ellipsis'>
-              {renderType === 'html'
-                ? '[HTML] Rendered.'
-                : `[${renderType.toUpperCase()}] Generated in `}
-            </span>
-            <span className='data'>
-              {renderType === 'html'
-                ? ''
-                : `${~~(renderedTimeSpent * 100) / 100}ms.`}
-              {renderType === 'pdf' || renderType === 'png' ? (
-                <>
-                  {' '}
-                  <a href={objectURL ?? ''} target='_blank' rel='noreferrer'>
-                    (View in New Tab ↗)
-                  </a>
-                </>
-              ) : (
-                ''
-              )}
-            </span>
-            <span>{`[${width}×${height}]`}</span>
-          </footer>
-        </div>
-      </Tabs>
-      <div className='controller'>
-        <h2 className='title'>Configurations</h2>
-        <div className='content'>
-          <div className='control'>
-            <label htmlFor='width'>Container Width</label>
-            <div>
-              <input
-                type='range'
-                value={width}
-                onChange={(e) => setWidth(Number(e.target.value))}
-                min={100}
-                max={1200}
-                step={1}
-              />
-              <input
-                id='width'
-                type='number'
-                value={width}
-                onChange={(e) => setWidth(Number(e.target.value))}
-                min={100}
-                max={1200}
-                step={1}
-              />
-              px
+              >
+                (View in New Tab ↗)
+              </a>
+            </div>
+            <div className='control'>
+              <label>Satori Version</label>
+              <a
+                href='https://github.com/vercel/satori'
+                target='_blank'
+                rel='noreferrer'
+              >
+                {packageJson.version}
+              </a>
             </div>
           </div>
-          <div className='control'>
-            <label htmlFor='height'>Container Height</label>
-            <div>
-              <input
-                type='range'
-                value={height}
-                onChange={(e) => setHeight(Number(e.target.value))}
-                min={100}
-                max={1200}
-                step={1}
-              />
-              <input
-                id='height'
-                type='number'
-                value={height}
-                onChange={(e) => setHeight(Number(e.target.value))}
-                min={100}
-                max={1200}
-                step={1}
-              />
-              px
-            </div>
-          </div>
-          <div className='control'>
-            <label htmlFor='reset'>Size</label>
-            <button
-              id='reset'
-              onClick={() => {
-                setWidth(800)
-                setHeight(400)
-              }}
-            >
-              Reset
-            </button>
-            <button
-              type='button'
-              onClick={() => {
-                setWidth(1200)
-                setHeight(600)
-              }}
-            >
-              2:1
-            </button>
-            <button
-              type='button'
-              onClick={() => {
-                setWidth(1200)
-                setHeight(630)
-              }}
-            >
-              1.9:1
-            </button>
-          </div>
-          <div className='control'>
-            <label htmlFor='debug'>Debug Mode</label>
-            <input
-              id='debug'
-              type='checkbox'
-              checked={debug}
-              onChange={() => setDebug(!debug)}
-            />
-          </div>
-          <div className='control'>
-            <label htmlFor='font'>Embed Font</label>
-            <input
-              id='font'
-              type='checkbox'
-              checked={fontEmbed}
-              onChange={() => setFontEmbed(!fontEmbed)}
-            />
-          </div>
-          <div className='control'>
-            <label htmlFor='emoji'>Emoji Provider</label>
-            <select
-              id='emoji'
-              onChange={(e) => setEmojiType(e.target.value)}
-              value={emojiType}
-            >
-              <option value='twemoji'>Twemoji</option>
-              <option value='fluent'>Fluent Emoji</option>
-              <option value='fluentFlat'>Fluent Emoji Flat</option>
-              <option value='noto'>Noto Emoji</option>
-              <option value='blobmoji'>Blobmoji</option>
-              <option value='openmoji'>OpenMoji</option>
-            </select>
-          </div>
-          <div className='control'>
-            <label htmlFor='export'>Export</label>
-            <a
-              className={!result || renderType === 'html' ? 'disabled' : ''}
-              href={
-                result
-                  ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-                    result
-                  )}`
-                  : undefined
-              }
-              target={result ? '_blank' : ''}
-              download={result ? 'image.svg' : false}
-              rel='noreferrer'
-            >
-              Export SVG
-            </a>
-            <a
-              className={!result || renderType === 'html' ? 'disabled' : ''}
-              href='#'
-              onClick={(e) => {
-                e.preventDefault()
-                if (!result) return false
-                window.open?.('')?.document.write(result)
-              }}
-            >
-              (View in New Tab ↗)
-            </a>
-          </div>
-          <div className='control'>
-            <label>Satori Version</label>
-            <a
-              href='https://github.com/vercel/satori'
-              target='_blank'
-              rel='noreferrer'
-            >
-              {packageJson.version}
-            </a>
-          </div>
         </div>
-      </div>
+      </Panel>
     </>
   )
 })
@@ -929,6 +936,17 @@ function ResetCode({ activeCard }: { activeCard: string }) {
 export default function Playground() {
   const [activeCard, setActiveCard] = useState<string>('helloworld')
   const [showIntroduction, setShowIntroduction] = useState(false)
+  const [isMobileView, setIsMobileView] = useState(false)
+
+  // set isMobileView to true if the screen is less than 600px wide
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 600)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     try {
@@ -941,6 +959,61 @@ export default function Playground() {
     setShowIntroduction(true)
   }, [])
 
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => {
+    setHydrated(true)
+  }, [])
+
+  const editorPanel = (
+    <Panel>
+      <Tabs
+        options={cardNames}
+        onChange={(name: string) => {
+          setActiveCard(name)
+        }}
+      >
+        <div className='editor'>
+          <div className='editor-controls'>
+            <ResetCode activeCard={activeCard} />
+            <button
+              onClick={() => {
+                const code = editedCards[activeCard]
+                const compressed = Base64.fromUint8Array(
+                  fflate.deflateSync(
+                    fflate.strToU8(
+                      JSON.stringify({
+                        code,
+                        options: currentOptions,
+                      })
+                    )
+                  ),
+                  true
+                )
+
+                window.history.replaceState(null, '', '?share=' + compressed)
+                copy(window.location.href)
+                toast.success('Copied to clipboard')
+              }}
+            >
+              Share
+            </button>
+          </div>
+          <div className='monaco-container'>
+            <LiveEditor key={activeCard} id={activeCard} />
+          </div>
+        </div>
+      </Tabs>
+    </Panel>
+  )
+
+  const previewPanel = (
+    <Panel>
+      <PanelGroup direction='vertical'>
+        <LiveSatori />
+      </PanelGroup>
+    </Panel>
+  )
+
   return (
     <>
       {showIntroduction ? (
@@ -951,6 +1024,15 @@ export default function Playground() {
           }}
         />
       ) : null}
+      <Toaster
+        toastOptions={{
+          style: {
+            fontSize: 13,
+            borderRadius: 6,
+            padding: '2px 4px 2px 12px',
+          },
+        }}
+      />
       <nav>
         <h1>
           <svg viewBox='0 0 75 65' fill='#000' height='12'>
@@ -975,50 +1057,16 @@ export default function Playground() {
       </nav>
       <div className='container'>
         <LiveProvider code={editedCards[activeCard]}>
-          <Tabs
-            options={cardNames}
-            onChange={(name: string) => {
-              setActiveCard(name)
-            }}
-          >
-            <div className='editor'>
-              <div className='editor-controls'>
-                <ResetCode activeCard={activeCard} />
-                <button
-                  onClick={() => {
-                    const code = editedCards[activeCard]
-                    const compressed = Base64.fromUint8Array(
-                      fflate.deflateSync(
-                        fflate.strToU8(
-                          JSON.stringify({
-                            code,
-                            options: currentOptions,
-                          })
-                        )
-                      ),
-                      true
-                    )
-
-                    window.history.replaceState(
-                      null,
-                      '',
-                      '?share=' + compressed
-                    )
-                    copy(window.location.href)
-                    toast.success('Copied to clipboard')
-                  }}
-                >
-                  Share
-                </button>
-              </div>
-              <div className='monaco-container'>
-                <LiveEditor key={activeCard} id={activeCard} />
-              </div>
-            </div>
-          </Tabs>
-          <div className='preview'>
-            <LiveSatori />
-          </div>
+          {hydrated ? (
+            <PanelGroup
+              autoSaveId='og-playground'
+              direction={isMobileView ? 'vertical' : 'horizontal'}
+            >
+              {isMobileView ? previewPanel : editorPanel}
+              <PanelResizeHandle />
+              {isMobileView ? editorPanel : previewPanel}
+            </PanelGroup>
+          ) : null}
         </LiveProvider>
       </div>
     </>
