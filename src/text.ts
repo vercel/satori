@@ -124,7 +124,7 @@ export default async function* buildTextNodes(
   let lineWidths = []
   let baselines = []
   let lineSegmentNumber = []
-  let wordsInLayout: (null | {
+  let wordPositionInLayout: (null | {
     x: number
     y: number
     width: number
@@ -254,7 +254,7 @@ export default async function* buildTextNodes(
           remainingSpace = ' '
         }
         remainingSpaceWidth = measureWithCache([remainingSpace])
-        wordsInLayout[i] = null
+        wordPositionInLayout[i] = null
       } else {
         const w = forceBreak
           ? 0
@@ -325,7 +325,7 @@ export default async function* buildTextNodes(
         }
 
         maxWidth = Math.max(maxWidth, _currentWidth)
-        wordsInLayout[i] = {
+        wordPositionInLayout[i] = {
           y: height,
           x: _currentWidth - w,
           width: w,
@@ -409,8 +409,8 @@ export default async function* buildTextNodes(
 
   for (let i = 0; i < words.length; i++) {
     // Skip whitespace.
-    if (!wordsInLayout[i]) continue
-    const layout = wordsInLayout[i]
+    if (!wordPositionInLayout[i]) continue
+    const layout = wordPositionInLayout[i]
 
     let word = words[i]
     let path: string | null = null
@@ -495,10 +495,13 @@ export default async function* buildTextNodes(
       // For images, we remove the baseline offset.
       topOffset += 0
     } else if (embedFont) {
+      // If the current word and the next word are on the same line, we try to
+      // merge them together to better handle the kerning.
       if (
         words[i + 1] &&
-        wordsInLayout[i + 1] &&
-        topOffset === wordsInLayout[i + 1].y
+        !graphemeImages[words[i + 1]] &&
+        wordPositionInLayout[i + 1] &&
+        topOffset === wordPositionInLayout[i + 1].y
       ) {
         if (wordBuffer === null) {
           bufferedOffset = leftOffset
@@ -558,7 +561,7 @@ export default async function* buildTextNodes(
     // Get the decoration shape.
     if (parentStyle.textDecorationLine) {
       // If it's the last word in the current line.
-      if (line !== wordsInLayout[i + 1]?.line || skippedLine === line) {
+      if (line !== wordPositionInLayout[i + 1]?.line || skippedLine === line) {
         const deco = decorationLines[line]
         if (deco && !deco[2]) {
           decorationShape += decoration(
