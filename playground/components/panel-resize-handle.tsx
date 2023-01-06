@@ -1,3 +1,4 @@
+import React from 'react'
 import { PanelResizeHandle as PanelResizeHandleImpl } from 'react-resizable-panels'
 
 import styles from './panel-resize-handle.module.css'
