@@ -4,6 +4,7 @@ node_modules
 .vscode
 .next
 .idea
+.turbo
 dist
 .pnpm-debug.log
 __diff_output__

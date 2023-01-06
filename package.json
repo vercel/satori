@@ -26,6 +26,7 @@
     "dev": "concurrently \"pnpm dev:default\" \"pnpm dev:wasm\"",
     "dev:default": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
     "dev:wasm": "WASM=1 NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
+    "dev:playground": "turbo dev --filter=satori-playground...",
     "build": "NODE_ENV=production pnpm run build:default && pnpm run build:wasm",
     "build:default": "tsup",
     "build:wasm": "WASM=1 tsup",
@@ -70,6 +71,7 @@
     "prettier": "^2.7.1",
     "react": "^17.0.2",
     "tsup": "^5.11.13",
+    "turbo": "^1.6.3",
     "twrnc": "^3.4.0",
     "typescript": "^4.5.5",
     "vitest": "0.23.4"
