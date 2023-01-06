@@ -23,6 +23,7 @@ const code = {
   ja: /\p{scx=Hira}|\p{scx=Kana}|[\u3000]|[\uFF00-\uFFEF]/u,
   ko: /\p{scx=Hangul}/u,
   zh: /\p{scx=Han}/u,
+  km: /\p{scx=Khmer}/u,
   th: /\p{scx=Thai}/u,
   bn: /\p{scx=Bengali}/u,
   ar: /\p{scx=Arabic}/u,
