@@ -51,12 +51,13 @@ export default async function* buildTextNodes(
       .join('')
   }
 
+  const isBreakWord = parentStyle.wordBreak === 'break-word'
   const segmenter = v(
     parentStyle.wordBreak,
     {
       normal: 'word',
       'break-all': 'grapheme',
-      'break-word': 'grapheme',
+      'break-word': 'word',
       'keep-all': 'word',
     },
     'word',
@@ -248,8 +249,7 @@ export default async function* buildTextNodes(
         ) &&
         !forceBreak
       ) {
-        // Multiple whitespaces are considered
-        // as one.
+        // Multiple whitespaces are considered as one.
         if (!remainingSpace) {
           remainingSpace = ' '
         }
@@ -278,14 +278,40 @@ export default async function* buildTextNodes(
           remainingSpaceWidth || ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
         const allowedToJustify = !_currentWidth || !!remainingSpaceWidth
 
-        if (
-          forceBreak ||
-          (i &&
-            allowedToPutAtBeginning &&
-            _currentWidth + remainingSpaceWidth + w > width &&
-            whiteSpace !== 'nowrap' &&
-            whiteSpace !== 'pre')
-        ) {
+        const willWrap =
+          i &&
+          allowedToPutAtBeginning &&
+          _currentWidth + remainingSpaceWidth + w > width &&
+          whiteSpace !== 'nowrap' &&
+          whiteSpace !== 'pre'
+
+        // Need to break the word if:
+        // - we have break-word
+        // - the word is wider than the container width
+        // - the word will be put at the beginning of the line
+        const needToBreakWord =
+          isBreakWord && w > width && (!_currentWidth || willWrap || forceBreak)
+
+        if (needToBreakWord) {
+          // Break the word into multiple segments and continue the loop.
+          const chars = segment(word, 'grapheme')
+          words.splice(i, 1, '', ...chars)
+          if (_currentWidth > 0) {
+            // Start a new line, spaces can be ignored.
+            lineWidths.push(_currentWidth)
+            baselines.push(currentBaselineOffset)
+            lines++
+            height += currentLineHeight
+            _currentWidth = 0
+            currentLineHeight = 0
+            currentBaselineOffset = 0
+            lineSegmentNumber.push(1)
+            lineIndex = -1
+          }
+          continue
+        }
+
+        if (forceBreak || willWrap) {
           // Start a new line, spaces can be ignored.
           lineWidths.push(_currentWidth)
           baselines.push(currentBaselineOffset)
