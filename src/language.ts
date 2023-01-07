@@ -25,7 +25,7 @@ const code = {
   emoji: emojiRegex,
   symbol: /\p{Symbol}/u,
   math: /\p{Math}/u,
-  ja: /\p{scx=Hira}|\p{scx=Kana}|\p{scx=Han}|[，；：]|[\u3000]|[\uFF00-\uFFEF]/u,
+  ja: /\p{scx=Hira}|\p{scx=Kana}|\p{scx=Han}|[\u3000]|[\uFF00-\uFFEF]/u,
   ko: /\p{scx=Hangul}/u,
   zh: /\p{scx=Han}/u,
   th: /\p{scx=Thai}/u,
