@@ -103,6 +103,26 @@ describe('white-space', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
+    it('should render line breaks correctly without separators', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            whiteSpace: 'pre',
+            color: 'red',
+          }}
+        >
+          {'hello\nworld'}
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+          embedFont: false,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
     it('should not wrap with `white-space: pre`', async () => {
       const svg = await satori(
         <div
