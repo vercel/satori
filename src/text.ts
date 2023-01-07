@@ -408,7 +408,7 @@ export default async function* buildTextNodes(
   let bufferedOffset = 0
 
   for (let i = 0; i < words.length; i++) {
-    // Skip whitespace.
+    // Skip whitespace and empty characters.
     if (!wordPositionInLayout[i]) continue
     const layout = wordPositionInLayout[i]
 
@@ -498,6 +498,7 @@ export default async function* buildTextNodes(
       // If the current word and the next word are on the same line, we try to
       // merge them together to better handle the kerning.
       if (
+        !wordSeparators.includes(word) &&
         words[i + 1] &&
         !graphemeImages[words[i + 1]] &&
         wordPositionInLayout[i + 1] &&
