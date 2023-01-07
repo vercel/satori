@@ -5,7 +5,7 @@ import layout from './layout'
 import FontLoader, { FontOptions } from './font'
 import svg from './builder/svg'
 import { segment } from './utils'
-import { detectLanguageCode } from './language'
+import {detectLanguageCode, LangCode, Locale} from './language'
 import getTw from './handler/tailwind'
 
 // We don't need to initialize the opentype instances every time.
@@ -45,7 +45,6 @@ export default async function satori(
       'Satori is not initialized: expect `yoga` to be loaded, got ' + Yoga
     )
   }
-
   options.fonts = options.fonts || []
 
   let font: FontLoader
@@ -69,6 +68,19 @@ export default async function satori(
   root.setOverflow(Yoga.OVERFLOW_HIDDEN)
 
   const graphemeImages = { ...options.graphemeImages }
+  // Some Chinese characters have different glyphs in Chinese and
+  // Japanese, but their Unicode is the same. If the user needs to display
+  // the Chinese and Japanese characters simultaneously correctly, the user
+  // needs to download the Chinese and Japanese fonts, respectively.
+  // Assuming that the user has downloaded the corresponding Japanese font,
+  // to let the program realize that the font has not been downloaded in Chinese,
+  // we need to prohibit Japanese as the fallback when executing `engine.has`.
+  //
+  // This causes a problem. Consider a scenario where we need to display Chinese
+  // correctly under tags with `lang="ja"` set. `engine.has` will repeatedly treat
+  // the Chinese as missing font because we have removed the Chinese as a fallback.
+  // To address this situation, we may need to add `processedWordsMissingFont`
+  const processedWordsMissingFonts = new Set()
 
   const handler = layout(element, {
     id: 'id',
@@ -113,40 +125,30 @@ export default async function satori(
     },
   })
 
-  let segmentsMissingFont = (await handler.next()).value as string[]
+  const segmentsMissingFont = (await handler.next()).value as {word: string, locale?: Locale}[]
 
   if (options.loadAdditionalAsset) {
     if (segmentsMissingFont.length) {
-      // Potentially CJK fonts are missing.
-      segmentsMissingFont = Array.from(
-        new Set(segment(segmentsMissingFont.join(''), 'grapheme'))
-      )
-
-      const languageCodes: Record<string, string[]> = {}
-      segmentsMissingFont.forEach((seg) => {
-        const code = detectLanguageCode(seg)
-        languageCodes[code] = languageCodes[code] || []
-        if (code === 'emoji') {
-          languageCodes[code].push(seg)
-        } else {
-          languageCodes[code][0] = (languageCodes[code][0] || '') + seg
-        }
-      })
-
+      const languageCodes = convertToLanguageCodes(segmentsMissingFont)
       const fonts: FontOptions[] = []
       const images: Record<string, string> = {}
 
       await Promise.all(
         Object.entries(languageCodes).flatMap(([code, segments]) =>
-          segments.map((_segment) =>
-            options.loadAdditionalAsset(code, _segment).then((asset) => {
+          segments.map((_segment) => {
+            const key = `${code}_${_segment}`
+            if (processedWordsMissingFonts.has(key)) {
+              return null
+            }
+            processedWordsMissingFonts.add(key)
+            return options.loadAdditionalAsset(code, _segment).then((asset) => {
               if (typeof asset === 'string') {
                 images[_segment] = asset
               } else if (asset) {
                 fonts.push(asset)
               }
             })
-          )
+          })
         )
       )
 
@@ -167,4 +169,31 @@ export default async function satori(
   root.freeRecursive()
 
   return svg({ width: computedWidth, height: computedHeight, content })
+}
+
+function convertToLanguageCodes(segmentsMissingFont: {word: string, locale?: Locale}[]): Partial<Record<LangCode, string[]>> {
+  const languageCodes = {}
+  let wordsByCode = {}
+
+  for (let { word, locale } of segmentsMissingFont) {
+    const code = detectLanguageCode(word, locale)
+    wordsByCode[code] = wordsByCode[code] || ''
+    wordsByCode[code] += word
+  }
+
+  Object.keys(wordsByCode).forEach((code: LangCode) => {
+    languageCodes[code] = languageCodes[code] || []
+    if (code === 'emoji') {
+      languageCodes[code].push(...unique(segment(wordsByCode[code], 'grapheme')))
+    } else {
+      languageCodes[code][0] = languageCodes[code][0] || ''
+      languageCodes[code][0] += unique(segment(wordsByCode[code], 'grapheme', code === 'unknown' ? undefined : code)).join('')
+    }
+  })
+
+  return languageCodes
+}
+
+function unique<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr))
 }

@@ -148,9 +148,6 @@ export function v(
   return value
 }
 
-// @TODO: Support "lang" attribute to modify the locale
-const locale = undefined
-
 let wordSegmenter
 let graphemeSegmenter
 
@@ -163,7 +160,8 @@ export const wordSeparators = [
 
 export function segment(
   content: string,
-  granularity: 'word' | 'grapheme'
+  granularity: 'word' | 'grapheme',
+  locale?: string
 ): string[] {
   if (!wordSegmenter || !graphemeSegmenter) {
     if (!(typeof Intl !== 'undefined' && 'Segmenter' in Intl)) {

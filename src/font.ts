@@ -2,16 +2,19 @@
  * This class handles everything related to fonts.
  */
 import opentype from '@shuding/opentype.js'
+import {Locale, locales, isValidLocale} from "./language";
 
 export type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
 type WeightName = 'normal' | 'bold'
 export type Style = 'normal' | 'italic'
+const SUFFIX_WHEN_LANG_NOT_SET = 'unknown'
 
 export interface FontOptions {
   data: Buffer | ArrayBuffer
   name: string
   weight?: Weight
-  style?: Style
+  style?: Style,
+  lang?: string
 }
 
 function compareFont(
@@ -108,7 +111,11 @@ export default class FontLoader {
 
   public addFonts(fontOptions: FontOptions[]) {
     for (const fontOption of fontOptions) {
-      const data = fontOption.data
+      const { name, data, lang } = fontOption
+      if (lang && !isValidLocale(lang)) {
+        throw new Error(`Invalid value for props 'lang': ${lang}. The value must be one of the following: ${locales}.`)
+      }
+      const _lang = lang ?? SUFFIX_WHEN_LANG_NOT_SET
       const font = opentype.parse(
         // Buffer to ArrayBuffer.
         'buffer' in data
@@ -138,11 +145,12 @@ export default class FontLoader {
       // We use the first font as the default font fallback.
       if (!this.defaultFont) this.defaultFont = font
 
-      const name = fontOption.name.toLowerCase()
-      if (!this.fonts.has(name)) {
-        this.fonts.set(name, [])
+      const _name = `${name.toLowerCase()}_${_lang}`
+
+      if (!this.fonts.has(_name)) {
+        this.fonts.set(_name, [])
       }
-      this.fonts.get(name).push([font, fontOption.weight, fontOption.style])
+      this.fonts.get(_name).push([font, fontOption.weight, fontOption.style])
     }
   }
 
@@ -157,7 +165,8 @@ export default class FontLoader {
       fontFamily: string | string[]
       fontWeight?: Weight | WeightName
       fontStyle?: Style
-    }
+    },
+    locale: Locale | undefined
   ) {
     if (!this.fonts.size) {
       throw new Error(
@@ -180,15 +189,49 @@ export default class FontLoader {
 
     // Add additional fonts as the fallback.
     const keys = Array.from(this.fonts.keys())
+    const specifiedLangFonts = []
+    const nonSpecifiedLangFonts = []
+    const additionalFonts = []
     for (const name of keys) {
       if (fontFamily.includes(name)) continue
-      fonts.push(
-        this.get({
-          name,
-          weight: fontWeight,
-          style: fontStyle,
-        })
-      )
+      if (locale) {
+        const lang = getLangFromFontName(name)
+        if (lang) {
+          if (lang === locale) {
+            specifiedLangFonts.push(
+              this.get({
+                name,
+                weight: fontWeight,
+                style: fontStyle
+              })
+            )
+          } else {
+            nonSpecifiedLangFonts.push(
+              this.get({
+                name,
+                weight: fontWeight,
+                style: fontStyle
+              })
+            )
+          }
+        } else {
+          additionalFonts.push(
+            this.get({
+              name,
+              weight: fontWeight,
+              style: fontStyle
+            })
+          )
+        }
+      } else {
+        additionalFonts.push(
+          this.get({
+            name,
+            weight: fontWeight,
+            style: fontStyle
+          })
+        )
+      }
     }
 
     const cachedFontResolver = new Map<number, opentype.Font | undefined>()
@@ -196,16 +239,24 @@ export default class FontLoader {
       const code = word.charCodeAt(0)
       if (cachedFontResolver.has(code)) return cachedFontResolver.get(code)
 
-      const font = fonts.find((_font, index) => {
+      const _fonts = [
+        ...fonts,
+        ...additionalFonts,
+        ...specifiedLangFonts,
+        ...(fallback ? nonSpecifiedLangFonts : []),
+      ]
+
+      const font = _fonts.find((_font, index) => {
         return (
           !!_font.charToGlyphIndex(word) ||
-          (fallback && index === fonts.length - 1)
+          (fallback && index === _fonts.length - 1)
         )
       })
 
       if (font) {
         cachedFontResolver.set(code, font)
       }
+
       return font
     }
 
@@ -389,4 +440,13 @@ export default class FontLoader {
       unpatch()
     }
   }
+}
+
+function getLangFromFontName(name: string): Locale | undefined {
+  const arr = name.split('_')
+  const lang = arr[arr.length - 1]
+
+  return lang === SUFFIX_WHEN_LANG_NOT_SET
+    ? undefined
+    : lang as Locale
 }

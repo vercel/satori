@@ -12,20 +12,36 @@ describe('detectLanguageCode', () => {
     expect(detectLanguageCode('👋 vs 🌊')).toBe('emoji')
   })
 
-  it('should detect japanese', async () => {
+  it('should detect japanese(hiragana)', async () => {
     expect(detectLanguageCode('こんにちは')).toBe('ja')
+  })
+
+  it('should detect japanese(katakana)', async () => {
+    expect(detectLanguageCode('ハナミズキ')).toBe('ja')
+  })
+
+  it('should detect japanese（kanji)', async () => {
+    expect(detectLanguageCode('桜')).toBe('ja')
+  })
+
+  it('should detect japanese(hiragana) when locale is zh', async () => {
+    expect(detectLanguageCode('こんにちは')).toBe('ja')
+  })
+
+  it('should detect japanese(katakana) when locale is zh', async () => {
+    expect(detectLanguageCode('ハナミズキ')).toBe('ja')
+  })
+
+  it('should detect simplified chinese when locale is zh', async () => {
+    expect(detectLanguageCode('我知道怎么说中文', 'zh')).toBe('zh')
+  })
+
+  it('should detect traditional chinese when locale is zh', async () => {
+    expect(detectLanguageCode('我知道怎麼說中文', 'zh')).toBe('zh')
   })
 
   it('should detect korean', async () => {
     expect(detectLanguageCode('안녕하세요')).toBe('ko')
-  })
-
-  it('should detect simplified chinese', async () => {
-    expect(detectLanguageCode('我知道怎么说中文')).toBe('zh')
-  })
-
-  it('should detect traditional chinese', async () => {
-    expect(detectLanguageCode('我知道怎麼說中文')).toBe('zh')
   })
 
   it('should detect thai', async () => {
