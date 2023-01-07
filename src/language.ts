@@ -23,6 +23,8 @@ const emojiRegex = new RegExp(createEmojiRegex(), '')
 // - https://unicode.org/faq/han_cjk.html
 const code = {
   emoji: emojiRegex,
+  symbol: /\p{Symbol}/u,
+  math: /\p{Math}/u,
   ja: /\p{scx=Hira}|\p{scx=Kana}|\p{scx=Han}|[，；：]|[\u3000]|[\uFF00-\uFFEF]/u,
   ko: /\p{scx=Hangul}/u,
   zh: /\p{scx=Han}/u,
@@ -35,15 +37,16 @@ const code = {
   te: /\p{scx=Telugu}/u,
   devanagari: /\p{scx=Devanagari}/u,
   kannada: /\p{scx=Kannada}/u,
-  symbol: /\p{Symbol}/u,
-  math: /\p{Math}/u,
 } as const
 
 type CodeKey = keyof typeof code
-export type Locale = Exclude<CodeKey, 'emoji'>
+export type Locale = Exclude<CodeKey, 'emoji' | 'symbol' | 'math'>
 export type LangCode = CodeKey | 'unknown'
 
-const locales = Object.keys(code).splice(1) as Locale[]
+export const locales = Object.keys(code).splice(3) as Locale[]
+export function isValidLocale(x: any): x is Locale {
+  return locales.includes(x)
+}
 
 // Here we assume all characters from the passed in "segment" is in the same
 // written language. So if the string contains at least one matched character,
@@ -66,6 +69,7 @@ export function detectLanguageCode(segment: string, locale?: Locale): LangCode {
       return c
     }
   }
+
   return 'unknown'
 }
 

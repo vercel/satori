@@ -2,19 +2,20 @@
  * This class handles everything related to fonts.
  */
 import opentype from '@shuding/opentype.js'
+import {Locale, locales, isValidLocale} from "./language";
 
 export type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
 type WeightName = 'normal' | 'bold'
 export type Style = 'normal' | 'italic'
+const SUFFIX_WHEN_LANG_NOT_SET = 'unknown'
 
 export interface FontOptions {
   data: Buffer | ArrayBuffer
   name: string
   weight?: Weight
-  style?: Style
+  style?: Style,
+  lang?: string
 }
-
-const PREFIX = 'satori'
 
 function compareFont(
   weight,
@@ -110,7 +111,11 @@ export default class FontLoader {
 
   public addFonts(fontOptions: FontOptions[]) {
     for (const fontOption of fontOptions) {
-      const data = fontOption.data
+      const { name, data, lang } = fontOption
+      if (lang && !isValidLocale(lang)) {
+        throw new Error(`Invalid value for props 'lang': ${lang}. The value must be one of the following: ${locales}.`)
+      }
+      const _lang = lang ?? SUFFIX_WHEN_LANG_NOT_SET
       const font = opentype.parse(
         // Buffer to ArrayBuffer.
         'buffer' in data
@@ -140,11 +145,12 @@ export default class FontLoader {
       // We use the first font as the default font fallback.
       if (!this.defaultFont) this.defaultFont = font
 
-      const name = fontOption.name.toLowerCase()
-      if (!this.fonts.has(name)) {
-        this.fonts.set(name, [])
+      const _name = `${name.toLowerCase()}_${_lang}`
+
+      if (!this.fonts.has(_name)) {
+        this.fonts.set(_name, [])
       }
-      this.fonts.get(name).push([font, fontOption.weight, fontOption.style])
+      this.fonts.get(_name).push([font, fontOption.weight, fontOption.style])
     }
   }
 
@@ -160,7 +166,7 @@ export default class FontLoader {
       fontWeight?: Weight | WeightName
       fontStyle?: Style
     },
-    locale: string | undefined
+    locale: Locale | undefined
   ) {
     if (!this.fonts.size) {
       throw new Error(
@@ -189,9 +195,9 @@ export default class FontLoader {
     for (const name of keys) {
       if (fontFamily.includes(name)) continue
       if (locale) {
-        const langName = getLangFromFontName(name)
-        if (langName) {
-          if (getLangFromFontName(name) === locale) {
+        const lang = getLangFromFontName(name)
+        if (lang) {
+          if (lang === locale) {
             specifiedLangFonts.push(
               this.get({
                 name,
@@ -436,10 +442,11 @@ export default class FontLoader {
   }
 }
 
-function getLangFromFontName(name: string): string | undefined {
-  if (!name.startsWith(PREFIX)) {
-    return undefined
-  }
+function getLangFromFontName(name: string): Locale | undefined {
+  const arr = name.split('_')
+  const lang = arr[arr.length - 1]
 
-  return name.split('_')[1] ?? undefined
+  return lang === SUFFIX_WHEN_LANG_NOT_SET
+    ? undefined
+    : lang as Locale
 }

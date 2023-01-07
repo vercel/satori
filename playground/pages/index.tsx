@@ -139,6 +139,7 @@ const loadDynamicAsset = withCache(
             data: font,
             weight: 400,
             style: 'normal',
+            lang: code === 'unknown' ? undefined : code
           }
         }
       }
