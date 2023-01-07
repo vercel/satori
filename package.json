@@ -32,10 +32,10 @@
     "build:wasm": "WASM=1 tsup",
     "test": "NODE_ENV=test vitest run --outputTruncateLength=9999999",
     "dev:test": "NODE_ENV=test vitest --update --outputTruncateLength=9999999",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --quiet",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --quiet --cache",
     "lint:fix": "pnpm lint --fix",
     "prettier-check": "prettier --check .",
-    "prettier-fix": "prettier --write ."
+    "prettier-fix": "prettier --write . --cache"
   },
   "repository": {
     "type": "git",
