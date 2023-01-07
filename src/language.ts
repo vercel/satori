@@ -21,29 +21,35 @@ const emojiRegex = new RegExp(createEmojiRegex(), '')
 //
 // We can't tell if a hanzi(kanji) is Chinese or Japanese by regular expressions.
 // - https://unicode.org/faq/han_cjk.html
-const code = {
+
+const specialCode = {
   emoji: emojiRegex,
   symbol: /\p{Symbol}/u,
   math: /\p{Math}/u,
-  ja: /\p{scx=Hira}|\p{scx=Kana}|\p{scx=Han}|[\u3000]|[\uFF00-\uFFEF]/u,
-  ko: /\p{scx=Hangul}/u,
-  zh: /\p{scx=Han}/u,
-  th: /\p{scx=Thai}/u,
-  bn: /\p{scx=Bengali}/u,
-  ar: /\p{scx=Arabic}/u,
-  ta: /\p{scx=Tamil}/u,
-  ml: /\p{scx=Malayalam}/u,
-  he: /\p{scx=Hebrew}/u,
-  te: /\p{scx=Telugu}/u,
+} as const
+
+const code = {
+  'ja-JP': /\p{scx=Hira}|\p{scx=Kana}|\p{scx=Han}|[\u3000]|[\uFF00-\uFFEF]/u,
+  'ko-KR': /\p{scx=Hangul}/u,
+  'zh-CN': /\p{scx=Han}/u,
+  'zh-TW': /\p{scx=Han}/u,
+  'zh-HK': /\p{scx=Han}/u,
+  'th-TH': /\p{scx=Thai}/u,
+  'bn-IN': /\p{scx=Bengali}/u,
+  'ar-AR': /\p{scx=Arabic}/u,
+  'ta-IN': /\p{scx=Tamil}/u,
+  'ml-IN': /\p{scx=Malayalam}/u,
+  'he-IL': /\p{scx=Hebrew}/u,
+  'te-IN': /\p{scx=Telugu}/u,
   devanagari: /\p{scx=Devanagari}/u,
   kannada: /\p{scx=Kannada}/u,
 } as const
 
-type CodeKey = keyof typeof code
-export type Locale = Exclude<CodeKey, 'emoji' | 'symbol' | 'math'>
+type CodeKey = keyof typeof specialCode | keyof typeof code
+export type Locale = keyof typeof code
 export type LangCode = CodeKey | 'unknown'
 
-export const locales = Object.keys(code).splice(3) as Locale[]
+export const locales = Object.keys(code) as Locale[]
 export function isValidLocale(x: any): x is Locale {
   return locales.includes(x)
 }
@@ -54,17 +60,20 @@ export function isValidLocale(x: any): x is Locale {
 // Since some characters may belong to multiple languages simultaneously,
 // we adjust the order of the languages by locale.
 export function detectLanguageCode(segment: string, locale?: Locale): LangCode {
-  const order = Object.keys(code) as CodeKey[]
-  if (locale) {
-    const index = order.indexOf(locale)
-    if (index === -1) {
-      throw new Error('locale is invalid')
+  // If `locale` matches, return it directly
+  if (locale && code[locale]) {
+    if (code[locale].test(segment)) {
+      return locale
     }
-    order.splice(index, 1)
-    order.unshift(locale)
   }
 
-  for (const c of order) {
+  for (const c of Object.keys(specialCode) as CodeKey[]) {
+    if (specialCode[c].test(segment)) {
+      return c
+    }
+  }
+
+  for (const c of Object.keys(code) as CodeKey[]) {
     if (code[c].test(segment)) {
       return c
     }
@@ -73,6 +82,12 @@ export function detectLanguageCode(segment: string, locale?: Locale): LangCode {
   return 'unknown'
 }
 
-export function normalizeLocale(lang?: string): Locale | undefined {
-  return locales.find(_locale => lang && lang.startsWith(_locale))
+export function normalizeLocale(locale?: string): Locale | undefined {
+  if (locale) {
+    return locales.find(
+      (l) =>
+        l.toLowerCase() === locale.toLowerCase() ||
+        l.toLowerCase().startsWith(locale.toLowerCase())
+    )
+  }
 }

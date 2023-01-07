@@ -29,16 +29,18 @@ const editedCards: Tabs = { ...playgroundTabs }
 // than built-in.
 // @TODO: Cover most languages with Noto Sans.
 const languageFontMap = {
-  zh: 'Noto+Sans+SC',
-  ja: 'Noto+Sans+JP',
-  ko: 'Noto+Sans+KR',
-  th: 'Noto+Sans+Thai',
-  he: 'Noto+Sans+Hebrew',
-  ar: 'Noto+Sans+Arabic',
-  bn: 'Noto+Sans+Bengali',
-  ta: 'Noto+Sans+Tamil',
-  te: 'Noto+Sans+Telugu',
-  ml: 'Noto+Sans+Malayalam',
+  'ja-JP': 'Noto+Sans+JP',
+  'ko-KR': 'Noto+Sans+KR',
+  'zh-CN': 'Noto+Sans+SC',
+  'zh-TW': 'Noto+Sans+TC',
+  'zh-HK': 'Noto+Sans+HK',
+  'th-TH': 'Noto+Sans+Thai',
+  'bn-IN': 'Noto+Sans+Bengali',
+  'ar-AR': 'Noto+Sans+Arabic',
+  'ta-IN': 'Noto+Sans+Tamil',
+  'ml-IN': 'Noto+Sans+Malayalam',
+  'he-IL': 'Noto+Sans+Hebrew',
+  'te-IN': 'Noto+Sans+Telugu',
   devanagari: 'Noto+Sans+Devanagari',
   kannada: 'Noto+Sans+Kannada',
   symbol: ['Noto+Sans+Symbols', 'Noto+Sans+Symbols+2'],
@@ -139,7 +141,7 @@ const loadDynamicAsset = withCache(
             data: font,
             weight: 400,
             style: 'normal',
-            lang: code === 'unknown' ? undefined : code
+            lang: code === 'unknown' ? undefined : code,
           }
         }
       }
