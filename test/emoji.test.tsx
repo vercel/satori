@@ -1,7 +1,7 @@
 import React from 'react'
 import { it, describe, expect } from 'vitest'
 
-import { initFonts } from './utils'
+import { initFonts, toImage } from './utils'
 import satori from '../src'
 
 describe('Emojis', () => {
@@ -32,5 +32,19 @@ describe('Emojis', () => {
         "👶🏾",
       ]
     `)
+  })
+
+  // https://github.com/vercel/satori/issues/302
+  it('should render emojis correctly', async () => {
+    const svg = await satori(<div>Hello🦺</div>, {
+      width: 100,
+      height: 100,
+      fonts,
+      graphemeImages: {
+        '🦺': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==',
+      },
+    })
+
+    expect(await toImage(svg)).toMatchImageSnapshot()
   })
 })

@@ -18,6 +18,7 @@ import handler from './handler'
 import FontLoader from './font'
 import layoutText from './text'
 import rect from './builder/rect'
+import {Locale, normalizeLocale} from "./language";
 
 export interface LayoutContext {
   id: string
@@ -30,13 +31,14 @@ export interface LayoutContext {
   debug?: boolean
   graphemeImages?: Record<string, string>
   canLoadAdditionalAssets: boolean
+  locale?: Locale,
   getTwStyles: (tw: string, style: any) => any
 }
 
 export default async function* layout(
   element: ReactNode,
   context: LayoutContext
-): AsyncGenerator<string[], string, [number, number]> {
+): AsyncGenerator<{ word: string; locale?: string; }[], string, [number, number]> {
   const Yoga = getYoga()
   const {
     id,
@@ -44,6 +46,7 @@ export default async function* layout(
     parent,
     font,
     debug,
+    locale,
     embedFont = true,
     graphemeImages,
     canLoadAdditionalAssets,
@@ -64,7 +67,7 @@ export default async function* layout(
     if (!isReactElement(element)) {
       // Process as text node.
       iter = layoutText(String(element), context)
-      yield (await iter.next()).value as string[]
+      yield (await iter.next()).value as { word: string; locale?: Locale; }[]
     } else {
       if (isClass(element.type as Function)) {
         throw new Error('Class component is not supported.')
@@ -74,7 +77,7 @@ export default async function* layout(
       // So we can safely evaluate it to render. Otherwise, an error will be
       // thrown by React.
       iter = layout((element.type as Function)(element.props), context)
-      yield (await iter.next()).value as string[]
+      yield (await iter.next()).value as { word: string; locale?: string; }[]
     }
 
     await iter.next()
@@ -89,7 +92,8 @@ export default async function* layout(
       'dangerouslySetInnerHTML property is not supported. See documentation for more information https://github.com/vercel/satori#jsx.'
     )
   }
-  let { style, children, tw } = props || {}
+  let { style, children, tw, lang: _newLocale = locale } = props || {}
+  const newLocale = normalizeLocale(_newLocale)
 
   // Extend Tailwind styles.
   if (tw) {
@@ -138,7 +142,7 @@ export default async function* layout(
   const iterators: ReturnType<typeof layout>[] = []
 
   let i = 0
-  const segmentsMissingFont: string[] = []
+  const segmentsMissingFont: { word: string; locale?: string; }[] = []
   for (const child of normalizedChildren) {
     const iter = layout(child, {
       id: id + '-' + i++,
@@ -151,6 +155,7 @@ export default async function* layout(
       debug,
       graphemeImages,
       canLoadAdditionalAssets,
+      locale: newLocale,
       getTwStyles,
     })
     if (canLoadAdditionalAssets) {
