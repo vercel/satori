@@ -187,6 +187,8 @@ export function segment(
     const output = []
 
     let i = 0
+    // When there is a non-breaking space, join the previous and next words together.
+    // This change causes them to be treated as a single segment.
     while (i < segmented.length) {
       const segment = segmented[i]
 
