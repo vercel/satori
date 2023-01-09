@@ -83,4 +83,12 @@ describe('detectLanguageCode', () => {
   it('should detect unknown', async () => {
     expect(detectLanguageCode('wat')).toBe('unknown')
   })
+
+  it('should detect math', async () => {
+    expect(detectLanguageCode('ℵ')).toBe('math')
+  })
+
+  it('should detect symbol', async () => {
+    expect(detectLanguageCode('☻')).toBe('symbol')
+  })
 })
