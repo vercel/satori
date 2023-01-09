@@ -18,7 +18,7 @@ const items = [
   'blue',
 ]
 
-describe('Flex gap', () => {
+describe('flex gap', () => {
   it('should support gap', async () => {
     const svg = await satori(
       <div

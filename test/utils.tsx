@@ -8,11 +8,18 @@ import initYoga from 'yoga-wasm-web'
 import { init } from '../src'
 import type { SatoriOptions } from '../src'
 
-
 export function initYogaWasm() {
   beforeAll(async () => {
+    // @ts-expect-error
     const yoga = await initYoga(
-      await readFile('yoga-wasm-web/dist/yoga.wasm')
+      await readFile(
+        join(
+          require.resolve('yoga-wasm-web/package.json'),
+          '..',
+          'dist',
+          'yoga.wasm'
+        )
+      )
     )
     init(yoga)
   })
