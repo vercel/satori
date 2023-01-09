@@ -26,8 +26,7 @@
     "react-live": "^2.4.1",
     "react-resizable-panels": "^0.0.30",
     "satori": "workspace:*",
-    "svg-to-pdfkit": "^0.1.8",
-    "yoga-wasm-web": "0.1.2"
+    "svg-to-pdfkit": "^0.1.8"
   },
   "devDependencies": {
     "@types/blob-stream": "^0.1.30",

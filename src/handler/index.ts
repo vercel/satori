@@ -274,6 +274,29 @@ export default async function handler(
     )
   )
 
+  // @TODO: fix types
+  if (
+    // @ts-ignore
+    typeof node.setGap !== 'undefined' &&
+    // @ts-ignore
+    typeof node.getGap !== 'undefined'
+  ) {
+    if (typeof style.gap !== 'undefined') {
+      // @ts-ignore
+      node.setGap(Yoga.GUTTER_ALL, style.gap)
+    }
+
+    if (typeof style.rowGap !== 'undefined') {
+      // @ts-ignore
+      node.setGap(Yoga.GUTTER_ROW, style.rowGap)
+    }
+
+    if (typeof style.columnGap !== 'undefined') {
+      // @ts-ignore
+      node.setGap(Yoga.GUTTER_COLUMN, style.columnGap)
+    }
+  }
+
   // @TODO: node.setFlex
 
   if (typeof style.flexBasis !== 'undefined') {

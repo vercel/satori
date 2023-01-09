@@ -31,7 +31,7 @@ importers:
       twrnc: ^3.4.0
       typescript: ^4.5.5
       vitest: 0.23.4
-      yoga-layout-prebuilt: ^1.10.0
+      yoga-wasm-web: ^0.3.0
     dependencies:
       '@shuding/opentype.js': 1.4.0-beta.0
       css-background-parser: 0.1.0
@@ -39,7 +39,7 @@ importers:
       css-to-react-native: 3.0.0
       emoji-regex: 10.2.1
       postcss-value-parser: 4.2.0
-      yoga-layout-prebuilt: 1.10.0
+      yoga-wasm-web: 0.3.0
     devDependencies:
       '@resvg/resvg-js': 2.1.0
       '@types/node': 16.11.59
@@ -88,7 +88,6 @@ importers:
       regenerator: link:@babel/runtime/regenerator
       satori: workspace:*
       svg-to-pdfkit: ^0.1.8
-      yoga-wasm-web: 0.1.2
     dependencies:
       '@babel/runtime': 7.19.0
       '@monaco-editor/react': 4.4.5_sfoxds7t5ydpegc3knd667wn6m
@@ -108,7 +107,6 @@ importers:
       react-resizable-panels: 0.0.30_sfoxds7t5ydpegc3knd667wn6m
       satori: link:..
       svg-to-pdfkit: 0.1.8
-      yoga-wasm-web: 0.1.2
     devDependencies:
       '@types/blob-stream': 0.1.30
       '@types/pdfkit': 0.12.7
@@ -683,10 +681,6 @@ packages:
     dependencies:
       '@types/pdfkit': 0.12.7
     dev: true
-
-  /@types/yoga-layout/1.9.2:
-    resolution: {integrity: sha512-S9q47ByT2pPvD65IvrWp7qppVMpk9WGMbVq9wbWZOHg6tnXSD4vyhao6nOSBwwfDdV2p3Kx9evA9vI+XWTfDvw==}
-    dev: false
 
   /@types/yoga-layout/1.9.4:
     resolution: {integrity: sha512-RRHc1+8Hc5mf/2lZKnom6kCnqcNS07s8keahniWTOva0KELF6RgDJmaEcvGEKUUJgN4UgessmEsWuidaOycIOw==}
@@ -3776,13 +3770,6 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /yoga-layout-prebuilt/1.10.0:
-    resolution: {integrity: sha512-YnOmtSbv4MTf7RGJMK0FvZ+KD8OEe/J5BNnR0GHhD8J/XcG/Qvxgszm0Un6FTHWW4uHlTgP0IztiXQnGyIR45g==}
-    engines: {node: '>=8'}
-    dependencies:
-      '@types/yoga-layout': 1.9.2
-    dev: false
-
-  /yoga-wasm-web/0.1.2:
-    resolution: {integrity: sha512-8SkgawHcA0RUbMrnhxbaQkZDBi8rMed8pQHixkFF9w32zGhAwZ9/cOHWlpYfr6RCx42Yp3siV45/jPEkJxsk6w==}
+  /yoga-wasm-web/0.3.0:
+    resolution: {integrity: sha512-rD3L4jyMlO1m+RWU60lNwZQK5zmzglCV5fI1gTRikmpv3YzmNIZQbjyfE6cMNb9Xaly/C1SwemYGbsiOekMvnQ==}
     dev: false

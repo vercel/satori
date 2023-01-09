@@ -1,3 +1,6 @@
-import * as Yoga from 'yoga-layout-prebuilt'
+// @ts-ignore
+import initYoga from 'yoga-wasm-web/asm'
 
-export default Yoga
+const yoga = initYoga()
+
+export default yoga
