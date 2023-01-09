@@ -4,8 +4,10 @@ node_modules
 .vscode
 .next
 .idea
+.turbo
 dist
 .pnpm-debug.log
 __diff_output__
+.eslintcache
 
 playground/public/yoga.wasm

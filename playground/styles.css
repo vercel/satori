@@ -39,6 +39,8 @@ body {
   margin: 0;
   background: fixed 0 0 /20px 20px radial-gradient(#d1d1d1 1px, transparent 0),
     fixed 10px 10px /20px 20px radial-gradient(#d1d1d1 1px, transparent 0);
+  --border: 1px solid #d7d7d7;
+  --border-inactive: 1px solid #e4e4e4;
 }
 
 nav {
@@ -73,6 +75,7 @@ nav ul {
   list-style: none;
   margin: 0;
   gap: 10px;
+  padding: 0;
 }
 
 a {
@@ -94,10 +97,10 @@ code {
   display: flex;
   flex-direction: column;
   height: 100%;
-  box-shadow: 0 4px 24px rgb(0 0 0 / 10%), 0 0 0 1px rgb(0 0 0 / 5%);
   background: white;
   border-radius: 12px;
   border-top-left-radius: 0;
+  border: var(--border);
   overflow: auto;
 }
 .editor .editor-controls {
@@ -126,6 +129,19 @@ code {
   overflow: auto;
   gap: 10px;
 }
+
+.content-wrapper svg {
+  width: 100%;
+  height: 100%;
+}
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
 .container > .tabs {
   height: 100%;
   display: flex;
@@ -140,24 +156,26 @@ code {
   align-self: flex-start;
 }
 
-.svg-container {
+.result-container {
   position: relative;
   display: flex;
-  /* 16:9 */
-  height: calc((50vw - 15px) * 9 / 16);
+  height: 100%;
+  width: 100%;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: #111;
 }
 
 .preview-card {
+  flex: 1;
   position: relative;
   border-radius: 12px;
   border-top-left-radius: 0;
-  background: white;
-  box-shadow: 0 4px 24px rgb(0 0 0 / 10%), 0 0 0 1px rgb(0 0 0 / 5%);
+  background: #111;
+  border: var(--border);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .preview-card footer {
@@ -207,26 +225,25 @@ code {
   display: inline-flex;
   position: relative;
   font-size: 12px;
+  margin-bottom: -1px;
   letter-spacing: -0.02em;
-  gap: 1px;
   z-index: 1;
   user-select: none;
-  margin-bottom: 1px;
   white-space: nowrap;
   max-width: calc(100% - 15px);
 }
 
 .tab {
   color: #a5a5a5;
-  box-shadow: 0 0px 0 1px rgb(231 231 231);
   background: #efefef;
-  height: 20px;
+  height: 22px;
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
-  padding: 2px 10px;
+  border: var(--border-inactive);
+  border-bottom: var(--border);
+  padding: 2px 10px 4px;
   cursor: default;
   text-overflow: ellipsis;
-  max-width: 100%;
   overflow: hidden;
 }
 .tab:hover {
@@ -236,15 +253,17 @@ code {
 .tab.active {
   color: #111;
   font-weight: 600;
-  box-shadow: 0 1px white, 0 0px 0 1px rgb(0 0 0 / 5%);
+  border: var(--border);
+  border-bottom: none;
   background: white;
 }
 
 .controller {
   flex: 1;
+  height: 100%;
   border-radius: 12px;
   background: white;
-  box-shadow: 0 4px 24px rgb(0 0 0 / 10%), 0 0 0 1px rgb(0 0 0 / 5%);
+  border: var(--border);
   overflow: hidden;
 }
 
@@ -329,9 +348,6 @@ code {
   .preview > .tabs {
     width: calc(50% - 5px);
   }
-  .controller {
-    width: calc(50% - 5px);
-  }
   .controller .control label {
     flex: 0 0 120px;
   }
@@ -352,11 +368,5 @@ code {
   }
   .container > .tabs {
     max-height: calc(100% - (100vw - 20px) * 9 / 16 - 214px + 5px);
-  }
-  .svg-container {
-    height: calc((100vw - 20px) * 9 / 16);
-  }
-  .controller {
-    height: 160px;
   }
 }

@@ -9,14 +9,12 @@ import { v, segment, wordSeparators, buildXMLString } from './utils'
 import text, { container } from './builder/text'
 import { dropShadow } from './builder/shadow'
 import decoration from './builder/text-decoration'
-
-// @TODO: Support "lang" attribute to modify the locale
-const locale = undefined
+import {Locale} from "./language";
 
 export default async function* buildTextNodes(
   content: string,
   context: LayoutContext
-) {
+): AsyncGenerator<{word: string, locale?: Locale}[], string, [any, any]> {
   const Yoga = getYoga()
 
   const {
@@ -29,6 +27,7 @@ export default async function* buildTextNodes(
     debug,
     embedFont,
     graphemeImages,
+    locale,
     canLoadAdditionalAssets,
   } = context
 
@@ -37,11 +36,11 @@ export default async function* buildTextNodes(
   } else if (parentStyle.textTransform === 'lowercase') {
     content = content.toLocaleLowerCase(locale)
   } else if (parentStyle.textTransform === 'capitalize') {
-    content = segment(content, 'word')
+    content = segment(content, 'word', locale)
       // For each word...
       .map((word) => {
         // ...split into graphemes...
-        return segment(word, 'grapheme')
+        return segment(word, 'grapheme', locale)
           .map((grapheme, index) => {
             // ...and make the first grapheme uppercase
             return index === 0 ? grapheme.toLocaleUpperCase(locale) : grapheme
@@ -51,19 +50,20 @@ export default async function* buildTextNodes(
       .join('')
   }
 
+  const isBreakWord = parentStyle.wordBreak === 'break-word'
   const segmenter = v(
     parentStyle.wordBreak,
     {
       normal: 'word',
       'break-all': 'grapheme',
-      'break-word': 'grapheme',
+      'break-word': 'word',
       'keep-all': 'word',
     },
     'word',
     'wordBreak'
   )
 
-  const words = segment(content, segmenter)
+  const words = segment(content, segmenter, locale)
 
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
@@ -102,20 +102,29 @@ export default async function* buildTextNodes(
   let engine = font.getEngine(
     baseFontSize,
     lineHeight as number,
-    parentStyle as any
+    parentStyle as any,
+    locale
   )
 
   // Yield segments that are missing a font.
   const wordsMissingFont = canLoadAdditionalAssets
     ? words.filter((word) => !engine.has(word))
     : []
-  yield wordsMissingFont
+
+  yield wordsMissingFont.map(word => {
+    return {
+      word,
+      locale
+    }
+  })
+
   if (wordsMissingFont.length) {
     // Reload the engine with additional fonts.
     engine = font.getEngine(
       baseFontSize,
       lineHeight as number,
-      parentStyle as any
+      parentStyle as any,
+      locale
     )
   }
 
@@ -124,7 +133,7 @@ export default async function* buildTextNodes(
   let lineWidths = []
   let baselines = []
   let lineSegmentNumber = []
-  let wordsInLayout: (null | {
+  let wordPositionInLayout: (null | {
     x: number
     y: number
     width: number
@@ -248,13 +257,12 @@ export default async function* buildTextNodes(
         ) &&
         !forceBreak
       ) {
-        // Multiple whitespaces are considered
-        // as one.
+        // Multiple whitespaces are considered as one.
         if (!remainingSpace) {
           remainingSpace = ' '
         }
         remainingSpaceWidth = measureWithCache([remainingSpace])
-        wordsInLayout[i] = null
+        wordPositionInLayout[i] = null
       } else {
         const w = forceBreak
           ? 0
@@ -278,14 +286,40 @@ export default async function* buildTextNodes(
           remainingSpaceWidth || ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
         const allowedToJustify = !_currentWidth || !!remainingSpaceWidth
 
-        if (
-          forceBreak ||
-          (i &&
-            allowedToPutAtBeginning &&
-            _currentWidth + remainingSpaceWidth + w > width &&
-            whiteSpace !== 'nowrap' &&
-            whiteSpace !== 'pre')
-        ) {
+        const willWrap =
+          i &&
+          allowedToPutAtBeginning &&
+          _currentWidth + remainingSpaceWidth + w > width &&
+          whiteSpace !== 'nowrap' &&
+          whiteSpace !== 'pre'
+
+        // Need to break the word if:
+        // - we have break-word
+        // - the word is wider than the container width
+        // - the word will be put at the beginning of the line
+        const needToBreakWord =
+          isBreakWord && w > width && (!_currentWidth || willWrap || forceBreak)
+
+        if (needToBreakWord) {
+          // Break the word into multiple segments and continue the loop.
+          const chars = segment(word, 'grapheme')
+          words.splice(i, 1, '', ...chars)
+          if (_currentWidth > 0) {
+            // Start a new line, spaces can be ignored.
+            lineWidths.push(_currentWidth)
+            baselines.push(currentBaselineOffset)
+            lines++
+            height += currentLineHeight
+            _currentWidth = 0
+            currentLineHeight = 0
+            currentBaselineOffset = 0
+            lineSegmentNumber.push(1)
+            lineIndex = -1
+          }
+          continue
+        }
+
+        if (forceBreak || willWrap) {
           // Start a new line, spaces can be ignored.
           lineWidths.push(_currentWidth)
           baselines.push(currentBaselineOffset)
@@ -325,7 +359,7 @@ export default async function* buildTextNodes(
         }
 
         maxWidth = Math.max(maxWidth, _currentWidth)
-        wordsInLayout[i] = {
+        wordPositionInLayout[i] = {
           y: height,
           x: _currentWidth - w,
           width: w,
@@ -408,9 +442,9 @@ export default async function* buildTextNodes(
   let bufferedOffset = 0
 
   for (let i = 0; i < words.length; i++) {
-    // Skip whitespace.
-    if (!wordsInLayout[i]) continue
-    const layout = wordsInLayout[i]
+    // Skip whitespace and empty characters.
+    if (!wordPositionInLayout[i]) continue
+    const layout = wordPositionInLayout[i]
 
     let word = words[i]
     let path: string | null = null
@@ -461,7 +495,7 @@ export default async function* buildTextNodes(
           layout.x + width + ellipsisWidth + spaceWidth >
           parentContainerInnerWidth
         ) {
-          const chars = segment(word, 'grapheme')
+          const chars = segment(word, 'grapheme', locale)
           let subset = ''
           let resolvedWidth = 0
           for (const char of chars) {
@@ -495,10 +529,14 @@ export default async function* buildTextNodes(
       // For images, we remove the baseline offset.
       topOffset += 0
     } else if (embedFont) {
+      // If the current word and the next word are on the same line, we try to
+      // merge them together to better handle the kerning.
       if (
+        !wordSeparators.includes(word) &&
         words[i + 1] &&
-        wordsInLayout[i + 1] &&
-        topOffset === wordsInLayout[i + 1].y
+        !graphemeImages[words[i + 1]] &&
+        wordPositionInLayout[i + 1] &&
+        topOffset === wordPositionInLayout[i + 1].y
       ) {
         if (wordBuffer === null) {
           bufferedOffset = leftOffset
@@ -558,7 +596,7 @@ export default async function* buildTextNodes(
     // Get the decoration shape.
     if (parentStyle.textDecorationLine) {
       // If it's the last word in the current line.
-      if (line !== wordsInLayout[i + 1]?.line || skippedLine === line) {
+      if (line !== wordPositionInLayout[i + 1]?.line || skippedLine === line) {
         const deco = decorationLines[line]
         if (deco && !deco[2]) {
           decorationShape += decoration(

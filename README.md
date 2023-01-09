@@ -3,9 +3,9 @@
 **Satori**: Enlightened library to convert HTML and CSS to SVG.
 
 > **Note**
-> 
-> To use Satori in your project to generate PNG images like Open Graph images and social cards, check out our [announcement](https://vercel.com/blog/introducing-vercel-og-image-generation-fast-dynamic-social-card-images) and [Vercel’s Open Graph Image Generation →](https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation)   
-> 
+>
+> To use Satori in your project to generate PNG images like Open Graph images and social cards, check out our [announcement](https://vercel.com/blog/introducing-vercel-og-image-generation-fast-dynamic-social-card-images) and [Vercel’s Open Graph Image Generation →](https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation)
+>
 > To use it in Next.js, take a look at the [Next.js Open Graph Image Generation template →](https://vercel.com/templates/next.js/og-image-generation)
 
 ## Overview
@@ -70,7 +70,7 @@ await satori(
 
 ### HTML Elements
 
-Satori supports a limited subset of HTML and CSS features, due to its special use cases. In general, only these static and visible elements and properties that are implemented. 
+Satori supports a limited subset of HTML and CSS features, due to its special use cases. In general, only these static and visible elements and properties that are implemented.
 
 For example, the `<input>` HTML element, the `cursor` CSS property are not in consideration. And you can't use `<style>` tags or external resources via `<link>` or `<script>`.
 
@@ -241,10 +241,11 @@ Note:
 3. `box-sizing` is set to `border-box` for all elements.
 4. `calc` isn't supported.
 5. `overflow: hidden` and `transform` can't be used together.
+6. `currentcolor` support is only available for the `color` property.
 
 ### Language and Typography
 
-Advanced typography features such as kerning, ligatures and other OpenType features are not currently supported. 
+Advanced typography features such as kerning, ligatures and other OpenType features are not currently supported.
 
 RTL languages are not supported either.
 
@@ -296,6 +297,20 @@ await satori(
 
 The image will be resized to the current font-size (both width and height) as a square.
 
+#### Locales
+
+Satori supports rendering text in different locales. You can specify the supported locales via the `lang` attribute:
+
+```jsx
+await satori(
+  <div lang="ja-JP">骨</div>
+)
+```
+
+Same characters can be rendered differently in different locales, you can specify the locale when necessary to force it to render with a specific font and locale. Check out [this example](https://og-playground.vercel.app/?share=nVLdSsMwFH6VcEC86VgdXoyweTMVpyiCA296kzWnbWaalCZ160rfwAcRH8Bn0rcwWVdQEYTdnJzz_ZyEnNNArDkChQkXz5EixNha4rRpfE4IF6aQrKbkOJG4OQ461OfnosTYCq0cF2tZ5apnMxRpZh18EoZHPbgW3Ga_sIJxLlS6Q4sNGbnQU0yKVM0t5sa3R2Wx7KlVZaxI6pl2oPLX_KQTh1-yXEj_6LlnAhLBLXOJYJLMY61MBN_VD2KLlIzGe2jJ4qe01JXiMy116bqsM2Gxc7Stj2edcmIKpohkKp1GsGKD6_sI9hQhn2-vHy_ve-HQK_9ybbPB7O4Q1-LxENfVzX-uydDtgTshAF348RqgDeymB3QchgF04wV66guOyyoFmjBpMADM9Uos6sLvk13vKtfH__FFvkQO1JYVtu0X) to learn more. 
+
+Supported locales are exported as the `Locale` enum type.
+
 #### Dynamically Load Emojis and Fonts
 
 Satori supports dynamically loading emoji images (grapheme pictures) and fonts. The `loadAdditionalAsset` function will be called when a text segment is rendered but missing the image or font:
@@ -334,6 +349,14 @@ init(yoga)
 
 await satori(...)
 ```
+
+When running in the browser or in the Node.js environment, WASM files need to be hosted and fetched before initializing. asm.js can be bundled together with the lib. In this case WASM should be faster.
+
+When running on the Node.js server, native modules should be faster. However there are Node.js environments where native modules are not supported (e.g. StackBlitz's WebContainers), or other JS runtimes that support WASM (e.g. Vercel's Edge Runtime, Cloudflare Workers, or Deno).
+
+Additionally, there are other difference between asm.js, native and WASM, such as security and compatibility.
+
+Overall there are many trade-offs between each choice, and it's better to pick the one that works the best for your use case.
 
 ### Font Embedding
 

@@ -7,6 +7,13 @@
  * TODO: We might want another option to disable image caching by default.
  */
 
+const AVIF = 'image/avif'
+const WEBP = 'image/webp'
+const PNG = 'image/png'
+const JPEG = 'image/jpeg'
+const GIF = 'image/gif'
+const SVG = 'image/svg+xml'
+
 function parseJPEG(buf: ArrayBuffer) {
   const view = new DataView(buf)
 
@@ -57,10 +64,10 @@ const cache = createLRU<ResolvedImageData>(100)
 const inflightRequests = new Map<string, Promise<ResolvedImageData>>()
 
 const ALLOWED_IMAGE_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/gif',
-  'image/svg+xml',
+  PNG,
+  JPEG,
+  GIF,
+  SVG,
 ]
 
 function arrayBufferToBase64(buffer) {
@@ -72,6 +79,45 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary)
 }
 
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  let binaryString = atob(base64)
+  let len = binaryString.length
+  let bytes = new Uint8Array(len)
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
+  }
+  return bytes.buffer
+}
+
+function parseSvgImageSize(src: string, data: string) {
+  // Parse the SVG image size
+  const svgTag = data.match(/<svg[^>]*>/)[0]
+
+  const viewBoxStr = svgTag.match(/viewBox=['"](.+)['"]/)
+  let viewBox = viewBoxStr ? parseViewBox(viewBoxStr[1]) : null
+
+  const width = svgTag.match(/width=['"](\d*\.\d+|\d+)['"]/)
+  const height = svgTag.match(/height=['"](\d*\.\d+|\d+)['"]/)
+
+  if (!viewBox && (!width || !height)) {
+    throw new Error(`Failed to parse SVG from ${src}: missing "viewBox"`)
+  }
+
+  const size = viewBox ? [viewBox[2], viewBox[3]] : [+width[1], +height[1]]
+
+  const ratio = size[0] / size[1]
+  const imageSize: [number, number] =
+    width && height
+      ? [+width[1], +height[1]]
+      : width
+      ? [+width[1], +width[1] / ratio]
+      : height
+      ? [+height[1] * ratio, +height[1]]
+      : [size[0], size[1]]
+
+  return imageSize
+}
+
 export async function resolveImageData(
   src: string
 ): Promise<ResolvedImageData> {
@@ -79,12 +125,51 @@ export async function resolveImageData(
     throw new Error('Image source is not provided.')
   }
 
-  if (/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/.test(src)) {
-    src = src.slice(1, -1);
+  if (
+    (src.startsWith('"') && src.endsWith('"')) ||
+    (src.startsWith('\'') && src.endsWith('\''))
+  ) {
+    src = src.slice(1, -1)
   }
 
   if (src.startsWith('data:')) {
-    return [src]
+    let decodedURI: { imageType; encodingType; dataString }
+
+    try {
+      decodedURI =
+        /data:(?<imageType>[a-z/+]+)(;(?<encodingType>base64|utf8))?,(?<dataString>.*)/g.exec(
+          src
+        ).groups as typeof decodedURI
+    } catch (err) {
+      console.warn('Image data URI resolved without size:' + src)
+      return [src]
+    }
+
+    const { imageType, encodingType, dataString } = decodedURI
+    if (imageType === SVG) {
+      const utf8Src = encodingType === 'base64' ? atob(dataString) : decodeURIComponent(dataString.replace(/ /g, '%20'))
+      const base64Src = encodingType === 'base64' ? src : `data:image/svg+xml;base64,${btoa(utf8Src)}`
+      let imageSize = parseSvgImageSize(src, utf8Src)
+      return [base64Src, ...imageSize]
+    } else if (encodingType === 'base64') {
+      let imageSize: [number, number]
+      const data = base64ToArrayBuffer(dataString)
+      switch (imageType) {
+        case PNG:
+          imageSize = parsePNG(data)
+          break
+        case GIF:
+          imageSize = parseGIF(data)
+          break
+        case JPEG:
+          imageSize = parseJPEG(data)
+          break
+      }
+      return [src, ...imageSize]
+    } else {
+      console.warn('Image data URI resolved without size:' + src)
+      return [src]
+    }
   }
 
   if (!globalThis.fetch) {
@@ -116,33 +201,7 @@ export async function resolveImageData(
           try {
             const newSrc = `data:image/svg+xml;base64,${btoa(data)}`
             // Parse the SVG image size
-            const svgTag = data.match(/<svg[^>]*>/)[0]
-
-            const viewBoxStr = svgTag.match(/viewBox=['"](.+)['"]/)
-            let viewBox = viewBoxStr ? parseViewBox(viewBoxStr[1]) : null
-
-            const width = svgTag.match(/width="(\d*\.\d+|\d+)"/)
-            const height = svgTag.match(/height="(\d*\.\d+|\d+)"/)
-
-            if (!viewBox && (!width || !height)) {
-              throw new Error(
-                `Failed to parse SVG from ${src}: missing "viewBox"`
-              )
-            }
-
-            const size = viewBox
-              ? [viewBox[2], viewBox[3]]
-              : [+width[1], +height[1]]
-
-            const ratio = size[0] / size[1]
-            const imageSize: [number, number] =
-              width && height
-                ? [+width[1], +height[1]]
-                : width
-                ? [+width[1], +width[1] / ratio]
-                : height
-                ? [+height[1] * ratio, +height[1]]
-                : [size[0], size[1]]
+            const imageSize = parseSvgImageSize(src, data)
 
             cache.set(src, [newSrc, ...imageSize])
             resolve([newSrc, ...imageSize])
@@ -152,30 +211,18 @@ export async function resolveImageData(
           }
         }
 
-        let imageType: string
         let imageSize: [number, number]
 
-        const magicBytes = new Uint8Array(data.slice(0, 4))
-        const magicString = [...magicBytes]
-          .map((byte) => byte.toString(16))
-          .join('')
-        switch (magicString) {
-          case '89504e47':
-            imageType = 'image/png'
+        const imageType = detectContentType(new Uint8Array(data))
+
+        switch (imageType) {
+          case PNG:
             imageSize = parsePNG(data)
             break
-          case '47494638':
-            imageType = 'image/gif'
+          case GIF:
             imageSize = parseGIF(data)
             break
-          case 'ffd8ffe0':
-          case 'ffd8ffe1':
-          case 'ffd8ffe2':
-          case 'ffd8ffe3':
-          case 'ffd8ffe8':
-          case 'ffd8ffed':
-          case 'ffd8ffdb':
-            imageType = 'image/jpeg'
+          case JPEG:
             imageSize = parseJPEG(data)
             break
         }
@@ -193,4 +240,43 @@ export async function resolveImageData(
   })
   inflightRequests.set(src, promise)
   return promise
+}
+
+/**
+ * Inspects the first few bytes of a buffer to determine if
+ * it matches the "magic number" of known file signatures.
+ * https://en.wikipedia.org/wiki/List_of_file_signatures
+ */
+function detectContentType(buffer: Uint8Array) {
+  if ([0xff, 0xd8, 0xff].every((b, i) => buffer[i] === b)) {
+    return JPEG
+  }
+  if (
+    [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every(
+      (b, i) => buffer[i] === b
+    )
+  ) {
+    return PNG
+  }
+  if ([0x47, 0x49, 0x46, 0x38].every((b, i) => buffer[i] === b)) {
+    return GIF
+  }
+  if (
+    [0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50].every(
+      (b, i) => !b || buffer[i] === b
+    )
+  ) {
+    return WEBP
+  }
+  if ([0x3c, 0x3f, 0x78, 0x6d, 0x6c].every((b, i) => buffer[i] === b)) {
+    return SVG
+  }
+  if (
+    [0, 0, 0, 0, 0x66, 0x74, 0x79, 0x70, 0x61, 0x76, 0x69, 0x66].every(
+      (b, i) => !b || buffer[i] === b
+    )
+  ) {
+    return AVIF
+  }
+  return null
 }

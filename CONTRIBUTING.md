@@ -26,16 +26,16 @@ This project uses [pnpm](https://pnpm.io). To install dependencies, run:
 pnpm install
 ```
 
-To start the playground locally, run:
+To start the playground together with Satori locally, run:
 
 ```bash
 cd playground
-pnpm dev
+pnpm dev:playground
 ```
 
 And visit localhost:3000.
 
-To start the development mode of Satori, run `pnpm dev` in the root directory (can be used together with the playground to see changes in live).
+To only start the development mode of Satori, run `pnpm dev` in the root directory (recommended to test together with the playground to see changes in live).
 
 ## Adding Tests
 
