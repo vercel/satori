@@ -5,7 +5,7 @@ import layout from './layout'
 import FontLoader, { FontOptions } from './font'
 import svg from './builder/svg'
 import { segment } from './utils'
-import {detectLanguageCode, LangCode, Locale} from './language'
+import { detectLanguageCode, LangCode, Locale } from './language'
 import getTw from './handler/tailwind'
 
 // We don't need to initialize the opentype instances every time.
@@ -125,7 +125,10 @@ export default async function satori(
     },
   })
 
-  const segmentsMissingFont = (await handler.next()).value as {word: string, locale?: Locale}[]
+  const segmentsMissingFont = (await handler.next()).value as {
+    word: string
+    locale?: Locale
+  }[]
 
   if (options.loadAdditionalAsset) {
     if (segmentsMissingFont.length) {
@@ -171,7 +174,9 @@ export default async function satori(
   return svg({ width: computedWidth, height: computedHeight, content })
 }
 
-function convertToLanguageCodes(segmentsMissingFont: {word: string, locale?: Locale}[]): Partial<Record<LangCode, string[]>> {
+function convertToLanguageCodes(
+  segmentsMissingFont: { word: string; locale?: Locale }[]
+): Partial<Record<LangCode, string[]>> {
   const languageCodes = {}
   let wordsByCode = {}
 
@@ -184,10 +189,18 @@ function convertToLanguageCodes(segmentsMissingFont: {word: string, locale?: Loc
   Object.keys(wordsByCode).forEach((code: LangCode) => {
     languageCodes[code] = languageCodes[code] || []
     if (code === 'emoji') {
-      languageCodes[code].push(...unique(segment(wordsByCode[code], 'grapheme')))
+      languageCodes[code].push(
+        ...unique(segment(wordsByCode[code], 'grapheme'))
+      )
     } else {
       languageCodes[code][0] = languageCodes[code][0] || ''
-      languageCodes[code][0] += unique(segment(wordsByCode[code], 'grapheme', code === 'unknown' ? undefined : code)).join('')
+      languageCodes[code][0] += unique(
+        segment(
+          wordsByCode[code],
+          'grapheme',
+          code === 'unknown' ? undefined : code
+        )
+      ).join('')
     }
   })
 
