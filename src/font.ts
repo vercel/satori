@@ -2,7 +2,7 @@
  * This class handles everything related to fonts.
  */
 import opentype from '@shuding/opentype.js'
-import {Locale, locales, isValidLocale} from "./language";
+import { Locale, locales, isValidLocale } from './language'
 
 export type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
 type WeightName = 'normal' | 'bold'
@@ -13,7 +13,7 @@ export interface FontOptions {
   data: Buffer | ArrayBuffer
   name: string
   weight?: Weight
-  style?: Style,
+  style?: Style
   lang?: string
 }
 
@@ -113,7 +113,11 @@ export default class FontLoader {
     for (const fontOption of fontOptions) {
       const { name, data, lang } = fontOption
       if (lang && !isValidLocale(lang)) {
-        throw new Error(`Invalid value for props 'lang': ${lang}. The value must be one of the following: ${locales}.`)
+        throw new Error(
+          `Invalid value for props \`lang\`: "${lang}". The value must be one of the following: ${locales.join(
+            ', '
+          )}.`
+        )
       }
       const _lang = lang ?? SUFFIX_WHEN_LANG_NOT_SET
       const font = opentype.parse(
@@ -202,7 +206,7 @@ export default class FontLoader {
               this.get({
                 name,
                 weight: fontWeight,
-                style: fontStyle
+                style: fontStyle,
               })
             )
           } else {
@@ -210,7 +214,7 @@ export default class FontLoader {
               this.get({
                 name,
                 weight: fontWeight,
-                style: fontStyle
+                style: fontStyle,
               })
             )
           }
@@ -219,7 +223,7 @@ export default class FontLoader {
             this.get({
               name,
               weight: fontWeight,
-              style: fontStyle
+              style: fontStyle,
             })
           )
         }
@@ -228,7 +232,7 @@ export default class FontLoader {
           this.get({
             name,
             weight: fontWeight,
-            style: fontStyle
+            style: fontStyle,
           })
         )
       }
@@ -446,7 +450,5 @@ function getLangFromFontName(name: string): Locale | undefined {
   const arr = name.split('_')
   const lang = arr[arr.length - 1]
 
-  return lang === SUFFIX_WHEN_LANG_NOT_SET
-    ? undefined
-    : lang as Locale
+  return lang === SUFFIX_WHEN_LANG_NOT_SET ? undefined : (lang as Locale)
 }

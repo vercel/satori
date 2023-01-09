@@ -49,7 +49,7 @@ type CodeKey = keyof typeof specialCode | keyof typeof code
 export type Locale = keyof typeof code
 export type LangCode = CodeKey | 'unknown'
 
-export const locales = Object.keys(code) as Locale[]
+export const locales = Object.keys({ ...code, ...specialCode }) as Locale[]
 export function isValidLocale(x: any): x is Locale {
   return locales.includes(x)
 }
