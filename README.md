@@ -290,7 +290,7 @@ await satori(
   {
     ...,
     graphemeImages: {
-      '🤯': 'https://twemoji.maxcdn.com/v/13.1.0/svg/1f92f.svg',
+      '🤯': 'https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f92f.svg',
     },
   }
 )
