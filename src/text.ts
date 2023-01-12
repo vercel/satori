@@ -31,6 +31,7 @@ export default async function* buildTextNodes(
     canLoadAdditionalAssets,
   } = context
 
+  // console.log(':::before content: ', content)
   if (parentStyle.textTransform === 'uppercase') {
     content = content.toLocaleUpperCase(locale)
   } else if (parentStyle.textTransform === 'lowercase') {
@@ -49,6 +50,7 @@ export default async function* buildTextNodes(
       })
       .join('')
   }
+  // console.log(':::after content: ', content)
 
   const isBreakWord = parentStyle.wordBreak === 'break-word'
   const segmenter = v(
@@ -64,6 +66,7 @@ export default async function* buildTextNodes(
   )
 
   const words = segment(content, segmenter, locale)
+  console.log(':::words JSON: ', JSON.stringify(words))
 
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
@@ -163,10 +166,11 @@ export default async function* buildTextNodes(
   let minWidth = 0
   let remainingSegment = []
   let extraWidth = 0
+  console.log(':::whiteSpace: ', whiteSpace)
   for (const word of words) {
     let breakSegment = false
     const isImage = graphemeImages && graphemeImages[word]
-
+    // console.log(':::word: ', word)
     if (whiteSpace === 'pre') {
       // For `pre`, only break the line for `\n`.
       breakSegment = word[0] === '\n'
@@ -177,7 +181,7 @@ export default async function* buildTextNodes(
         breakSegment = true
       }
     }
-
+    // console.log(':::breakSegment: ', breakSegment)
     if (!breakSegment) {
       if (!wordSeparators.includes(word[0]) || !remainingSegment.length) {
         remainingSegment.push(word === '\n' ? ' ' : word)
@@ -289,9 +293,12 @@ export default async function* buildTextNodes(
         const willWrap =
           i &&
           allowedToPutAtBeginning &&
-          _currentWidth + remainingSpaceWidth + w > width &&
+          _currentWidth + remainingSpaceWidth + w + 0.0001> width &&
           whiteSpace !== 'nowrap' &&
           whiteSpace !== 'pre'
+        console.log('::: _currentWidth + remainingSpaceWidth + w > width', _currentWidth + remainingSpaceWidth + w > width)
+        console.log('::: detail _currentWidth, remainingSpaceWidth, w, width', _currentWidth, remainingSpaceWidth, w, width)
+        console.log('::: delta', _currentWidth + remainingSpaceWidth + w - width)
 
         // Need to break the word if:
         // - we have break-word
@@ -308,6 +315,7 @@ export default async function* buildTextNodes(
             // Start a new line, spaces can be ignored.
             lineWidths.push(_currentWidth)
             baselines.push(currentBaselineOffset)
+            console.log('::: lines++ 1')
             lines++
             height += currentLineHeight
             _currentWidth = 0
@@ -318,11 +326,12 @@ export default async function* buildTextNodes(
           }
           continue
         }
-
+        console.log(':::forceBreak, willWrap', forceBreak, willWrap)
         if (forceBreak || willWrap) {
           // Start a new line, spaces can be ignored.
           lineWidths.push(_currentWidth)
           baselines.push(currentBaselineOffset)
+          console.log('::: lines++ 2')
           lines++
           height += currentLineHeight
           _currentWidth = w
@@ -369,6 +378,7 @@ export default async function* buildTextNodes(
       }
     }
     if (_currentWidth) {
+      console.log('::: lines++ 3')
       lines++
       lineWidths.push(_currentWidth)
       baselines.push(currentBaselineOffset)
@@ -378,6 +388,8 @@ export default async function* buildTextNodes(
     // @TODO: Support `line-height`.
     return { width: maxWidth, height }
   })
+
+  console.log('::: words: ', words)
 
   const [x, y] = yield
 
@@ -440,6 +452,8 @@ export default async function* buildTextNodes(
   let decorationLines: Record<number, null | number[]> = {}
   let wordBuffer: string | null = null
   let bufferedOffset = 0
+
+  console.log(':::wordPositionInLayout: ', wordPositionInLayout)
 
   for (let i = 0; i < words.length; i++) {
     // Skip whitespace and empty characters.
@@ -531,6 +545,22 @@ export default async function* buildTextNodes(
     } else if (embedFont) {
       // If the current word and the next word are on the same line, we try to
       // merge them together to better handle the kerning.
+
+      // console.log(`
+      // (
+      //   !wordSeparators.includes(word) &&
+      //   words[i + 1] &&
+      //   !graphemeImages[words[i + 1]] &&
+      //   wordPositionInLayout[i + 1] &&
+      //   topOffset === wordPositionInLayout[i + 1].y
+      // )
+      // `,
+      //   !wordSeparators.includes(word),
+      //   words[i + 1],
+      //   !graphemeImages[words[i + 1]],
+      //   wordPositionInLayout[i + 1],
+      //   topOffset === wordPositionInLayout[i + 1]?.y
+      // )
       if (
         !wordSeparators.includes(word) &&
         words[i + 1] &&
@@ -549,7 +579,7 @@ export default async function* buildTextNodes(
       const finalizedLeftOffset =
         wordBuffer === null ? leftOffset : bufferedOffset
       const finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
-
+      console.log(':::finalizedSegment: ', finalizedSegment)
       path = engine.getSVG(finalizedSegment, {
         ...parentStyle,
         left: left + finalizedLeftOffset,

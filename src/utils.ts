@@ -163,6 +163,7 @@ export function segment(
   granularity: 'word' | 'grapheme',
   locale?: string
 ): string[] {
+  console.log('::: granularity:', granularity)
   if (!wordSegmenter || !graphemeSegmenter) {
     if (!(typeof Intl !== 'undefined' && 'Segmenter' in Intl)) {
       // https://caniuse.com/mdn-javascript_builtins_intl_segments

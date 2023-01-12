@@ -76,6 +76,7 @@ export default function text(
   },
   style: Record<string, number | string>
 ) {
+  console.log(':::content', content)
   let extra = ''
   if (debug) {
     extra = buildXMLString('rect', {
