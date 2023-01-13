@@ -112,6 +112,16 @@ export default async function* layout(
     props
   )
 
+  console.log('node,\n' +
+    '    type,\n' +
+    '    inheritedStyle,\n' +
+    '    style,\n' +
+    '    props', node,
+    type,
+    inheritedStyle,
+    style,
+    props)
+
   // Post-process styles to attach inheritable properties for Satori.
 
   // If the element is inheriting the parent `transform`, or applying its own.
@@ -143,6 +153,7 @@ export default async function* layout(
 
   let i = 0
   const segmentsMissingFont: { word: string; locale?: string; }[] = []
+  console.log('::: normalizedChildren: ', normalizedChildren)
   for (const child of normalizedChildren) {
     const iter = layout(child, {
       id: id + '-' + i++,
@@ -170,9 +181,9 @@ export default async function* layout(
 
   // 3. Post-process the node.
   const [x, y] = yield
-
+  console.log('::: layout x, y', x, y)
   let { left, top, width, height } = node.getComputedLayout()
-
+  console.log('::: layout before: left, top, width, height ', left, top, width, height)
   // Attach offset to the current node.
   left += x
   top += y
@@ -236,6 +247,7 @@ export default async function* layout(
 
   // Generate the rendered markup for the children.
   for (const iter of iterators) {
+    console.log('::: [left, top]', [left, top])
     childrenRenderResult += (await iter.next([left, top])).value
   }
 

@@ -10,6 +10,7 @@ import text, { container } from './builder/text.js'
 import { dropShadow } from './builder/shadow.js'
 import decoration from './builder/text-decoration.js'
 import {Locale} from './language.js';
+import LineBreaker from 'linebreak'
 
 export default async function* buildTextNodes(
   content: string,
@@ -65,8 +66,9 @@ export default async function* buildTextNodes(
     'wordBreak'
   )
 
-  const words = segment(content, segmenter, locale)
-  console.log(':::words JSON: ', JSON.stringify(words))
+  // const words = segment(content, segmenter, locale)
+  const words = getWordsSplitByBreakOpportunities(content)
+  // console.log(':::words JSON: ', JSON.stringify(words))
 
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
@@ -166,7 +168,7 @@ export default async function* buildTextNodes(
   let minWidth = 0
   let remainingSegment = []
   let extraWidth = 0
-  console.log(':::whiteSpace: ', whiteSpace)
+  // console.log(':::whiteSpace: ', whiteSpace)
   for (const word of words) {
     let breakSegment = false
     const isImage = graphemeImages && graphemeImages[word]
@@ -216,7 +218,8 @@ export default async function* buildTextNodes(
         // @TODO: Support percentage units.
       }
     }
-    parent.setMinWidth(minWidth)
+    console.log('::: buildTextNodes minWidth: ', minWidth)
+    // parent.setMinWidth(minWidth)
   }
   if (typeof parentStyle.flexShrink === 'undefined') {
     parent.setFlexShrink(1)
@@ -230,6 +233,7 @@ export default async function* buildTextNodes(
   )
 
   textContainer.setMeasureFunc((width) => {
+    console.log('::: setMeasureFunc props width', width)
     let lines = 0
     let remainingSpace = ''
     let remainingSpaceWidth = 0
@@ -293,12 +297,12 @@ export default async function* buildTextNodes(
         const willWrap =
           i &&
           allowedToPutAtBeginning &&
-          _currentWidth + remainingSpaceWidth + w + 0.0001> width &&
+          _currentWidth + remainingSpaceWidth + w > width + 1 &&
           whiteSpace !== 'nowrap' &&
           whiteSpace !== 'pre'
-        console.log('::: _currentWidth + remainingSpaceWidth + w > width', _currentWidth + remainingSpaceWidth + w > width)
+        // console.log('::: _currentWidth + remainingSpaceWidth + w > width', _currentWidth + remainingSpaceWidth + w > width)
         console.log('::: detail _currentWidth, remainingSpaceWidth, w, width', _currentWidth, remainingSpaceWidth, w, width)
-        console.log('::: delta', _currentWidth + remainingSpaceWidth + w - width)
+        // console.log('::: delta', _currentWidth + remainingSpaceWidth + w - width)
 
         // Need to break the word if:
         // - we have break-word
@@ -326,7 +330,7 @@ export default async function* buildTextNodes(
           }
           continue
         }
-        console.log(':::forceBreak, willWrap', forceBreak, willWrap)
+        // console.log(':::forceBreak, willWrap', forceBreak, willWrap)
         if (forceBreak || willWrap) {
           // Start a new line, spaces can be ignored.
           lineWidths.push(_currentWidth)
@@ -344,6 +348,7 @@ export default async function* buildTextNodes(
           // Since if there are multiple lines, the width should fit the
           // container.
           if (!forceBreak) {
+            console.log('::: setMeasureFunc width: ', width)
             maxWidth = Math.max(maxWidth, width)
           }
         } else {
@@ -367,6 +372,7 @@ export default async function* buildTextNodes(
           lineIndex++
         }
 
+        console.log('::: setMeasureFunc _currentWidth: ', _currentWidth)
         maxWidth = Math.max(maxWidth, _currentWidth)
         wordPositionInLayout[i] = {
           y: height,
@@ -386,12 +392,15 @@ export default async function* buildTextNodes(
     }
 
     // @TODO: Support `line-height`.
+    console.log('::: setMeasureFunc result: width, height', maxWidth, height )
     return { width: maxWidth, height }
   })
 
-  console.log('::: words: ', words)
+  // console.log('::: words: ', words)
 
   const [x, y] = yield
+  console.log('x, y', x, y)
+
 
   let result = ''
   let backgroundClipDef = ''
@@ -405,6 +414,7 @@ export default async function* buildTextNodes(
     width: containerWidth,
     height: containerHeight,
   } = textContainer.getComputedLayout()
+  console.log('containerLeft, containerTop, containerWidth, containerHeight', containerLeft, containerTop, containerWidth, containerHeight)
   const parentContainerInnerWidth =
     parent.getComputedWidth() -
     parent.getComputedPadding(Yoga.EDGE_LEFT) -
@@ -453,7 +463,7 @@ export default async function* buildTextNodes(
   let wordBuffer: string | null = null
   let bufferedOffset = 0
 
-  console.log(':::wordPositionInLayout: ', wordPositionInLayout)
+  // console.log(':::wordPositionInLayout: ', wordPositionInLayout)
 
   for (let i = 0; i < words.length; i++) {
     // Skip whitespace and empty characters.
@@ -580,6 +590,8 @@ export default async function* buildTextNodes(
         wordBuffer === null ? leftOffset : bufferedOffset
       const finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
       console.log(':::finalizedSegment: ', finalizedSegment)
+      console.log('::: left: ', left + finalizedLeftOffset, left, finalizedLeftOffset)
+      console.log('::: top: ', top + topOffset + baselineOfWord + baselineDelta)
       path = engine.getSVG(finalizedSegment, {
         ...parentStyle,
         left: left + finalizedLeftOffset,
@@ -713,4 +725,26 @@ export default async function* buildTextNodes(
   }
 
   return result
+}
+
+function getWordsSplitByBreakOpportunities(str: string): string[] {
+  const breaker = new LineBreaker(str)
+  let last = 0
+  let bk = breaker.nextBreak()
+  const words = []
+
+  while (bk) {
+    let word = str.slice(last, bk.position)
+    words.push(word)
+    console.log(word)
+
+    if (bk.required) {
+      // todo
+    }
+
+    last = bk.position
+    bk = breaker.nextBreak()
+  }
+
+  return words
 }

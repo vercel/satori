@@ -82,6 +82,7 @@
     "css-box-shadow": "1.0.0-3",
     "css-to-react-native": "^3.0.0",
     "emoji-regex": "^10.2.1",
+    "linebreak": "^1.1.0",
     "postcss-value-parser": "^4.2.0",
     "yoga-wasm-web": "^0.3.1"
   },

@@ -31,6 +31,8 @@ export default async function handler(
     ...expand(definedStyle, inheritedStyle),
   }
 
+  console.log(':::style: ', style )
+
   if (type === 'img') {
     let [resolvedSrc, imageWidth, imageHeight] = await resolveImageData(
       props.src
