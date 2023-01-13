@@ -1,6 +1,7 @@
 import type { ReactNode, ReactElement } from 'react'
 
 import CssDimension from './vendor/parse-css-dimension'
+import LineBreaker from 'linebreak'
 
 export function isReactElement(node: ReactNode): node is ReactElement {
   const type = typeof node
@@ -400,4 +401,25 @@ export function SVGNodeToImage(
 
 export function isString(x: unknown): x is string {
   return typeof x === 'string'
+}
+
+export function splitByBreakOpportunities(content: string): string[] {
+  const breaker = new LineBreaker(content)
+  let last = 0
+  let bk = breaker.nextBreak()
+  const words = []
+
+  while (bk) {
+    let word = content.slice(last, bk.position)
+    words.push(word)
+
+    if (bk.required) {
+      // todo
+    }
+
+    last = bk.position
+    bk = breaker.nextBreak()
+  }
+
+  return words
 }

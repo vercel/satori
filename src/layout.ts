@@ -111,17 +111,6 @@ export default async function* layout(
     style,
     props
   )
-
-  console.log('node,\n' +
-    '    type,\n' +
-    '    inheritedStyle,\n' +
-    '    style,\n' +
-    '    props', node,
-    type,
-    inheritedStyle,
-    style,
-    props)
-
   // Post-process styles to attach inheritable properties for Satori.
 
   // If the element is inheriting the parent `transform`, or applying its own.

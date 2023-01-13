@@ -5,12 +5,11 @@
 import type { LayoutContext } from './layout.js'
 
 import getYoga from './yoga/index.js'
-import { v, segment, wordSeparators, buildXMLString } from './utils.js'
+import { v, segment, wordSeparators, buildXMLString, splitByBreakOpportunities } from './utils.js'
 import text, { container } from './builder/text.js'
 import { dropShadow } from './builder/shadow.js'
 import decoration from './builder/text-decoration.js'
 import {Locale} from './language.js';
-import LineBreaker from 'linebreak'
 
 export default async function* buildTextNodes(
   content: string,
@@ -51,24 +50,10 @@ export default async function* buildTextNodes(
       })
       .join('')
   }
-  // console.log(':::after content: ', content)
 
   const isBreakWord = parentStyle.wordBreak === 'break-word'
-  const segmenter = v(
-    parentStyle.wordBreak,
-    {
-      normal: 'word',
-      'break-all': 'grapheme',
-      'break-word': 'word',
-      'keep-all': 'word',
-    },
-    'word',
-    'wordBreak'
-  )
 
-  // const words = segment(content, segmenter, locale)
-  const words = getWordsSplitByBreakOpportunities(content)
-  // console.log(':::words JSON: ', JSON.stringify(words))
+  const words = splitByBreakOpportunities(content)
 
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
@@ -297,12 +282,11 @@ export default async function* buildTextNodes(
         const willWrap =
           i &&
           allowedToPutAtBeginning &&
-          _currentWidth + remainingSpaceWidth + w > width + 1 &&
+          _currentWidth + remainingSpaceWidth + w > width &&
           whiteSpace !== 'nowrap' &&
           whiteSpace !== 'pre'
-        // console.log('::: _currentWidth + remainingSpaceWidth + w > width', _currentWidth + remainingSpaceWidth + w > width)
         console.log('::: detail _currentWidth, remainingSpaceWidth, w, width', _currentWidth, remainingSpaceWidth, w, width)
-        // console.log('::: delta', _currentWidth + remainingSpaceWidth + w - width)
+        console.log('::: delta', _currentWidth + remainingSpaceWidth + w - width)
 
         // Need to break the word if:
         // - we have break-word
@@ -335,7 +319,6 @@ export default async function* buildTextNodes(
           // Start a new line, spaces can be ignored.
           lineWidths.push(_currentWidth)
           baselines.push(currentBaselineOffset)
-          console.log('::: lines++ 2')
           lines++
           height += currentLineHeight
           _currentWidth = w
@@ -384,7 +367,6 @@ export default async function* buildTextNodes(
       }
     }
     if (_currentWidth) {
-      console.log('::: lines++ 3')
       lines++
       lineWidths.push(_currentWidth)
       baselines.push(currentBaselineOffset)
@@ -396,11 +378,8 @@ export default async function* buildTextNodes(
     return { width: maxWidth, height }
   })
 
-  // console.log('::: words: ', words)
-
   const [x, y] = yield
   console.log('x, y', x, y)
-
 
   let result = ''
   let backgroundClipDef = ''
@@ -555,22 +534,6 @@ export default async function* buildTextNodes(
     } else if (embedFont) {
       // If the current word and the next word are on the same line, we try to
       // merge them together to better handle the kerning.
-
-      // console.log(`
-      // (
-      //   !wordSeparators.includes(word) &&
-      //   words[i + 1] &&
-      //   !graphemeImages[words[i + 1]] &&
-      //   wordPositionInLayout[i + 1] &&
-      //   topOffset === wordPositionInLayout[i + 1].y
-      // )
-      // `,
-      //   !wordSeparators.includes(word),
-      //   words[i + 1],
-      //   !graphemeImages[words[i + 1]],
-      //   wordPositionInLayout[i + 1],
-      //   topOffset === wordPositionInLayout[i + 1]?.y
-      // )
       if (
         !wordSeparators.includes(word) &&
         words[i + 1] &&
@@ -725,26 +688,4 @@ export default async function* buildTextNodes(
   }
 
   return result
-}
-
-function getWordsSplitByBreakOpportunities(str: string): string[] {
-  const breaker = new LineBreaker(str)
-  let last = 0
-  let bk = breaker.nextBreak()
-  const words = []
-
-  while (bk) {
-    let word = str.slice(last, bk.position)
-    words.push(word)
-    console.log(word)
-
-    if (bk.required) {
-      // todo
-    }
-
-    last = bk.position
-    bk = breaker.nextBreak()
-  }
-
-  return words
 }
