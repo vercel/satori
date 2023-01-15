@@ -159,12 +159,15 @@ export const wordSeparators = [
   0x0020, 0x00a0, 0x1361, 0x10100, 0x10101, 0x1039, 0x1091, 0xa,
 ].map((point) => String.fromCodePoint(point))
 
+export const TRAILING_SPACES_THAT_CAN_BE_IGNORED_WHEN_LINE_WRAPPING = [
+  0x0020, 0x3000,
+].map((point) => String.fromCodePoint(point))
+
 export function segment(
   content: string,
   granularity: 'word' | 'grapheme',
   locale?: string
 ): string[] {
-  console.log('::: granularity:', granularity)
   if (!wordSegmenter || !graphemeSegmenter) {
     if (!(typeof Intl !== 'undefined' && 'Segmenter' in Intl)) {
       // https://caniuse.com/mdn-javascript_builtins_intl_segments

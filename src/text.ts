@@ -5,7 +5,7 @@
 import type { LayoutContext } from './layout.js'
 
 import getYoga from './yoga/index.js'
-import { v, segment, wordSeparators, buildXMLString, splitByBreakOpportunities } from './utils.js'
+import { v, segment, wordSeparators, buildXMLString, splitByBreakOpportunities, TRAILING_SPACES_THAT_CAN_BE_IGNORED_WHEN_LINE_WRAPPING } from './utils.js'
 import text, { container } from './builder/text.js'
 import { dropShadow } from './builder/shadow.js'
 import decoration from './builder/text-decoration.js'
@@ -31,7 +31,6 @@ export default async function* buildTextNodes(
     canLoadAdditionalAssets,
   } = context
 
-  // console.log(':::before content: ', content)
   if (parentStyle.textTransform === 'uppercase') {
     content = content.toLocaleUpperCase(locale)
   } else if (parentStyle.textTransform === 'lowercase') {
@@ -54,6 +53,7 @@ export default async function* buildTextNodes(
   const isBreakWord = parentStyle.wordBreak === 'break-word'
 
   const words = splitByBreakOpportunities(content)
+  console.log('::: splitByBreakOpportunities words: ', words)
 
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
@@ -147,13 +147,27 @@ export default async function* buildTextNodes(
     }
     return total
   }
+  const getEndingSpacesWidthOrZero = (str: string): number => {
+    if (str.length === 0) return 0
+
+    const lastCharOfStr = str[str.length - 1]
+    const index = TRAILING_SPACES_THAT_CAN_BE_IGNORED_WHEN_LINE_WRAPPING.indexOf(lastCharOfStr)
+
+    if (index === -1) return 0
+
+    const space = TRAILING_SPACES_THAT_CAN_BE_IGNORED_WHEN_LINE_WRAPPING[index]
+    const width = engine.measure(space, parentStyle as any)
+    wordWidthCache.set(space, width)
+
+    return width
+  }
 
   // Calculate the minimal possible width of the parent container so it don't
   // shrink below the content.
   let minWidth = 0
   let remainingSegment = []
   let extraWidth = 0
-  // console.log(':::whiteSpace: ', whiteSpace)
+  // console.log(':::whiteSpace: ', whiteSpace)、
   for (const word of words) {
     let breakSegment = false
     const isImage = graphemeImages && graphemeImages[word]
@@ -204,7 +218,6 @@ export default async function* buildTextNodes(
       }
     }
     console.log('::: buildTextNodes minWidth: ', minWidth)
-    // parent.setMinWidth(minWidth)
   }
   if (typeof parentStyle.flexShrink === 'undefined') {
     parent.setFlexShrink(1)
@@ -218,7 +231,6 @@ export default async function* buildTextNodes(
   )
 
   textContainer.setMeasureFunc((width) => {
-    console.log('::: setMeasureFunc props width', width)
     let lines = 0
     let remainingSpace = ''
     let remainingSpaceWidth = 0
@@ -257,11 +269,16 @@ export default async function* buildTextNodes(
         remainingSpaceWidth = measureWithCache([remainingSpace])
         wordPositionInLayout[i] = null
       } else {
-        const w = forceBreak
-          ? 0
-          : graphemeImages && graphemeImages[word]
-          ? (parentStyle.fontSize as number)
-          : measureWithCache([word])
+        let w = 0
+        let lineEndingSpacesWidth = 0
+        if (!forceBreak) {
+          if (graphemeImages && graphemeImages[word]) {
+            w = parentStyle.fontSize as number
+          } else {
+            w = measureWithCache([word])
+            lineEndingSpacesWidth = getEndingSpacesWidthOrZero(word)
+          }
+        }
 
         // When starting a new line from an empty line, we should push one extra
         // line height.
@@ -282,7 +299,10 @@ export default async function* buildTextNodes(
         const willWrap =
           i &&
           allowedToPutAtBeginning &&
-          _currentWidth + remainingSpaceWidth + w > width &&
+          // When determining whether a line break is necessary, the width of the
+          // trailing spaces is not included in the calculation, as the end boundary
+          // can be closely adjacent to the last non-space character.
+          _currentWidth + remainingSpaceWidth + w > width + lineEndingSpacesWidth &&
           whiteSpace !== 'nowrap' &&
           whiteSpace !== 'pre'
         console.log('::: detail _currentWidth, remainingSpaceWidth, w, width', _currentWidth, remainingSpaceWidth, w, width)
