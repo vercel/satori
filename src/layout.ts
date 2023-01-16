@@ -142,7 +142,6 @@ export default async function* layout(
 
   let i = 0
   const segmentsMissingFont: { word: string; locale?: string; }[] = []
-  console.log('::: normalizedChildren: ', normalizedChildren)
   for (const child of normalizedChildren) {
     const iter = layout(child, {
       id: id + '-' + i++,

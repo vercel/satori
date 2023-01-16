@@ -302,6 +302,11 @@ export default async function* buildTextNodes(
           // When determining whether a line break is necessary, the width of the
           // trailing spaces is not included in the calculation, as the end boundary
           // can be closely adjacent to the last non-space character.
+          // e.g.
+          // 'aaa bbb ccc'
+          // When the break line happens at the end of the `bbb`, what we see looks like this
+          // |aaa bbb|
+          // |ccc    |
           _currentWidth + remainingSpaceWidth + w > width + lineEndingSpacesWidth &&
           whiteSpace !== 'nowrap' &&
           whiteSpace !== 'pre'

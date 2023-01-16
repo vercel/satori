@@ -416,9 +416,9 @@ export function splitByBreakOpportunities(content: string): string[] {
     let word = content.slice(last, bk.position)
     words.push(word)
 
-    if (bk.required) {
-      // todo
-    }
+    // @TODO
+    // if (bk.required) {
+    // }
 
     last = bk.position
     bk = breaker.nextBreak()
