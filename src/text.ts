@@ -51,9 +51,10 @@ export default async function* buildTextNodes(
   }
 
   const isBreakWord = parentStyle.wordBreak === 'break-word'
+  console.log(':::parentStyle.wordBreak: ', parentStyle.wordBreak)
+  const words = getWordsByWordBreak(content, parentStyle.wordBreak as string, locale)
 
-  const words = splitByBreakOpportunities(content)
-  console.log('::: splitByBreakOpportunities words: ', words)
+  console.log('::: getWordsByWordBreak: ', words)
 
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
@@ -713,4 +714,23 @@ export default async function* buildTextNodes(
   }
 
   return result
+}
+
+function getWordsByWordBreak(content: string, wordBreak = 'normal', locale?: Locale): string[] {
+  if (wordBreak === 'normal') {
+    return splitByBreakOpportunities(content)
+  }
+
+  const segmenter = v(
+    wordBreak,
+    {
+      'break-all': 'grapheme',
+      'break-word': 'word',
+      'keep-all': 'word',
+    },
+    'word',
+    'wordBreak'
+  )
+
+  return segment(content, segmenter, locale)
 }
