@@ -406,23 +406,29 @@ export function isString(x: unknown): x is string {
   return typeof x === 'string'
 }
 
-export function splitByBreakOpportunities(content: string): string[] {
+export function splitByBreakOpportunities(content: string): {
+  words: string[]
+  requiredBreaks: boolean[]
+} {
   const breaker = new LineBreaker(content)
   let last = 0
   let bk = breaker.nextBreak()
   const words = []
+  const requiredBreaks = [false]
 
   while (bk) {
-    let word = content.slice(last, bk.position)
+    const word = content.slice(last, bk.position)
     words.push(word)
 
-    // @TODO
-    // if (bk.required) {
-    // }
+    if (bk.required) {
+      requiredBreaks.push(true)
+    } else {
+      requiredBreaks.push(false)
+    }
 
     last = bk.position
     bk = breaker.nextBreak()
   }
 
-  return words
+  return { words, requiredBreaks }
 }

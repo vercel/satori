@@ -52,7 +52,7 @@ export default async function* buildTextNodes(
 
   const isBreakWord = parentStyle.wordBreak === 'break-word'
   console.log(':::parentStyle.wordBreak: ', parentStyle.wordBreak)
-  const words = getWordsByWordBreak(content, parentStyle.wordBreak as string, locale)
+  const { words, requiredBreaks } = splitByBreakOpportunities(content)
 
   console.log('::: getWordsByWordBreak: ', words)
 
@@ -169,17 +169,19 @@ export default async function* buildTextNodes(
   let remainingSegment = []
   let extraWidth = 0
   // console.log(':::whiteSpace: ', whiteSpace)、
-  for (const word of words) {
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i]
+    console.log(':::word: ', word, word.codePointAt(0))
     let breakSegment = false
     const isImage = graphemeImages && graphemeImages[word]
     // console.log(':::word: ', word)
     if (whiteSpace === 'pre') {
       // For `pre`, only break the line for `\n`.
-      breakSegment = word[0] === '\n'
+      breakSegment = requiredBreaks[i]
     } else if (whiteSpace !== 'nowrap') {
       // For `normal`, `pre-wrap`, `pre-line` we can wrap with any word separators or
       // images.
-      if (isImage || wordSeparators.includes(word[0])) {
+      if (isImage || requiredBreaks[i]) {
         breakSegment = true
       }
     }
@@ -251,7 +253,7 @@ export default async function* buildTextNodes(
     for (let i = 0; i < words.length; i++) {
       const word = words[i]
 
-      const forceBreak = shouldKeepLinebreak && word === '\n'
+      const forceBreak = shouldKeepLinebreak && requiredBreaks[i]
 
       // A character is a word separator if `white-space` is not `pre`.
       if (
@@ -272,14 +274,14 @@ export default async function* buildTextNodes(
       } else {
         let w = 0
         let lineEndingSpacesWidth = 0
-        if (!forceBreak) {
+        // if (!forceBreak) {
           if (graphemeImages && graphemeImages[word]) {
             w = parentStyle.fontSize as number
           } else {
             w = measureWithCache([word])
             lineEndingSpacesWidth = getEndingSpacesWidthOrZero(word)
           }
-        }
+        // }
 
         // When starting a new line from an empty line, we should push one extra
         // line height.
@@ -324,12 +326,12 @@ export default async function* buildTextNodes(
         if (needToBreakWord) {
           // Break the word into multiple segments and continue the loop.
           const chars = segment(word, 'grapheme')
+          console.log('!!! words.splice: ', i)
           words.splice(i, 1, '', ...chars)
           if (_currentWidth > 0) {
             // Start a new line, spaces can be ignored.
             lineWidths.push(_currentWidth)
             baselines.push(currentBaselineOffset)
-            console.log('::: lines++ 1')
             lines++
             height += currentLineHeight
             _currentWidth = 0
@@ -468,7 +470,7 @@ export default async function* buildTextNodes(
   let wordBuffer: string | null = null
   let bufferedOffset = 0
 
-  // console.log(':::wordPositionInLayout: ', wordPositionInLayout)
+  console.log(':::wordPositionInLayout: ', wordPositionInLayout)
 
   for (let i = 0; i < words.length; i++) {
     // Skip whitespace and empty characters.
@@ -476,6 +478,7 @@ export default async function* buildTextNodes(
     const layout = wordPositionInLayout[i]
 
     let word = words[i]
+    console.log('!!word: ', word)
     let path: string | null = null
 
     const image = graphemeImages ? graphemeImages[word] : null
@@ -553,7 +556,7 @@ export default async function* buildTextNodes(
     const baselineOfWord = engine.baseline(word)
     const heightOfWord = engine.height(word)
     const baselineDelta = baselineOfLine - baselineOfWord
-
+    console.log(':::embedFont: ', embedFont)
     if (image) {
       // For images, we remove the baseline offset.
       topOffset += 0
@@ -578,7 +581,7 @@ export default async function* buildTextNodes(
       const finalizedLeftOffset =
         wordBuffer === null ? leftOffset : bufferedOffset
       const finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
-      console.log(':::finalizedSegment: ', finalizedSegment)
+      console.log(':::finalizedSegment: ', `'${finalizedSegment}'`)
       console.log('::: left: ', left + finalizedLeftOffset, left, finalizedLeftOffset)
       console.log('::: top: ', top + topOffset + baselineOfWord + baselineDelta)
       path = engine.getSVG(finalizedSegment, {
@@ -714,23 +717,4 @@ export default async function* buildTextNodes(
   }
 
   return result
-}
-
-function getWordsByWordBreak(content: string, wordBreak = 'normal', locale?: Locale): string[] {
-  if (wordBreak === 'normal') {
-    return splitByBreakOpportunities(content)
-  }
-
-  const segmenter = v(
-    wordBreak,
-    {
-      'break-all': 'grapheme',
-      'break-word': 'word',
-      'keep-all': 'word',
-    },
-    'word',
-    'wordBreak'
-  )
-
-  return segment(content, segmenter, locale)
 }
