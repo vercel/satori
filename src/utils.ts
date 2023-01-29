@@ -406,10 +406,14 @@ export function isString(x: unknown): x is string {
   return typeof x === 'string'
 }
 
-export function splitByBreakOpportunities(content: string): {
+export function splitByBreakOpportunities(content: string, isBreakAll): {
   words: string[]
   requiredBreaks: boolean[]
 } {
+  if (isBreakAll) {
+    return { words: content.split(''), requiredBreaks: [] }
+  }
+
   const breaker = new LineBreaker(content)
   let last = 0
   let bk = breaker.nextBreak()

@@ -31,6 +31,16 @@ export default async function* buildTextNodes(
     canLoadAdditionalAssets,
   } = context
 
+  const {
+    textAlign,
+    textOverflow,
+    whiteSpace,
+    wordBreak,
+    lineHeight,
+    filter: cssFilter,
+    _inheritedBackgroundClipTextPath,
+  } = parentStyle
+
   if (parentStyle.textTransform === 'uppercase') {
     content = content.toLocaleUpperCase(locale)
   } else if (parentStyle.textTransform === 'lowercase') {
@@ -50,9 +60,29 @@ export default async function* buildTextNodes(
       .join('')
   }
 
-  const isBreakWord = parentStyle.wordBreak === 'break-word'
+  const shouldKeepLinebreak = ['pre', 'pre-wrap', 'pre-line'].includes(
+    whiteSpace as string
+  )
+  const shouldCollapseWhitespace = !['pre', 'pre-wrap'].includes(
+    whiteSpace as string
+  )
+
+  console.log(':::shouldKeepLinebreak: ', shouldKeepLinebreak)
+  if (!shouldKeepLinebreak) {
+    content = content.replace(/\n/g, ' ')
+  }
+
+  if (shouldCollapseWhitespace) {
+    content = content.replace(/[ ]+/g, ' ')
+    content = content.trim()
+  }
+
+  console.log(':::content: ', `'${content}'`)
+
   console.log(':::parentStyle.wordBreak: ', parentStyle.wordBreak)
-  const { words, requiredBreaks } = splitByBreakOpportunities(content)
+  const isBreakWord = wordBreak === 'break-word'
+  const isBreakAll = wordBreak === 'break-all'
+  const { words, requiredBreaks } = splitByBreakOpportunities(content, isBreakAll)
 
   console.log('::: getWordsByWordBreak: ', words)
 
@@ -76,15 +106,6 @@ export default async function* buildTextNodes(
     )
   )
   parent.insertChild(textContainer, parent.getChildCount())
-
-  const {
-    textAlign,
-    textOverflow,
-    whiteSpace,
-    lineHeight,
-    filter: cssFilter,
-    _inheritedBackgroundClipTextPath,
-  } = parentStyle
 
   const baseFontSize = parentStyle.fontSize as number
 
@@ -165,13 +186,10 @@ export default async function* buildTextNodes(
 
   // Calculate the minimal possible width of the parent container so it don't
   // shrink below the content.
-  let minWidth = 0
   let remainingSegment = []
   let extraWidth = 0
-  // console.log(':::whiteSpace: ', whiteSpace)、
   for (let i = 0; i < words.length; i++) {
     const word = words[i]
-    console.log(':::word: ', word, word.codePointAt(0))
     let breakSegment = false
     const isImage = graphemeImages && graphemeImages[word]
     // console.log(':::word: ', word)
@@ -194,44 +212,14 @@ export default async function* buildTextNodes(
       if (whiteSpace === 'nowrap') {
         extraWidth +=
           measureWithCache(remainingSegment) + (parentStyle.fontSize as number)
-      } else {
-        minWidth = Math.max(minWidth, measureWithCache(remainingSegment))
-        if (isImage) {
-          minWidth = Math.max(minWidth, parentStyle.fontSize as number)
-        }
       }
       remainingSegment = []
     }
   }
-  minWidth = Math.max(minWidth, measureWithCache(remainingSegment) + extraWidth)
-  const currentMinWidth = parent.getMinWidth()
-  const currentMaxWidth = parent.getMaxWidth()
-  const currentWidth = parent.getWidth()
-  if (
-    isNaN(currentWidth.value) &&
-    (isNaN(currentMinWidth.value) ||
-      (currentMinWidth.unit === 1 && currentMinWidth.value > minWidth))
-  ) {
-    // minWidth cannot be larger than maxWidth
-    if (!isNaN(currentMaxWidth.value)) {
-      if (currentMaxWidth.unit === 1) {
-        minWidth = Math.min(minWidth, currentMaxWidth.value)
-      } else {
-        // @TODO: Support percentage units.
-      }
-    }
-    console.log('::: buildTextNodes minWidth: ', minWidth)
-  }
+
   if (typeof parentStyle.flexShrink === 'undefined') {
     parent.setFlexShrink(1)
   }
-
-  const shouldKeepLinebreak = ['pre', 'pre-wrap', 'pre-line'].includes(
-    whiteSpace as string
-  )
-  const shouldCollapseWhitespace = !['pre', 'pre-wrap'].includes(
-    whiteSpace as string
-  )
 
   textContainer.setMeasureFunc((width) => {
     let lines = 0
@@ -243,6 +231,7 @@ export default async function* buildTextNodes(
     let height = 0
     let currentLineHeight = 0
     let currentBaselineOffset = 0
+    let isNewLineStart = false
 
     lineWidths = []
     lineSegmentNumber = [0]
@@ -252,146 +241,130 @@ export default async function* buildTextNodes(
     // @TODO: Support RTL languages.
     for (let i = 0; i < words.length; i++) {
       const word = words[i]
-
       const forceBreak = shouldKeepLinebreak && requiredBreaks[i]
+      console.log(':::word: ', `'${word}'`, forceBreak, isNewLineStart)
 
-      // A character is a word separator if `white-space` is not `pre`.
-      if (
-        shouldCollapseWhitespace &&
-        wordSeparators.includes(
-          // It's possible that the segment contains multiple separate words such
-          // as `  `. We can just use the first character to detect.
-          word[0]
-        ) &&
-        !forceBreak
-      ) {
-        // Multiple whitespaces are considered as one.
-        if (!remainingSpace) {
-          remainingSpace = ' '
-        }
-        remainingSpaceWidth = measureWithCache([remainingSpace])
-        wordPositionInLayout[i] = null
+      let w = 0
+      let lineEndingSpacesWidth = 0
+
+      if (graphemeImages && graphemeImages[word]) {
+        w = parentStyle.fontSize as number
       } else {
-        let w = 0
-        let lineEndingSpacesWidth = 0
-        // if (!forceBreak) {
-          if (graphemeImages && graphemeImages[word]) {
-            w = parentStyle.fontSize as number
-          } else {
-            w = measureWithCache([word])
-            lineEndingSpacesWidth = getEndingSpacesWidthOrZero(word)
-          }
-        // }
+        w = measureWithCache([word])
+        lineEndingSpacesWidth = getEndingSpacesWidthOrZero(word)
+      }
 
-        // When starting a new line from an empty line, we should push one extra
-        // line height.
-        if (forceBreak && currentLineHeight === 0) {
-          currentLineHeight = engine.height(word)
-        }
+      // When starting a new line from an empty line, we should push one extra
+      // line height.
+      if (forceBreak && currentLineHeight === 0) {
+        currentLineHeight = engine.height(word)
+      }
 
-        // This is the start of the line, we can ignore all spaces here.
-        if (!_currentWidth) {
-          remainingSpace = ''
-          remainingSpaceWidth = 0
-        }
+      // This is the start of the line, we can ignore all spaces here.
+      // if (!_currentWidth) {
+      //   console.log('::: new line start')
+      //   remainingSpace = ''
+      //   remainingSpaceWidth = 0
+      // }
 
-        const allowedToPutAtBeginning =
-          remainingSpaceWidth || ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
-        const allowedToJustify = !_currentWidth || !!remainingSpaceWidth
+      const allowedToPutAtBeginning =
+        remainingSpaceWidth || ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
+      const allowedToJustify = !_currentWidth || !!remainingSpaceWidth
 
-        const willWrap =
-          i &&
-          allowedToPutAtBeginning &&
-          // When determining whether a line break is necessary, the width of the
-          // trailing spaces is not included in the calculation, as the end boundary
-          // can be closely adjacent to the last non-space character.
-          // e.g.
-          // 'aaa bbb ccc'
-          // When the break line happens at the end of the `bbb`, what we see looks like this
-          // |aaa bbb|
-          // |ccc    |
-          _currentWidth + remainingSpaceWidth + w > width + lineEndingSpacesWidth &&
-          whiteSpace !== 'nowrap' &&
-          whiteSpace !== 'pre'
-        console.log('::: detail _currentWidth, remainingSpaceWidth, w, width', _currentWidth, remainingSpaceWidth, w, width)
-        console.log('::: delta', _currentWidth + remainingSpaceWidth + w - width)
+      const willWrap =
+        i &&
+        allowedToPutAtBeginning &&
+        // When determining whether a line break is necessary, the width of the
+        // trailing spaces is not included in the calculation, as the end boundary
+        // can be closely adjacent to the last non-space character.
+        // e.g.
+        // 'aaa bbb ccc'
+        // When the break line happens at the end of the `bbb`, what we see looks like this
+        // |aaa bbb|
+        // |ccc    |
+        _currentWidth + remainingSpaceWidth + w > width + lineEndingSpacesWidth &&
+        whiteSpace !== 'nowrap' &&
+        whiteSpace !== 'pre'
+      console.log('::: detail _currentWidth, remainingSpaceWidth, w, width', _currentWidth, remainingSpaceWidth, w, width)
+      console.log('::: delta', _currentWidth + remainingSpaceWidth + w - width)
 
-        // Need to break the word if:
-        // - we have break-word
-        // - the word is wider than the container width
-        // - the word will be put at the beginning of the line
-        const needToBreakWord =
-          isBreakWord && w > width && (!_currentWidth || willWrap || forceBreak)
+      // Need to break the word if:
+      // - we have break-word
+      // - the word is wider than the container width
+      // - the word will be put at the beginning of the line
+      const needToBreakWord =
+        isBreakWord && w > width && (!_currentWidth || willWrap || forceBreak)
 
-        if (needToBreakWord) {
-          // Break the word into multiple segments and continue the loop.
-          const chars = segment(word, 'grapheme')
-          console.log('!!! words.splice: ', i)
-          words.splice(i, 1, '', ...chars)
-          if (_currentWidth > 0) {
-            // Start a new line, spaces can be ignored.
-            lineWidths.push(_currentWidth)
-            baselines.push(currentBaselineOffset)
-            lines++
-            height += currentLineHeight
-            _currentWidth = 0
-            currentLineHeight = 0
-            currentBaselineOffset = 0
-            lineSegmentNumber.push(1)
-            lineIndex = -1
-          }
-          continue
-        }
-        // console.log(':::forceBreak, willWrap', forceBreak, willWrap)
-        if (forceBreak || willWrap) {
+      if (needToBreakWord) {
+        // Break the word into multiple segments and continue the loop.
+        const chars = segment(word, 'grapheme')
+        console.log('!!! words.splice: ', i)
+        words.splice(i, 1, '', ...chars)
+        if (_currentWidth > 0) {
           // Start a new line, spaces can be ignored.
+          isNewLineStart = true
           lineWidths.push(_currentWidth)
           baselines.push(currentBaselineOffset)
           lines++
           height += currentLineHeight
-          _currentWidth = w
-          currentLineHeight = w ? engine.height(word) : 0
-          currentBaselineOffset = w ? engine.baseline(word) : 0
+          _currentWidth = 0
+          currentLineHeight = 0
+          currentBaselineOffset = 0
           lineSegmentNumber.push(1)
           lineIndex = -1
-
-          // If it's naturally broken, we update the max width.
-          // Since if there are multiple lines, the width should fit the
-          // container.
-          if (!forceBreak) {
-            console.log('::: setMeasureFunc width: ', width)
-            maxWidth = Math.max(maxWidth, width)
-          }
-        } else {
-          // It fits into the current line.
-          _currentWidth += remainingSpaceWidth + w
-          const glyphHeight = engine.height(word)
-          if (glyphHeight > currentLineHeight) {
-            // Use the baseline of the highest segment as the baseline of the line.
-            currentLineHeight = glyphHeight
-            currentBaselineOffset = engine.baseline(word)
-          }
-          if (allowedToJustify) {
-            lineSegmentNumber[lineSegmentNumber.length - 1]++
-          }
         }
+        continue
+      }
+      // console.log(':::forceBreak, willWrap', forceBreak, willWrap)
+      if (forceBreak || willWrap) {
+        // Start a new line, spaces can be ignored.
+        isNewLineStart = true
+        lineWidths.push(_currentWidth)
+        baselines.push(currentBaselineOffset)
+        lines++
+        height += currentLineHeight
+        _currentWidth = w
+        currentLineHeight = w ? engine.height(word) : 0
+        currentBaselineOffset = w ? engine.baseline(word) : 0
+        lineSegmentNumber.push(1)
+        lineIndex = -1
 
-        remainingSpace = ''
-        remainingSpaceWidth = 0
-
+        // If it's naturally broken, we update the max width.
+        // Since if there are multiple lines, the width should fit the
+        // container.
+        if (!forceBreak) {
+          console.log('::: setMeasureFunc width: ', width)
+          maxWidth = Math.max(maxWidth, width)
+        }
+      } else {
+        // It fits into the current line.
+        _currentWidth += remainingSpaceWidth + w
+        const glyphHeight = engine.height(word)
+        if (glyphHeight > currentLineHeight) {
+          // Use the baseline of the highest segment as the baseline of the line.
+          currentLineHeight = glyphHeight
+          currentBaselineOffset = engine.baseline(word)
+        }
         if (allowedToJustify) {
-          lineIndex++
+          lineSegmentNumber[lineSegmentNumber.length - 1]++
         }
+      }
 
-        console.log('::: setMeasureFunc _currentWidth: ', _currentWidth)
-        maxWidth = Math.max(maxWidth, _currentWidth)
-        wordPositionInLayout[i] = {
-          y: height,
-          x: _currentWidth - w,
-          width: w,
-          line: lines,
-          lineIndex,
-        }
+      remainingSpace = ''
+      remainingSpaceWidth = 0
+
+      if (allowedToJustify) {
+        lineIndex++
+      }
+
+      console.log('::: setMeasureFunc _currentWidth: ', _currentWidth)
+      maxWidth = Math.max(maxWidth, _currentWidth)
+      wordPositionInLayout[i] = {
+        y: height,
+        x: _currentWidth - w,
+        width: w,
+        line: lines,
+        lineIndex,
       }
     }
     if (_currentWidth) {
