@@ -294,6 +294,7 @@ export default async function* buildTextNodes(
       }
       if (forceBreak || willWrap) {
         // Start a new line, spaces can be ignored.
+        // @TODO Lack of support for Japanese spacing
         if (shouldCollapseWhitespace && word === ' ') {
           w = 0
         }
