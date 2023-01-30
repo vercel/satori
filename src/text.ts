@@ -67,7 +67,6 @@ export default async function* buildTextNodes(
     whiteSpace as string
   )
 
-  console.log(':::shouldKeepLinebreak: ', shouldKeepLinebreak)
   if (!shouldKeepLinebreak) {
     content = content.replace(/\n/g, ' ')
   }
@@ -79,7 +78,6 @@ export default async function* buildTextNodes(
 
   console.log(':::content: ', `'${content}'`)
 
-  console.log(':::parentStyle.wordBreak: ', parentStyle.wordBreak)
   const isBreakWord = wordBreak === 'break-word'
   const isBreakAll = wordBreak === 'break-all'
   const { words, requiredBreaks } = splitByBreakOpportunities(content, isBreakAll)
@@ -156,32 +154,33 @@ export default async function* buildTextNodes(
   // We can cache the measured width of each word as the measure function will be
   // called multiple times.
   const wordWidthCache = new Map<string, number>()
+
+  function getWordWidthWithCache(s): number {
+    if (wordWidthCache.has(s)) {
+      return wordWidthCache.get(s)
+    }
+
+    const width = engine.measure(s, parentStyle as any)
+    wordWidthCache.set(s, width)
+
+    return width
+  }
+
   const measureWithCache = (segments: string[]) => {
     let total = 0
     for (const s of segments) {
-      if (wordWidthCache.has(s)) {
-        total += wordWidthCache.get(s)
-        continue
-      }
-      const width = engine.measure(s, parentStyle as any)
-      wordWidthCache.set(s, width)
-      total += width
+      total += getWordWidthWithCache(s)
     }
     return total
   }
+
   const getEndingSpacesWidthOrZero = (str: string): number => {
     if (str.length === 0) return 0
 
-    const lastCharOfStr = str[str.length - 1]
-    const index = TRAILING_SPACES_THAT_CAN_BE_IGNORED_WHEN_LINE_WRAPPING.indexOf(lastCharOfStr)
+    const originWidth = getWordWidthWithCache(str)
+    const afterTrimEndWidth = getWordWidthWithCache(str.trimEnd())
 
-    if (index === -1) return 0
-
-    const space = TRAILING_SPACES_THAT_CAN_BE_IGNORED_WHEN_LINE_WRAPPING[index]
-    const width = engine.measure(space, parentStyle as any)
-    wordWidthCache.set(space, width)
-
-    return width
+    return originWidth - afterTrimEndWidth
   }
 
   // Calculate the minimal possible width of the parent container so it don't
@@ -223,15 +222,12 @@ export default async function* buildTextNodes(
 
   textContainer.setMeasureFunc((width) => {
     let lines = 0
-    let remainingSpace = ''
-    let remainingSpaceWidth = 0
     let _currentWidth = 0
     let maxWidth = 0
     let lineIndex = -1
     let height = 0
     let currentLineHeight = 0
     let currentBaselineOffset = 0
-    let isNewLineStart = false
 
     lineWidths = []
     lineSegmentNumber = [0]
@@ -240,9 +236,9 @@ export default async function* buildTextNodes(
     // @TODO: Support different writing modes.
     // @TODO: Support RTL languages.
     for (let i = 0; i < words.length; i++) {
-      const word = words[i]
+      let word = words[i]
       const forceBreak = shouldKeepLinebreak && requiredBreaks[i]
-      console.log(':::word: ', `'${word}'`, forceBreak, isNewLineStart)
+      console.log(':::word: ', `'${word}'`, forceBreak)
 
       let w = 0
       let lineEndingSpacesWidth = 0
@@ -260,16 +256,8 @@ export default async function* buildTextNodes(
         currentLineHeight = engine.height(word)
       }
 
-      // This is the start of the line, we can ignore all spaces here.
-      // if (!_currentWidth) {
-      //   console.log('::: new line start')
-      //   remainingSpace = ''
-      //   remainingSpaceWidth = 0
-      // }
-
-      const allowedToPutAtBeginning =
-        remainingSpaceWidth || ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
-      const allowedToJustify = !_currentWidth || !!remainingSpaceWidth
+      const allowedToPutAtBeginning = ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
+      const allowedToJustify = !_currentWidth
 
       const willWrap =
         i &&
@@ -282,11 +270,11 @@ export default async function* buildTextNodes(
         // When the break line happens at the end of the `bbb`, what we see looks like this
         // |aaa bbb|
         // |ccc    |
-        _currentWidth + remainingSpaceWidth + w > width + lineEndingSpacesWidth &&
+        _currentWidth + w > width + lineEndingSpacesWidth &&
         whiteSpace !== 'nowrap' &&
         whiteSpace !== 'pre'
-      console.log('::: detail _currentWidth, remainingSpaceWidth, w, width', _currentWidth, remainingSpaceWidth, w, width)
-      console.log('::: delta', _currentWidth + remainingSpaceWidth + w - width)
+      console.log('::: detail _currentWidth, w, width', _currentWidth, w, width, lineEndingSpacesWidth)
+      console.log('::: delta', _currentWidth + w - width - lineEndingSpacesWidth)
 
       // Need to break the word if:
       // - we have break-word
@@ -302,7 +290,6 @@ export default async function* buildTextNodes(
         words.splice(i, 1, '', ...chars)
         if (_currentWidth > 0) {
           // Start a new line, spaces can be ignored.
-          isNewLineStart = true
           lineWidths.push(_currentWidth)
           baselines.push(currentBaselineOffset)
           lines++
@@ -318,7 +305,9 @@ export default async function* buildTextNodes(
       // console.log(':::forceBreak, willWrap', forceBreak, willWrap)
       if (forceBreak || willWrap) {
         // Start a new line, spaces can be ignored.
-        isNewLineStart = true
+        if (shouldCollapseWhitespace && word === ' ') {
+          w = 0
+        }
         lineWidths.push(_currentWidth)
         baselines.push(currentBaselineOffset)
         lines++
@@ -338,7 +327,7 @@ export default async function* buildTextNodes(
         }
       } else {
         // It fits into the current line.
-        _currentWidth += remainingSpaceWidth + w
+        _currentWidth += w
         const glyphHeight = engine.height(word)
         if (glyphHeight > currentLineHeight) {
           // Use the baseline of the highest segment as the baseline of the line.
@@ -349,9 +338,6 @@ export default async function* buildTextNodes(
           lineSegmentNumber[lineSegmentNumber.length - 1]++
         }
       }
-
-      remainingSpace = ''
-      remainingSpaceWidth = 0
 
       if (allowedToJustify) {
         lineIndex++
@@ -443,15 +429,12 @@ export default async function* buildTextNodes(
   let wordBuffer: string | null = null
   let bufferedOffset = 0
 
-  console.log(':::wordPositionInLayout: ', wordPositionInLayout)
-
   for (let i = 0; i < words.length; i++) {
     // Skip whitespace and empty characters.
     if (!wordPositionInLayout[i]) continue
     const layout = wordPositionInLayout[i]
 
     let word = words[i]
-    console.log('!!word: ', word)
     let path: string | null = null
 
     const image = graphemeImages ? graphemeImages[word] : null
@@ -554,9 +537,7 @@ export default async function* buildTextNodes(
       const finalizedLeftOffset =
         wordBuffer === null ? leftOffset : bufferedOffset
       const finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
-      console.log(':::finalizedSegment: ', `'${finalizedSegment}'`)
-      console.log('::: left: ', left + finalizedLeftOffset, left, finalizedLeftOffset)
-      console.log('::: top: ', top + topOffset + baselineOfWord + baselineDelta)
+
       path = engine.getSVG(finalizedSegment, {
         ...parentStyle,
         left: left + finalizedLeftOffset,
