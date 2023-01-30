@@ -169,9 +169,7 @@ export default async function* layout(
 
   // 3. Post-process the node.
   const [x, y] = yield
-  console.log('::: layout x, y', x, y)
   let { left, top, width, height } = node.getComputedLayout()
-  console.log('::: layout before: left, top, width, height ', left, top, width, height)
   // Attach offset to the current node.
   left += x
   top += y
@@ -235,7 +233,6 @@ export default async function* layout(
 
   // Generate the rendered markup for the children.
   for (const iter of iterators) {
-    console.log('::: [left, top]', [left, top])
     childrenRenderResult += (await iter.next([left, top])).value
   }
 
