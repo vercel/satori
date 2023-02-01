@@ -1,4 +1,3 @@
-import React from 'react'
 import { it, describe, expect } from 'vitest'
 
 import { initFonts, toImage } from './utils'
@@ -92,6 +91,26 @@ describe('white-space', () => {
           }}
         >
           {' hello \n world '}
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+          embedFont: false,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should render line breaks correctly without separators', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            whiteSpace: 'pre',
+            color: 'red',
+          }}
+        >
+          {'hello\nworld'}
         </div>,
         {
           width: 100,

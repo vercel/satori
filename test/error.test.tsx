@@ -1,4 +1,3 @@
-import React from 'react'
 import { it, describe, expect } from 'vitest'
 
 import { initFonts } from './utils'

@@ -1,6 +1,6 @@
 {
   "name": "satori",
-  "version": "0.0.44",
+  "version": "0.0.0-development",
   "description": "Enlightened library to convert HTML and CSS to SVG.",
   "module": "./dist/index.js",
   "main": "./dist/index.js",
@@ -26,15 +26,16 @@
     "dev": "concurrently \"pnpm dev:default\" \"pnpm dev:wasm\"",
     "dev:default": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
     "dev:wasm": "WASM=1 NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
+    "dev:playground": "turbo dev --filter=satori-playground...",
     "build": "NODE_ENV=production pnpm run build:default && pnpm run build:wasm",
     "build:default": "tsup",
     "build:wasm": "WASM=1 tsup",
     "test": "NODE_ENV=test vitest run --outputTruncateLength=9999999",
     "dev:test": "NODE_ENV=test vitest --update --outputTruncateLength=9999999",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --quiet",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --quiet --cache",
     "lint:fix": "pnpm lint --fix",
     "prettier-check": "prettier --check .",
-    "prettier-fix": "prettier --write ."
+    "prettier-fix": "prettier --write . --cache"
   },
   "repository": {
     "type": "git",
@@ -70,9 +71,10 @@
     "prettier": "^2.7.1",
     "react": "^17.0.2",
     "tsup": "^5.11.13",
+    "turbo": "^1.6.3",
     "twrnc": "^3.4.0",
     "typescript": "^4.5.5",
-    "vitest": "0.23.4"
+    "vitest": "0.28.3"
   },
   "dependencies": {
     "@shuding/opentype.js": "1.4.0-beta.0",
@@ -81,7 +83,7 @@
     "css-to-react-native": "^3.0.0",
     "emoji-regex": "^10.2.1",
     "postcss-value-parser": "^4.2.0",
-    "yoga-layout-prebuilt": "^1.10.0"
+    "yoga-wasm-web": "^0.3.0"
   },
   "packageManager": "pnpm@7.11.0",
   "engines": {

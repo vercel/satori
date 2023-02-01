@@ -159,7 +159,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>borderBottomRightRadius</code></td><td>Supported</td></tr>
 <tr><td>Shorthand</td><td>Supported, i.e. <code>5px</code>, <code>50% / 5px</code></td></tr>
 
-<tr><td rowspan="10">Flex</td></tr>
+<tr><td rowspan="11">Flex</td></tr>
 <tr><td><code>flexDirection</code></td><td><code>column</code>, <code>row</code>, <code>row-reverse</code>, <code>column-reverse</code>, default to <code>row</code></td></tr>
 <tr><td><code>flexWrap</code></td><td><code>wrap</code>, <code>nowrap</code>, <code>wrap-reverse</code>, default to <code>wrap</code></td></tr>
 <tr><td><code>flexGrow</code></td><td>Supported</td></tr>
@@ -169,6 +169,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>alignContent</code></td><td>Supported</td></tr>
 <tr><td><code>alignSelf</code></td><td>Supported</td></tr>
 <tr><td><code>justifyContent</code></td><td>Supported</td></tr>
+<tr><td><code>gap</code></td><td>Supported</td></tr>
 
 <tr><td rowspan="5">Font</td></tr>
 <tr><td><code>fontFamily</code></td><td>Supported</td></tr>
@@ -289,13 +290,27 @@ await satori(
   {
     ...,
     graphemeImages: {
-      '🤯': 'https://twemoji.maxcdn.com/v/13.1.0/svg/1f92f.svg',
+      '🤯': 'https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f92f.svg',
     },
   }
 )
 ```
 
 The image will be resized to the current font-size (both width and height) as a square.
+
+#### Locales
+
+Satori supports rendering text in different locales. You can specify the supported locales via the `lang` attribute:
+
+```jsx
+await satori(
+  <div lang="ja-JP">骨</div>
+)
+```
+
+Same characters can be rendered differently in different locales, you can specify the locale when necessary to force it to render with a specific font and locale. Check out [this example](https://og-playground.vercel.app/?share=nVLdSsMwFH6VcEC86VgdXoyweTMVpyiCA296kzWnbWaalCZ160rfwAcRH8Bn0rcwWVdQEYTdnJzz_ZyEnNNArDkChQkXz5EixNha4rRpfE4IF6aQrKbkOJG4OQ461OfnosTYCq0cF2tZ5apnMxRpZh18EoZHPbgW3Ga_sIJxLlS6Q4sNGbnQU0yKVM0t5sa3R2Wx7KlVZaxI6pl2oPLX_KQTh1-yXEj_6LlnAhLBLXOJYJLMY61MBN_VD2KLlIzGe2jJ4qe01JXiMy116bqsM2Gxc7Stj2edcmIKpohkKp1GsGKD6_sI9hQhn2-vHy_ve-HQK_9ybbPB7O4Q1-LxENfVzX-uydDtgTshAF348RqgDeymB3QchgF04wV66guOyyoFmjBpMADM9Uos6sLvk13vKtfH__FFvkQO1JYVtu0X) to learn more. 
+
+Supported locales are exported as the `Locale` enum type.
 
 #### Dynamically Load Emojis and Fonts
 
