@@ -1,5 +1,4 @@
 import { join } from 'node:path'
-import React from 'react'
 import { it, describe, expect } from 'vitest'
 
 import { initFonts, toImage } from './utils'
