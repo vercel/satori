@@ -1,4 +1,3 @@
-import React from 'react'
 import { it, describe, expect, beforeEach, afterEach } from 'vitest'
 
 import { initFonts, toImage } from './utils'

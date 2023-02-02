@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { TwConfig } from 'twrnc'
 
 import getYoga, { init } from './yoga'
 import layout from './layout'
@@ -31,6 +32,7 @@ export type SatoriOptions = (
     languageCode: string,
     segment: string
   ) => Promise<FontOptions | string | undefined>
+  tailwindConfig?: TwConfig
 }
 
 export { init }
@@ -109,6 +111,7 @@ export default async function satori(
       const twToStyles = getTw({
         width: definedWidth,
         height: definedHeight,
+        config: options.tailwindConfig,
       })
       const twStyles = { ...twToStyles([tw] as any) }
       if (typeof twStyles.lineHeight === 'number') {

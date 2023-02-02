@@ -181,15 +181,29 @@ export default class FontLoader {
     fontFamily = (Array.isArray(fontFamily) ? fontFamily : [fontFamily]).map(
       (name) => name.toLowerCase()
     )
-    const fonts = fontFamily
-      .map((face) =>
-        this.get({
-          name: face,
-          weight: fontWeight,
-          style: fontStyle,
-        })
-      )
-      .filter(Boolean)
+    const fonts = []
+    fontFamily.forEach((face) => {
+      const getNormal = this.get({
+        name: face,
+        weight: fontWeight,
+        style: fontStyle,
+      })
+      if (getNormal) {
+        fonts.push(getNormal)
+        return
+      }
+
+      const getUnknown = this.get({
+        name: face + '_unknown',
+        weight: fontWeight,
+        style: fontStyle,
+      })
+
+      if (getUnknown) {
+        fonts.push(getUnknown)
+        return
+      }
+    })
 
     // Add additional fonts as the fallback.
     const keys = Array.from(this.fonts.keys())

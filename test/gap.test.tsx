@@ -1,4 +1,3 @@
-import React from 'react'
 import { it, describe, expect } from 'vitest'
 
 import { initYogaWasm, toImage } from './utils'
