@@ -12,6 +12,8 @@ concurrency:
 
 jobs:
   test:
+    # prevents this action from running on forks
+    if: github.repository_owner == 'vercel'
     name: Node.js ${{ matrix.node }} on ${{ matrix.os }}
     timeout-minutes: 5
     strategy:
