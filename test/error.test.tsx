@@ -8,19 +8,22 @@ describe('Error', () => {
   initFonts((f) => (fonts = f))
 
   it('should throw if flex missing on div that has children', async () => {
-    const result = satori(
-      <div>
-        Test <span>satori</span> with space
-      </div>,
-      {
-        width: 10,
-        height: 10,
-        fonts,
-      }
-    )
-    expect(result).rejects.toThrowError(
-      `Expected <div> to have explicit "display: flex" or "display: none" if it has more than one child node.`
-    )
+    let error = new Error();
+    try {
+      await satori(
+        <div>
+          Test <span>satori</span> with space
+        </div>,
+        {
+          width: 10,
+          height: 10,
+          fonts,
+        }
+      )
+    } catch(err) {
+      error = err;
+    }
+    expect(error?.message).toBe('Expected <div> to have explicit "display: flex" or "display: none" if it has more than one child node.')
   })
 
   it('should throw if display inline-block on div that has children', async () => {
