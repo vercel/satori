@@ -1,12 +1,12 @@
-import type { ParsedTransformOrigin } from '../transform-origin'
+import type { ParsedTransformOrigin } from '../transform-origin.js'
 
-import backgroundImage from './background-image'
-import radius from './border-radius'
-import { boxShadow } from './shadow'
-import transform from './transform'
-import overflow from './overflow'
-import { buildXMLString } from '../utils'
-import border, { getBorderClipPath } from './border'
+import backgroundImage from './background-image.js'
+import radius from './border-radius.js'
+import { boxShadow } from './shadow.js'
+import transform from './transform.js'
+import overflow from './overflow.js'
+import { buildXMLString } from '../utils.js'
+import border, { getBorderClipPath } from './border.js'
 
 export default async function rect(
   {

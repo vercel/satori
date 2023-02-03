@@ -1,6 +1,6 @@
-import type { ParsedTransformOrigin } from '../transform-origin'
-import transform from './transform'
-import { buildXMLString } from '../utils'
+import type { ParsedTransformOrigin } from '../transform-origin.js'
+import transform from './transform.js'
+import { buildXMLString } from '../utils.js'
 
 export function container(
   {

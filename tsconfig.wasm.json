@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "jsx": "react-jsx",
-    "moduleResolution": "node",
+    "module": "node16",
+    "moduleResolution": "node16",
     "esModuleInterop": true,
     "lib": ["esnext", "dom"],
     "baseUrl": ".",

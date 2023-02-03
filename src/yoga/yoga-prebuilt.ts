@@ -1,6 +1,5 @@
-// @ts-ignore
-import initYoga from 'yoga-wasm-web/asm'
-
-const yoga = initYoga()
-
-export default yoga
+export default async function getYoga() {
+  const initYoga = await import('yoga-wasm-web/asm')
+  const yoga = initYoga()
+  return yoga
+}

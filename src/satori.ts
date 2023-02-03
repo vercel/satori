@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react'
 import type { TwConfig } from 'twrnc'
 
-import getYoga, { init } from './yoga'
-import layout from './layout'
-import FontLoader, { FontOptions } from './font'
-import svg from './builder/svg'
-import { segment } from './utils'
-import { detectLanguageCode, LangCode, Locale } from './language'
-import getTw from './handler/tailwind'
+import getYoga, { init } from './yoga/index.js'
+import layout from './layout.js'
+import FontLoader, { FontOptions } from './font.js'
+import svg from './builder/svg.js'
+import { segment } from './utils.js'
+import { detectLanguageCode, LangCode, Locale } from './language.js'
+import getTw from './handler/tailwind.js'
 
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
@@ -41,7 +41,7 @@ export default async function satori(
   element: ReactNode,
   options: SatoriOptions
 ): Promise<string> {
-  const Yoga = getYoga()
+  const Yoga = await getYoga()
   if (!Yoga || !Yoga.Node) {
     throw new Error(
       'Satori is not initialized: expect `yoga` to be loaded, got ' + Yoga

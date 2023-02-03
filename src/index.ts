@@ -2,8 +2,8 @@ export type {
   FontOptions as Font,
   Weight as FontWeight,
   Style as FontStyle,
-} from './font'
-export type { Locale } from './language'
+} from './font.js'
+export type { Locale } from './language.js'
 
-export * from './satori'
-export { default } from './satori'
+export * from './satori.js'
+export { default } from './satori.js'

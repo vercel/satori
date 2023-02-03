@@ -2,20 +2,20 @@
  * This module calculates the layout of a text string. Currently the only
  * supported inline node is text. All other nodes are using block layout.
  */
-import type { LayoutContext } from './layout'
+import type { LayoutContext } from './layout.js'
 
-import getYoga from './yoga'
-import { v, segment, wordSeparators, buildXMLString } from './utils'
-import text, { container } from './builder/text'
-import { dropShadow } from './builder/shadow'
-import decoration from './builder/text-decoration'
-import {Locale} from "./language";
+import getYoga from './yoga/index.js'
+import { v, segment, wordSeparators, buildXMLString } from './utils.js'
+import text, { container } from './builder/text.js'
+import { dropShadow } from './builder/shadow.js'
+import decoration from './builder/text-decoration.js'
+import {Locale} from './language.js';
 
 export default async function* buildTextNodes(
   content: string,
   context: LayoutContext
 ): AsyncGenerator<{word: string, locale?: Locale}[], string, [any, any]> {
-  const Yoga = getYoga()
+  const Yoga = await getYoga()
 
   const {
     parentStyle,

@@ -2,8 +2,8 @@
  * Generate clip path for the given element.
  */
 
-import { buildXMLString } from '../utils'
-import mask from './content-mask'
+import { buildXMLString } from '../utils.js'
+import mask from './content-mask.js'
 
 export default function overflow(
   {

@@ -6,12 +6,12 @@
 
 import type { YogaNode } from 'yoga-layout'
 
-import getYoga from '../yoga'
-import presets from './presets'
-import inheritable from './inheritable'
-import expand from './expand'
-import { lengthToNumber, parseViewBox, v } from '../utils'
-import { resolveImageData } from './image'
+import getYoga from '../yoga/index.js'
+import presets from './presets.js'
+import inheritable from './inheritable.js'
+import expand from './expand.js'
+import { lengthToNumber, parseViewBox, v } from '../utils.js'
+import { resolveImageData } from './image.js'
 
 type SatoriElement = keyof typeof presets
 
@@ -22,7 +22,7 @@ export default async function handler(
   definedStyle: Record<string, string | number>,
   props: Record<string, any>
 ): Promise<[Record<string, string | number>, Record<string, string | number>]> {
-  const Yoga = getYoga()
+  const Yoga = await getYoga()
 
   // Extend the default style with defined and inherited styles.
   const style = {
