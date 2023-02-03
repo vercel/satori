@@ -1,7 +1,7 @@
 import { it, describe, expect } from 'vitest'
 
-import { initFonts } from './utils'
-import satori from '../src'
+import { initFonts } from './utils.js'
+import satori from '../src/index.js'
 
 describe('Error', () => {
   let fonts

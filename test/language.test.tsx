@@ -1,6 +1,6 @@
 import { it, describe, expect } from 'vitest'
 
-import { detectLanguageCode } from '../src/language'
+import { detectLanguageCode } from '../src/language.js'
 
 describe('detectLanguageCode', () => {
   it('should detect emoji', async () => {

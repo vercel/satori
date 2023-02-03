@@ -1,7 +1,7 @@
 import { it, describe, expect } from 'vitest'
 
-import { initYogaWasm, toImage } from './utils'
-import satori from '../src'
+import { initYogaWasm, toImage } from './utils.js'
+import satori from '../src/index.js'
 
 initYogaWasm()
 
