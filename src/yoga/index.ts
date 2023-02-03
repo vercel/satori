@@ -7,8 +7,7 @@ export function init(yoga: typeof Yoga) {
 export default async function getYoga(): Promise<typeof Yoga> {
   if (!Yoga) {
     const mod = await import('@yoga')
-    // @ts-expect-error Yoga type is wrong
-    Yoga = mod.getYoga();
+    Yoga = await mod.getYogaModule()
   }
   return Yoga
 }
