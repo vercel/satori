@@ -50,7 +50,6 @@ GradientParser.parse = (function () {
     if (input.length > 0) {
       error('Invalid input not EOF')
     }
-    
     return ast
   }
 
@@ -168,7 +167,6 @@ GradientParser.parse = (function () {
 
   function matchRadialOrientation() {
     var radialType = matchCircle() || matchEllipse()
-
     if (radialType) {
       radialType.at = matchAtPosition()
     } else {
@@ -180,11 +178,21 @@ GradientParser.parse = (function () {
           radialType.at = positionAt
         }
       } else {
-        var defaultPosition = matchPositioning()
-        if (defaultPosition) {
+        // If unspecified, it defaults to ellipse.
+        var positionAt = matchAtPosition()
+        if (positionAt) {
           radialType = {
-            type: 'default-radial',
-            at: defaultPosition,
+            type: 'shape',
+            value: 'ellipse',
+            at: positionAt
+          }
+        } else {
+          var defaultPosition = matchPositioning()
+          if (defaultPosition) {
+            radialType = {
+              type: 'default-radial',
+              at: defaultPosition,
+            }
           }
         }
       }

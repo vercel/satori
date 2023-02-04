@@ -142,6 +142,35 @@ describe('Gradient', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support radial-gradient with unspecified <ending-shape>', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            height: '100%',
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "rgb(225, 168, 211)",
+              height: "100%",
+              width: '100%',
+              backgroundImage: "radial-gradient(at 3% 42%, rgb(228, 105, 236) 0px, transparent 50%)",
+            }}
+          ></div>
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 
   it('should support advanced usage', async () => {
