@@ -1,14 +1,13 @@
 let Yoga: typeof import('yoga-layout')
 
-import YogaMod from '@yoga'
-
-// @ts-ignore
-Yoga = YogaMod.default || YogaMod
-
 export function init(yoga: typeof Yoga) {
   Yoga = yoga
 }
 
-export default function getYoga(): typeof Yoga {
+export default async function getYoga(): Promise<typeof Yoga> {
+  if (!Yoga) {
+    const mod = await import('@yoga')
+    Yoga = await mod.getYogaModule()
+  }
   return Yoga
 }

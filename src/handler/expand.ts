@@ -8,8 +8,8 @@ import { parseElementStyle } from 'css-background-parser'
 import { parse as parseBoxShadow } from 'css-box-shadow'
 
 import CssDimension from '../vendor/parse-css-dimension'
-import parseTransformOrigin from '../transform-origin'
-import {isString, lengthToNumber, v} from '../utils'
+import parseTransformOrigin from '../transform-origin.js'
+import {isString, lengthToNumber, v} from '../utils.js'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([

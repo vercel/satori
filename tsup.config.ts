@@ -11,6 +11,7 @@ export default defineConfig({
   entry: ['src/index.ts'],
   splitting: false,
   sourcemap: true,
+  target: 'node16',
   dts: process.env.NODE_ENV !== 'development' && {
     resolve: ['twrnc', './tw-config', './types'],
   },

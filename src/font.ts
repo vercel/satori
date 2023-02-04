@@ -2,7 +2,7 @@
  * This class handles everything related to fonts.
  */
 import opentype from '@shuding/opentype.js'
-import { Locale, locales, isValidLocale } from './language'
+import { Locale, locales, isValidLocale } from './language.js'
 
 export type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
 type WeightName = 'normal' | 'bold'

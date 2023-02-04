@@ -1,8 +1,8 @@
 import CssDimension from '../vendor/parse-css-dimension'
-import { buildXMLString } from '../utils'
+import { buildXMLString } from '../utils.js'
 
 import gradient from '../vendor/gradient-parser'
-import { resolveImageData } from '../handler/image'
+import { resolveImageData } from '../handler/image.js'
 
 interface Background {
   attachment: string

@@ -5,8 +5,7 @@ import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { readFile } from 'node:fs/promises'
 import initYoga from 'yoga-wasm-web'
 
-import { init } from '../src'
-import type { SatoriOptions } from '../src'
+import { init, type SatoriOptions } from '../src/index.js'
 
 export function initYogaWasm() {
   beforeAll(async () => {

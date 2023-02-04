@@ -1,4 +1,4 @@
-import { buildXMLString } from '../utils'
+import { buildXMLString } from '../utils.js'
 
 export default function svg({
   width,

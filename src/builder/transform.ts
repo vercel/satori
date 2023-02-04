@@ -1,5 +1,5 @@
-import { multiply } from '../utils'
-import type { ParsedTransformOrigin } from '../transform-origin'
+import { multiply } from '../utils.js'
+import type { ParsedTransformOrigin } from '../transform-origin.js'
 
 const baseMatrix = [1, 0, 0, 1, 0, 0]
 
