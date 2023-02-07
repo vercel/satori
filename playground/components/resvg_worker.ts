@@ -1,6 +1,7 @@
 import * as resvg from '@resvg/resvg-wasm'
 
-fetch('/resvg.wasm').then((res) => resvg.initWasm(res))
+const wasmPath = new URL('@resvg/resvg-wasm/index_bg.wasm', import.meta.url)
+fetch(wasmPath).then((res) => resvg.initWasm(res))
 
 self.onmessage = (e) => {
   const { svg, width, _id } = e.data
@@ -11,7 +12,8 @@ self.onmessage = (e) => {
       value: width,
     },
   })
-  const pngData = renderer.render()
-  const url = URL.createObjectURL(new Blob([pngData], { type: 'image/png' }))
+  const image = renderer.render()
+  const pngBuffer = image.asPng()
+  const url = URL.createObjectURL(new Blob([pngBuffer], { type: 'image/png' }))
   self.postMessage({ _id, url })
 }

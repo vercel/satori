@@ -67,8 +67,7 @@ importers:
     specifiers:
       '@babel/runtime': ^7.19.0
       '@monaco-editor/react': ^4.4.5
-      '@resvg/resvg-js': ^1.4.0
-      '@resvg/resvg-wasm': 2.0.0-alpha.4
+      '@resvg/resvg-wasm': ^2.3.1
       '@types/blob-stream': ^0.1.30
       '@types/pdfkit': ^0.12.7
       '@types/react-dom': ^18.0.6
@@ -91,8 +90,7 @@ importers:
     dependencies:
       '@babel/runtime': 7.19.0
       '@monaco-editor/react': 4.4.5_sfoxds7t5ydpegc3knd667wn6m
-      '@resvg/resvg-js': 1.4.0
-      '@resvg/resvg-wasm': 2.0.0-alpha.4
+      '@resvg/resvg-wasm': 2.3.1
       blob-stream: 0.1.3
       copy-to-clipboard: 3.3.2
       fflate: 0.7.3
@@ -534,15 +532,6 @@ packages:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
     dev: true
 
-  /@resvg/resvg-js-android-arm-eabi/1.4.0:
-    resolution: {integrity: sha512-8C7P2dYNeL5mghCgJ+2IqNwv5V50d5pZQYIvGYlbP7d3OB/T8uVEcmuflYgWq+/vEn1gZE+Q2A0tFJOHqIvH9A==}
-    engines: {node: '>= 10'}
-    cpu: [arm]
-    os: [android]
-    requiresBuild: true
-    dev: false
-    optional: true
-
   /@resvg/resvg-js-android-arm-eabi/2.1.0:
     resolution: {integrity: sha512-JtvWWtC6bYRhyth1qgUgcPQSP+jkwkmUzok/5b/IqKFb6cattMBFFdHnwM8AS+sgzXJKa8LhW48f3FmFQhfdrA==}
     engines: {node: '>= 10'}
@@ -550,15 +539,6 @@ packages:
     os: [android]
     requiresBuild: true
     dev: true
-    optional: true
-
-  /@resvg/resvg-js-android-arm64/1.4.0:
-    resolution: {integrity: sha512-BQp3zo+/8Ns9u2NCh7YeII2KflsiXfJDrwahXk21PuDp0l1KcMjdQ2o4dTWTskF5Dba/rcuDa94T5GD9Pgap7g==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [android]
-    requiresBuild: true
-    dev: false
     optional: true
 
   /@resvg/resvg-js-android-arm64/2.1.0:
@@ -570,15 +550,6 @@ packages:
     dev: true
     optional: true
 
-  /@resvg/resvg-js-darwin-arm64/1.4.0:
-    resolution: {integrity: sha512-IuvUOIpdxk5fEqr8EXgdCfugRWS88HlXwSeHPDVNCh/9kQ7exRoVi5CDOipkngUPYKxbKTekJWTxQHRUtf8oNQ==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    dev: false
-    optional: true
-
   /@resvg/resvg-js-darwin-arm64/2.1.0:
     resolution: {integrity: sha512-OrYqlmn2g4Pu/dWr+M5t5W8GDKIX3zk0JxDySU1oNWwhqlmZXBuCrx3TP9dVrTpTYx86E5RQcTZWe64wz8dlIQ==}
     engines: {node: '>= 10'}
@@ -586,15 +557,6 @@ packages:
     os: [darwin]
     requiresBuild: true
     dev: true
-    optional: true
-
-  /@resvg/resvg-js-darwin-x64/1.4.0:
-    resolution: {integrity: sha512-XFao3tkBBPHubVvXDX/ViYf2509tgqcfUc6bDtVYHCUOecK10ppbtdMRRnXjesi3towPQj2peiRUEavTIBbfGg==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [darwin]
-    requiresBuild: true
-    dev: false
     optional: true
 
   /@resvg/resvg-js-darwin-x64/2.1.0:
@@ -606,15 +568,6 @@ packages:
     dev: true
     optional: true
 
-  /@resvg/resvg-js-linux-arm-gnueabihf/1.4.0:
-    resolution: {integrity: sha512-RAjGdBJKGO5tSE1PsTl2WpG/TkgJGqsHIFtaQAUWNG4/LQ+0MNAptBOGrvNZvmRu+hVIk1t8m9rKme2RMdmlLQ==}
-    engines: {node: '>= 10'}
-    cpu: [arm]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
   /@resvg/resvg-js-linux-arm-gnueabihf/2.1.0:
     resolution: {integrity: sha512-8F0ugeAaYGNNZhSCYt+X4YgyKyKcFiH0tqfJmN69+Gqqmu/lmZcn78JVLyTGD/OGHbYfCCYJbxwV+txIOdVNkQ==}
     engines: {node: '>= 10'}
@@ -622,15 +575,6 @@ packages:
     os: [linux]
     requiresBuild: true
     dev: true
-    optional: true
-
-  /@resvg/resvg-js-linux-arm64-gnu/1.4.0:
-    resolution: {integrity: sha512-mT0UWGyzSaTu48sJGQno9zaZqk7j9ZjZppNu/TkLqObYu0xSeTnxnU73/Xy+byZh9RvLY/994bEaOP50jpDW/g==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
     optional: true
 
   /@resvg/resvg-js-linux-arm64-gnu/2.1.0:
@@ -642,15 +586,6 @@ packages:
     dev: true
     optional: true
 
-  /@resvg/resvg-js-linux-arm64-musl/1.4.0:
-    resolution: {integrity: sha512-wfl0dk9pNExJeFxRoAO0P0ywVkqW80FqsCH6KCtTbB1f2P2NY0paAKPho1LJ2z1YSzq3ngganyAKPl2PoBqn4g==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
   /@resvg/resvg-js-linux-arm64-musl/2.1.0:
     resolution: {integrity: sha512-DzuRbZj5oVXYFAlo2PVbiaTSb14z/FDUlvgfzVFHiKEw3w6gT/soveLTIAvfeIlRYYkwYNHCiEPxFztyr7x/rw==}
     engines: {node: '>= 10'}
@@ -658,15 +593,6 @@ packages:
     os: [linux]
     requiresBuild: true
     dev: true
-    optional: true
-
-  /@resvg/resvg-js-linux-x64-gnu/1.4.0:
-    resolution: {integrity: sha512-XDebImgHmQMIjxISZ4UsV9iHcO2IJnkKrT9/F5SWF3MgqRLro2pIY1JsgW70sEjkHlcyF7dbTa/M7TAgSz0uvg==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
     optional: true
 
   /@resvg/resvg-js-linux-x64-gnu/2.1.0:
@@ -678,15 +604,6 @@ packages:
     dev: true
     optional: true
 
-  /@resvg/resvg-js-linux-x64-musl/1.4.0:
-    resolution: {integrity: sha512-cvq7pPQECLyP5SoI5ECZL0RhKcgz7sQTjYWQdZjFdF6riN40uWSo1Le31+oLLCwSoSOo8Z60xmU95ChbZjSY5Q==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: false
-    optional: true
-
   /@resvg/resvg-js-linux-x64-musl/2.1.0:
     resolution: {integrity: sha512-mkwGe4I9CmQ1GPSnFa22PHwKbE+TZnRk/ViCvO89UOwypW0I+X+KlQVzVbZn9ypvcrbvzotOvl3OkVRq5MgsBA==}
     engines: {node: '>= 10'}
@@ -694,15 +611,6 @@ packages:
     os: [linux]
     requiresBuild: true
     dev: true
-    optional: true
-
-  /@resvg/resvg-js-win32-arm64-msvc/1.4.0:
-    resolution: {integrity: sha512-4waye03doDRsQmtibxiTQ7alAmvT2D7gt5n3gmIMsAP8fF+szRQ+cD/ClPZdBIMonhAUbe3nLMduocOe2Jp59Q==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [win32]
-    requiresBuild: true
-    dev: false
     optional: true
 
   /@resvg/resvg-js-win32-arm64-msvc/2.1.0:
@@ -714,15 +622,6 @@ packages:
     dev: true
     optional: true
 
-  /@resvg/resvg-js-win32-ia32-msvc/1.4.0:
-    resolution: {integrity: sha512-9Ld/Hv8nXslvodPv9wL3wec8Tf9kFAO4t9632Y66aAcGZBNW/xAwzbgDOSv32N763tsLphleu1DhJ7nXKZIz9A==}
-    engines: {node: '>= 10'}
-    cpu: [ia32]
-    os: [win32]
-    requiresBuild: true
-    dev: false
-    optional: true
-
   /@resvg/resvg-js-win32-ia32-msvc/2.1.0:
     resolution: {integrity: sha512-RtRQ8loZA4zib8kzD1QjoScb6VAaZTbajB3WU/O6raP2/f2zIk9v4FU2E/hiC0vi5DGhJL5GTmSrsWShbLPjZw==}
     engines: {node: '>= 10'}
@@ -730,15 +629,6 @@ packages:
     os: [win32]
     requiresBuild: true
     dev: true
-    optional: true
-
-  /@resvg/resvg-js-win32-x64-msvc/1.4.0:
-    resolution: {integrity: sha512-sMGQdOIop6a/s+cmFodnQNNykvr/MavgBXCzVt9jp1Rq4PXWtn8uwSsUupsn3SHPJCZ83kee6m4JCnak6Rec9A==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [win32]
-    requiresBuild: true
-    dev: false
     optional: true
 
   /@resvg/resvg-js-win32-x64-msvc/2.1.0:
@@ -749,24 +639,6 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
-
-  /@resvg/resvg-js/1.4.0:
-    resolution: {integrity: sha512-AcsRqAPFMIOxlMZCHxSxTG5vZTbW95xFDrQDTmsX/VEwc3tgLL9E4Be2nIJjWrdvIQxsTlaWYJsn2pxkki9Ltg==}
-    engines: {node: '>= 10'}
-    optionalDependencies:
-      '@resvg/resvg-js-android-arm-eabi': 1.4.0
-      '@resvg/resvg-js-android-arm64': 1.4.0
-      '@resvg/resvg-js-darwin-arm64': 1.4.0
-      '@resvg/resvg-js-darwin-x64': 1.4.0
-      '@resvg/resvg-js-linux-arm-gnueabihf': 1.4.0
-      '@resvg/resvg-js-linux-arm64-gnu': 1.4.0
-      '@resvg/resvg-js-linux-arm64-musl': 1.4.0
-      '@resvg/resvg-js-linux-x64-gnu': 1.4.0
-      '@resvg/resvg-js-linux-x64-musl': 1.4.0
-      '@resvg/resvg-js-win32-arm64-msvc': 1.4.0
-      '@resvg/resvg-js-win32-ia32-msvc': 1.4.0
-      '@resvg/resvg-js-win32-x64-msvc': 1.4.0
-    dev: false
 
   /@resvg/resvg-js/2.1.0:
     resolution: {integrity: sha512-nR6uVR5ugXLT2jh7U141nhawzgUs4JBl8BpM4XH7/ughSsOA/+WRxVhMUfdtEsz7REpTMKe2Sat+1/eWAuQ04w==}
@@ -786,8 +658,8 @@ packages:
       '@resvg/resvg-js-win32-x64-msvc': 2.1.0
     dev: true
 
-  /@resvg/resvg-wasm/2.0.0-alpha.4:
-    resolution: {integrity: sha512-pWIG9a/x1ky8gXKRhPH1OPKpHFoMN1ISLbJ+O+gPXQHIAKhNd5I28RlWf7q576hAOQA9JZTlo3p/M2uyLzJmmw==}
+  /@resvg/resvg-wasm/2.3.1:
+    resolution: {integrity: sha512-m5TN7ulzqAkg6c8dla66+hPiMKaJz3aWqpquf2PmbrmcLY20HVIJKHUCd1ibJqx8OEdoc5yeN3FVXb4nYBcrTA==}
     engines: {node: '>= 10'}
     dev: false
 
