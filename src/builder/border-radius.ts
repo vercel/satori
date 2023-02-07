@@ -63,6 +63,9 @@ function resolveRadius(
   return [true, undefined]
 }
 
+const radiusZeroOrNull = (_radius?: [number, number]) =>
+  _radius && _radius[0] !== 0 && _radius[1] !== 0
+
 export default function radius(
   {
     left,
@@ -121,10 +124,10 @@ export default function radius(
 
   if (
     !partialSides &&
-    !borderTopLeftRadius &&
-    !borderTopRightRadius &&
-    !borderBottomLeftRadius &&
-    !borderBottomRightRadius
+    !radiusZeroOrNull(borderTopLeftRadius) &&
+    !radiusZeroOrNull(borderTopRightRadius) &&
+    !radiusZeroOrNull(borderBottomLeftRadius) &&
+    !radiusZeroOrNull(borderBottomRightRadius)
   ) {
     return ''
   }

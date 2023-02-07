@@ -153,5 +153,21 @@ describe('Shadow', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should work correct with zero border radius', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: 50,
+            height: 50,
+            margin: '25px 25px',
+            borderRadius: '0%',
+            boxShadow: '0px 0px 0px 10px black',
+          }}
+        ></div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 })
