@@ -407,7 +407,7 @@ export function splitByBreakOpportunities(content: string, isBreakAll): {
   requiredBreaks: boolean[]
 } {
   if (isBreakAll) {
-    return { words: content.split(''), requiredBreaks: [] }
+    return { words: segment(content, 'grapheme'), requiredBreaks: [] }
   }
 
   const breaker = new LineBreaker(content)

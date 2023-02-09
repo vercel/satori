@@ -80,6 +80,8 @@ export default async function* buildTextNodes(
   const isBreakAll = wordBreak === 'break-all'
   const { words, requiredBreaks } = splitByBreakOpportunities(content, isBreakAll)
 
+  console.log(':::words: ', words)
+
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
   textContainer.setAlignItems(Yoga.ALIGN_BASELINE)
@@ -114,8 +116,10 @@ export default async function* buildTextNodes(
 
   // Yield segments that are missing a font.
   const wordsMissingFont = canLoadAdditionalAssets
-    ? words.filter((word) => !engine.has(word))
+    ? segment(content, 'grapheme').filter((word) => !engine.has(word))
     : []
+
+  console.log(':::wordsMissingFont: ', wordsMissingFont)
 
   yield wordsMissingFont.map(word => {
     return {
@@ -162,21 +166,43 @@ export default async function* buildTextNodes(
     return width
   }
 
-  const measureWithCache = (segments: string[]) => {
-    let total = 0
+  function measureWithCache(segments: string[]): {
+    width: number
+    isImage: boolean
+  } {
+    let width = 0
+    let isImage = false
+
     for (const s of segments) {
-      total += getWordWidthWithCache(s)
+      if (graphemeImages && graphemeImages[s]) {
+        width += parentStyle.fontSize as number
+        isImage = true
+      } else {
+        width += getWordWidthWithCache(s)
+      }
     }
-    return total
+    return { width, isImage }
   }
 
-  const getEndingSpacesWidthOrZero = (str: string): number => {
-    if (str.length === 0) return 0
+  const calc = (_words: string): {
+    originWidth: number
+    endingSpacesWidth: number
+    isImage: boolean
+  } => {
+    if (_words.length === 0) return {
+      originWidth: 0,
+      endingSpacesWidth: 0,
+      isImage: false
+    }
 
-    const originWidth = getWordWidthWithCache(str)
-    const afterTrimEndWidth = getWordWidthWithCache(str.trimEnd())
+    const { width: originWidth, isImage } = measureWithCache(segment(_words, 'grapheme'))
+    const { width: afterTrimEndWidth } = measureWithCache(segment(_words.trimEnd(), 'grapheme'))
 
-    return originWidth - afterTrimEndWidth
+    return {
+      originWidth,
+      endingSpacesWidth: originWidth - afterTrimEndWidth,
+      isImage
+    }
   }
 
   // Calculate the minimal possible width of the parent container so it don't
@@ -204,7 +230,7 @@ export default async function* buildTextNodes(
     } else {
       if (whiteSpace === 'nowrap') {
         extraWidth +=
-          measureWithCache(remainingSegment) + (parentStyle.fontSize as number)
+          measureWithCache(remainingSegment).width + (parentStyle.fontSize as number)
       }
       remainingSegment = []
     }
@@ -236,12 +262,14 @@ export default async function* buildTextNodes(
       let w = 0
       let lineEndingSpacesWidth = 0
 
-      if (graphemeImages && graphemeImages[word]) {
-        w = parentStyle.fontSize as number
-      } else {
-        w = measureWithCache([word])
-        lineEndingSpacesWidth = getEndingSpacesWidthOrZero(word)
-      }
+      const {
+        originWidth,
+        endingSpacesWidth,
+        isImage
+      } = calc(word)
+
+      w = originWidth
+      lineEndingSpacesWidth = endingSpacesWidth
 
       // When starting a new line from an empty line, we should push one extra
       // line height.
@@ -336,7 +364,7 @@ export default async function* buildTextNodes(
       wordPositionInLayout[i] = {
         y: height,
         x: _currentWidth - w,
-        width: w,
+        width: isImage ? originWidth - endingSpacesWidth : w,
         line: lines,
         lineIndex,
       }
@@ -408,21 +436,24 @@ export default async function* buildTextNodes(
   let mergedPath = ''
   let extra = ''
   let skippedLine = -1
-  let ellipsisWidth = textOverflow === 'ellipsis' ? measureWithCache(['…']) : 0
-  let spaceWidth = textOverflow === 'ellipsis' ? measureWithCache([' ']) : 0
+  let ellipsisWidth = textOverflow === 'ellipsis' ? measureWithCache(['…']).width : 0
+  let spaceWidth = textOverflow === 'ellipsis' ? measureWithCache([' ']).width : 0
   let decorationLines: Record<number, null | number[]> = {}
   let wordBuffer: string | null = null
   let bufferedOffset = 0
 
+  console.log(':::wordPositionInLayout: ', wordPositionInLayout)
+
   for (let i = 0; i < words.length; i++) {
     // Skip whitespace and empty characters.
-    if (!wordPositionInLayout[i]) continue
     const layout = wordPositionInLayout[i]
+
+    if (!layout) continue
 
     let word = words[i]
     let path: string | null = null
 
-    const image = graphemeImages ? graphemeImages[word] : null
+    const image = graphemeImages ? graphemeImages[segment(word, 'grapheme')[0]] : null
 
     let topOffset = layout.y
     let leftOffset = layout.x
@@ -472,7 +503,7 @@ export default async function* buildTextNodes(
           let subset = ''
           let resolvedWidth = 0
           for (const char of chars) {
-            const w = layout.x + measureWithCache([subset + char])
+            const w = layout.x + measureWithCache([subset + char]).width
             if (
               // Keep at least one character:
               // > The first character or atomic inline-level element on a line
@@ -506,7 +537,7 @@ export default async function* buildTextNodes(
       if (
         !wordSeparators.includes(word) &&
         words[i + 1] &&
-        !graphemeImages[words[i + 1]] &&
+        !graphemeImages[segment(words[i + 1], 'grapheme')[0]] &&
         wordPositionInLayout[i + 1] &&
         topOffset === wordPositionInLayout[i + 1].y
       ) {
@@ -521,6 +552,8 @@ export default async function* buildTextNodes(
       const finalizedLeftOffset =
         wordBuffer === null ? leftOffset : bufferedOffset
       const finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
+      console.log(':::finalizedSegment: ', `'${finalizedSegment}'`)
+      console.log(':::left + finalizedLeftOffset', left, finalizedLeftOffset, left + finalizedLeftOffset)
 
       path = engine.getSVG(finalizedSegment, {
         ...parentStyle,
@@ -589,6 +622,7 @@ export default async function* buildTextNodes(
     if (path !== null) {
       mergedPath += path + ' '
     } else {
+      console.log(':::image left + leftOffset', left, leftOffset, left + leftOffset)
       const [t, shape] = text(
         {
           content: word,
