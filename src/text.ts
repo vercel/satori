@@ -80,8 +80,6 @@ export default async function* buildTextNodes(
   const isBreakAll = wordBreak === 'break-all'
   const { words, requiredBreaks } = splitByBreakOpportunities(content, isBreakAll)
 
-  console.log(':::words: ', words)
-
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
   textContainer.setAlignItems(Yoga.ALIGN_BASELINE)
@@ -118,8 +116,6 @@ export default async function* buildTextNodes(
   const wordsMissingFont = canLoadAdditionalAssets
     ? segment(content, 'grapheme').filter((word) => !engine.has(word))
     : []
-
-  console.log(':::wordsMissingFont: ', wordsMissingFont)
 
   yield wordsMissingFont.map(word => {
     return {
@@ -442,8 +438,6 @@ export default async function* buildTextNodes(
   let wordBuffer: string | null = null
   let bufferedOffset = 0
 
-  console.log(':::wordPositionInLayout: ', wordPositionInLayout)
-
   for (let i = 0; i < words.length; i++) {
     // Skip whitespace and empty characters.
     const layout = wordPositionInLayout[i]
@@ -552,8 +546,6 @@ export default async function* buildTextNodes(
       const finalizedLeftOffset =
         wordBuffer === null ? leftOffset : bufferedOffset
       const finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
-      console.log(':::finalizedSegment: ', `'${finalizedSegment}'`)
-      console.log(':::left + finalizedLeftOffset', left, finalizedLeftOffset, left + finalizedLeftOffset)
 
       path = engine.getSVG(finalizedSegment, {
         ...parentStyle,
@@ -622,7 +614,6 @@ export default async function* buildTextNodes(
     if (path !== null) {
       mergedPath += path + ' '
     } else {
-      console.log(':::image left + leftOffset', left, leftOffset, left + leftOffset)
       const [t, shape] = text(
         {
           content: word,
