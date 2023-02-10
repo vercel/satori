@@ -62,6 +62,24 @@ describe('white-space', () => {
       )
       expect(toImage(svg, 20)).toMatchImageSnapshot()
     })
+
+    it('Should have line break before fast.!!!!!!!!!!!!!!!!!', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            backgroundColor: '#fff',
+          }}
+        >
+          Taking a look at Vercels new library to generate dynamic OpenGraph images on the fly it is fast.!!!!!!!!!!!!!!!!!
+        </div>,
+        {
+          width: 340,
+          height: 60,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 400)).toMatchImageSnapshot()
+    })
   })
 
   describe('pre', () => {

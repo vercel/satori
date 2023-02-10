@@ -111,7 +111,6 @@ export default async function* layout(
     style,
     props
   )
-
   // Post-process styles to attach inheritable properties for Satori.
 
   // If the element is inheriting the parent `transform`, or applying its own.
@@ -170,9 +169,7 @@ export default async function* layout(
 
   // 3. Post-process the node.
   const [x, y] = yield
-
   let { left, top, width, height } = node.getComputedLayout()
-
   // Attach offset to the current node.
   left += x
   top += y
