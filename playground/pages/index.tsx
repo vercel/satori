@@ -64,7 +64,14 @@ async function init() {
         res.arrayBuffer()
       ),
       !globalThis.Intl || !globalThis.Intl.Segmenter
-        ? createIntlSegmenterPolyfill(fetch('/break_iterator.wasm'))
+        ? createIntlSegmenterPolyfill(
+            fetch(
+              new URL(
+                'intl-segmenter-polyfill/dist/break_iterator.wasm',
+                import.meta.url
+              )
+            )
+          )
         : null,
     ]))
 

@@ -1,8 +1,7 @@
-import React from 'react'
 import { it, describe, expect } from 'vitest'
 
-import { initFonts, toImage } from './utils'
-import satori from '../src'
+import { initFonts, toImage } from './utils.js'
+import satori from '../src/index.js'
 
 describe('Shadow', () => {
   let fonts
@@ -148,6 +147,22 @@ describe('Shadow', () => {
             borderRadius: 20,
             boxShadow: '10px 10px 4px 5px black',
             opacity: 0.5,
+          }}
+        ></div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should work correct with zero border radius', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: 50,
+            height: 50,
+            margin: '25px 25px',
+            borderRadius: '0%',
+            boxShadow: '0px 0px 0px 10px black',
           }}
         ></div>,
         { width: 100, height: 100, fonts }

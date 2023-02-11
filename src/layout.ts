@@ -5,7 +5,7 @@
 import type { ReactNode } from 'react'
 import type { YogaNode } from 'yoga-layout'
 
-import getYoga from './yoga'
+import getYoga from './yoga/index.js'
 import {
   isReactElement,
   isClass,
@@ -13,12 +13,12 @@ import {
   SVGNodeToImage,
   normalizeChildren,
   hasDangerouslySetInnerHTMLProp,
-} from './utils'
-import handler from './handler'
-import FontLoader from './font'
-import layoutText from './text'
-import rect from './builder/rect'
-import {Locale, normalizeLocale} from "./language";
+} from './utils.js'
+import handler from './handler/index.js'
+import FontLoader from './font.js'
+import layoutText from './text.js'
+import rect from './builder/rect.js'
+import {Locale, normalizeLocale} from './language.js';
 
 export interface LayoutContext {
   id: string
@@ -39,7 +39,7 @@ export default async function* layout(
   element: ReactNode,
   context: LayoutContext
 ): AsyncGenerator<{ word: string; locale?: string; }[], string, [number, number]> {
-  const Yoga = getYoga()
+  const Yoga = await getYoga()
   const {
     id,
     inheritedStyle,

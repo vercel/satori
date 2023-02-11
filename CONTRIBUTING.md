@@ -29,7 +29,6 @@ pnpm install
 To start the playground together with Satori locally, run:
 
 ```bash
-cd playground
 pnpm dev:playground
 ```
 

@@ -57,7 +57,7 @@ function parsePNG(buf: ArrayBuffer) {
   return [v.getUint16(18, false), v.getUint16(22, false)] as [number, number]
 }
 
-import { createLRU, parseViewBox } from '../utils'
+import { createLRU, parseViewBox } from '../utils.js'
 
 type ResolvedImageData = [string, number?, number?]
 const cache = createLRU<ResolvedImageData>(100)

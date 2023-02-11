@@ -5,7 +5,7 @@
 // TODO: Support the `border-radius: 10px / 20px` syntax.
 // https://developer.mozilla.org/en-US/docs/Web/CSS/border-radius
 
-import { lengthToNumber } from '../utils'
+import { lengthToNumber } from '../utils.js'
 
 // Getting the intersection of a 45deg ray with the elliptical arc x^2/rx^2 + y^2/ry^2 = 1.
 // Reference:
@@ -62,6 +62,9 @@ function resolveRadius(
   }
   return [true, undefined]
 }
+
+const radiusZeroOrNull = (_radius?: [number, number]) =>
+  _radius && _radius[0] !== 0 && _radius[1] !== 0
 
 export default function radius(
   {
@@ -121,10 +124,10 @@ export default function radius(
 
   if (
     !partialSides &&
-    !borderTopLeftRadius &&
-    !borderTopRightRadius &&
-    !borderBottomLeftRadius &&
-    !borderBottomRightRadius
+    !radiusZeroOrNull(borderTopLeftRadius) &&
+    !radiusZeroOrNull(borderTopRightRadius) &&
+    !radiusZeroOrNull(borderBottomLeftRadius) &&
+    !radiusZeroOrNull(borderBottomRightRadius)
   ) {
     return ''
   }
