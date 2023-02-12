@@ -113,7 +113,7 @@ export default async function handler(
   if (type === 'svg') {
     const viewBox = props.viewBox || props.viewbox
     const viewBoxSize = parseViewBox(viewBox)
-    const ratio = viewBoxSize ? (viewBoxSize[3] / viewBoxSize[2]) : null
+    const ratio = viewBoxSize ? viewBoxSize[3] / viewBoxSize[2] : null
 
     let { width, height } = props
     if (typeof width === 'undefined' && height) {
@@ -213,7 +213,7 @@ export default async function handler(
         baseline: Yoga.ALIGN_BASELINE,
         normal: Yoga.ALIGN_AUTO,
       },
-      Yoga.ALIGN_FLEX_START,
+      Yoga.ALIGN_STRETCH,
       'alignItems'
     )
   )

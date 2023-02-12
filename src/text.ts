@@ -5,16 +5,22 @@
 import type { LayoutContext } from './layout.js'
 
 import getYoga from './yoga/index.js'
-import { v, segment, wordSeparators, buildXMLString, splitByBreakOpportunities } from './utils.js'
+import {
+  v,
+  segment,
+  wordSeparators,
+  buildXMLString,
+  splitByBreakOpportunities,
+} from './utils.js'
 import text, { container } from './builder/text.js'
 import { dropShadow } from './builder/shadow.js'
 import decoration from './builder/text-decoration.js'
-import {Locale} from './language.js';
+import { Locale } from './language.js'
 
 export default async function* buildTextNodes(
   content: string,
   context: LayoutContext
-): AsyncGenerator<{word: string, locale?: Locale}[], string, [any, any]> {
+): AsyncGenerator<{ word: string; locale?: Locale }[], string, [any, any]> {
   const Yoga = await getYoga()
 
   const {
@@ -78,7 +84,10 @@ export default async function* buildTextNodes(
 
   const isBreakWord = wordBreak === 'break-word'
   const isBreakAll = wordBreak === 'break-all'
-  const { words, requiredBreaks } = splitByBreakOpportunities(content, isBreakAll)
+  const { words, requiredBreaks } = splitByBreakOpportunities(
+    content,
+    isBreakAll
+  )
 
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
@@ -117,10 +126,10 @@ export default async function* buildTextNodes(
     ? segment(content, 'grapheme').filter((word) => !engine.has(word))
     : []
 
-  yield wordsMissingFont.map(word => {
+  yield wordsMissingFont.map((word) => {
     return {
       word,
-      locale
+      locale,
     }
   })
 
@@ -180,24 +189,31 @@ export default async function* buildTextNodes(
     return { width, isImage }
   }
 
-  const calc = (_words: string): {
+  const calc = (
+    _words: string
+  ): {
     originWidth: number
     endingSpacesWidth: number
     isImage: boolean
   } => {
-    if (_words.length === 0) return {
-      originWidth: 0,
-      endingSpacesWidth: 0,
-      isImage: false
-    }
+    if (_words.length === 0)
+      return {
+        originWidth: 0,
+        endingSpacesWidth: 0,
+        isImage: false,
+      }
 
-    const { width: originWidth, isImage } = measureWithCache(segment(_words, 'grapheme'))
-    const { width: afterTrimEndWidth } = measureWithCache(segment(_words.trimEnd(), 'grapheme'))
+    const { width: originWidth, isImage } = measureWithCache(
+      segment(_words, 'grapheme')
+    )
+    const { width: afterTrimEndWidth } = measureWithCache(
+      segment(_words.trimEnd(), 'grapheme')
+    )
 
     return {
       originWidth,
       endingSpacesWidth: originWidth - afterTrimEndWidth,
-      isImage
+      isImage,
     }
   }
 
@@ -226,7 +242,8 @@ export default async function* buildTextNodes(
     } else {
       if (whiteSpace === 'nowrap') {
         extraWidth +=
-          measureWithCache(remainingSegment).width + (parentStyle.fontSize as number)
+          measureWithCache(remainingSegment).width +
+          (parentStyle.fontSize as number)
       }
       remainingSegment = []
     }
@@ -258,11 +275,7 @@ export default async function* buildTextNodes(
       let w = 0
       let lineEndingSpacesWidth = 0
 
-      const {
-        originWidth,
-        endingSpacesWidth,
-        isImage
-      } = calc(word)
+      const { originWidth, endingSpacesWidth, isImage } = calc(word)
 
       w = originWidth
       lineEndingSpacesWidth = endingSpacesWidth
@@ -432,8 +445,10 @@ export default async function* buildTextNodes(
   let mergedPath = ''
   let extra = ''
   let skippedLine = -1
-  let ellipsisWidth = textOverflow === 'ellipsis' ? measureWithCache(['…']).width : 0
-  let spaceWidth = textOverflow === 'ellipsis' ? measureWithCache([' ']).width : 0
+  let ellipsisWidth =
+    textOverflow === 'ellipsis' ? measureWithCache(['…']).width : 0
+  let spaceWidth =
+    textOverflow === 'ellipsis' ? measureWithCache([' ']).width : 0
   let decorationLines: Record<number, null | number[]> = {}
   let wordBuffer: string | null = null
   let bufferedOffset = 0
@@ -448,7 +463,9 @@ export default async function* buildTextNodes(
     let path: string | null = null
     let islastDisplayedBeforeEllipsis = false
 
-    const image = graphemeImages ? graphemeImages[segment(word, 'grapheme')[0]] : null
+    const image = graphemeImages
+      ? graphemeImages[segment(word, 'grapheme')[0]]
+      : null
 
     let topOffset = layout.y
     let leftOffset = layout.x
@@ -524,6 +541,7 @@ export default async function* buildTextNodes(
     const baselineOfWord = engine.baseline(word)
     const heightOfWord = engine.height(word)
     const baselineDelta = baselineOfLine - baselineOfWord
+
     if (image) {
       // For images, we remove the baseline offset.
       topOffset += 0

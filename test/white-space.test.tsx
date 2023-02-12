@@ -70,7 +70,8 @@ describe('white-space', () => {
             backgroundColor: '#fff',
           }}
         >
-          Taking a look at Vercels new library to generate dynamic OpenGraph images on the fly it is fast.!!!!!!!!!!!!!!!!!
+          Taking a look at Vercels new library to generate dynamic OpenGraph
+          images on the fly it is fast.!!!!!!!!!!!!!!!!!
         </div>,
         {
           width: 340,
