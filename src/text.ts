@@ -446,7 +446,7 @@ export default async function* buildTextNodes(
 
     let word = words[i]
     let path: string | null = null
-    let isLastWordOfLine = false
+    let islastDisplayedBeforeEllipsis = false
 
     const image = graphemeImages ? graphemeImages[segment(word, 'grapheme')[0]] : null
 
@@ -454,6 +454,7 @@ export default async function* buildTextNodes(
     let leftOffset = layout.x
     const width = layout.width
     const line = layout.line
+
     if (line === skippedLine) {
       continue
     }
@@ -514,7 +515,7 @@ export default async function* buildTextNodes(
           word = subset + '…'
           skippedLine = line
           decorationLines[line][1] = resolvedWidth
-          isLastWordOfLine = true
+          islastDisplayedBeforeEllipsis = true
         }
       }
     }
@@ -535,7 +536,7 @@ export default async function* buildTextNodes(
         !graphemeImages[segment(words[i + 1], 'grapheme')[0]] &&
         wordPositionInLayout[i + 1] &&
         topOffset === wordPositionInLayout[i + 1].y &&
-        !isLastWordOfLine
+        !islastDisplayedBeforeEllipsis
       ) {
         if (wordBuffer === null) {
           bufferedOffset = leftOffset
