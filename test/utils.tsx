@@ -9,7 +9,6 @@ import { init, type SatoriOptions } from '../src/index.js'
 
 export function initYogaWasm() {
   beforeAll(async () => {
-    // @ts-expect-error
     const yoga = await initYoga(
       await readFile(
         join(
