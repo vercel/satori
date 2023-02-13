@@ -59,7 +59,7 @@ function parsePNG(buf: ArrayBuffer) {
 
 import { createLRU, parseViewBox } from '../utils.js'
 
-type ResolvedImageData = [string, number?, number?]
+type ResolvedImageData = [string, number?, number?] | readonly []
 const cache = createLRU<ResolvedImageData>(100)
 const inflightRequests = new Map<string, Promise<ResolvedImageData>>()
 
@@ -249,7 +249,8 @@ export async function resolveImageData(
       return result
     })
     .catch((err) => {
-      throw new Error(`Can't load image ${url}: ` + err.message)
+      console.error(`Can't load image ${url}: ` + err.message)
+      return [] as const
     })
 
   inflightRequests.set(url, promise)
