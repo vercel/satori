@@ -402,7 +402,10 @@ export function isString(x: unknown): x is string {
   return typeof x === 'string'
 }
 
-export function splitByBreakOpportunities(content: string, isBreakAll): {
+export function splitByBreakOpportunities(
+  content: string,
+  isBreakAll
+): {
   words: string[]
   requiredBreaks: boolean[]
 } {

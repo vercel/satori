@@ -233,7 +233,9 @@ describe('Color Models', () => {
           <div style={{ display: 'flex', backgroundColor: 'currentcolor' }}>
             <span style={{ color: 'white' }}>pink background</span>
           </div>
-          <div style={{ display: 'flex', backgroundColor: 'gray', padding: '4px' }}>
+          <div
+            style={{ display: 'flex', backgroundColor: 'gray', padding: '4px' }}
+          >
             <div style={{ display: 'flex', backgroundColor: 'currentcolor' }}>
               <span style={{ color: 'white' }}>pink background</span>
             </div>
@@ -260,13 +262,11 @@ describe('Color Models', () => {
             width: '100%',
           }}
         >
-          <div style={{ border: '1px solid currentcolor' }}>
-            pink border
-          </div>
-          <div style={{ display: 'flex', backgroundColor: 'gray', padding: '4px' }}>
-            <div style={{ border: '1px solid currentcolor' }}>
-              pink border
-            </div>
+          <div style={{ border: '1px solid currentcolor' }}>pink border</div>
+          <div
+            style={{ display: 'flex', backgroundColor: 'gray', padding: '4px' }}
+          >
+            <div style={{ border: '1px solid currentcolor' }}>pink border</div>
           </div>
         </div>,
         {

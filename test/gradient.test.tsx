@@ -156,10 +156,11 @@ describe('Gradient', () => {
         >
           <div
             style={{
-              backgroundColor: "rgb(225, 168, 211)",
-              height: "100%",
+              backgroundColor: 'rgb(225, 168, 211)',
+              height: '100%',
               width: '100%',
-              backgroundImage: "radial-gradient(at 3% 42%, rgb(228, 105, 236) 0px, transparent 50%)",
+              backgroundImage:
+                'radial-gradient(at 3% 42%, rgb(228, 105, 236) 0px, transparent 50%)',
             }}
           ></div>
         </div>,

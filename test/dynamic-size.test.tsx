@@ -20,15 +20,17 @@ describe('Dynamic size', () => {
 
   it('should render image with dynamic width', async () => {
     const svg = await satori(
-      <div style={{
-        background: 'white'
-      }}>
+      <div
+        style={{
+          background: 'white',
+        }}
+      >
         Lorem Ipsum is simply dummy text of the printing and typesetting
         industry.
       </div>,
       {
         height: 25,
-        fonts
+        fonts,
       }
     )
     expect(toImage(svg, 300)).toMatchImageSnapshot()

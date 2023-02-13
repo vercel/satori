@@ -18,7 +18,7 @@ import handler from './handler/index.js'
 import FontLoader from './font.js'
 import layoutText from './text.js'
 import rect from './builder/rect.js'
-import {Locale, normalizeLocale} from './language.js';
+import { Locale, normalizeLocale } from './language.js'
 
 export interface LayoutContext {
   id: string
@@ -31,14 +31,18 @@ export interface LayoutContext {
   debug?: boolean
   graphemeImages?: Record<string, string>
   canLoadAdditionalAssets: boolean
-  locale?: Locale,
+  locale?: Locale
   getTwStyles: (tw: string, style: any) => any
 }
 
 export default async function* layout(
   element: ReactNode,
   context: LayoutContext
-): AsyncGenerator<{ word: string; locale?: string; }[], string, [number, number]> {
+): AsyncGenerator<
+  { word: string; locale?: string }[],
+  string,
+  [number, number]
+> {
   const Yoga = await getYoga()
   const {
     id,
@@ -67,7 +71,7 @@ export default async function* layout(
     if (!isReactElement(element)) {
       // Process as text node.
       iter = layoutText(String(element), context)
-      yield (await iter.next()).value as { word: string; locale?: Locale; }[]
+      yield (await iter.next()).value as { word: string; locale?: Locale }[]
     } else {
       if (isClass(element.type as Function)) {
         throw new Error('Class component is not supported.')
@@ -77,7 +81,7 @@ export default async function* layout(
       // So we can safely evaluate it to render. Otherwise, an error will be
       // thrown by React.
       iter = layout((element.type as Function)(element.props), context)
-      yield (await iter.next()).value as { word: string; locale?: string; }[]
+      yield (await iter.next()).value as { word: string; locale?: string }[]
     }
 
     await iter.next()
@@ -141,7 +145,7 @@ export default async function* layout(
   const iterators: ReturnType<typeof layout>[] = []
 
   let i = 0
-  const segmentsMissingFont: { word: string; locale?: string; }[] = []
+  const segmentsMissingFont: { word: string; locale?: string }[] = []
   for (const child of normalizedChildren) {
     const iter = layout(child, {
       id: id + '-' + i++,
