@@ -8,7 +8,7 @@ describe('Error', () => {
   initFonts((f) => (fonts = f))
 
   it('should throw if flex missing on div that has children', async () => {
-    let error = new Error();
+    let error = new Error()
     try {
       await satori(
         <div>
@@ -20,10 +20,12 @@ describe('Error', () => {
           fonts,
         }
       )
-    } catch(err) {
-      error = err;
+    } catch (err) {
+      error = err
     }
-    expect(error?.message).toBe('Expected <div> to have explicit "display: flex" or "display: none" if it has more than one child node.')
+    expect(error?.message).toBe(
+      'Expected <div> to have explicit "display: flex" or "display: none" if it has more than one child node.'
+    )
   })
 
   it('should throw if display inline-block on div that has children', async () => {

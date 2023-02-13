@@ -23,6 +23,7 @@
     }
   },
   "scripts": {
+    "prepare": "husky install",
     "dev": "concurrently \"pnpm dev:default\" \"pnpm dev:wasm\"",
     "dev:default": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
     "dev:wasm": "WASM=1 NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
@@ -36,6 +37,12 @@
     "lint:fix": "pnpm lint --fix",
     "prettier-check": "prettier --check .",
     "prettier-fix": "prettier --write . --cache"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --cache",
+      "prettier --write --cache"
+    ]
   },
   "repository": {
     "type": "git",
@@ -67,7 +74,9 @@
     "eslint": "^8.25.0",
     "eslint-plugin-react": "^7.31.10",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "8.0.3",
     "jest-image-snapshot": "^5.2.0",
+    "lint-staged": "13.1.0",
     "prettier": "^2.7.1",
     "react": "^17.0.2",
     "tsup": "^5.12.9",
