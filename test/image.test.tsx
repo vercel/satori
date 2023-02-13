@@ -28,7 +28,9 @@ beforeEach(() => {
   requests = []
   ;(globalThis as any).fetch = async (url) => {
     requests.push(url)
-    if (url.startsWith('data:')) {
+    if (url.includes('wrong-url')) {
+      throw Error('wrong url')
+    } else if (url.startsWith('data:')) {
       return {
         headers: {
           get: () => 'image/png',
@@ -302,6 +304,28 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should not throw when image is not valid', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          border: '1px solid',
+          width: '50%',
+          height: '50%',
+          display: 'flex',
+        }}
+      >
+        <img
+          width='100%'
+          height='100%'
+          src='https://wrong-url.placeholder.com/150'
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 })
