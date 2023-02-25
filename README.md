@@ -177,7 +177,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>fontWeight</code></td><td>Supported</td></tr>
 <tr><td><code>fontStyle</code></td><td>Supported</td></tr>
 
-<tr><td rowspan="10">Text</td></tr>
+<tr><td rowspan="11">Text</td></tr>
 <tr><td><code>textAlign</code></td><td><code>start</code>, <code>end</code>, <code>left</code>, <code>right</code>, <code>center</code>, <code>justify</code>, default to <code>start</code></td></tr>
 <tr><td><code>textTransform</code></td><td><code>none</code>, <code>lowercase</code>, <code>uppercase</code>, <code>capitalize</code>, defaults to <code>none</code></td></tr>
 <tr><td><code>textOverflow</code></td><td><code>clip</code>, <code>ellipsis</code>, defaults to <code>clip</code></td></tr>
@@ -187,6 +187,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>letterSpacing</code></td><td>Supported</td></tr>
 <tr><td><code>whiteSpace</code></td><td><code>normal</code>, <code>pre</code>, <code>pre-wrap</code>, <code>pre-line</code>, <code>nowrap</code>, defaults to <code>normal</code></td></tr>
 <tr><td><code>wordBreak</code></td><td><code>normal</code>, <code>break-all</code>, <code>break-word</code>, <code>keep-all</code>, defaults to <code>normal</code></td></tr>
+<tr><td><code>textWrap</code></td><td><code>wrap</code>, <code>balance</code>, defaults to <code>wrap</code></td></tr>
 
 <tr><td rowspan="7">Background</td></tr>
 <tr><td><code>backgroundColor</code></td><td>Supported, single value</td></tr>

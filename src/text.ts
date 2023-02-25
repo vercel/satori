@@ -143,19 +143,6 @@ export default async function* buildTextNodes(
     )
   }
 
-  // Compute the layout.
-  // @TODO: Use segments instead of words to properly support kerning.
-  let lineWidths = []
-  let baselines = []
-  let lineSegmentNumber = []
-  let wordPositionInLayout: (null | {
-    x: number
-    y: number
-    width: number
-    line: number
-    lineIndex: number
-  })[] = []
-
   // We can cache the measured width of each word as the measure function will be
   // called multiple times.
   const wordWidthCache = new Map<string, number>()
@@ -190,25 +177,27 @@ export default async function* buildTextNodes(
   }
 
   const calc = (
-    _words: string
+    seg: string
   ): {
     originWidth: number
     endingSpacesWidth: number
     isImage: boolean
   } => {
-    if (_words.length === 0)
+    if (seg.length === 0) {
       return {
         originWidth: 0,
         endingSpacesWidth: 0,
         isImage: false,
       }
+    }
 
     const { width: originWidth, isImage } = measureWithCache(
-      segment(_words, 'grapheme')
+      segment(seg, 'grapheme')
     )
-    const { width: afterTrimEndWidth } = measureWithCache(
-      segment(_words.trimEnd(), 'grapheme')
-    )
+    const afterTrimEndWidth =
+      seg.trimEnd() === seg
+        ? originWidth
+        : measureWithCache(segment(seg.trimEnd(), 'grapheme')).width
 
     return {
       originWidth,
@@ -217,43 +206,25 @@ export default async function* buildTextNodes(
     }
   }
 
-  // Calculate the minimal possible width of the parent container so it don't
-  // shrink below the content.
-  let remainingSegment = []
-  let extraWidth = 0
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i]
-    let breakSegment = false
-    const isImage = graphemeImages && graphemeImages[word]
-    if (whiteSpace === 'pre') {
-      // For `pre`, only break the line for `\n`.
-      breakSegment = requiredBreaks[i]
-    } else if (whiteSpace !== 'nowrap') {
-      // For `normal`, `pre-wrap`, `pre-line` we can wrap with any word separators or
-      // images.
-      if (isImage || requiredBreaks[i]) {
-        breakSegment = true
-      }
-    }
-    if (!breakSegment) {
-      if (!wordSeparators.includes(word[0]) || !remainingSegment.length) {
-        remainingSegment.push(word === '\n' ? ' ' : word)
-      }
-    } else {
-      if (whiteSpace === 'nowrap') {
-        extraWidth +=
-          measureWithCache(remainingSegment).width +
-          (parentStyle.fontSize as number)
-      }
-      remainingSegment = []
-    }
-  }
-
   if (typeof parentStyle.flexShrink === 'undefined') {
     parent.setFlexShrink(1)
   }
 
-  textContainer.setMeasureFunc((width) => {
+  // Global variables used to compute the text layout.
+  // @TODO: Use segments instead of words to properly support kerning.
+  let lineWidths = []
+  let baselines = []
+  let lineSegmentNumber = []
+  let wordPositionInLayout: (null | {
+    x: number
+    y: number
+    width: number
+    line: number
+    lineIndex: number
+  })[] = []
+
+  // With the given container width, compute the text layout.
+  function flow(width: number) {
     let lines = 0
     let _currentWidth = 0
     let maxWidth = 0
@@ -264,6 +235,7 @@ export default async function* buildTextNodes(
 
     lineWidths = []
     lineSegmentNumber = [0]
+    wordPositionInLayout = []
 
     // We naively implement the width calculation without proper kerning.
     // @TODO: Support different writing modes.
@@ -387,6 +359,32 @@ export default async function* buildTextNodes(
 
     // @TODO: Support `line-height`.
     return { width: maxWidth, height }
+  }
+
+  textContainer.setMeasureFunc((containerWidth) => {
+    const { width, height } = flow(containerWidth)
+
+    // When doing `text-wrap: balance`, we reflow the text multiple times
+    // using binary search to find the best width.
+    // https://www.w3.org/TR/css-text-4/#valdef-text-wrap-balance
+    if (parentStyle.textWrap === 'balance') {
+      let l = width / 2
+      let r = width
+      let m: number = width
+      while (l + 1 < r) {
+        m = (l + r) / 2
+        const { height: mHeight } = flow(m)
+        if (mHeight > height) {
+          l = m
+        } else {
+          r = m
+        }
+      }
+      flow(r)
+      return { width: r, height }
+    }
+
+    return { width, height }
   })
 
   const [x, y] = yield
