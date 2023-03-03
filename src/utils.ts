@@ -404,13 +404,17 @@ export function isString(x: unknown): x is string {
 
 export function splitByBreakOpportunities(
   content: string,
-  isBreakAll
+  wordBreak: string
 ): {
   words: string[]
   requiredBreaks: boolean[]
 } {
-  if (isBreakAll) {
+  if (wordBreak === 'break-all') {
     return { words: segment(content, 'grapheme'), requiredBreaks: [] }
+  }
+
+  if (wordBreak === 'keep-all') {
+    return { words: segment(content, 'word'), requiredBreaks: [] }
   }
 
   const breaker = new LineBreaker(content)

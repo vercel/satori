@@ -83,10 +83,9 @@ export default async function* buildTextNodes(
   }
 
   const isBreakWord = wordBreak === 'break-word'
-  const isBreakAll = wordBreak === 'break-all'
   const { words, requiredBreaks } = splitByBreakOpportunities(
     content,
-    isBreakAll
+    wordBreak as string
   )
 
   // Create a container node for this text fragment.
