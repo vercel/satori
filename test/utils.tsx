@@ -23,6 +23,21 @@ export function initYogaWasm() {
   })
 }
 
+export async function getDynamicAsset(text: string): Promise<Buffer> {
+  const fontPath = join(process.cwd(), 'test', 'assets', text)
+  return await readFile(fontPath)
+}
+
+export async function loadDynamicAsset(code: unknown, text: string) {
+  return {
+    name: `satori_${code}_fallback_${text}`,
+    data: await getDynamicAsset(text),
+    weight: 400,
+    style: 'normal',
+    lang: code === 'unknown' ? undefined : code,
+  }
+}
+
 export function initFonts(callback: (fonts: SatoriOptions['fonts']) => void) {
   beforeAll(async () => {
     const fontPath = join(process.cwd(), 'test', 'assets', 'Roboto-Regular.ttf')
