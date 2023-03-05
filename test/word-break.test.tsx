@@ -1,6 +1,6 @@
 import { it, describe, expect } from 'vitest'
 
-import { initFonts, toImage } from './utils.js'
+import { initFonts, loadDynamicAsset, toImage } from './utils.js'
 import satori from '../src/index.js'
 
 describe('word-break', () => {
@@ -148,6 +148,38 @@ describe('word-break', () => {
       )
 
       expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should not break CJK with word-break: keep-all', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            height: '100%',
+            width: '100%',
+            backgroundColor: '#fff',
+            display: 'flex',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              wordBreak: 'keep-all',
+            }}
+          >
+            Hello! 你好! 안녕! こんにちは! Χαίρετε! Hallå!
+          </div>
+        </div>,
+        {
+          width: 200,
+          height: 200,
+          fonts,
+          loadAdditionalAsset: (languageCode: string, segment: string) => {
+            return loadDynamicAsset(languageCode, segment) as any
+          },
+        }
+      )
+
+      expect(toImage(svg, 200)).toMatchImageSnapshot()
     })
   })
 })
