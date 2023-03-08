@@ -21,10 +21,7 @@ export function isClass(f: Function) {
 }
 
 export function hasDangerouslySetInnerHTMLProp(props: any) {
-  if ('dangerouslySetInnerHTML' in props) {
-    return true
-  }
-  return false
+  return 'dangerouslySetInnerHTML' in props
 }
 
 export function normalizeChildren(children: any) {
@@ -172,8 +169,8 @@ export function segment(
       )
     }
 
-    wordSegmenter = new (Intl as any).Segmenter(locale, { granularity: 'word' })
-    graphemeSegmenter = new (Intl as any).Segmenter(locale, {
+    wordSegmenter = new Intl.Segmenter(locale, { granularity: 'word' })
+    graphemeSegmenter = new Intl.Segmenter(locale, {
       granularity: 'grapheme',
     })
   }
