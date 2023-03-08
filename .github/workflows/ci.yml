@@ -28,7 +28,8 @@ jobs:
       with:
         node-version: ${{ matrix.node }}
         cache: 'pnpm'
-    - run: pnpm test-type
+    - run: pnpm install
+    - run: pnpm ci-check
 
   test:
     # prevents this action from running on forks

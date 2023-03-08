@@ -12,8 +12,5 @@
       "@yoga": ["src/yoga/yoga-prebuilt.ts"]
     }
   },
-  "include": [
-    "src/*",
-    "test/*"
-  ]
+  "include": ["src/*", "test/*"]
 }
