@@ -32,11 +32,13 @@
     "build:default": "tsup",
     "build:wasm": "WASM=1 tsup",
     "test": "NODE_ENV=test vitest run --outputTruncateLength=999999999999",
+    "test-type": "tsc -p tsconfig.json --noEmit && tsc -p playground/tsconfig.json --noEmit",
     "dev:test": "NODE_ENV=test vitest --update --outputTruncateLength=999999999999",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --quiet --cache",
     "lint:fix": "pnpm lint --fix",
     "prettier-check": "prettier --check .",
-    "prettier-fix": "prettier --write . --cache"
+    "prettier-fix": "prettier --write . --cache",
+    "ci-check": "concurrently \"pnpm prettier-check\" \"pnpm test-type\" \"pnpm lint\""
   },
   "lint-staged": {
     "*.{ts,tsx}": [

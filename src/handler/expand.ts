@@ -7,7 +7,7 @@ import { getPropertyName, getStylesForProperty } from 'css-to-react-native'
 import { parseElementStyle } from 'css-background-parser'
 import { parse as parseBoxShadow } from 'css-box-shadow'
 
-import CssDimension from '../vendor/parse-css-dimension'
+import CssDimension from '../vendor/parse-css-dimension/index.js'
 import parseTransformOrigin from '../transform-origin.js'
 import { isString, lengthToNumber, v } from '../utils.js'
 
