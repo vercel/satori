@@ -1,6 +1,6 @@
 import type { ReactNode, ReactElement } from 'react'
 
-import CssDimension from './vendor/parse-css-dimension'
+import CssDimension from './vendor/parse-css-dimension/index.js'
 import LineBreaker from 'linebreak'
 
 export function isReactElement(node: ReactNode): node is ReactElement {
@@ -185,7 +185,7 @@ export function segment(
 
 export function buildXMLString(
   type: string,
-  attrs: Record<string, any>,
+  attrs: Record<string, string | number>,
   children?: string
 ) {
   let attrString = ''

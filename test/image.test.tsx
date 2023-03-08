@@ -300,7 +300,7 @@ describe('Image', () => {
           display: 'flex',
         }}
       >
-        <img width='100%' height='100%' src={PNG_SAMPLE_ARRAYBUFFER} />
+        <img width='100%' height='100%' src={PNG_SAMPLE_ARRAYBUFFER as any} />
       </div>,
       { width: 100, height: 100, fonts }
     )
