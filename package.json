@@ -5,6 +5,13 @@
   "module": "./dist/index.js",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "wasm": [
+        "./dist/index.d.ts"
+      ]
+    }
+  },
   "type": "module",
   "license": "MPL-2.0",
   "files": [
@@ -14,10 +21,12 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
     "./wasm": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.wasm.js",
       "require": "./dist/index.wasm.cjs"
     }
