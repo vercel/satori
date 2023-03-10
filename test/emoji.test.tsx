@@ -84,4 +84,36 @@ describe('Emojis', () => {
 
     expect(await toImage(svg)).toMatchImageSnapshot()
   })
+
+  it('should render emojis correctly with alphabetic emoji', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+        }}
+      >
+        <div>⚡Hello⚡</div>
+        <div>⚡ Hello ⚡</div>
+        <div>🚀Hello🚀</div>
+        <div>🚀 Hello 🚀</div>
+      </div>,
+      {
+        width: 200,
+        height: 100,
+        fonts,
+        graphemeImages: {
+          '⚡': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNiAzNiI+PHBhdGggZmlsbD0iI0ZGQUMzMyIgZD0iTTMyLjkzOCAxNS42NTFDMzIuNzkyIDE1LjI2IDMyLjQxOCAxNSAzMiAxNUgxOS45MjVMMjYuODkgMS40NThjLjIxOS0uNDI2LjEwNi0uOTQ3LS4yNzEtMS4yNDNDMjYuNDM3LjA3MSAyNi4yMTggMCAyNiAwYy0uMjMzIDAtLjQ2Ni4wODItLjY1My4yNDNMMTggNi41ODggMy4zNDcgMTkuMjQzYy0uMzE2LjI3My0uNDMuNzE0LS4yODQgMS4xMDVTMy41ODIgMjEgNCAyMWgxMi4wNzVMOS4xMSAzNC41NDJjLS4yMTkuNDI2LS4xMDYuOTQ3LjI3MSAxLjI0My4xODIuMTQ0LjQwMS4yMTUuNjE5LjIxNS4yMzMgMCAuNDY2LS4wODIuNjUzLS4yNDNMMTggMjkuNDEybDE0LjY1My0xMi42NTVjLjMxNy0uMjczLjQzLS43MTQuMjg1LTEuMTA2eiIvPjwvc3ZnPg==',
+          '🚀': 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNiAzNiI+PHBhdGggZmlsbD0iI0EwMDQxRSIgZD0iTTEgMTdsOC03IDE2IDEgMSAxNi03IDhzLjAwMS01Ljk5OS02LTEyLTEyLTYtMTItNnoiLz48cGF0aCBmaWxsPSIjRkZBQzMzIiBkPSJNLjk3MyAzNXMtLjAzNi03Ljk3OSAyLjk4NS0xMVMxNSAyMS4xODcgMTUgMjEuMTg3IDE0Ljk5OSAyOSAxMS45OTkgMzJjLTMgMy0xMS4wMjYgMy0xMS4wMjYgM3oiLz48Y2lyY2xlIGZpbGw9IiNGRkNDNEQiIGN4PSI4Ljk5OSIgY3k9IjI3IiByPSI0Ii8+PHBhdGggZmlsbD0iIzU1QUNFRSIgZD0iTTM1Ljk5OSAwcy0xMCAwLTIyIDEwYy02IDUtNiAxNC00IDE2czExIDIgMTYtNGMxMC0xMiAxMC0yMiAxMC0yMnoiLz48cGF0aCBkPSJNMjYuOTk5IDVjLTEuNjIzIDAtMy4wMTMuOTcxLTMuNjQxIDIuMzYuNTAyLS4yMjcgMS4wNTUtLjM2IDEuNjQxLS4zNiAyLjIwOSAwIDQgMS43OTEgNCA0IDAgLjU4Ni0uMTMzIDEuMTM5LS4zNTkgMS42NCAxLjM4OS0uNjI3IDIuMzU5LTIuMDE3IDIuMzU5LTMuNjQgMC0yLjIwOS0xLjc5MS00LTQtNHoiLz48cGF0aCBmaWxsPSIjQTAwNDFFIiBkPSJNOCAyOHMwLTQgMS01IDEzLjAwMS0xMC45OTkgMTQtMTAtOS4wMDEgMTMtMTAuMDAxIDE0UzggMjggOCAyOHoiLz48L3N2Zz4=',
+        },
+      }
+    )
+
+    expect(await toImage(svg)).toMatchImageSnapshot()
+  })
 })
