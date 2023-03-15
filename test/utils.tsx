@@ -3,22 +3,12 @@ import { join } from 'path'
 import { Resvg } from '@resvg/resvg-js'
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { readFile } from 'node:fs/promises'
-import initYoga from 'yoga-wasm-web'
+import yoga from 'yoga-wasm-web/auto'
 
 import { init, type SatoriOptions } from '../src/index.js'
 
 export function initYogaWasm() {
   beforeAll(async () => {
-    const yoga = await initYoga(
-      await readFile(
-        join(
-          require.resolve('yoga-wasm-web/package.json'),
-          '..',
-          'dist',
-          'yoga.wasm'
-        )
-      )
-    )
     init(yoga)
   })
 }
