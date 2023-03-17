@@ -1,6 +1,6 @@
 import { buildXMLString } from '../utils.js'
 
-export default function decoration(
+export default function buildDecoration(
   {
     width,
     left,

@@ -3,7 +3,7 @@
  * supported inline node is text. All other nodes are using block layout.
  */
 import type { LayoutContext } from './layout.js'
-
+import type { Yoga } from 'yoga-wasm-web'
 import getYoga from './yoga/index.js'
 import {
   v,
@@ -13,8 +13,8 @@ import {
   splitByBreakOpportunities,
 } from './utils.js'
 import buildText, { container } from './builder/text.js'
-import { dropShadow } from './builder/shadow.js'
-import decoration from './builder/text-decoration.js'
+import { buildDropShadow } from './builder/shadow.js'
+import buildDecoration from './builder/text-decoration.js'
 import { Locale } from './language.js'
 
 export default async function* buildTextNodes(
@@ -43,28 +43,13 @@ export default async function* buildTextNodes(
     whiteSpace,
     wordBreak,
     lineHeight,
+    textTransform,
+    textWrap,
     filter: cssFilter,
     _inheritedBackgroundClipTextPath,
   } = parentStyle
 
-  if (parentStyle.textTransform === 'uppercase') {
-    content = content.toLocaleUpperCase(locale)
-  } else if (parentStyle.textTransform === 'lowercase') {
-    content = content.toLocaleLowerCase(locale)
-  } else if (parentStyle.textTransform === 'capitalize') {
-    content = segment(content, 'word', locale)
-      // For each word...
-      .map((word) => {
-        // ...split into graphemes...
-        return segment(word, 'grapheme', locale)
-          .map((grapheme, index) => {
-            // ...and make the first grapheme uppercase
-            return index === 0 ? grapheme.toLocaleUpperCase(locale) : grapheme
-          })
-          .join('')
-      })
-      .join('')
-  }
+  content = processTextTransform(content, textTransform as string, locale)
 
   const shouldKeepLinebreak = ['pre', 'pre-wrap', 'pre-line'].includes(
     whiteSpace as string
@@ -82,32 +67,17 @@ export default async function* buildTextNodes(
     content = content.trim()
   }
 
-  const isBreakWord = wordBreak === 'break-word'
   const { words, requiredBreaks } = splitByBreakOpportunities(
     content,
     wordBreak as string
   )
 
-  // Create a container node for this text fragment.
-  const textContainer = Yoga.Node.create()
-  textContainer.setAlignItems(Yoga.ALIGN_BASELINE)
-  textContainer.setJustifyContent(
-    v(
-      parentStyle.textAlign,
-      {
-        left: Yoga.JUSTIFY_FLEX_START,
-        right: Yoga.JUSTIFY_FLEX_END,
-        center: Yoga.JUSTIFY_CENTER,
-        justify: Yoga.JUSTIFY_SPACE_BETWEEN,
-        // We don't have other writing modes yet.
-        start: Yoga.JUSTIFY_FLEX_START,
-        end: Yoga.JUSTIFY_FLEX_END,
-      },
-      Yoga.JUSTIFY_FLEX_START,
-      'textAlign'
-    )
-  )
+  const textContainer = createTextContainerNode(Yoga, textAlign as string)
   parent.insertChild(textContainer, parent.getChildCount())
+
+  if (typeof parentStyle.flexShrink === 'undefined') {
+    parent.setFlexShrink(1)
+  }
 
   const baseFontSize = parentStyle.fontSize as number
 
@@ -203,10 +173,6 @@ export default async function* buildTextNodes(
     }
   }
 
-  if (typeof parentStyle.flexShrink === 'undefined') {
-    parent.setFlexShrink(1)
-  }
-
   // Global variables used to compute the text layout.
   // @TODO: Use segments instead of words to properly support kerning.
   let lineWidths = []
@@ -282,7 +248,9 @@ export default async function* buildTextNodes(
       // - the word is wider than the container width
       // - the word will be put at the beginning of the line
       const needToBreakWord =
-        isBreakWord && w > width && (!_currentWidth || willWrap || forceBreak)
+        wordBreak === 'break-word' &&
+        w > width &&
+        (!_currentWidth || willWrap || forceBreak)
 
       if (needToBreakWord) {
         // Break the word into multiple segments and continue the loop.
@@ -404,7 +372,7 @@ export default async function* buildTextNodes(
     // When doing `text-wrap: balance`, we reflow the text multiple times
     // using binary search to find the best width.
     // https://www.w3.org/TR/css-text-4/#valdef-text-wrap-balance
-    if (parentStyle.textWrap === 'balance') {
+    if (textWrap === 'balance') {
       let l = width / 2
       let r = width
       let m: number = width
@@ -438,6 +406,7 @@ export default async function* buildTextNodes(
     width: containerWidth,
     height: containerHeight,
   } = textContainer.getComputedLayout()
+
   const parentContainerInnerWidth =
     parent.getComputedWidth() -
     parent.getComputedPadding(Yoga.EDGE_LEFT) -
@@ -462,7 +431,7 @@ export default async function* buildTextNodes(
 
   let filter = ''
   if (parentStyle.textShadowOffset) {
-    filter = dropShadow(
+    filter = buildDropShadow(
       {
         width: containerWidth,
         height: containerHeight,
@@ -650,7 +619,7 @@ export default async function* buildTextNodes(
       if (line !== wordPositionInLayout[i + 1]?.line || skippedLine === line) {
         const deco = decorationLines[line]
         if (deco && !deco[2]) {
-          decorationShape += decoration(
+          decorationShape += buildDecoration(
             {
               left: left + deco[0],
               top: top + heightOfWord * +line,
@@ -734,4 +703,58 @@ export default async function* buildTextNodes(
   }
 
   return result
+}
+
+function processTextTransform(
+  content: string,
+  textTransform: string,
+  locale?: Locale
+): string {
+  if (textTransform === 'uppercase') {
+    content = content.toLocaleUpperCase(locale)
+  } else if (textTransform === 'lowercase') {
+    content = content.toLocaleLowerCase(locale)
+  } else if (textTransform === 'capitalize') {
+    content = segment(content, 'word', locale)
+      // For each word...
+      .map((word) => {
+        // ...split into graphemes...
+        return segment(word, 'grapheme', locale)
+          .map((grapheme, index) => {
+            // ...and make the first grapheme uppercase
+            return index === 0 ? grapheme.toLocaleUpperCase(locale) : grapheme
+          })
+          .join('')
+      })
+      .join('')
+  }
+
+  return content
+}
+
+function createTextContainerNode(
+  Yoga: Yoga,
+  textAlign: string
+): ReturnType<Yoga['Node']['create']> {
+  // Create a container node for this text fragment.
+  const textContainer = Yoga.Node.create()
+  textContainer.setAlignItems(Yoga.ALIGN_BASELINE)
+  textContainer.setJustifyContent(
+    v(
+      textAlign,
+      {
+        left: Yoga.JUSTIFY_FLEX_START,
+        right: Yoga.JUSTIFY_FLEX_END,
+        center: Yoga.JUSTIFY_CENTER,
+        justify: Yoga.JUSTIFY_SPACE_BETWEEN,
+        // We don't have other writing modes yet.
+        start: Yoga.JUSTIFY_FLEX_START,
+        end: Yoga.JUSTIFY_FLEX_END,
+      },
+      Yoga.JUSTIFY_FLEX_START,
+      'textAlign'
+    )
+  )
+
+  return textContainer
 }

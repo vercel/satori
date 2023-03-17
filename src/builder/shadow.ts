@@ -13,7 +13,7 @@ function shiftPath(path: string, dx: number, dy: number) {
   )
 }
 
-export function dropShadow(
+export function buildDropShadow(
   { id, width, height }: { id: string; width: number; height: number },
   style: Record<string, any>
 ) {
