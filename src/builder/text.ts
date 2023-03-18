@@ -42,7 +42,7 @@ export function container(
   return { matrix, opacity }
 }
 
-export default function text(
+export default function buildText(
   {
     id,
     content,

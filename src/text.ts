@@ -11,11 +11,13 @@ import {
   wordSeparators,
   buildXMLString,
   splitByBreakOpportunities,
+  isUndefined,
 } from './utils.js'
 import buildText, { container } from './builder/text.js'
 import { buildDropShadow } from './builder/shadow.js'
 import buildDecoration from './builder/text-decoration.js'
 import { Locale } from './language.js'
+import { FontEngine } from './font.js'
 
 export default async function* buildTextNodes(
   content: string,
@@ -51,31 +53,21 @@ export default async function* buildTextNodes(
 
   content = processTextTransform(content, textTransform as string, locale)
 
-  const shouldKeepLinebreak = ['pre', 'pre-wrap', 'pre-line'].includes(
-    whiteSpace as string
-  )
-  const shouldCollapseWhitespace = !['pre', 'pre-wrap'].includes(
-    whiteSpace as string
-  )
+  const {
+    content: _content,
+    shouldCollapseWhitespace,
+    allowSoftWrap,
+  } = processWhiteSpace(content, whiteSpace as string)
 
-  if (!shouldKeepLinebreak) {
-    content = content.replace(/\n/g, ' ')
-  }
-
-  if (shouldCollapseWhitespace) {
-    content = content.replace(/[ ]+/g, ' ')
-    content = content.trim()
-  }
-
-  const { words, requiredBreaks } = splitByBreakOpportunities(
-    content,
+  const { words, requiredBreaks, allowBreakWord } = processWordBreak(
+    _content,
     wordBreak as string
   )
 
   const textContainer = createTextContainerNode(Yoga, textAlign as string)
   parent.insertChild(textContainer, parent.getChildCount())
 
-  if (typeof parentStyle.flexShrink === 'undefined') {
+  if (isUndefined(parentStyle.flexShrink)) {
     parent.setFlexShrink(1)
   }
 
@@ -114,37 +106,24 @@ export default async function* buildTextNodes(
 
   // We can cache the measured width of each word as the measure function will be
   // called multiple times.
-  const wordWidthCache = new Map<string, number>()
-
-  function getWordWidthWithCache(s): number {
-    if (wordWidthCache.has(s)) {
-      return wordWidthCache.get(s)
-    }
-
-    const width = engine.measure(s, parentStyle as any)
-    wordWidthCache.set(s, width)
-
-    return width
-  }
+  const measureWordWidth = genMeasureWordWidth(engine, parentStyle)
 
   function isImage(s: string): boolean {
     return !!(graphemeImages && graphemeImages[s])
   }
 
-  function measureWithCache(segments: string[]): {
-    width: number
-  } {
+  function measureWithCache(segments: string[]): number {
     let width = 0
 
     for (const s of segments) {
       if (isImage(s)) {
         width += parentStyle.fontSize as number
       } else {
-        width += getWordWidthWithCache(s)
+        width += measureWordWidth(s)
       }
     }
 
-    return { width }
+    return width
   }
 
   const calc = (
@@ -160,12 +139,12 @@ export default async function* buildTextNodes(
       }
     }
 
-    const { width: originWidth } = measureWithCache(segment(seg, 'grapheme'))
+    const originWidth = measureWithCache(segment(seg, 'grapheme'))
 
     const afterTrimEndWidth =
       seg.trimEnd() === seg
         ? originWidth
-        : measureWithCache(segment(seg.trimEnd(), 'grapheme')).width
+        : measureWithCache(segment(seg.trimEnd(), 'grapheme'))
 
     return {
       originWidth,
@@ -209,7 +188,7 @@ export default async function* buildTextNodes(
     let i = 0
     while (i < words.length) {
       let word = words[i]
-      const forceBreak = shouldKeepLinebreak && requiredBreaks[i]
+      const forceBreak = requiredBreaks[i]
 
       let w = 0
       let lineEndingSpacesWidth = 0
@@ -240,15 +219,14 @@ export default async function* buildTextNodes(
         // |aaa bbb|
         // |ccc    |
         _currentWidth + w > width + lineEndingSpacesWidth &&
-        whiteSpace !== 'nowrap' &&
-        whiteSpace !== 'pre'
+        allowSoftWrap
 
       // Need to break the word if:
       // - we have break-word
       // - the word is wider than the container width
       // - the word will be put at the beginning of the line
       const needToBreakWord =
-        wordBreak === 'break-word' &&
+        allowBreakWord &&
         w > width &&
         (!_currentWidth || willWrap || forceBreak)
 
@@ -335,7 +313,7 @@ export default async function* buildTextNodes(
             _width = parentStyle.fontSize as number
             _isImage = true
           } else {
-            _width = getWordWidthWithCache(_text)
+            _width = measureWordWidth(_text)
           }
 
           texts.push(_text)
@@ -449,10 +427,8 @@ export default async function* buildTextNodes(
   let mergedPath = ''
   let extra = ''
   let skippedLine = -1
-  let ellipsisWidth =
-    textOverflow === 'ellipsis' ? measureWithCache(['…']).width : 0
-  let spaceWidth =
-    textOverflow === 'ellipsis' ? measureWithCache([' ']).width : 0
+  let ellipsisWidth = textOverflow === 'ellipsis' ? measureWithCache(['…']) : 0
+  let spaceWidth = textOverflow === 'ellipsis' ? measureWithCache([' ']) : 0
   let decorationLines: Record<number, null | number[]> = {}
   let wordBuffer: string | null = null
   let bufferedOffset = 0
@@ -517,7 +493,7 @@ export default async function* buildTextNodes(
           let subset = ''
           let resolvedWidth = 0
           for (const char of chars) {
-            const w = layout.x + measureWithCache([subset + char]).width
+            const w = layout.x + measureWithCache([subset + char])
             if (
               // Keep at least one character:
               // > The first character or atomic inline-level element on a line
@@ -576,7 +552,7 @@ export default async function* buildTextNodes(
         // Since we need to pass the baseline position, add the ascender to the top.
         top: top + topOffset + baselineOfWord + baselineDelta,
         letterSpacing: parentStyle.letterSpacing,
-      } as any)
+      })
 
       wordBuffer = null
 
@@ -732,6 +708,38 @@ function processTextTransform(
   return content
 }
 
+function processWordBreak(content, wordBreak: string) {
+  const allowBreakWord = ['break-all', 'break-word'].includes(wordBreak)
+
+  const { words, requiredBreaks } = splitByBreakOpportunities(
+    content,
+    wordBreak
+  )
+
+  return { words, requiredBreaks, allowBreakWord }
+}
+
+function processWhiteSpace(content: string, whiteSpace: string) {
+  const shouldKeepLinebreak = ['pre', 'pre-wrap', 'pre-line'].includes(
+    whiteSpace
+  )
+
+  const shouldCollapseWhitespace = !['pre', 'pre-wrap'].includes(whiteSpace)
+
+  const allowSoftWrap = !['pre', 'nowrap'].includes(whiteSpace)
+
+  if (!shouldKeepLinebreak) {
+    content = content.replace(/\n/g, ' ')
+  }
+
+  if (shouldCollapseWhitespace) {
+    content = content.replace(/[ ]+/g, ' ')
+    content = content.trim()
+  }
+
+  return { content, shouldCollapseWhitespace, allowSoftWrap }
+}
+
 function createTextContainerNode(
   Yoga: Yoga,
   textAlign: string
@@ -757,4 +765,22 @@ function createTextContainerNode(
   )
 
   return textContainer
+}
+
+function genMeasureWordWidth(
+  engine: FontEngine,
+  parentStyle: any
+): (s: string) => number {
+  const wordWidthCache = new Map<string, number>()
+
+  return function measureWordWidth(s: string): number {
+    if (wordWidthCache.has(s)) {
+      return wordWidthCache.get(s)
+    }
+
+    const width = engine.measure(s, parentStyle)
+    wordWidthCache.set(s, width)
+
+    return width
+  }
 }

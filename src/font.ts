@@ -17,6 +17,14 @@ export interface FontOptions {
   lang?: string
 }
 
+export type FontEngine = {
+  has: (s: string) => boolean
+  baseline: (s?: string, resolvedFont?: any) => number
+  height: (s?: string, resolvedFont?: any) => number
+  measure: (s: string, style: any) => number
+  getSVG: (s: string, style: any) => string
+}
+
 function compareFont(
   weight,
   style,
@@ -171,7 +179,7 @@ export default class FontLoader {
       fontStyle?: Style
     },
     locale: Locale | undefined
-  ) {
+  ): FontEngine {
     if (!this.fonts.size) {
       throw new Error(
         'No fonts are loaded. At least one font is required to calculate the layout.'
