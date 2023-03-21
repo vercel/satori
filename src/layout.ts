@@ -3,7 +3,7 @@
  */
 
 import type { ReactNode } from 'react'
-import type { YogaNode } from 'yoga-layout'
+import type { Node as YogaNode } from 'yoga-wasm-web'
 
 import getYoga from './yoga/index.js'
 import {
