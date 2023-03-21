@@ -47,6 +47,7 @@ export default async function* buildTextNodes(
     lineHeight,
     textTransform,
     textWrap,
+    fontSize,
     filter: cssFilter,
     _inheritedBackgroundClipTextPath,
   } = parentStyle
@@ -71,12 +72,10 @@ export default async function* buildTextNodes(
     parent.setFlexShrink(1)
   }
 
-  const baseFontSize = parentStyle.fontSize as number
-
   // Get the correct font according to the container style.
   // https://www.w3.org/TR/CSS2/visudet.html
   let engine = font.getEngine(
-    baseFontSize,
+    fontSize as number,
     lineHeight as number,
     parentStyle as any,
     locale
@@ -97,7 +96,7 @@ export default async function* buildTextNodes(
   if (wordsMissingFont.length) {
     // Reload the engine with additional fonts.
     engine = font.getEngine(
-      baseFontSize,
+      fontSize as number,
       lineHeight as number,
       parentStyle as any,
       locale
@@ -117,7 +116,7 @@ export default async function* buildTextNodes(
 
     for (const s of segments) {
       if (isImage(s)) {
-        width += parentStyle.fontSize as number
+        width += fontSize as number
       } else {
         width += measureWordWidth(s)
       }
@@ -310,7 +309,7 @@ export default async function* buildTextNodes(
           let _isImage = false
 
           if (isImage(_text)) {
-            _width = parentStyle.fontSize as number
+            _width = fontSize as number
             _isImage = true
           } else {
             _width = measureWordWidth(_text)

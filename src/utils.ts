@@ -399,7 +399,7 @@ export function toString(x: unknown): string {
 }
 
 export function isString(x: unknown): x is string {
-  return toString(x) === '[object String]'
+  return typeof x === 'string'
 }
 
 export function isUndefined(x: unknown): x is undefined {
