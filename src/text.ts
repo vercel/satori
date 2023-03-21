@@ -12,7 +12,7 @@ import {
   buildXMLString,
   splitByBreakOpportunities,
 } from './utils.js'
-import text, { container } from './builder/text.js'
+import buildText, { container } from './builder/text.js'
 import { dropShadow } from './builder/shadow.js'
 import decoration from './builder/text-decoration.js'
 import { Locale } from './language.js'
@@ -157,22 +157,24 @@ export default async function* buildTextNodes(
     return width
   }
 
+  function isImage(s: string): boolean {
+    return !!(graphemeImages && graphemeImages[s])
+  }
+
   function measureWithCache(segments: string[]): {
     width: number
-    isImage: boolean
   } {
     let width = 0
-    let isImage = false
 
     for (const s of segments) {
-      if (graphemeImages && graphemeImages[s]) {
+      if (isImage(s)) {
         width += parentStyle.fontSize as number
-        isImage = true
       } else {
         width += getWordWidthWithCache(s)
       }
     }
-    return { width, isImage }
+
+    return { width }
   }
 
   const calc = (
@@ -180,19 +182,16 @@ export default async function* buildTextNodes(
   ): {
     originWidth: number
     endingSpacesWidth: number
-    isImage: boolean
   } => {
     if (seg.length === 0) {
       return {
         originWidth: 0,
         endingSpacesWidth: 0,
-        isImage: false,
       }
     }
 
-    const { width: originWidth, isImage } = measureWithCache(
-      segment(seg, 'grapheme')
-    )
+    const { width: originWidth } = measureWithCache(segment(seg, 'grapheme'))
+
     const afterTrimEndWidth =
       seg.trimEnd() === seg
         ? originWidth
@@ -201,7 +200,6 @@ export default async function* buildTextNodes(
     return {
       originWidth,
       endingSpacesWidth: originWidth - afterTrimEndWidth,
-      isImage,
     }
   }
 
@@ -214,12 +212,14 @@ export default async function* buildTextNodes(
   let lineWidths = []
   let baselines = []
   let lineSegmentNumber = []
+  let texts = []
   let wordPositionInLayout: (null | {
     x: number
     y: number
     width: number
     line: number
     lineIndex: number
+    isImage: boolean
   })[] = []
 
   // With the given container width, compute the text layout.
@@ -234,19 +234,21 @@ export default async function* buildTextNodes(
 
     lineWidths = []
     lineSegmentNumber = [0]
+    texts = []
     wordPositionInLayout = []
 
     // We naively implement the width calculation without proper kerning.
     // @TODO: Support different writing modes.
     // @TODO: Support RTL languages.
-    for (let i = 0; i < words.length; i++) {
+    let i = 0
+    while (i < words.length) {
       let word = words[i]
       const forceBreak = shouldKeepLinebreak && requiredBreaks[i]
 
       let w = 0
       let lineEndingSpacesWidth = 0
 
-      const { originWidth, endingSpacesWidth, isImage } = calc(word)
+      const { originWidth, endingSpacesWidth } = calc(word)
 
       w = originWidth
       lineEndingSpacesWidth = endingSpacesWidth
@@ -285,7 +287,7 @@ export default async function* buildTextNodes(
       if (needToBreakWord) {
         // Break the word into multiple segments and continue the loop.
         const chars = segment(word, 'grapheme')
-        words.splice(i, 1, '', ...chars)
+        words.splice(i, 1, ...chars)
         if (_currentWidth > 0) {
           // Start a new line, spaces can be ignored.
           lineWidths.push(_currentWidth)
@@ -341,14 +343,50 @@ export default async function* buildTextNodes(
       }
 
       maxWidth = Math.max(maxWidth, _currentWidth)
-      wordPositionInLayout[i] = {
-        y: height,
-        x: _currentWidth - w,
-        width: isImage ? originWidth - endingSpacesWidth : w,
-        line: lines,
-        lineIndex,
+
+      let x = _currentWidth - w
+
+      if (w === 0) {
+        wordPositionInLayout.push({
+          y: height,
+          x,
+          width: 0,
+          line: lines,
+          lineIndex,
+          isImage: false,
+        })
+      } else {
+        const _texts = segment(word, 'word')
+
+        for (let j = 0; j < _texts.length; j++) {
+          const _text = _texts[j]
+          let _width = 0
+          let _isImage = false
+
+          if (isImage(_text)) {
+            _width = parentStyle.fontSize as number
+            _isImage = true
+          } else {
+            _width = getWordWidthWithCache(_text)
+          }
+
+          texts.push(_text)
+          wordPositionInLayout.push({
+            y: height,
+            x,
+            width: _width,
+            line: lines,
+            lineIndex,
+            isImage: _isImage,
+          })
+
+          x += _width
+        }
       }
+
+      i++
     }
+
     if (_currentWidth) {
       lines++
       lineWidths.push(_currentWidth)
@@ -450,19 +488,17 @@ export default async function* buildTextNodes(
   let wordBuffer: string | null = null
   let bufferedOffset = 0
 
-  for (let i = 0; i < words.length; i++) {
+  for (let i = 0; i < texts.length; i++) {
     // Skip whitespace and empty characters.
     const layout = wordPositionInLayout[i]
 
     if (!layout) continue
 
-    let word = words[i]
+    let text = texts[i]
     let path: string | null = null
     let isLastDisplayedBeforeEllipsis = false
 
-    const image = graphemeImages
-      ? graphemeImages[segment(word, 'grapheme')[0]]
-      : null
+    const image = graphemeImages ? graphemeImages[text] : null
 
     let topOffset = layout.y
     let leftOffset = layout.x
@@ -508,7 +544,7 @@ export default async function* buildTextNodes(
           layout.x + width + ellipsisWidth + spaceWidth >
           parentContainerInnerWidth
         ) {
-          const chars = segment(word, 'grapheme', locale)
+          const chars = segment(text, 'grapheme', locale)
           let subset = ''
           let resolvedWidth = 0
           for (const char of chars) {
@@ -526,7 +562,7 @@ export default async function* buildTextNodes(
             subset += char
             resolvedWidth = w
           }
-          word = subset + '…'
+          text = subset + '…'
           skippedLine = line
           decorationLines[line][1] = resolvedWidth
           isLastDisplayedBeforeEllipsis = true
@@ -535,8 +571,8 @@ export default async function* buildTextNodes(
     }
 
     const baselineOfLine = baselines[line]
-    const baselineOfWord = engine.baseline(word)
-    const heightOfWord = engine.height(word)
+    const baselineOfWord = engine.baseline(text)
+    const heightOfWord = engine.height(text)
     const baselineDelta = baselineOfLine - baselineOfWord
 
     if (image) {
@@ -546,21 +582,21 @@ export default async function* buildTextNodes(
       // If the current word and the next word are on the same line, we try to
       // merge them together to better handle the kerning.
       if (
-        !wordSeparators.includes(word) &&
-        words[i + 1] &&
-        !graphemeImages[segment(words[i + 1], 'grapheme')[0]] &&
+        !wordSeparators.includes(text) &&
+        texts[i + 1] &&
         wordPositionInLayout[i + 1] &&
+        !wordPositionInLayout[i + 1].isImage &&
         topOffset === wordPositionInLayout[i + 1].y &&
         !isLastDisplayedBeforeEllipsis
       ) {
         if (wordBuffer === null) {
           bufferedOffset = leftOffset
         }
-        wordBuffer = wordBuffer === null ? word : wordBuffer + word
+        wordBuffer = wordBuffer === null ? text : wordBuffer + text
         continue
       }
 
-      const finalizedSegment = wordBuffer === null ? word : wordBuffer + word
+      const finalizedSegment = wordBuffer === null ? text : wordBuffer + text
       const finalizedLeftOffset =
         wordBuffer === null ? leftOffset : bufferedOffset
       const finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
@@ -619,7 +655,7 @@ export default async function* buildTextNodes(
               left: left + deco[0],
               top: top + heightOfWord * +line,
               width: deco[1],
-              ascender: engine.baseline(word),
+              ascender: engine.baseline(text),
               clipPathId,
             },
             parentStyle
@@ -632,9 +668,9 @@ export default async function* buildTextNodes(
     if (path !== null) {
       mergedPath += path + ' '
     } else {
-      const [t, shape] = text(
+      const [t, shape] = buildText(
         {
-          content: word,
+          content: text,
           filter,
           id,
           left: left + leftOffset,

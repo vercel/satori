@@ -20,11 +20,7 @@ describe('Dynamic size', () => {
 
   it('should render image with dynamic width', async () => {
     const svg = await satori(
-      <div
-        style={{
-          background: 'white',
-        }}
-      >
+      <div>
         Lorem Ipsum is simply dummy text of the printing and typesetting
         industry.
       </div>,
