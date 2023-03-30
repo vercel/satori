@@ -394,9 +394,16 @@ export function SVGNodeToImage(
     currentColor
   )}</svg>`.replace(SVGSymbols, encodeURIComponent)}`
 }
+export function toString(x: unknown): string {
+  return Object.prototype.toString.call(x)
+}
 
 export function isString(x: unknown): x is string {
   return typeof x === 'string'
+}
+
+export function isUndefined(x: unknown): x is undefined {
+  return toString(x) === '[object Undefined]'
 }
 
 export function splitByBreakOpportunities(

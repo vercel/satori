@@ -3,7 +3,7 @@
  * supported inline node is text. All other nodes are using block layout.
  */
 import type { LayoutContext } from './layout.js'
-
+import type { Yoga } from 'yoga-wasm-web'
 import getYoga from './yoga/index.js'
 import {
   v,
@@ -11,11 +11,13 @@ import {
   wordSeparators,
   buildXMLString,
   splitByBreakOpportunities,
+  isUndefined,
 } from './utils.js'
 import buildText, { container } from './builder/text.js'
-import { dropShadow } from './builder/shadow.js'
-import decoration from './builder/text-decoration.js'
+import { buildDropShadow } from './builder/shadow.js'
+import buildDecoration from './builder/text-decoration.js'
 import { Locale } from './language.js'
+import { FontEngine } from './font.js'
 
 export default async function* buildTextNodes(
   content: string,
@@ -43,78 +45,37 @@ export default async function* buildTextNodes(
     whiteSpace,
     wordBreak,
     lineHeight,
+    textTransform,
+    textWrap,
+    fontSize,
     filter: cssFilter,
     _inheritedBackgroundClipTextPath,
   } = parentStyle
 
-  if (parentStyle.textTransform === 'uppercase') {
-    content = content.toLocaleUpperCase(locale)
-  } else if (parentStyle.textTransform === 'lowercase') {
-    content = content.toLocaleLowerCase(locale)
-  } else if (parentStyle.textTransform === 'capitalize') {
-    content = segment(content, 'word', locale)
-      // For each word...
-      .map((word) => {
-        // ...split into graphemes...
-        return segment(word, 'grapheme', locale)
-          .map((grapheme, index) => {
-            // ...and make the first grapheme uppercase
-            return index === 0 ? grapheme.toLocaleUpperCase(locale) : grapheme
-          })
-          .join('')
-      })
-      .join('')
-  }
+  content = processTextTransform(content, textTransform as string, locale)
 
-  const shouldKeepLinebreak = ['pre', 'pre-wrap', 'pre-line'].includes(
-    whiteSpace as string
-  )
-  const shouldCollapseWhitespace = !['pre', 'pre-wrap'].includes(
-    whiteSpace as string
-  )
+  const {
+    content: _content,
+    shouldCollapseWhitespace,
+    allowSoftWrap,
+  } = processWhiteSpace(content, whiteSpace as string)
 
-  if (!shouldKeepLinebreak) {
-    content = content.replace(/\n/g, ' ')
-  }
-
-  if (shouldCollapseWhitespace) {
-    content = content.replace(/[ ]+/g, ' ')
-    content = content.trim()
-  }
-
-  const isBreakWord = wordBreak === 'break-word'
-  const { words, requiredBreaks } = splitByBreakOpportunities(
-    content,
+  const { words, requiredBreaks, allowBreakWord } = processWordBreak(
+    _content,
     wordBreak as string
   )
 
-  // Create a container node for this text fragment.
-  const textContainer = Yoga.Node.create()
-  textContainer.setAlignItems(Yoga.ALIGN_BASELINE)
-  textContainer.setJustifyContent(
-    v(
-      parentStyle.textAlign,
-      {
-        left: Yoga.JUSTIFY_FLEX_START,
-        right: Yoga.JUSTIFY_FLEX_END,
-        center: Yoga.JUSTIFY_CENTER,
-        justify: Yoga.JUSTIFY_SPACE_BETWEEN,
-        // We don't have other writing modes yet.
-        start: Yoga.JUSTIFY_FLEX_START,
-        end: Yoga.JUSTIFY_FLEX_END,
-      },
-      Yoga.JUSTIFY_FLEX_START,
-      'textAlign'
-    )
-  )
+  const textContainer = createTextContainerNode(Yoga, textAlign as string)
   parent.insertChild(textContainer, parent.getChildCount())
 
-  const baseFontSize = parentStyle.fontSize as number
+  if (isUndefined(parentStyle.flexShrink)) {
+    parent.setFlexShrink(1)
+  }
 
   // Get the correct font according to the container style.
   // https://www.w3.org/TR/CSS2/visudet.html
   let engine = font.getEngine(
-    baseFontSize,
+    fontSize as number,
     lineHeight as number,
     parentStyle as any,
     locale
@@ -135,7 +96,7 @@ export default async function* buildTextNodes(
   if (wordsMissingFont.length) {
     // Reload the engine with additional fonts.
     engine = font.getEngine(
-      baseFontSize,
+      fontSize as number,
       lineHeight as number,
       parentStyle as any,
       locale
@@ -144,37 +105,24 @@ export default async function* buildTextNodes(
 
   // We can cache the measured width of each word as the measure function will be
   // called multiple times.
-  const wordWidthCache = new Map<string, number>()
-
-  function getWordWidthWithCache(s): number {
-    if (wordWidthCache.has(s)) {
-      return wordWidthCache.get(s)
-    }
-
-    const width = engine.measure(s, parentStyle as any)
-    wordWidthCache.set(s, width)
-
-    return width
-  }
+  const measureWordWidth = genMeasureWordWidth(engine, parentStyle)
 
   function isImage(s: string): boolean {
     return !!(graphemeImages && graphemeImages[s])
   }
 
-  function measureWithCache(segments: string[]): {
-    width: number
-  } {
+  function measureWithCache(segments: string[]): number {
     let width = 0
 
     for (const s of segments) {
       if (isImage(s)) {
-        width += parentStyle.fontSize as number
+        width += fontSize as number
       } else {
-        width += getWordWidthWithCache(s)
+        width += measureWordWidth(s)
       }
     }
 
-    return { width }
+    return width
   }
 
   const calc = (
@@ -190,21 +138,17 @@ export default async function* buildTextNodes(
       }
     }
 
-    const { width: originWidth } = measureWithCache(segment(seg, 'grapheme'))
+    const originWidth = measureWithCache(segment(seg, 'grapheme'))
 
     const afterTrimEndWidth =
       seg.trimEnd() === seg
         ? originWidth
-        : measureWithCache(segment(seg.trimEnd(), 'grapheme')).width
+        : measureWithCache(segment(seg.trimEnd(), 'grapheme'))
 
     return {
       originWidth,
       endingSpacesWidth: originWidth - afterTrimEndWidth,
     }
-  }
-
-  if (typeof parentStyle.flexShrink === 'undefined') {
-    parent.setFlexShrink(1)
   }
 
   // Global variables used to compute the text layout.
@@ -243,7 +187,7 @@ export default async function* buildTextNodes(
     let i = 0
     while (i < words.length) {
       let word = words[i]
-      const forceBreak = shouldKeepLinebreak && requiredBreaks[i]
+      const forceBreak = requiredBreaks[i]
 
       let w = 0
       let lineEndingSpacesWidth = 0
@@ -274,15 +218,16 @@ export default async function* buildTextNodes(
         // |aaa bbb|
         // |ccc    |
         _currentWidth + w > width + lineEndingSpacesWidth &&
-        whiteSpace !== 'nowrap' &&
-        whiteSpace !== 'pre'
+        allowSoftWrap
 
       // Need to break the word if:
       // - we have break-word
       // - the word is wider than the container width
       // - the word will be put at the beginning of the line
       const needToBreakWord =
-        isBreakWord && w > width && (!_currentWidth || willWrap || forceBreak)
+        allowBreakWord &&
+        w > width &&
+        (!_currentWidth || willWrap || forceBreak)
 
       if (needToBreakWord) {
         // Break the word into multiple segments and continue the loop.
@@ -364,10 +309,10 @@ export default async function* buildTextNodes(
           let _isImage = false
 
           if (isImage(_text)) {
-            _width = parentStyle.fontSize as number
+            _width = fontSize as number
             _isImage = true
           } else {
-            _width = getWordWidthWithCache(_text)
+            _width = measureWordWidth(_text)
           }
 
           texts.push(_text)
@@ -404,7 +349,7 @@ export default async function* buildTextNodes(
     // When doing `text-wrap: balance`, we reflow the text multiple times
     // using binary search to find the best width.
     // https://www.w3.org/TR/css-text-4/#valdef-text-wrap-balance
-    if (parentStyle.textWrap === 'balance') {
+    if (textWrap === 'balance') {
       let l = width / 2
       let r = width
       let m: number = width
@@ -438,6 +383,7 @@ export default async function* buildTextNodes(
     width: containerWidth,
     height: containerHeight,
   } = textContainer.getComputedLayout()
+
   const parentContainerInnerWidth =
     parent.getComputedWidth() -
     parent.getComputedPadding(Yoga.EDGE_LEFT) -
@@ -462,7 +408,7 @@ export default async function* buildTextNodes(
 
   let filter = ''
   if (parentStyle.textShadowOffset) {
-    filter = dropShadow(
+    filter = buildDropShadow(
       {
         width: containerWidth,
         height: containerHeight,
@@ -480,10 +426,8 @@ export default async function* buildTextNodes(
   let mergedPath = ''
   let extra = ''
   let skippedLine = -1
-  let ellipsisWidth =
-    textOverflow === 'ellipsis' ? measureWithCache(['…']).width : 0
-  let spaceWidth =
-    textOverflow === 'ellipsis' ? measureWithCache([' ']).width : 0
+  let ellipsisWidth = textOverflow === 'ellipsis' ? measureWithCache(['…']) : 0
+  let spaceWidth = textOverflow === 'ellipsis' ? measureWithCache([' ']) : 0
   let decorationLines: Record<number, null | number[]> = {}
   let wordBuffer: string | null = null
   let bufferedOffset = 0
@@ -548,7 +492,7 @@ export default async function* buildTextNodes(
           let subset = ''
           let resolvedWidth = 0
           for (const char of chars) {
-            const w = layout.x + measureWithCache([subset + char]).width
+            const w = layout.x + measureWithCache([subset + char])
             if (
               // Keep at least one character:
               // > The first character or atomic inline-level element on a line
@@ -607,7 +551,7 @@ export default async function* buildTextNodes(
         // Since we need to pass the baseline position, add the ascender to the top.
         top: top + topOffset + baselineOfWord + baselineDelta,
         letterSpacing: parentStyle.letterSpacing,
-      } as any)
+      })
 
       wordBuffer = null
 
@@ -650,7 +594,7 @@ export default async function* buildTextNodes(
       if (line !== wordPositionInLayout[i + 1]?.line || skippedLine === line) {
         const deco = decorationLines[line]
         if (deco && !deco[2]) {
-          decorationShape += decoration(
+          decorationShape += buildDecoration(
             {
               left: left + deco[0],
               top: top + heightOfWord * +line,
@@ -734,4 +678,108 @@ export default async function* buildTextNodes(
   }
 
   return result
+}
+
+function processTextTransform(
+  content: string,
+  textTransform: string,
+  locale?: Locale
+): string {
+  if (textTransform === 'uppercase') {
+    content = content.toLocaleUpperCase(locale)
+  } else if (textTransform === 'lowercase') {
+    content = content.toLocaleLowerCase(locale)
+  } else if (textTransform === 'capitalize') {
+    content = segment(content, 'word', locale)
+      // For each word...
+      .map((word) => {
+        // ...split into graphemes...
+        return segment(word, 'grapheme', locale)
+          .map((grapheme, index) => {
+            // ...and make the first grapheme uppercase
+            return index === 0 ? grapheme.toLocaleUpperCase(locale) : grapheme
+          })
+          .join('')
+      })
+      .join('')
+  }
+
+  return content
+}
+
+function processWordBreak(content, wordBreak: string) {
+  const allowBreakWord = ['break-all', 'break-word'].includes(wordBreak)
+
+  const { words, requiredBreaks } = splitByBreakOpportunities(
+    content,
+    wordBreak
+  )
+
+  return { words, requiredBreaks, allowBreakWord }
+}
+
+function processWhiteSpace(content: string, whiteSpace: string) {
+  const shouldKeepLinebreak = ['pre', 'pre-wrap', 'pre-line'].includes(
+    whiteSpace
+  )
+
+  const shouldCollapseWhitespace = !['pre', 'pre-wrap'].includes(whiteSpace)
+
+  const allowSoftWrap = !['pre', 'nowrap'].includes(whiteSpace)
+
+  if (!shouldKeepLinebreak) {
+    content = content.replace(/\n/g, ' ')
+  }
+
+  if (shouldCollapseWhitespace) {
+    content = content.replace(/[ ]+/g, ' ')
+    content = content.trim()
+  }
+
+  return { content, shouldCollapseWhitespace, allowSoftWrap }
+}
+
+function createTextContainerNode(
+  Yoga: Yoga,
+  textAlign: string
+): ReturnType<Yoga['Node']['create']> {
+  // Create a container node for this text fragment.
+  const textContainer = Yoga.Node.create()
+  textContainer.setAlignItems(Yoga.ALIGN_BASELINE)
+  textContainer.setJustifyContent(
+    v(
+      textAlign,
+      {
+        left: Yoga.JUSTIFY_FLEX_START,
+        right: Yoga.JUSTIFY_FLEX_END,
+        center: Yoga.JUSTIFY_CENTER,
+        justify: Yoga.JUSTIFY_SPACE_BETWEEN,
+        // We don't have other writing modes yet.
+        start: Yoga.JUSTIFY_FLEX_START,
+        end: Yoga.JUSTIFY_FLEX_END,
+      },
+      Yoga.JUSTIFY_FLEX_START,
+      'textAlign'
+    )
+  )
+
+  return textContainer
+}
+
+function genMeasureWordWidth(
+  engine: FontEngine,
+  parentStyle: any
+): (s: string) => number {
+  const wordWidthCache = new Map<string, number>()
+
+  return function measureWordWidth(s: string): number {
+    if (wordWidthCache.has(s)) {
+      return wordWidthCache.get(s)
+    }
+
+    const width = engine.measure(s, parentStyle)
+    wordWidthCache.set(s, width)
+
+    return width
+  }
 }
