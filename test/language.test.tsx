@@ -1,6 +1,12 @@
 import { it, describe, expect } from 'vitest'
 
+import { initFonts, toImage } from './utils.js'
+import satori from '../src/index.js'
+
 import { detectLanguageCode } from '../src/language.js'
+
+let fonts
+initFonts((f) => (fonts = f))
 
 describe('detectLanguageCode', () => {
   it('should detect emoji', async () => {
@@ -90,5 +96,21 @@ describe('detectLanguageCode', () => {
 
   it('should detect symbol', async () => {
     expect(detectLanguageCode('☻')).toBe('symbol')
+  })
+
+  it('should not crash when rendering Arabic letters', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          background: 'white',
+        }}
+      >
+        سلام
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 })
