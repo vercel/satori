@@ -169,5 +169,30 @@ describe('Shadow', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should show box shadow without specifying height', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            width: 100,
+            padding: 10,
+            background: 'white',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              boxShadow: '10px 10px 10px green',
+              width: `50px`,
+              height: '50px',
+              background: 'rgba(0,0,0,0.5)',
+            }}
+          ></div>
+        </div>,
+        { width: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 })
