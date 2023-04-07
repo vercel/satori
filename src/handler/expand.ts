@@ -166,6 +166,26 @@ function handleSpecialCase(
     return getStylesForProperty('background', value, true)
   }
 
+  if (name === 'textShadow') {
+    // Handle multiple text shadows if provided.
+    value = value.toString().trim()
+    if (value.includes(',')) {
+      const shadows = value.split(',')
+      const result = {}
+      for (const shadow of shadows) {
+        const styles = getStylesForProperty('textShadow', shadow, true)
+        for (const k in styles) {
+          if (!result[k]) {
+            result[k] = [styles[k]]
+          } else {
+            result[k].push(styles[k])
+          }
+        }
+      }
+      return result
+    }
+  }
+
   return
 }
 

@@ -194,5 +194,23 @@ describe('Shadow', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support multiple box shadows', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            background: 'white',
+            width: 100,
+            height: 100,
+            fontSize: 40,
+            textShadow: '2px 2px red, 4px 4px blue',
+          }}
+        >
+          Hello
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 })
