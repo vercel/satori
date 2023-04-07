@@ -343,6 +343,10 @@ export default async function* buildTextNodes(
     return { width: maxWidth, height }
   }
 
+  // It's possible that the text's measured size is different from the container's
+  // size, because the container might have a fixed width or height or being
+  // expanded by its parent.
+  let measuredTextSize = { width: 0, height: 0 }
   textContainer.setMeasureFunc((containerWidth) => {
     const { width, height } = flow(containerWidth)
 
@@ -363,9 +367,11 @@ export default async function* buildTextNodes(
         }
       }
       flow(r)
+      measuredTextSize = { width: r, height }
       return { width: r, height }
     }
 
+    measuredTextSize = { width, height }
     return { width, height }
   })
 
@@ -408,18 +414,28 @@ export default async function* buildTextNodes(
 
   let filter = ''
   if (parentStyle.textShadowOffset) {
+    let { textShadowColor, textShadowOffset, textShadowRadius } =
+      parentStyle as any
+    if (!Array.isArray(parentStyle.textShadowOffset)) {
+      textShadowColor = [textShadowColor]
+      textShadowOffset = [textShadowOffset]
+      textShadowRadius = [textShadowRadius]
+    }
+
     filter = buildDropShadow(
       {
-        width: containerWidth,
-        height: containerHeight,
+        width: measuredTextSize.width,
+        height: measuredTextSize.height,
         id,
       },
       {
-        shadowColor: parentStyle.textShadowColor,
-        shadowOffset: parentStyle.textShadowOffset,
-        shadowRadius: parentStyle.textShadowRadius,
+        shadowColor: textShadowColor,
+        shadowOffset: textShadowOffset,
+        shadowRadius: textShadowRadius,
       }
     )
+
+    filter = buildXMLString('defs', {}, filter)
   }
 
   let decorationShape = ''
