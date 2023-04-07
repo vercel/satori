@@ -262,15 +262,22 @@ export default class FontLoader {
 
     const cachedFontResolver = new Map<number, opentype.Font | undefined>()
     const resolveFont = (word: string, fallback = true) => {
-      const code = word.charCodeAt(0)
-      if (cachedFontResolver.has(code)) return cachedFontResolver.get(code)
-
       const _fonts = [
         ...fonts,
         ...additionalFonts,
         ...specifiedLangFonts,
         ...(fallback ? nonSpecifiedLangFonts : []),
       ]
+
+      if (typeof word === 'undefined') {
+        if (fallback) {
+          return _fonts[_fonts.length - 1]
+        }
+        return undefined
+      }
+
+      const code = word.charCodeAt(0)
+      if (cachedFontResolver.has(code)) return cachedFontResolver.get(code)
 
       const font = _fonts.find((_font, index) => {
         return (
