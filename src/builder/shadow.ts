@@ -119,8 +119,8 @@ export function boxShadow(
       buildXMLString('rect', {
         x: 0,
         y: 0,
-        width: style._viewportWidth,
-        height: style._viewportHeight,
+        width: style._viewportWidth || '100%',
+        height: style._viewportHeight || '100%',
         fill: shadowStyle.inset ? '#000' : '#fff',
       }) +
         shapeWithSpread
