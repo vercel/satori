@@ -1,18 +1,36 @@
 import type { NextRequest } from 'next/server'
+import { FontDetector } from '../../utils/font'
 
 export const config = {
   runtime: 'experimental-edge',
 }
 
+const detector = new FontDetector()
+
 export default async function loadGoogleFont(req: NextRequest) {
   if (req.nextUrl.pathname !== '/api/font') return
+
   const { searchParams, hostname } = new URL(req.url)
 
-  const font = searchParams.get('font')
+  const fonts = searchParams.getAll('fonts')
   const text = searchParams.get('text')
 
-  if (!font || !text) return
+  if (!fonts || fonts.length === 0 || !text) return
 
+  const textByFont = await detector.detect(text, fonts)
+
+  console.log(':textByFont', textByFont)
+
+  const _fonts = Object.keys(textByFont)
+
+  const responses = await Promise.all(
+    _fonts.map((font) => fetchFont(textByFont[font], font, hostname))
+  )
+
+  return responses[0]
+}
+
+async function fetchFont(text: string, font: string, hostname: string) {
   const API = `https://fonts.googleapis.com/css2?family=${font}&text=${encodeURIComponent(
     text
   )}`
@@ -40,4 +58,10 @@ export default async function loadGoogleFont(req: NextRequest) {
   }
 
   return res
+
+  // const blob = await res.blob()
+
+  // console.log(':blob', URL.createObjectURL(blob))
+
+  // return blob
 }

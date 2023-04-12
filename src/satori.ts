@@ -31,7 +31,7 @@ export type SatoriOptions = (
   loadAdditionalAsset?: (
     languageCode: string,
     segment: string
-  ) => Promise<FontOptions | string | undefined>
+  ) => Promise<Array<string | FontOptions>>
   tailwindConfig?: TwConfig
 }
 
@@ -135,9 +135,13 @@ export default async function satori(
 
   if (options.loadAdditionalAsset) {
     if (segmentsMissingFont.length) {
+      console.log(':::segmentsMissingFont: ', segmentsMissingFont)
+
       const languageCodes = convertToLanguageCodes(segmentsMissingFont)
       const fonts: FontOptions[] = []
       const images: Record<string, string> = {}
+
+      console.log(':::languageCodes: ', languageCodes)
 
       await Promise.all(
         Object.entries(languageCodes).flatMap(([code, segments]) =>
@@ -147,13 +151,24 @@ export default async function satori(
               return null
             }
             processedWordsMissingFonts.add(key)
-            return options.loadAdditionalAsset(code, _segment).then((asset) => {
-              if (typeof asset === 'string') {
-                images[_segment] = asset
-              } else if (asset) {
-                fonts.push(asset)
-              }
-            })
+            console.log(':::options.loadAdditionalAsset: ', code, _segment)
+            return options
+              .loadAdditionalAsset(code, _segment)
+              .then((asset: any) => {
+                if (typeof asset === 'string') {
+                  images[_segment] = asset
+                } else if (asset) {
+                  fonts.push(asset)
+                }
+
+                // for (const asset of assets) {
+                //   if (typeof asset === 'string') {
+                //     images[_segment] = asset
+                //   } else if (asset) {
+                //     fonts.push(asset)
+                //   }
+                // }
+              })
           })
         )
       )
@@ -183,8 +198,8 @@ function convertToLanguageCodes(
   const languageCodes = {}
   let wordsByCode = {}
 
-  for (let { word, locale } of segmentsMissingFont) {
-    const code = detectLanguageCode(word, locale)
+  for (const { word, locale } of segmentsMissingFont) {
+    const code = detectLanguageCode(word, locale).join('|')
     wordsByCode[code] = wordsByCode[code] || ''
     wordsByCode[code] += word
   }

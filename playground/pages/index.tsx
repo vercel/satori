@@ -106,7 +106,7 @@ async function init() {
 function withCache(fn: Function) {
   const cache = new Map()
   return async (...args: string[]) => {
-    const key = args.join('|')
+    const key = args.join(':')
     if (cache.has(key)) return cache.get(key)
     const result = await fn(...args)
     cache.set(key, result)
@@ -117,8 +117,8 @@ function withCache(fn: Function) {
 type LanguageCode = keyof typeof languageFontMap | 'emoji'
 
 const loadDynamicAsset = withCache(
-  async (emojiType: keyof typeof apis, code: LanguageCode, text: string) => {
-    if (code === 'emoji') {
+  async (emojiType: keyof typeof apis, _code: string, text: string) => {
+    if (_code === 'emoji') {
       // It's an emoji, load the image.
       return (
         `data:image/svg+xml;base64,` +
@@ -126,30 +126,33 @@ const loadDynamicAsset = withCache(
       )
     }
 
+    const codes = _code.split('|')
+    let preferredLanguage = codes[0]
+
     // Try to load from Google Fonts.
-    let names = languageFontMap[code]
-    if (!names) code = 'unknown'
+    const names = codes
+      .map((code) => languageFontMap[code as keyof typeof languageFontMap])
+      .filter(Boolean)
+    if (names.length === 0) preferredLanguage = 'unknown'
+
+    const params = new URLSearchParams()
+    for (const name of names.flat()) {
+      params.append('fonts', name)
+    }
+    params.set('text', text)
 
     try {
-      if (typeof names === 'string') {
-        names = [names]
-      }
+      const response = await fetch(`/api/font?${params.toString()}`)
 
-      for (const name of names) {
-        const res = await fetch(
-          `/api/font?font=${encodeURIComponent(name)}&text=${encodeURIComponent(
-            text
-          )}`
-        )
-        if (res.status === 200) {
-          const font = await res.arrayBuffer()
-          return {
-            name: `satori_${code}_fallback_${text}`,
-            data: font,
-            weight: 400,
-            style: 'normal',
-            lang: code === 'unknown' ? undefined : code,
-          }
+      if (response.status === 200) {
+        const data = await response.arrayBuffer()
+        console.log('data', data)
+        return {
+          name: `satori_${preferredLanguage}_fallback_${text}`,
+          data,
+          weight: 400,
+          style: 'normal',
+          lang: preferredLanguage === 'unknown' ? undefined : preferredLanguage,
         }
       }
     } catch (e) {
@@ -549,8 +552,8 @@ const LiveSatori = withLive(function ({
               width,
               height,
               debug,
-              loadAdditionalAsset: (...args: string[]) =>
-                loadDynamicAsset(emojiType, ...args),
+              loadAdditionalAsset: (code: string, text: string) =>
+                loadDynamicAsset(emojiType, code, text),
             })
             if (renderType === 'png') {
               const url = (await renderPNG?.({
