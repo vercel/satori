@@ -907,27 +907,30 @@ function ResetCode({ activeCard }: { activeCard: string }) {
   useEffect(() => {
     const params = new URL(String(document.location)).searchParams
     const shared = params.get('share')
+    // we just need change editedCards on mounted
     if (shared) {
       try {
         const decompressedData = fflate.strFromU8(
           fflate.decompressSync(Base64.toUint8Array(shared))
         )
         let card
+        let tab
         try {
           const decoded = JSON.parse(decompressedData)
           card = decoded.code
           overrideOptions = decoded.options
+          tab = decoded.tab
         } catch (e) {
           card = decompressedData
         }
 
-        editedCards[activeCard] = card
-        onChange(editedCards[activeCard])
+        editedCards[tab] = card
+        onChange(editedCards[tab])
       } catch (e) {
         console.error('Failed to parse shared card:', e)
       }
     }
-  }, [activeCard])
+  }, [])
 
   return (
     <button
@@ -994,6 +997,7 @@ export default function Playground() {
                       JSON.stringify({
                         code,
                         options: currentOptions,
+                        tab: activeCard,
                       })
                     )
                   ),
