@@ -79,7 +79,12 @@ export default async function loadGoogleFont(req: NextRequest) {
     offset += buffer.byteLength
   })
 
-  return new Response(responseBuffer)
+  return new Response(responseBuffer, {
+    headers: {
+      'Content-Type': 'font/woff',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    },
+  })
 
   // return responses[0]
 }
