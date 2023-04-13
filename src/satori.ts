@@ -158,7 +158,11 @@ export default async function satori(
                 if (typeof asset === 'string') {
                   images[_segment] = asset
                 } else if (asset) {
-                  fonts.push(asset)
+                  if (Array.isArray(asset)) {
+                    fonts.push(...asset)
+                  } else {
+                    fonts.push(asset)
+                  }
                 }
 
                 // for (const asset of assets) {

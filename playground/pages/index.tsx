@@ -18,35 +18,13 @@ import { Panel, PanelGroup } from 'react-resizable-panels'
 import { loadEmoji, getIconCode, apis } from '../utils/twemoji'
 import Introduction from '../components/introduction'
 import PanelResizeHandle from '../components/panel-resize-handle'
+import { languageFontMap } from '../utils/font'
 
 import playgroundTabs, { Tabs } from '../cards/playground-data'
 import previewTabs from '../cards/preview-tabs'
 
 const cardNames = Object.keys(playgroundTabs)
 const editedCards: Tabs = { ...playgroundTabs }
-
-// @TODO: Support font style and weights, and make this option extensible rather
-// than built-in.
-// @TODO: Cover most languages with Noto Sans.
-const languageFontMap = {
-  'ja-JP': 'Noto+Sans+JP',
-  'ko-KR': 'Noto+Sans+KR',
-  'zh-CN': 'Noto+Sans+SC',
-  'zh-TW': 'Noto+Sans+TC',
-  'zh-HK': 'Noto+Sans+HK',
-  'th-TH': 'Noto+Sans+Thai',
-  'bn-IN': 'Noto+Sans+Bengali',
-  'ar-AR': 'Noto+Sans+Arabic',
-  'ta-IN': 'Noto+Sans+Tamil',
-  'ml-IN': 'Noto+Sans+Malayalam',
-  'he-IL': 'Noto+Sans+Hebrew',
-  'te-IN': 'Noto+Sans+Telugu',
-  devanagari: 'Noto+Sans+Devanagari',
-  kannada: 'Noto+Sans+Kannada',
-  symbol: ['Noto+Sans+Symbols', 'Noto+Sans+Symbols+2'],
-  math: 'Noto+Sans+Math',
-  unknown: 'Noto+Sans',
-}
 
 async function init() {
   if (typeof window === 'undefined') return []
@@ -146,7 +124,45 @@ const loadDynamicAsset = withCache(
 
       if (response.status === 200) {
         const data = await response.arrayBuffer()
-        console.log('data', data)
+        const fonts: any[] = []
+
+        // Decode the encoded font format.
+        const decodeFontInfoFromArrayBuffer = (buffer: ArrayBuffer) => {
+          let offset = 0
+          const bufferView = new Uint8Array(buffer)
+
+          console.log('bufferView', bufferView)
+
+          while (offset < bufferView.length) {
+            // 1 byte for font name length.
+            const languageCodeLength = bufferView[offset]
+            offset += 1
+            let languageCode = ''
+            for (let i = 0; i < languageCodeLength; i++) {
+              languageCode += String.fromCharCode(bufferView[offset + i])
+            }
+            offset += languageCodeLength
+
+            // 4 bytes for font data length.
+            const fontDataLength = new DataView(buffer).getUint32(offset, false)
+            offset += 4
+            const fontData = buffer.slice(offset, offset + fontDataLength)
+            offset += fontDataLength
+
+            fonts.push({
+              name: `satori_${languageCode}_fallback_${text}`,
+              data: fontData,
+              weight: 400,
+              style: 'normal',
+              lang: languageCode === 'unknown' ? undefined : languageCode,
+            })
+          }
+        }
+
+        decodeFontInfoFromArrayBuffer(data)
+
+        console.log('data', fonts)
+        return fonts
         return {
           name: `satori_${preferredLanguage}_fallback_${text}`,
           data,
