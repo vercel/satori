@@ -919,7 +919,7 @@ function ResetCode({ activeCard }: { activeCard: string }) {
           const decoded = JSON.parse(decompressedData)
           card = decoded.code
           overrideOptions = decoded.options
-          tab = decoded.tab
+          tab = decoded.tab || 'helloworld'
         } catch (e) {
           card = decompressedData
         }
