@@ -105,13 +105,13 @@ const loadDynamicAsset = withCache(
     }
 
     const codes = _code.split('|')
-    let preferredLanguage = codes[0]
 
     // Try to load from Google Fonts.
     const names = codes
       .map((code) => languageFontMap[code as keyof typeof languageFontMap])
       .filter(Boolean)
-    if (names.length === 0) preferredLanguage = 'unknown'
+
+    if (names.length === 0) return []
 
     const params = new URLSearchParams()
     for (const name of names.flat()) {
@@ -163,13 +163,6 @@ const loadDynamicAsset = withCache(
 
         console.log('data', fonts)
         return fonts
-        return {
-          name: `satori_${preferredLanguage}_fallback_${text}`,
-          data,
-          weight: 400,
-          style: 'normal',
-          lang: preferredLanguage === 'unknown' ? undefined : preferredLanguage,
-        }
       }
     } catch (e) {
       console.error('Failed to load dynamic font for', text, '. Error:', e)

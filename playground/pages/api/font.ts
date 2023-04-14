@@ -53,9 +53,7 @@ export default async function loadGoogleFont(req: NextRequest) {
   const encodedFontBuffers: ArrayBuffer[] = []
   let fontBufferByteLength = 0
   ;(
-    await Promise.all(
-      _fonts.map((font) => fetchFont(textByFont[font], font, hostname))
-    )
+    await Promise.all(_fonts.map((font) => fetchFont(textByFont[font], font)))
   ).forEach((fontData, i) => {
     if (fontData) {
       // TODO: We should be able to directly get the language code here :)
@@ -85,11 +83,12 @@ export default async function loadGoogleFont(req: NextRequest) {
       'Cache-Control': 'public, max-age=31536000, immutable',
     },
   })
-
-  // return responses[0]
 }
 
-async function fetchFont(text: string, font: string, hostname: string) {
+async function fetchFont(
+  text: string,
+  font: string
+): Promise<ArrayBuffer | null> {
   const API = `https://fonts.googleapis.com/css2?family=${font}&text=${encodeURIComponent(
     text
   )}`
@@ -106,15 +105,9 @@ async function fetchFont(text: string, font: string, hostname: string) {
 
   const resource = css.match(/src: url\((.+)\) format\('(opentype|truetype)'\)/)
 
-  if (!resource) return
+  if (!resource) return null
 
   const res = await fetch(resource[1])
 
   return res.arrayBuffer()
-
-  // const blob = await res.blob()
-
-  // console.log(':blob', URL.createObjectURL(blob))
-
-  // return blob
 }
