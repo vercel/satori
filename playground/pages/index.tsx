@@ -149,6 +149,9 @@ const loadDynamicAsset = withCache(
             const fontData = buffer.slice(offset, offset + fontDataLength)
             offset += fontDataLength
 
+            console.log('text', text)
+            console.log('fontData', fontData)
+
             fonts.push({
               name: `satori_${languageCode}_fallback_${text}`,
               data: fontData,

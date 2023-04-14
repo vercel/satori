@@ -31,7 +31,7 @@ export type SatoriOptions = (
   loadAdditionalAsset?: (
     languageCode: string,
     segment: string
-  ) => Promise<Array<string | FontOptions>>
+  ) => Promise<string | Array<FontOptions>>
   tailwindConfig?: TwConfig
 }
 

@@ -174,6 +174,7 @@ describe('word-break', () => {
           height: 200,
           fonts,
           loadAdditionalAsset: (languageCode: string, segment: string) => {
+            console.log('::::', languageCode, segment)
             return loadDynamicAsset(languageCode, segment) as any
           },
         }
