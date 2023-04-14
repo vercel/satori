@@ -80,4 +80,35 @@ describe('Font', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
+
+  it('should handle font-family fallback', async () => {
+    const fontName = 'MontserratSubrayada'
+    const fontPath = join(
+      process.cwd(),
+      'test',
+      'assets',
+      `${fontName}-Regular.ttf`
+    )
+    const fontData = await readFile(fontPath)
+    const montserratFont = {
+      name: fontName,
+      data: fontData,
+    }
+    const svg = await satori(
+      <div
+        style={{
+          fontSize: '3rem',
+        }}
+      >
+        Hello
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts: [montserratFont],
+      }
+    )
+
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })
