@@ -170,11 +170,11 @@ export default class FontLoader {
     fontSize = 16,
     lineHeight = 1.2,
     {
-      fontFamily,
+      fontFamily = 'sans-serif',
       fontWeight = 400,
       fontStyle = 'normal',
     }: {
-      fontFamily: string | string[]
+      fontFamily?: string | string[]
       fontWeight?: Weight | WeightName
       fontStyle?: Style
     },
