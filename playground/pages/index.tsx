@@ -131,8 +131,6 @@ const loadDynamicAsset = withCache(
           let offset = 0
           const bufferView = new Uint8Array(buffer)
 
-          console.log('bufferView', bufferView)
-
           while (offset < bufferView.length) {
             // 1 byte for font name length.
             const languageCodeLength = bufferView[offset]
@@ -149,9 +147,6 @@ const loadDynamicAsset = withCache(
             const fontData = buffer.slice(offset, offset + fontDataLength)
             offset += fontDataLength
 
-            console.log('text', text)
-            console.log('fontData', fontData)
-
             fonts.push({
               name: `satori_${languageCode}_fallback_${text}`,
               data: fontData,
@@ -164,7 +159,6 @@ const loadDynamicAsset = withCache(
 
         decodeFontInfoFromArrayBuffer(data)
 
-        console.log('data', fonts)
         return fonts
       }
     } catch (e) {

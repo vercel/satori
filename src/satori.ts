@@ -135,13 +135,9 @@ export default async function satori(
 
   if (options.loadAdditionalAsset) {
     if (segmentsMissingFont.length) {
-      console.log(':::segmentsMissingFont: ', segmentsMissingFont)
-
       const languageCodes = convertToLanguageCodes(segmentsMissingFont)
       const fonts: FontOptions[] = []
       const images: Record<string, string> = {}
-
-      console.log(':::languageCodes: ', languageCodes)
 
       await Promise.all(
         Object.entries(languageCodes).flatMap(([code, segments]) =>
@@ -151,7 +147,7 @@ export default async function satori(
               return null
             }
             processedWordsMissingFonts.add(key)
-            console.log(':::options.loadAdditionalAsset: ', code, _segment)
+
             return options
               .loadAdditionalAsset(code, _segment)
               .then((asset: any) => {
@@ -164,14 +160,6 @@ export default async function satori(
                     fonts.push(asset)
                   }
                 }
-
-                // for (const asset of assets) {
-                //   if (typeof asset === 'string') {
-                //     images[_segment] = asset
-                //   } else if (asset) {
-                //     fonts.push(asset)
-                //   }
-                // }
               })
           })
         )

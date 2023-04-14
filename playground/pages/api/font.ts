@@ -46,8 +46,6 @@ export default async function loadGoogleFont(req: NextRequest) {
 
   const textByFont = await detector.detect(text, fonts)
 
-  console.log(':textByFont', textByFont)
-
   const _fonts = Object.keys(textByFont)
 
   const encodedFontBuffers: ArrayBuffer[] = []

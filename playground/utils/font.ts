@@ -45,8 +45,6 @@ export class FontDetector {
       }
     }
 
-    // console.log(':result', segment, segment.codePointAt(0), result)
-
     return null
   }
 
@@ -66,8 +64,6 @@ export class FontDetector {
     params += 'display=swap'
 
     const API = `https://fonts.googleapis.com/css2?${params}`
-
-    console.log('API', API)
 
     const fontFace = await (
       await fetch(API, {
@@ -99,8 +95,6 @@ export class FontDetector {
         range: convert(range),
       })
     }
-
-    // console.log(':this.detectorsByLang', this.detectorsByLang)
   }
 }
 
