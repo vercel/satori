@@ -81,7 +81,7 @@ describe('Font', () => {
     })
   })
 
-  it.only('should handle font-family fallback', async () => {
+  it('should handle font-family fallback', async () => {
     const fontName = 'MontserratSubrayada'
     const fontPath = join(
       process.cwd(),
