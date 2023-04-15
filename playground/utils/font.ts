@@ -1,11 +1,8 @@
 type UnicodeRange = Array<number | number[]>
 
 export class FontDetector {
-  private detectorsByLang: {
-    [font: string]: {
-      url: string
-      range: UnicodeRange
-    }[]
+  private rangesByLang: {
+    [font: string]: UnicodeRange
   } = {}
 
   public async detect(
@@ -25,8 +22,6 @@ export class FontDetector {
       if (lang) {
         result[lang] = result[lang] || ''
         result[lang] += segment
-      } else {
-        // TODO: should warning?
       }
     }
 
@@ -35,13 +30,9 @@ export class FontDetector {
 
   private detectSegment(segment: string, fonts: string[]): string | null {
     for (const font of fonts) {
-      const detectors = this.detectorsByLang[font]
-      if (detectors) {
-        for (const { range, url } of detectors) {
-          if (checkSegmentInRange(segment, range)) {
-            return font
-          }
-        }
+      const range = this.rangesByLang[font]
+      if (range && checkSegmentInRange(segment, range)) {
+        return font
       }
     }
 
@@ -51,7 +42,7 @@ export class FontDetector {
   private async load(fonts: string[]): Promise<void> {
     let params = ''
 
-    const existingLang = Object.keys(this.detectorsByLang)
+    const existingLang = Object.keys(this.rangesByLang)
     const langNeedsToLoad = fonts.filter((font) => !existingLang.includes(font))
 
     if (langNeedsToLoad.length === 0) {
@@ -79,21 +70,16 @@ export class FontDetector {
   }
 
   private addDetectors(input: string) {
-    const regex =
-      /font-family:\s*'(.+?)';.+?src:\s*url\((.+?)\).+?;.+?unicode-range:\s*(.+?);/gms
+    const regex = /font-family:\s*'(.+?)';.+?unicode-range:\s*(.+?);/gms
     const matches = input.matchAll(regex)
 
-    // @ts-ignore
-    for (const [, _lang, url, range] of matches) {
+    for (const [, _lang, range] of matches) {
       const lang = _lang.replaceAll(' ', '+')
-      if (!this.detectorsByLang[lang]) {
-        this.detectorsByLang[lang] = []
+      if (!this.rangesByLang[lang]) {
+        this.rangesByLang[lang] = []
       }
 
-      this.detectorsByLang[lang].push({
-        url,
-        range: convert(range),
-      })
+      this.rangesByLang[lang].push(...convert(range))
     }
   }
 }

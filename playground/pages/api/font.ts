@@ -37,7 +37,7 @@ function encodeFontInfoAsArrayBuffer(code: string, fontData: ArrayBuffer) {
 export default async function loadGoogleFont(req: NextRequest) {
   if (req.nextUrl.pathname !== '/api/font') return
 
-  const { searchParams, hostname } = new URL(req.url)
+  const { searchParams } = new URL(req.url)
 
   const fonts = searchParams.getAll('fonts')
   const text = searchParams.get('text')
