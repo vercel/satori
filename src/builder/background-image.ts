@@ -190,31 +190,86 @@ export default async function backgroundImage(
 
   if (image.startsWith('linear-gradient(')) {
     const parsed = gradient.parse(image)[0]
-    const [xDelta, yDelta] = dimensions
+    const [imageWidth, imageHeight] = dimensions
+
     // Calculate the direction.
-    let x1, y1, x2, y2
+    let x1, y1, x2, y2, length
+
     if (parsed.orientation.type === 'directional') {
       ;[x1, y1, x2, y2] = resolveXYFromDirection(parsed.orientation.value)
-    } else if (parsed.orientation.type === 'angular') {
-      const angle = (+parsed.orientation.value / 180) * Math.PI - Math.PI / 2
-      const c = Math.cos(angle)
-      const s = Math.sin(angle)
 
-      x1 = 0
-      y1 = 0
-      x2 = c
-      y2 = s
-      if (x2 < 0) {
-        x1 -= x2
-        x2 = 0
+      length = Math.sqrt(
+        Math.pow((x2 - x1) * imageWidth, 2) +
+          Math.pow((y2 - y1) * imageHeight, 2)
+      )
+    } else if (parsed.orientation.type === 'angular') {
+      const EPS = 0.000001
+      const r = imageWidth / imageHeight
+
+      function calc(angle) {
+        angle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
+
+        if (Math.abs(angle - Math.PI / 2) < EPS) {
+          x1 = 0
+          y1 = 0
+          x2 = 1
+          y2 = 0
+          length = imageWidth
+          return
+        } else if (Math.abs(angle) < EPS) {
+          x1 = 0
+          y1 = 1
+          x2 = 0
+          y2 = 0
+          length = imageHeight
+          return
+        }
+
+        // Assuming 0 <= angle < PI / 2.
+        if (angle >= Math.PI / 2 && angle < Math.PI) {
+          calc(Math.PI - angle)
+          y1 = 1 - y1
+          y2 = 1 - y2
+          return
+        } else if (angle >= Math.PI) {
+          calc(angle - Math.PI)
+          let tmp = x1
+          x1 = x2
+          x2 = tmp
+          tmp = y1
+          y1 = y2
+          y2 = tmp
+          return
+        }
+
+        // Remap SVG distortion
+        const tan = Math.tan(angle)
+        const tanTexture = tan * r
+        const angleTexture = Math.atan(tanTexture)
+        const l = Math.sqrt(2) * Math.cos(Math.PI / 4 - angleTexture)
+        x1 = 0
+        y1 = 1
+        x2 = Math.sin(angleTexture) * l
+        y2 = 1 - Math.cos(angleTexture) * l
+
+        // Get the angle between the distored gradient direction and diagonal.
+        const x = 1
+        const y = 1 / tan
+        const cosA = Math.abs(
+          (x * r + y) / Math.sqrt(x * x + y * y) / Math.sqrt(r * r + 1)
+        )
+
+        // Get the distored gradient length.
+        const diagonal = Math.sqrt(
+          imageWidth * imageWidth + imageHeight * imageHeight
+        )
+        length = diagonal * cosA
       }
-      if (y2 < 0) {
-        y1 -= y2
-        y2 = 0
-      }
+
+      calc((+parsed.orientation.value / 180) * Math.PI)
     }
 
-    const stops = normalizeStops(width, parsed.colorStops)
+    const stops = normalizeStops(length, parsed.colorStops)
 
     const gradientId = `satori_bi${id}`
     const patternId = `satori_pattern_${id}`
@@ -225,8 +280,8 @@ export default async function backgroundImage(
         id: patternId,
         x: offsets[0] / width,
         y: offsets[1] / height,
-        width: repeatX ? xDelta / width : '1',
-        height: repeatY ? yDelta / height : '1',
+        width: repeatX ? imageWidth / width : '1',
+        height: repeatY ? imageHeight / height : '1',
         patternUnits: 'objectBoundingBox',
       },
       buildXMLString(
@@ -250,8 +305,8 @@ export default async function backgroundImage(
         buildXMLString('rect', {
           x: 0,
           y: 0,
-          width: xDelta,
-          height: yDelta,
+          width: imageWidth,
+          height: imageHeight,
           fill: `url(#${gradientId})`,
         })
     )
