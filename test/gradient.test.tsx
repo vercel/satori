@@ -245,4 +245,24 @@ describe('Gradient', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should calculate the gradient angle and length correctly', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          backgroundColor: 'blue',
+          backgroundImage:
+            'linear-gradient(-15deg, green 20px, transparent 10px), linear-gradient(to top, red 10px, transparent 10px), linear-gradient(to left, red 10px, transparent 10px), linear-gradient(470deg, orange 10px, transparent 10px), linear-gradient(-470deg, black 30px, transparent 10px)',
+        }}
+      ></div>,
+      {
+        width: 300,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })
