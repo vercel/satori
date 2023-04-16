@@ -103,6 +103,17 @@ describe('Image', () => {
     expect(requests).toEqual(['https://via.placeholder.com/150'])
   })
 
+  it('should throw error when relative path is used', async () => {
+    await expect(
+      satori(
+        <div>
+          <img width='100%' height='100%' src='/image.png' />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+    ).rejects.toThrowError('Image source must be an absolute URL: /image.png')
+  })
+
   it('should deduplicate image data requests', async () => {
     const svg = await satori(
       <div
