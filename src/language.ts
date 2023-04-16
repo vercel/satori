@@ -45,6 +45,7 @@ const code = {
   kannada: /\p{scx=Kannada}/u,
 } as const
 
+type SpecialCodeKey = keyof typeof specialCode
 type CodeKey = keyof typeof specialCode | keyof typeof code
 export type Locale = keyof typeof code
 export type LangCode = CodeKey | 'unknown'
@@ -54,32 +55,33 @@ export function isValidLocale(x: any): x is Locale {
   return locales.includes(x)
 }
 
-// Here we assume all characters from the passed in "segment" is in the same
-// written language. So if the string contains at least one matched character,
-// we determine it as the matched language.
-// Since some characters may belong to multiple languages simultaneously,
-// we adjust the order of the languages by locale.
-export function detectLanguageCode(segment: string, locale?: Locale): LangCode {
-  // If `locale` matches, return it directly
-  if (locale && code[locale]) {
-    if (code[locale].test(segment)) {
-      return locale
-    }
-  }
-
-  for (const c of Object.keys(specialCode) as CodeKey[]) {
+export function detectLanguageCode(
+  segment: string,
+  locale?: Locale
+): Array<Locale> | ['unknown'] | [SpecialCodeKey] {
+  for (const c of Object.keys(specialCode) as SpecialCodeKey[]) {
     if (specialCode[c].test(segment)) {
-      return c
+      return [c]
     }
   }
 
-  for (const c of Object.keys(code) as CodeKey[]) {
-    if (code[c].test(segment)) {
-      return c
+  const languages = Object.keys(code).filter((lang) =>
+    code[lang].test(segment)
+  ) as Locale[]
+
+  if (languages.length === 0) {
+    return ['unknown']
+  }
+
+  if (locale) {
+    const index = languages.findIndex((lang) => lang === locale)
+    if (index !== -1) {
+      languages.splice(index, 1)
+      languages.unshift(locale)
     }
   }
 
-  return 'unknown'
+  return languages
 }
 
 export function normalizeLocale(locale?: string): Locale | undefined {

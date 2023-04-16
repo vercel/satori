@@ -18,14 +18,16 @@ export async function getDynamicAsset(text: string): Promise<Buffer> {
   return await readFile(fontPath)
 }
 
-export async function loadDynamicAsset(code: unknown, text: string) {
-  return {
-    name: `satori_${code}_fallback_${text}`,
-    data: await getDynamicAsset(text),
-    weight: 400,
-    style: 'normal',
-    lang: code === 'unknown' ? undefined : code,
-  }
+export async function loadDynamicAsset(code: string, text: string) {
+  return [
+    {
+      name: `satori_${code}_fallback_${text}`,
+      data: await getDynamicAsset(text),
+      weight: 400,
+      style: 'normal',
+      lang: code === 'unknown' ? undefined : code.split('|')[0],
+    },
+  ]
 }
 
 export function initFonts(callback: (fonts: SatoriOptions['fonts']) => void) {

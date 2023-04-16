@@ -18,35 +18,13 @@ import { Panel, PanelGroup } from 'react-resizable-panels'
 import { loadEmoji, getIconCode, apis } from '../utils/twemoji'
 import Introduction from '../components/introduction'
 import PanelResizeHandle from '../components/panel-resize-handle'
+import { languageFontMap } from '../utils/font'
 
 import playgroundTabs, { Tabs } from '../cards/playground-data'
 import previewTabs from '../cards/preview-tabs'
 
 const cardNames = Object.keys(playgroundTabs)
 const editedCards: Tabs = { ...playgroundTabs }
-
-// @TODO: Support font style and weights, and make this option extensible rather
-// than built-in.
-// @TODO: Cover most languages with Noto Sans.
-const languageFontMap = {
-  'ja-JP': 'Noto+Sans+JP',
-  'ko-KR': 'Noto+Sans+KR',
-  'zh-CN': 'Noto+Sans+SC',
-  'zh-TW': 'Noto+Sans+TC',
-  'zh-HK': 'Noto+Sans+HK',
-  'th-TH': 'Noto+Sans+Thai',
-  'bn-IN': 'Noto+Sans+Bengali',
-  'ar-AR': 'Noto+Sans+Arabic',
-  'ta-IN': 'Noto+Sans+Tamil',
-  'ml-IN': 'Noto+Sans+Malayalam',
-  'he-IL': 'Noto+Sans+Hebrew',
-  'te-IN': 'Noto+Sans+Telugu',
-  devanagari: 'Noto+Sans+Devanagari',
-  kannada: 'Noto+Sans+Kannada',
-  symbol: ['Noto+Sans+Symbols', 'Noto+Sans+Symbols+2'],
-  math: 'Noto+Sans+Math',
-  unknown: 'Noto+Sans',
-}
 
 async function init() {
   if (typeof window === 'undefined') return []
@@ -106,7 +84,7 @@ async function init() {
 function withCache(fn: Function) {
   const cache = new Map()
   return async (...args: string[]) => {
-    const key = args.join('|')
+    const key = args.join(':')
     if (cache.has(key)) return cache.get(key)
     const result = await fn(...args)
     cache.set(key, result)
@@ -117,8 +95,8 @@ function withCache(fn: Function) {
 type LanguageCode = keyof typeof languageFontMap | 'emoji'
 
 const loadDynamicAsset = withCache(
-  async (emojiType: keyof typeof apis, code: LanguageCode, text: string) => {
-    if (code === 'emoji') {
+  async (emojiType: keyof typeof apis, _code: string, text: string) => {
+    if (_code === 'emoji') {
       // It's an emoji, load the image.
       return (
         `data:image/svg+xml;base64,` +
@@ -126,31 +104,62 @@ const loadDynamicAsset = withCache(
       )
     }
 
+    const codes = _code.split('|')
+
     // Try to load from Google Fonts.
-    let names = languageFontMap[code]
-    if (!names) code = 'unknown'
+    const names = codes
+      .map((code) => languageFontMap[code as keyof typeof languageFontMap])
+      .filter(Boolean)
+
+    if (names.length === 0) return []
+
+    const params = new URLSearchParams()
+    for (const name of names.flat()) {
+      params.append('fonts', name)
+    }
+    params.set('text', text)
 
     try {
-      if (typeof names === 'string') {
-        names = [names]
-      }
+      const response = await fetch(`/api/font?${params.toString()}`)
 
-      for (const name of names) {
-        const res = await fetch(
-          `/api/font?font=${encodeURIComponent(name)}&text=${encodeURIComponent(
-            text
-          )}`
-        )
-        if (res.status === 200) {
-          const font = await res.arrayBuffer()
-          return {
-            name: `satori_${code}_fallback_${text}`,
-            data: font,
-            weight: 400,
-            style: 'normal',
-            lang: code === 'unknown' ? undefined : code,
+      if (response.status === 200) {
+        const data = await response.arrayBuffer()
+        const fonts: any[] = []
+
+        // Decode the encoded font format.
+        const decodeFontInfoFromArrayBuffer = (buffer: ArrayBuffer) => {
+          let offset = 0
+          const bufferView = new Uint8Array(buffer)
+
+          while (offset < bufferView.length) {
+            // 1 byte for font name length.
+            const languageCodeLength = bufferView[offset]
+            offset += 1
+            let languageCode = ''
+            for (let i = 0; i < languageCodeLength; i++) {
+              languageCode += String.fromCharCode(bufferView[offset + i])
+            }
+            offset += languageCodeLength
+
+            // 4 bytes for font data length.
+            const fontDataLength = new DataView(buffer).getUint32(offset, false)
+            offset += 4
+            const fontData = buffer.slice(offset, offset + fontDataLength)
+            offset += fontDataLength
+
+            fonts.push({
+              name: `satori_${languageCode}_fallback_${text}`,
+              data: fontData,
+              weight: 400,
+              style: 'normal',
+              lang: languageCode === 'unknown' ? undefined : languageCode,
+            })
           }
         }
+
+        decodeFontInfoFromArrayBuffer(data)
+
+        return fonts
       }
     } catch (e) {
       console.error('Failed to load dynamic font for', text, '. Error:', e)
@@ -549,8 +558,8 @@ const LiveSatori = withLive(function ({
               width,
               height,
               debug,
-              loadAdditionalAsset: (...args: string[]) =>
-                loadDynamicAsset(emojiType, ...args),
+              loadAdditionalAsset: (code: string, text: string) =>
+                loadDynamicAsset(emojiType, code, text),
             })
             if (renderType === 'png') {
               const url = (await renderPNG?.({
