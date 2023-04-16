@@ -190,18 +190,21 @@ export default async function backgroundImage(
 
   if (image.startsWith('linear-gradient(')) {
     const parsed = gradient.parse(image)[0]
-    const [xDelta, yDelta] = dimensions
+    const [imageWidth, imageHeight] = dimensions
+
     // Calculate the direction.
     let x1, y1, x2, y2, length
+
     if (parsed.orientation.type === 'directional') {
       ;[x1, y1, x2, y2] = resolveXYFromDirection(parsed.orientation.value)
 
       length = Math.sqrt(
-        Math.pow((x2 - x1) * width, 2) + Math.pow((y2 - y1) * height, 2)
+        Math.pow((x2 - x1) * imageWidth, 2) +
+          Math.pow((y2 - y1) * imageHeight, 2)
       )
     } else if (parsed.orientation.type === 'angular') {
       const EPS = 0.000001
-      const r = width / height
+      const r = imageWidth / imageHeight
 
       function calc(angle) {
         angle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
@@ -211,14 +214,14 @@ export default async function backgroundImage(
           y1 = 0
           x2 = 1
           y2 = 0
-          length = width
+          length = imageWidth
           return
         } else if (Math.abs(angle) < EPS) {
           x1 = 0
           y1 = 1
           x2 = 0
           y2 = 0
-          length = height
+          length = imageHeight
           return
         }
 
@@ -257,7 +260,9 @@ export default async function backgroundImage(
         )
 
         // Get the distored gradient length.
-        const diagonal = Math.sqrt(width * width + height * height)
+        const diagonal = Math.sqrt(
+          imageWidth * imageWidth + imageHeight * imageHeight
+        )
         length = diagonal * cosA
       }
 
@@ -275,8 +280,8 @@ export default async function backgroundImage(
         id: patternId,
         x: offsets[0] / width,
         y: offsets[1] / height,
-        width: repeatX ? xDelta / width : '1',
-        height: repeatY ? yDelta / height : '1',
+        width: repeatX ? imageWidth / width : '1',
+        height: repeatY ? imageHeight / height : '1',
         patternUnits: 'objectBoundingBox',
       },
       buildXMLString(
@@ -300,8 +305,8 @@ export default async function backgroundImage(
         buildXMLString('rect', {
           x: 0,
           y: 0,
-          width: xDelta,
-          height: yDelta,
+          width: imageWidth,
+          height: imageHeight,
           fill: `url(#${gradientId})`,
         })
     )
