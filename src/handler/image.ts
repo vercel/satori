@@ -159,6 +159,14 @@ export async function resolveImageData(
     src = src.slice(1, -1)
   }
 
+  // Throw error if the image source is not an absolute URL in server environment
+  // Should be after slicing quotes to avoid throwing error too early
+  if (typeof window === 'undefined') {
+    if (!src.startsWith('http') && !src.startsWith('data:')) {
+      throw new Error(`Image source must be an absolute URL: ${src}`)
+    }
+  }
+
   if (src.startsWith('data:')) {
     let decodedURI: { imageType; encodingType; dataString }
 
