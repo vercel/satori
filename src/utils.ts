@@ -175,9 +175,35 @@ export function segment(
     })
   }
 
-  return granularity === 'word'
-    ? [...wordSegmenter.segment(content)].map((seg) => seg.segment)
-    : [...graphemeSegmenter.segment(content)].map((seg) => seg.segment)
+  if (granularity === 'grapheme') {
+    return [...graphemeSegmenter.segment(content)].map((seg) => seg.segment)
+  } else {
+    const segmented = [...wordSegmenter.segment(content)].map(
+      (seg) => seg.segment
+    ) as string[]
+
+    const output = []
+
+    let i = 0
+    // When there is a non-breaking space, join the previous and next words together.
+    // This change causes them to be treated as a single segment.
+    while (i < segmented.length) {
+      const s = segmented[i]
+
+      if (s == '\u00a0') {
+        const previousWord = i === 0 ? '' : output.pop()
+        const nextWord = i === segmented.length - 1 ? '' : segmented[i + 1]
+
+        output.push(previousWord + '\u00a0' + nextWord)
+        i += 2
+      } else {
+        output.push(s)
+        i++
+      }
+    }
+
+    return output
+  }
 }
 
 export function buildXMLString(

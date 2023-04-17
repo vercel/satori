@@ -55,6 +55,31 @@ describe('word-break', () => {
     })
   })
 
+  it('should support non-breaking space', async () => {
+    const text = `She weighs around blah 50\u00a0kg`
+    const svg = await satori(
+      <div
+        style={{
+          color: 'red',
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',
+          wordBreak: 'normal',
+        }}
+      >
+        <span>{text}</span>
+        <span>{text.replaceAll('\u00A0', ' ')}</span>
+      </div>,
+      {
+        width: 200,
+        height: 100,
+        fonts,
+      }
+    )
+
+    expect(toImage(svg, 200)).toMatchImageSnapshot()
+  })
+
   describe('break-all', () => {
     it('should always break words eagerly', async () => {
       const svg = await satori(
