@@ -5,6 +5,13 @@
   "module": "./dist/index.js",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "wasm": [
+        "./dist/index.d.ts"
+      ]
+    }
+  },
   "type": "module",
   "license": "MPL-2.0",
   "files": [
@@ -14,15 +21,18 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
     "./wasm": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.wasm.js",
       "require": "./dist/index.wasm.cjs"
     }
   },
   "scripts": {
+    "prepare": "husky install",
     "dev": "concurrently \"pnpm dev:default\" \"pnpm dev:wasm\"",
     "dev:default": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
     "dev:wasm": "WASM=1 NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
@@ -31,11 +41,19 @@
     "build:default": "tsup",
     "build:wasm": "WASM=1 tsup",
     "test": "NODE_ENV=test vitest run --outputTruncateLength=999999999999",
+    "test-type": "tsc -p tsconfig.json --noEmit && tsc -p playground/tsconfig.json --noEmit",
     "dev:test": "NODE_ENV=test vitest --update --outputTruncateLength=999999999999",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --quiet --cache",
     "lint:fix": "pnpm lint --fix",
     "prettier-check": "prettier --check .",
-    "prettier-fix": "prettier --write . --cache"
+    "prettier-fix": "prettier --write . --cache",
+    "ci-check": "concurrently \"pnpm prettier-check\" \"pnpm test-type\" \"pnpm lint\""
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --cache",
+      "prettier --write --cache"
+    ]
   },
   "repository": {
     "type": "git",
@@ -58,7 +76,6 @@
     "@types/node": "^16",
     "@types/opentype.js": "^1.3.3",
     "@types/react": "^17.0.38",
-    "@types/yoga-layout": "^1.9.4",
     "@typescript-eslint/eslint-plugin": "^5.40.0",
     "@typescript-eslint/parser": "^5.40.0",
     "@vitest/ui": "^0.7.6",
@@ -67,7 +84,9 @@
     "eslint": "^8.25.0",
     "eslint-plugin-react": "^7.31.10",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "8.0.3",
     "jest-image-snapshot": "^5.2.0",
+    "lint-staged": "13.1.0",
     "prettier": "^2.7.1",
     "react": "^17.0.2",
     "tsup": "^5.12.9",
@@ -84,7 +103,7 @@
     "emoji-regex": "^10.2.1",
     "linebreak": "^1.1.0",
     "postcss-value-parser": "^4.2.0",
-    "yoga-wasm-web": "^0.3.1"
+    "yoga-wasm-web": "^0.3.3"
   },
   "packageManager": "pnpm@7.11.0",
   "engines": {

@@ -17,6 +17,14 @@ export interface FontOptions {
   lang?: string
 }
 
+export type FontEngine = {
+  has: (s: string) => boolean
+  baseline: (s?: string, resolvedFont?: any) => number
+  height: (s?: string, resolvedFont?: any) => number
+  measure: (s: string, style: any) => number
+  getSVG: (s: string, style: any) => string
+}
+
 function compareFont(
   weight,
   style,
@@ -162,16 +170,16 @@ export default class FontLoader {
     fontSize = 16,
     lineHeight = 1.2,
     {
-      fontFamily,
+      fontFamily = 'sans-serif',
       fontWeight = 400,
       fontStyle = 'normal',
     }: {
-      fontFamily: string | string[]
+      fontFamily?: string | string[]
       fontWeight?: Weight | WeightName
       fontStyle?: Style
     },
     locale: Locale | undefined
-  ) {
+  ): FontEngine {
     if (!this.fonts.size) {
       throw new Error(
         'No fonts are loaded. At least one font is required to calculate the layout.'
@@ -254,15 +262,22 @@ export default class FontLoader {
 
     const cachedFontResolver = new Map<number, opentype.Font | undefined>()
     const resolveFont = (word: string, fallback = true) => {
-      const code = word.charCodeAt(0)
-      if (cachedFontResolver.has(code)) return cachedFontResolver.get(code)
-
       const _fonts = [
         ...fonts,
         ...additionalFonts,
         ...specifiedLangFonts,
         ...(fallback ? nonSpecifiedLangFonts : []),
       ]
+
+      if (typeof word === 'undefined') {
+        if (fallback) {
+          return _fonts[_fonts.length - 1]
+        }
+        return undefined
+      }
+
+      const code = word.charCodeAt(0)
+      if (cachedFontResolver.has(code)) return cachedFontResolver.get(code)
 
       const font = _fonts.find((_font, index) => {
         return (

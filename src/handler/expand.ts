@@ -7,9 +7,9 @@ import { getPropertyName, getStylesForProperty } from 'css-to-react-native'
 import { parseElementStyle } from 'css-background-parser'
 import { parse as parseBoxShadow } from 'css-box-shadow'
 
-import CssDimension from '../vendor/parse-css-dimension'
+import CssDimension from '../vendor/parse-css-dimension/index.js'
 import parseTransformOrigin from '../transform-origin.js'
-import {isString, lengthToNumber, v} from '../utils.js'
+import { isString, lengthToNumber, v } from '../utils.js'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
@@ -166,6 +166,26 @@ function handleSpecialCase(
     return getStylesForProperty('background', value, true)
   }
 
+  if (name === 'textShadow') {
+    // Handle multiple text shadows if provided.
+    value = value.toString().trim()
+    if (value.includes(',')) {
+      const shadows = value.split(',')
+      const result = {}
+      for (const shadow of shadows) {
+        const styles = getStylesForProperty('textShadow', shadow, true)
+        for (const k in styles) {
+          if (!result[k]) {
+            result[k] = [styles[k]]
+          } else {
+            result[k].push(styles[k])
+          }
+        }
+      }
+      return result
+    }
+  }
+
   return
 }
 
@@ -205,7 +225,10 @@ export default function expand(
   const transformedStyle = {} as any
 
   if (style) {
-    const currentColor = getCurrentColor(style.color as string, inheritedStyle.color as string)
+    const currentColor = getCurrentColor(
+      style.color as string,
+      inheritedStyle.color as string
+    )
 
     transformedStyle.color = currentColor
 
@@ -237,13 +260,11 @@ export default function expand(
       } catch (err) {
         throw new Error(
           err.message +
-          // Attach the extra information of the rule itself if it's not included in
-          // the error message.
-          (err.message.includes(value)
-            ? '\n  ' + getErrorHint(name)
-            : `\n  in CSS rule \`${name}: ${value}\`.${getErrorHint(
-              name
-            )}`)
+            // Attach the extra information of the rule itself if it's not included in
+            // the error message.
+            (err.message.includes(value)
+              ? '\n  ' + getErrorHint(name)
+              : `\n  in CSS rule \`${name}: ${value}\`.${getErrorHint(name)}`)
         )
       }
     }
@@ -356,11 +377,17 @@ function getCurrentColor(color: string | undefined, inheritedColor: string) {
   return inheritedColor
 }
 
-function convertCurrentColorToActualValue(value: string, currentColor: string): string {
-  return value.replace(/currentcolor/ig, currentColor)
+function convertCurrentColorToActualValue(
+  value: string,
+  currentColor: string
+): string {
+  return value.replace(/currentcolor/gi, currentColor)
 }
 
-function preprocess(value: string | number, currentColor: string): string | number {
+function preprocess(
+  value: string | number,
+  currentColor: string
+): string | number {
   if (isString(value)) {
     value = convertCurrentColorToActualValue(value, currentColor)
   }

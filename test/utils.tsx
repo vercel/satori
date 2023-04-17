@@ -3,25 +3,31 @@ import { join } from 'path'
 import { Resvg } from '@resvg/resvg-js'
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { readFile } from 'node:fs/promises'
-import initYoga from 'yoga-wasm-web'
+import yoga from 'yoga-wasm-web/auto'
 
 import { init, type SatoriOptions } from '../src/index.js'
 
 export function initYogaWasm() {
   beforeAll(async () => {
-    // @ts-expect-error
-    const yoga = await initYoga(
-      await readFile(
-        join(
-          require.resolve('yoga-wasm-web/package.json'),
-          '..',
-          'dist',
-          'yoga.wasm'
-        )
-      )
-    )
     init(yoga)
   })
+}
+
+export async function getDynamicAsset(text: string): Promise<Buffer> {
+  const fontPath = join(process.cwd(), 'test', 'assets', text)
+  return await readFile(fontPath)
+}
+
+export async function loadDynamicAsset(code: string, text: string) {
+  return [
+    {
+      name: `satori_${code}_fallback_${text}`,
+      data: await getDynamicAsset(text),
+      weight: 400,
+      style: 'normal',
+      lang: code === 'unknown' ? undefined : code.split('|')[0],
+    },
+  ]
 }
 
 export function initFonts(callback: (fonts: SatoriOptions['fonts']) => void) {

@@ -11,6 +11,26 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
+  integrity:
+    # prevents this action from running on forks
+    if: github.repository_owner == 'vercel'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [ 18 ]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Use pnpm
+      run: corepack enable pnpm && pnpm --version
+    - name: Use Node.js ${{ matrix.node }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node }}
+        cache: 'pnpm'
+    - run: pnpm install
+    - run: pnpm ci-check
+
   test:
     # prevents this action from running on forks
     if: github.repository_owner == 'vercel'

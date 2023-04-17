@@ -4,7 +4,7 @@
  * also returns the inherited style for children of the element.
  */
 
-import type { YogaNode } from 'yoga-layout'
+import type { Node as YogaNode } from 'yoga-wasm-web'
 
 import getYoga from '../yoga/index.js'
 import presets from './presets.js'
@@ -113,7 +113,7 @@ export default async function handler(
   if (type === 'svg') {
     const viewBox = props.viewBox || props.viewbox
     const viewBoxSize = parseViewBox(viewBox)
-    const ratio = viewBoxSize ? (viewBoxSize[3] / viewBoxSize[2]) : null
+    const ratio = viewBoxSize ? viewBoxSize[3] / viewBoxSize[2] : null
 
     let { width, height } = props
     if (typeof width === 'undefined' && height) {
@@ -213,7 +213,7 @@ export default async function handler(
         baseline: Yoga.ALIGN_BASELINE,
         normal: Yoga.ALIGN_AUTO,
       },
-      Yoga.ALIGN_FLEX_START,
+      Yoga.ALIGN_STRETCH,
       'alignItems'
     )
   )
@@ -274,35 +274,21 @@ export default async function handler(
     )
   )
 
-  // @TODO: fix types
-  if (
-    // @ts-ignore
-    typeof node.setGap !== 'undefined' &&
-    // @ts-ignore
-    typeof node.getGap !== 'undefined'
-  ) {
-    if (typeof style.gap !== 'undefined') {
-      // @ts-ignore
-      node.setGap(Yoga.GUTTER_ALL, style.gap)
-    }
+  if (typeof style.gap !== 'undefined') {
+    node.setGap(Yoga.GUTTER_ALL, style.gap as number)
+  }
 
-    if (typeof style.rowGap !== 'undefined') {
-      // @ts-ignore
-      node.setGap(Yoga.GUTTER_ROW, style.rowGap)
-    }
+  if (typeof style.rowGap !== 'undefined') {
+    node.setGap(Yoga.GUTTER_ROW, style.rowGap as number)
+  }
 
-    if (typeof style.columnGap !== 'undefined') {
-      // @ts-ignore
-      node.setGap(Yoga.GUTTER_COLUMN, style.columnGap)
-    }
+  if (typeof style.columnGap !== 'undefined') {
+    node.setGap(Yoga.GUTTER_COLUMN, style.columnGap as number)
   }
 
   // @TODO: node.setFlex
 
   if (typeof style.flexBasis !== 'undefined') {
-    // We can't use `auto` here due to this:
-    // https://github.com/facebook/yoga/pull/1112
-    // @TODO: We need a fork to add this API.
     node.setFlexBasis(style.flexBasis)
   }
   node.setFlexGrow(
@@ -337,10 +323,10 @@ export default async function handler(
     )
   )
 
-  node.setMargin(Yoga.EDGE_TOP, (style.marginTop as number) || 0)
-  node.setMargin(Yoga.EDGE_BOTTOM, (style.marginBottom as number) || 0)
-  node.setMargin(Yoga.EDGE_LEFT, (style.marginLeft as number) || 0)
-  node.setMargin(Yoga.EDGE_RIGHT, (style.marginRight as number) || 0)
+  node.setMargin(Yoga.EDGE_TOP, style.marginTop || 0)
+  node.setMargin(Yoga.EDGE_BOTTOM, style.marginBottom || 0)
+  node.setMargin(Yoga.EDGE_LEFT, style.marginLeft || 0)
+  node.setMargin(Yoga.EDGE_RIGHT, style.marginRight || 0)
 
   node.setBorder(Yoga.EDGE_TOP, (style.borderTopWidth as number) || 0)
   node.setBorder(Yoga.EDGE_BOTTOM, (style.borderBottomWidth as number) || 0)

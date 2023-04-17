@@ -1,6 +1,6 @@
 import type { ReactNode, ReactElement } from 'react'
 
-import CssDimension from './vendor/parse-css-dimension'
+import CssDimension from './vendor/parse-css-dimension/index.js'
 import LineBreaker from 'linebreak'
 
 export function isReactElement(node: ReactNode): node is ReactElement {
@@ -21,10 +21,7 @@ export function isClass(f: Function) {
 }
 
 export function hasDangerouslySetInnerHTMLProp(props: any) {
-  if ('dangerouslySetInnerHTML' in props) {
-    return true
-  }
-  return false
+  return 'dangerouslySetInnerHTML' in props
 }
 
 export function normalizeChildren(children: any) {
@@ -172,8 +169,8 @@ export function segment(
       )
     }
 
-    wordSegmenter = new (Intl as any).Segmenter(locale, { granularity: 'word' })
-    graphemeSegmenter = new (Intl as any).Segmenter(locale, {
+    wordSegmenter = new Intl.Segmenter(locale, { granularity: 'word' })
+    graphemeSegmenter = new Intl.Segmenter(locale, {
       granularity: 'grapheme',
     })
   }
@@ -211,7 +208,7 @@ export function segment(
 
 export function buildXMLString(
   type: string,
-  attrs: Record<string, any>,
+  attrs: Record<string, string | number>,
   children?: string
 ) {
   let attrString = ''
@@ -423,17 +420,31 @@ export function SVGNodeToImage(
     currentColor
   )}</svg>`.replace(SVGSymbols, encodeURIComponent)}`
 }
+export function toString(x: unknown): string {
+  return Object.prototype.toString.call(x)
+}
 
 export function isString(x: unknown): x is string {
   return typeof x === 'string'
 }
 
-export function splitByBreakOpportunities(content: string, isBreakAll): {
+export function isUndefined(x: unknown): x is undefined {
+  return toString(x) === '[object Undefined]'
+}
+
+export function splitByBreakOpportunities(
+  content: string,
+  wordBreak: string
+): {
   words: string[]
   requiredBreaks: boolean[]
 } {
-  if (isBreakAll) {
+  if (wordBreak === 'break-all') {
     return { words: segment(content, 'grapheme'), requiredBreaks: [] }
+  }
+
+  if (wordBreak === 'keep-all') {
+    return { words: segment(content, 'word'), requiredBreaks: [] }
   }
 
   const breaker = new LineBreaker(content)

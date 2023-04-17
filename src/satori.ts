@@ -31,7 +31,7 @@ export type SatoriOptions = (
   loadAdditionalAsset?: (
     languageCode: string,
     segment: string
-  ) => Promise<FontOptions | string | undefined>
+  ) => Promise<string | Array<FontOptions>>
   tailwindConfig?: TwConfig
 }
 
@@ -147,13 +147,20 @@ export default async function satori(
               return null
             }
             processedWordsMissingFonts.add(key)
-            return options.loadAdditionalAsset(code, _segment).then((asset) => {
-              if (typeof asset === 'string') {
-                images[_segment] = asset
-              } else if (asset) {
-                fonts.push(asset)
-              }
-            })
+
+            return options
+              .loadAdditionalAsset(code, _segment)
+              .then((asset: any) => {
+                if (typeof asset === 'string') {
+                  images[_segment] = asset
+                } else if (asset) {
+                  if (Array.isArray(asset)) {
+                    fonts.push(...asset)
+                  } else {
+                    fonts.push(asset)
+                  }
+                }
+              })
           })
         )
       )
@@ -183,8 +190,8 @@ function convertToLanguageCodes(
   const languageCodes = {}
   let wordsByCode = {}
 
-  for (let { word, locale } of segmentsMissingFont) {
-    const code = detectLanguageCode(word, locale)
+  for (const { word, locale } of segmentsMissingFont) {
+    const code = detectLanguageCode(word, locale).join('|')
     wordsByCode[code] = wordsByCode[code] || ''
     wordsByCode[code] += word
   }
