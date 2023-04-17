@@ -174,7 +174,7 @@ export function segment(
       granularity: 'grapheme',
     })
   }
-  
+
   if (granularity === 'grapheme') {
     return [...graphemeSegmenter.segment(content)].map((seg) => seg.segment)
   } else {
@@ -188,16 +188,16 @@ export function segment(
     // When there is a non-breaking space, join the previous and next words together.
     // This change causes them to be treated as a single segment.
     while (i < segmented.length) {
-      const segment = segmented[i]
+      const s = segmented[i]
 
-      if (segment == '\u00a0') {
+      if (s == '\u00a0') {
         const previousWord = i === 0 ? '' : output.pop()
         const nextWord = i === segmented.length - 1 ? '' : segmented[i + 1]
 
         output.push(previousWord + '\u00a0' + nextWord)
         i += 2
       } else {
-        output.push(segment)
+        output.push(s)
         i++
       }
     }
