@@ -102,6 +102,7 @@
     "css-to-react-native": "^3.0.0",
     "emoji-regex": "^10.2.1",
     "linebreak": "^1.1.0",
+    "parse-css-color": "^0.2.1",
     "postcss-value-parser": "^4.2.0",
     "yoga-wasm-web": "^0.3.3"
   },
