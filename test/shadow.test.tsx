@@ -212,5 +212,25 @@ describe('Shadow', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support text shadows if exist unexpected comma', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            background: 'white',
+            width: 100,
+            height: 100,
+            fontSize: 40,
+            textShadow:
+              '2px 2px red, 4px 4px #4bf542, 6px 6px rgb(186, 147, 17)',
+          }}
+        >
+          Lynn
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 })
