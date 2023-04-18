@@ -6,6 +6,7 @@
 import { getPropertyName, getStylesForProperty } from 'css-to-react-native'
 import { parseElementStyle } from 'css-background-parser'
 import { parse as parseBoxShadow } from 'css-box-shadow'
+import cssColorParse from 'parse-css-color'
 
 import CssDimension from '../vendor/parse-css-dimension/index.js'
 import parseTransformOrigin from '../transform-origin.js'
@@ -369,12 +370,28 @@ export default function expand(
   return transformedStyle
 }
 
-function getCurrentColor(color: string | undefined, inheritedColor: string) {
-  if (color && color.toLowerCase() !== 'currentcolor') {
-    return color
+/**
+ * @see https://github.com/RazrFalcon/resvg/issues/579
+ */
+function refineHSL(color: string) {
+  if (color.startsWith('hsl')) {
+    const t = cssColorParse(color)
+    const [h, s, l] = t.values
+
+    return `hsl(${[h, `${s}%`, `${l}%`]
+      .concat(t.alpha === 1 ? [] : [t.alpha])
+      .join(',')})`
   }
 
-  return inheritedColor
+  return color
+}
+
+function getCurrentColor(color: string | undefined, inheritedColor: string) {
+  if (color && color.toLowerCase() !== 'currentcolor') {
+    return refineHSL(color)
+  }
+
+  return refineHSL(inheritedColor)
 }
 
 function convertCurrentColorToActualValue(

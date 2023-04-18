@@ -279,6 +279,61 @@ describe('Color Models', () => {
     })
   })
 
+  it('should support css4 synatx color in hsl', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          fontSize: 16,
+          background: 'white',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          textAlign: 'center',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <span style={{ color: 'hsl(200deg, 50%, 50%)' }}>A</span>
+        <span style={{ color: 'hsl(200deg, 50%, 50%, 0.6)' }}>A</span>
+        <span style={{ color: 'hsl(200, 50%, 50%)' }}>B</span>
+        <span style={{ color: 'hsl(0.3turn, 50%, 50%)' }}>C</span>
+        <span style={{ color: 'hsl(0.3turn, 50%, 50%, 0.6)' }}>D</span>
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should support css4 synatx color in hsl if inherited', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          fontSize: 16,
+          background: 'white',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          textAlign: 'center',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'hsl(200deg, 50%, 50%)',
+        }}
+      >
+        <span>A</span>
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
   // Borders: shorthand, border-bottom-color, border-color, border-left-color, border-right-color, border-top-color
 
   // Box shadow
