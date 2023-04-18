@@ -391,7 +391,7 @@ function getCurrentColor(color: string | undefined, inheritedColor: string) {
     return refineHSL(color)
   }
 
-  return inheritedColor
+  return refineHSL(inheritedColor)
 }
 
 function convertCurrentColorToActualValue(
