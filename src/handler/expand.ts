@@ -301,25 +301,10 @@ export default function expand(
   }
 
   // Calculate the base font size.
-  let baseFontSize: number =
-    typeof transformedStyle.fontSize === 'number'
-      ? transformedStyle.fontSize
-      : inheritedStyle.fontSize
-  if (typeof baseFontSize === 'string') {
-    try {
-      const parsed = new CssDimension(baseFontSize)
-      switch (parsed.unit) {
-        case 'em':
-          baseFontSize = parsed.value * (inheritedStyle.fontSize as number)
-          break
-        case 'rem':
-          baseFontSize = parsed.value * 16
-          break
-      }
-    } catch (err) {
-      baseFontSize = 16
-    }
-  }
+  const baseFontSize = calcBaseFontSize(
+    transformedStyle.fontSize,
+    inheritedStyle.fontSize as number
+  )
   if (typeof transformedStyle.fontSize !== 'undefined') {
     transformedStyle.fontSize = baseFontSize
   }
@@ -391,6 +376,22 @@ export default function expand(
   }
 
   return transformedStyle
+}
+
+function calcBaseFontSize(size: number | string, inheritedSize: number) {
+  if (typeof size === 'number') return size
+
+  try {
+    const parsed = new CssDimension(size)
+    switch (parsed.unit) {
+      case 'em':
+        return parsed.value * inheritedSize
+      case 'rem':
+        return parsed.value * 16
+    }
+  } catch (err) {
+    return inheritedSize
+  }
 }
 
 /**

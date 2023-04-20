@@ -111,4 +111,39 @@ describe('Font', () => {
 
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should handle font-size correctly for element like heading', async () => {
+    const svgs = await Promise.all(
+      [20, '0.8em', '1.2rem'].map((fontSize) =>
+        satori(
+          <div
+            style={{
+              height: '100%',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#fff',
+              fontSize,
+              fontWeight: 600,
+            }}
+          >
+            <h1 style={{ color: 'red' }}>Hello, World</h1>
+            <h2 style={{ color: 'orange' }}>Hello, World</h2>
+            <h5 style={{ color: 'grey', fontSize: 20 }}>Hello, World</h5>
+          </div>,
+          {
+            width: 100,
+            height: 100,
+            fonts,
+          }
+        )
+      )
+    )
+
+    svgs.forEach((svg) => {
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+  })
 })
