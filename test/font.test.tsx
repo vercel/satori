@@ -103,18 +103,18 @@ describe('Font', () => {
         Hello
       </div>,
       {
-        width: 300,
-        height: 300,
+        width: 100,
+        height: 100,
         fonts: [montserratFont],
       }
     )
 
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should handle font-size correctly for element like heading', async () => {
-    const [pxSvg, emSvg, remSvg] = await Promise.all(
-      [20, '1.5em', '2rem'].map((fontSize) =>
+    const svgs = await Promise.all(
+      [20, '0.8em', '1.2rem'].map((fontSize) =>
         satori(
           <div
             style={{
@@ -134,16 +134,16 @@ describe('Font', () => {
             <h5 style={{ color: 'grey', fontSize: 20 }}>Hello, World</h5>
           </div>,
           {
-            width: 400,
-            height: 400,
+            width: 100,
+            height: 100,
             fonts,
           }
         )
       )
     )
 
-    expect(toImage(pxSvg, 400)).toMatchImageSnapshot()
-    expect(toImage(emSvg, 400)).toMatchImageSnapshot()
-    expect(toImage(remSvg, 400)).toMatchImageSnapshot()
+    svgs.forEach((svg) => {
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 })

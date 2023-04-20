@@ -386,10 +386,8 @@ function calcBaseFontSize(size: number | string, inheritedSize: number) {
     switch (parsed.unit) {
       case 'em':
         return parsed.value * inheritedSize
-        break
       case 'rem':
         return parsed.value * 16
-        break
     }
   } catch (err) {
     return inheritedSize
