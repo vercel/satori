@@ -103,12 +103,47 @@ describe('Font', () => {
         Hello
       </div>,
       {
-        width: 100,
-        height: 100,
+        width: 300,
+        height: 300,
         fonts: [montserratFont],
       }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(toImage(svg, 300)).toMatchImageSnapshot()
+  })
+
+  it('should handle font-size correctly for element like heading', async () => {
+    const [pxSvg, emSvg, remSvg] = await Promise.all(
+      [20, '1.5em', '2rem'].map((fontSize) =>
+        satori(
+          <div
+            style={{
+              height: '100%',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#fff',
+              fontSize,
+              fontWeight: 600,
+            }}
+          >
+            <h1 style={{ color: 'red' }}>Hello, World</h1>
+            <h2 style={{ color: 'orange' }}>Hello, World</h2>
+            <h5 style={{ color: 'grey', fontSize: 20 }}>Hello, World</h5>
+          </div>,
+          {
+            width: 400,
+            height: 400,
+            fonts,
+          }
+        )
+      )
+    )
+
+    expect(toImage(pxSvg, 400)).toMatchImageSnapshot()
+    expect(toImage(emSvg, 400)).toMatchImageSnapshot()
+    expect(toImage(remSvg, 400)).toMatchImageSnapshot()
   })
 })
