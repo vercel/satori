@@ -124,23 +124,37 @@ describe('Gradient', () => {
 
   describe('radial-gradient', () => {
     it('should support radial-gradient', async () => {
-      const svg = await satori(
-        <div
-          style={{
-            backgroundColor: 'white',
-            backgroundImage: 'radial-gradient(circle at 25px 25px, blue, red)',
-            backgroundSize: '100px 100px',
-            height: '100%',
-            width: '100%',
-          }}
-        ></div>,
-        {
-          width: 100,
-          height: 100,
-          fonts,
-        }
+      const svgs = await Promise.all(
+        [
+          'radial-gradient(circle at 25px 25px, blue, red)',
+          'radial-gradient(yellow, green)',
+          'radial-gradient(farthest-side at left bottom, red, yellow 50px, green)',
+          'radial-gradient(ellipse at 1em 25px,blue, red)',
+          'radial-gradient(circle at 1rem 25px,blue, red)',
+          'radial-gradient(circle at 2vw 25px,blue, red)',
+          'radial-gradient(circle at 1vh 50%,blue, red)',
+        ].map((backgroundImage) =>
+          satori(
+            <div
+              style={{
+                backgroundColor: 'white',
+                backgroundImage,
+                backgroundSize: '100px 100px',
+                height: '100%',
+                width: '100%',
+              }}
+            ></div>,
+            {
+              width: 100,
+              height: 100,
+              fonts,
+            }
+          )
+        )
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      svgs.forEach((svg) => {
+        expect(toImage(svg, 100)).toMatchImageSnapshot()
+      })
     })
 
     it('should support radial-gradient with unspecified <ending-shape>', async () => {

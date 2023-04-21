@@ -1,5 +1,5 @@
 import CssDimension from '../vendor/parse-css-dimension/index.js'
-import { buildXMLString } from '../utils.js'
+import { buildXMLString, lengthToNumber } from '../utils.js'
 
 import gradient from '../vendor/gradient-parser/index.js'
 import { resolveImageData } from '../handler/image.js'
@@ -167,7 +167,8 @@ export default async function backgroundImage(
     left,
     top,
   }: { id: string; width: number; height: number; left: number; top: number },
-  { image, size, position, repeat }: Background
+  { image, size, position, repeat }: Background,
+  inheritableStyle: Record<string, number | string>
 ): Promise<string[]> {
   // Default to `repeat`.
   repeat = repeat || 'repeat'
@@ -327,8 +328,16 @@ export default async function backgroundImage(
       if (!orientation.at) {
         // Defaults to center.
       } else if (orientation.at.type === 'position') {
-        cx = orientation.at.value.x.value
-        cy = orientation.at.value.y.value
+        const pos = calcRadialGradient(
+          orientation.at.value.x,
+          orientation.at.value.y,
+          xDelta,
+          yDelta,
+          inheritableStyle.fontSize as number,
+          inheritableStyle
+        )
+        cx = pos.x
+        cy = pos.y
       } else {
         throw new Error(
           'orientation.at.type not implemented: ' + orientation.at.type
@@ -458,4 +467,66 @@ export default async function backgroundImage(
   }
 
   throw new Error(`Invalid background image: "${image}"`)
+}
+
+type PositionKeyWord = 'center' | 'left' | 'right' | 'top' | 'bottom'
+interface Position {
+  type: string
+  value: PositionKeyWord
+}
+
+function calcRadialGradient(
+  cx: Position,
+  cy: Position,
+  xDelta: number,
+  yDelta: number,
+  baseFontSize: number,
+  style: Record<string, string | number>
+) {
+  const pos: { x: number; y: number } = { x: xDelta / 2, y: yDelta / 2 }
+  if (cx.type === 'position-keyword') {
+    Object.assign(pos, calcPos(cx.value, xDelta, yDelta, 'x'))
+  } else {
+    pos.x = lengthToNumber(
+      `${cx.value}${cx.type}`,
+      baseFontSize,
+      xDelta,
+      style,
+      true
+    )
+  }
+
+  if (cy.type === 'position-keyword') {
+    Object.assign(pos, calcPos(cy.value, xDelta, yDelta, 'y'))
+  } else {
+    pos.y = lengthToNumber(
+      `${cy.value}${cy.type}`,
+      baseFontSize,
+      xDelta,
+      style,
+      true
+    )
+  }
+
+  return pos
+}
+
+function calcPos(
+  key: PositionKeyWord,
+  xDelta: number,
+  yDelta: number,
+  dir: 'x' | 'y'
+) {
+  switch (key) {
+    case 'center':
+      return { [dir]: dir === 'x' ? xDelta / 2 : yDelta / 2 }
+    case 'left':
+      return { x: 0 }
+    case 'top':
+      return { y: 0 }
+    case 'right':
+      return { x: xDelta }
+    case 'bottom':
+      return { y: yDelta }
+  }
 }
