@@ -226,8 +226,7 @@ GradientParser.parse = (function () {
     } else if (rgSize){
       return {
         style: rgSize,
-        type: 'shape',
-        value: matchCircle() || matchEllipse()
+        ...(matchCircle() || matchEllipse())
       }
     } else {
       //
