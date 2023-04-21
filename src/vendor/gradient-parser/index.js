@@ -113,9 +113,9 @@ GradientParser.parse = (function () {
     if (!orientation.value) {
       Object.assign(res, {
         type: 'shape',
-        value: typeof res.at.value.x.value === 'number'
-          ? 'circle'
-          : 'ellipse'
+        value: ['%', 'extent-keyword'].includes(res.style.type)
+          ? 'ellipse'
+          : 'circle'
       })
     }
 
