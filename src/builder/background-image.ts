@@ -1,5 +1,5 @@
 import CssDimension from '../vendor/parse-css-dimension/index.js'
-import { buildXMLString } from '../utils.js'
+import { buildXMLString, lengthToNumber } from '../utils.js'
 
 import gradient from '../vendor/gradient-parser/index.js'
 import { resolveImageData } from '../handler/image.js'
@@ -167,7 +167,8 @@ export default async function backgroundImage(
     left,
     top,
   }: { id: string; width: number; height: number; left: number; top: number },
-  { image, size, position, repeat }: Background
+  { image, size, position, repeat }: Background,
+  inheritableStyle: Record<string, number | string>
 ): Promise<string[]> {
   // Default to `repeat`.
   repeat = repeat || 'repeat'
@@ -327,8 +328,16 @@ export default async function backgroundImage(
       if (!orientation.at) {
         // Defaults to center.
       } else if (orientation.at.type === 'position') {
-        cx = orientation.at.value.x.value
-        cy = orientation.at.value.y.value
+        const pos = calcRadialGradient(
+          orientation.at.value.x,
+          orientation.at.value.y,
+          xDelta,
+          yDelta,
+          inheritableStyle.fontSize as number,
+          inheritableStyle
+        )
+        cx = pos.x
+        cy = pos.y
       } else {
         throw new Error(
           'orientation.at.type not implemented: ' + orientation.at.type
@@ -346,25 +355,14 @@ export default async function backgroundImage(
 
     // We currently only support `farthest-corner`:
     // https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/radial-gradient()#values
-    const spread: Record<string, number> = {}
-
-    // Farest corner.
-    const fx = Math.max(Math.abs(xDelta - cx), Math.abs(cx))
-    const fy = Math.max(Math.abs(yDelta - cy), Math.abs(cy))
-    if (shape === 'circle') {
-      spread.r = Math.sqrt(fx * fx + fy * fy)
-    } else if (shape === 'ellipse') {
-      // Spec: https://drafts.csswg.org/css-images/#typedef-size
-      // Get the aspect ratio of the closest-side size.
-      const ratio = fy !== 0 ? fx / fy : 1
-
-      // fx^2/a^2 + fy^2/b^2 = 1
-      // fx^2/(b*ratio)^2 + fy^2/b^2 = 1
-      // (fx^2+fy^2*ratio^2) = (b*ratio)^2
-      // b = sqrt(fx^2+fy^2*ratio^2)/ratio
-      spread.ry = Math.sqrt(fx * fx + fy * fy * ratio * ratio) / ratio
-      spread.rx = spread.ry * ratio
-    }
+    const spread = calcRadius(
+      shape as Shape,
+      orientation.style,
+      inheritableStyle.fontSize as number,
+      { x: cx, y: cy },
+      [xDelta, yDelta],
+      inheritableStyle
+    )
 
     // TODO: check for repeat-x/repeat-y
     const defs = buildXMLString(
@@ -404,6 +402,13 @@ export default async function backgroundImage(
             fill: '#fff',
           })
         ) +
+        buildXMLString('rect', {
+          x: 0,
+          y: 0,
+          width: xDelta,
+          height: yDelta,
+          fill: stops.at(-1).color,
+        }) +
         buildXMLString(shape, {
           cx: cx,
           cy: cy,
@@ -458,4 +463,179 @@ export default async function backgroundImage(
   }
 
   throw new Error(`Invalid background image: "${image}"`)
+}
+
+type PositionKeyWord = 'center' | 'left' | 'right' | 'top' | 'bottom'
+interface Position {
+  type: string
+  value: PositionKeyWord
+}
+
+function calcRadialGradient(
+  cx: Position,
+  cy: Position,
+  xDelta: number,
+  yDelta: number,
+  baseFontSize: number,
+  style: Record<string, string | number>
+) {
+  const pos: { x: number; y: number } = { x: xDelta / 2, y: yDelta / 2 }
+  if (cx.type === 'position-keyword') {
+    Object.assign(pos, calcPos(cx.value, xDelta, yDelta, 'x'))
+  } else {
+    pos.x = lengthToNumber(
+      `${cx.value}${cx.type}`,
+      baseFontSize,
+      xDelta,
+      style,
+      true
+    )
+  }
+
+  if (cy.type === 'position-keyword') {
+    Object.assign(pos, calcPos(cy.value, xDelta, yDelta, 'y'))
+  } else {
+    pos.y = lengthToNumber(
+      `${cy.value}${cy.type}`,
+      baseFontSize,
+      yDelta,
+      style,
+      true
+    )
+  }
+
+  return pos
+}
+
+function calcPos(
+  key: PositionKeyWord,
+  xDelta: number,
+  yDelta: number,
+  dir: 'x' | 'y'
+) {
+  switch (key) {
+    case 'center':
+      return { [dir]: dir === 'x' ? xDelta / 2 : yDelta / 2 }
+    case 'left':
+      return { x: 0 }
+    case 'top':
+      return { y: 0 }
+    case 'right':
+      return { x: xDelta }
+    case 'bottom':
+      return { y: yDelta }
+  }
+}
+
+type Shape = 'circle' | 'ellipse'
+function calcRadius(
+  shape: Shape,
+  endingShape: Array<{ type: string; value: string }>,
+  baseFontSize: number,
+  centerAxis: { x: number; y: number },
+  length: [number, number],
+  inheritableStyle: Record<string, string | number>
+) {
+  const [xDelta, yDelta] = length
+  const { x: cx, y: cy } = centerAxis
+  const spread: Record<string, number> = {}
+  let fx = 0
+  let fy = 0
+  const isExtentKeyWord = endingShape.some((v) => v.type === 'extent-keyword')
+
+  if (!isExtentKeyWord) {
+    if (endingShape.some((v) => v.value.startsWith('-'))) {
+      throw new Error(
+        'disallow setting negative values to the size of the shape. Check https://w3c.github.io/csswg-drafts/css-images/#valdef-rg-size-length-0'
+      )
+    }
+    if (shape === 'circle') {
+      return {
+        r: lengthToNumber(
+          `${endingShape[0].value}${endingShape[0].type}`,
+          baseFontSize,
+          xDelta,
+          inheritableStyle,
+          true
+        ),
+      }
+    } else {
+      return {
+        rx: lengthToNumber(
+          `${endingShape[0].value}${endingShape[0].type}`,
+          baseFontSize,
+          xDelta,
+          inheritableStyle,
+          true
+        ),
+        ry: lengthToNumber(
+          `${endingShape[1].value}${endingShape[1].type}`,
+          baseFontSize,
+          yDelta,
+          inheritableStyle,
+          true
+        ),
+      }
+    }
+  }
+
+  switch (endingShape[0].value) {
+    case 'farthest-corner':
+      fx = Math.max(Math.abs(xDelta - cx), Math.abs(cx))
+      fy = Math.max(Math.abs(yDelta - cy), Math.abs(cy))
+      break
+    case 'closest-corner':
+      fx = Math.min(Math.abs(xDelta - cx), Math.abs(cx))
+      fy = Math.min(Math.abs(yDelta - cy), Math.abs(cy))
+      break
+    case 'farthest-side':
+      if (shape === 'circle') {
+        spread.r = Math.max(
+          Math.abs(xDelta - cx),
+          Math.abs(cx),
+          Math.abs(yDelta - cy),
+          Math.abs(cy)
+        )
+      } else {
+        spread.rx = Math.max(Math.abs(xDelta - cx), Math.abs(cx))
+        spread.ry = Math.max(Math.abs(yDelta - cy), Math.abs(cy))
+      }
+      return spread
+    case 'closest-side':
+      if (shape === 'circle') {
+        spread.r = Math.min(
+          Math.abs(xDelta - cx),
+          Math.abs(cx),
+          Math.abs(yDelta - cy),
+          Math.abs(cy)
+        )
+      } else {
+        spread.rx = Math.min(Math.abs(xDelta - cx), Math.abs(cx))
+        spread.ry = Math.min(Math.abs(yDelta - cy), Math.abs(cy))
+      }
+
+      return spread
+  }
+  if (shape === 'circle') {
+    spread.r = Math.sqrt(fx * fx + fy * fy)
+  } else {
+    // Spec: https://drafts.csswg.org/css-images/#typedef-size
+    // Get the aspect ratio of the closest-side size.
+    const ratio = fy !== 0 ? fx / fy : 1
+
+    if (fx === 0) {
+      spread.rx = 0
+      spread.ry = 0
+    } else {
+      // fx^2/a^2 + fy^2/b^2 = 1
+      // fx^2/(b*ratio)^2 + fy^2/b^2 = 1
+      // (fx^2+fy^2*ratio^2) = (b*ratio)^2
+      // b = sqrt(fx^2+fy^2*ratio^2)/ratio
+
+      spread.ry = Math.sqrt(fx * fx + fy * fy * ratio * ratio) / ratio
+      spread.rx = spread.ry * ratio
+    }
+  }
+
+  return spread
 }

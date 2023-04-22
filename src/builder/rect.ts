@@ -28,7 +28,8 @@ export default async function rect(
     src?: string
     debug?: boolean
   },
-  style: Record<string, number | string>
+  style: Record<string, number | string>,
+  inheritableStyle: Record<string, number | string>
 ) {
   if (style.display === 'none') return ''
 
@@ -75,7 +76,8 @@ export default async function rect(
       const background = (style.backgroundImage as any)[index]
       const image = await backgroundImage(
         { id: id + '_' + index, width, height, left, top },
-        background
+        background,
+        inheritableStyle
       )
       if (image) {
         // Background images that come first in the array are rendered last.

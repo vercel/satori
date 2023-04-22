@@ -23,7 +23,7 @@ GradientParser.parse = (function () {
     positionKeywords: /^(left|center|right|top|bottom)/i,
     pixelValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))px/,
     percentageValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))\%/,
-    emValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))em/,
+    emLikeValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))(r?em|vw|vh)/,
     angleValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))deg/,
     zeroValue: /[0]/,
     startCall: /^\(/,
@@ -84,6 +84,42 @@ GradientParser.parse = (function () {
     )
   }
 
+  function getDefaultRadialGradient(orientation = {}) {
+    const res = { ...orientation }
+
+    Object.assign(res, {
+      style: (res.style || []).length > 0
+        ? res.style
+        : [{ type: 'extent-keyword', value: 'farthest-corner' }],
+      at: {
+        type: 'position',
+        value: {
+          x: {
+            type: 'position-keyword',
+            value: 'center',
+            ...(res.at?.value?.x || {})
+          },
+          y: {
+            type: 'position-keyword',
+            value: 'center',
+            ...(res.at?.value?.y || {})
+          }
+        }
+      }}
+    )
+
+    if (!orientation.value) {
+      Object.assign(res, {
+        type: 'shape',
+        value: res.style.some(v => ['%', 'extent-keyword'].includes(v.type))
+          ? 'ellipse'
+          : 'circle'
+      })
+    }
+
+    return res
+  }
+
   function matchGradient(
     gradientType,
     pattern,
@@ -102,7 +138,9 @@ GradientParser.parse = (function () {
 
       return {
         type: gradientType,
-        orientation: orientation,
+        orientation: gradientType.endsWith('radial-gradient')
+          ? orientation?.map(v => getDefaultRadialGradient(v)) ?? [getDefaultRadialGradient()]
+          : orientation,
         colorStops: matchListing(matchColorStop),
       }
     })
@@ -166,59 +204,40 @@ GradientParser.parse = (function () {
   }
 
   function matchRadialOrientation() {
-    var radialType = matchCircle() || matchEllipse()
-    if (radialType) {
-      radialType.at = matchAtPosition()
-    } else {
-      var extent = matchExtentKeyword()
-      if (extent) {
-        radialType = extent
-        var positionAt = matchAtPosition()
-        if (positionAt) {
-          radialType.at = positionAt
-        }
-      } else {
-        // If unspecified, it defaults to ellipse.
-        var positionAt = matchAtPosition()
-        if (positionAt) {
-          radialType = {
-            type: 'shape',
-            value: 'ellipse',
-            at: positionAt
-          }
-        } else {
-          var defaultPosition = matchPositioning()
-          if (defaultPosition) {
-            radialType = {
-              type: 'default-radial',
-              at: defaultPosition,
-            }
-          }
-        }
-      }
-    }
+    const pre = preMatchRadialOrientation()
+    const at = matchAtPosition()
 
-    return radialType
+    if (!pre && !at) return
+
+    return { ...pre, at }
+  }
+
+  function preMatchRadialOrientation() {
+    let rgEndingShape = matchCircle() || matchEllipse()
+    let rgSize = matchExtentKeyword() || matchLength() || matchDistance()
+    const extra = match('%', tokens.percentageValue, 1)
+
+    if (rgEndingShape) {
+      return {
+        ...rgEndingShape,
+        style: [rgSize, extra].filter(v => v)
+      }
+    } else if (rgSize){
+      return {
+        style: [rgSize, extra].filter(v => v),
+        ...(matchCircle() || matchEllipse())
+      }
+    } else {
+      //
+    }
   }
 
   function matchCircle() {
-    var circle = match('shape', /^(circle)/i, 0)
-
-    if (circle) {
-      circle.style = matchLength() || matchExtentKeyword()
-    }
-
-    return circle
+    return match('shape', /^(circle)/i, 0)
   }
 
   function matchEllipse() {
-    var ellipse = match('shape', /^(ellipse)/i, 0)
-
-    if (ellipse) {
-      ellipse.style = matchDistance() || matchExtentKeyword()
-    }
-
-    return ellipse
+    return match('shape', /^(ellipse)/i, 0)
   }
 
   function matchExtentKeyword() {
@@ -337,7 +356,17 @@ GradientParser.parse = (function () {
   }
 
   function matchLength() {
-    return match('px', tokens.pixelValue, 1) || match('em', tokens.emValue, 1)
+    return match('px', tokens.pixelValue, 1) || matchRelativeLength(tokens.emLikeValue, 1)
+  }
+
+  function matchRelativeLength(pattern, captureIndex) {
+    var captures = scan(pattern)
+    if (captures) {
+      return {
+        type: captures[5],
+        value: captures[captureIndex],
+      }
+    }
   }
 
   function match(type, pattern, captureIndex) {

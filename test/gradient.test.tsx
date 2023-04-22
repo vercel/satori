@@ -172,6 +172,118 @@ describe('Gradient', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support default value', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            backgroundColor: 'white',
+            backgroundImage: 'radial-gradient(blue, red)',
+            backgroundSize: '100px 100px',
+            height: '100%',
+            width: '100%',
+          }}
+        ></div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support releative unit', async () => {
+      const svgs = await Promise.all(
+        [
+          'radial-gradient(ellipse at 1em 25px,blue, red)',
+          'radial-gradient(circle at 1rem 25px,blue, red)',
+          'radial-gradient(circle at 2vw 25px,blue, red)',
+          'radial-gradient(circle at 1vh 50%,blue, red)',
+        ].map((backgroundImage) =>
+          satori(
+            <div
+              style={{
+                backgroundColor: 'white',
+                backgroundImage,
+                backgroundSize: '100px 100px',
+                height: '100%',
+                width: '100%',
+              }}
+            ></div>,
+            {
+              width: 100,
+              height: 100,
+              fonts,
+            }
+          )
+        )
+      )
+      svgs.forEach((svg) => {
+        expect(toImage(svg, 100)).toMatchImageSnapshot()
+      })
+    })
+
+    it('should support rg-size with rg-extent-keyword', async () => {
+      const svgs = await Promise.all(
+        [
+          'radial-gradient(closest-corner at 50% 50%, yellow, green)',
+          'radial-gradient(farthest-side at left bottom, red, yellow 50px, green)',
+          'radial-gradient(closest-side at 20px 30px, red, yellow, green)',
+        ].map((backgroundImage) =>
+          satori(
+            <div
+              style={{
+                backgroundColor: 'white',
+                backgroundImage,
+                backgroundSize: '100px 100px',
+                height: '100%',
+                width: '100%',
+              }}
+            ></div>,
+            {
+              width: 100,
+              height: 100,
+              fonts,
+            }
+          )
+        )
+      )
+
+      svgs.forEach((svg) => {
+        expect(toImage(svg, 100)).toMatchImageSnapshot()
+      })
+    })
+
+    it('should support explicitly setting rg-size', async () => {
+      const svgs = await Promise.all(
+        [
+          'radial-gradient(20% 20% at top left, yellow, blue)',
+          'radial-gradient(30px at top left, yellow, blue)',
+        ].map((backgroundImage) =>
+          satori(
+            <div
+              style={{
+                backgroundColor: 'white',
+                backgroundImage,
+                backgroundSize: '100px 100px',
+                height: '100%',
+                width: '100%',
+              }}
+            ></div>,
+            {
+              width: 100,
+              height: 100,
+              fonts,
+            }
+          )
+        )
+      )
+
+      svgs.forEach((svg) => {
+        expect(toImage(svg, 100)).toMatchImageSnapshot()
+      })
+    })
   })
 
   it('should support advanced usage', async () => {

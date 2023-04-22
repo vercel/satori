@@ -196,7 +196,8 @@ export default async function* layout(
         isInheritingTransform,
         debug,
       },
-      computedStyle
+      computedStyle,
+      newInheritableStyle
     )
   } else if (type === 'svg') {
     // When entering a <svg> node, we need to convert it to a <img> with the
@@ -214,7 +215,8 @@ export default async function* layout(
         isInheritingTransform,
         debug,
       },
-      computedStyle
+      computedStyle,
+      newInheritableStyle
     )
   } else {
     const display = style?.display
@@ -231,7 +233,8 @@ export default async function* layout(
     }
     baseRenderResult = await rect(
       { id, left, top, width, height, isInheritingTransform, debug },
-      computedStyle
+      computedStyle,
+      newInheritableStyle
     )
   }
 
