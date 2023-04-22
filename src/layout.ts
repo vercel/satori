@@ -19,6 +19,7 @@ import FontLoader from './font.js'
 import layoutText from './text.js'
 import rect from './builder/rect.js'
 import { Locale, normalizeLocale } from './language.js'
+import { SatoriNode } from './types.js'
 
 export interface LayoutContext {
   id: string
@@ -33,6 +34,7 @@ export interface LayoutContext {
   canLoadAdditionalAssets: boolean
   locale?: Locale
   getTwStyles: (tw: string, style: any) => any
+  onNodeAdded?: (node: SatoriNode) => void
 }
 
 export default async function* layout(
@@ -64,7 +66,7 @@ export default async function* layout(
     return ''
   }
 
-  // Not a normal element.
+  // Not a regular element.
   if (!isReactElement(element) || typeof element.type === 'function') {
     let iter: ReturnType<typeof layout>
 
@@ -160,6 +162,7 @@ export default async function* layout(
       canLoadAdditionalAssets,
       locale: newLocale,
       getTwStyles,
+      onNodeAdded: context.onNodeAdded,
     })
     if (canLoadAdditionalAssets) {
       segmentsMissingFont.push(...(((await iter.next()).value as any) || []))
@@ -234,6 +237,21 @@ export default async function* layout(
       computedStyle
     )
   }
+
+  // Emit event for the current node. We don't pass the children prop to the
+  // event handler because everything is already flattened, unless it's a text
+  // node.
+  const { children: childrenNode, ...restProps } = props
+  context.onNodeAdded?.({
+    left,
+    top,
+    width,
+    height,
+    type,
+    props: restProps,
+    key: element.key,
+    textContent: isReactElement(childrenNode) ? undefined : childrenNode,
+  })
 
   // Generate the rendered markup for the children.
   for (const iter of iterators) {
