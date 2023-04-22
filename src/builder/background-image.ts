@@ -502,7 +502,7 @@ function calcRadialGradient(
     pos.y = lengthToNumber(
       `${cy.value}${cy.type}`,
       baseFontSize,
-      xDelta,
+      yDelta,
       style,
       true
     )
