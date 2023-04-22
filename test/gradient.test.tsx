@@ -254,6 +254,36 @@ describe('Gradient', () => {
         expect(toImage(svg, 100)).toMatchImageSnapshot()
       })
     })
+
+    it('should support explicitly setting rg-size', async () => {
+      const svgs = await Promise.all(
+        [
+          'radial-gradient(20% 20% at top left, yellow, blue)',
+          'radial-gradient(30px at top left, yellow, blue)',
+        ].map((backgroundImage) =>
+          satori(
+            <div
+              style={{
+                backgroundColor: 'white',
+                backgroundImage,
+                backgroundSize: '100px 100px',
+                height: '100%',
+                width: '100%',
+              }}
+            ></div>,
+            {
+              width: 100,
+              height: 100,
+              fonts,
+            }
+          )
+        )
+      )
+
+      svgs.forEach((svg) => {
+        expect(toImage(svg, 100)).toMatchImageSnapshot()
+      })
+    })
   })
 
   it('should support advanced usage', async () => {

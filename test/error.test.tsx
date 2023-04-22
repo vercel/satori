@@ -95,4 +95,32 @@ describe('Error', () => {
     })
     expect(typeof svg).toBe('string')
   })
+
+  it('should not allowed to set negative value to rg-size', async () => {
+    const result = satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundImage:
+            'radial-gradient(-20% 20% at top left, yellow, blue)',
+          fontSize: 32,
+          fontWeight: 600,
+        }}
+      ></div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+
+    expect(result).rejects.toThrowError(
+      'disallow setting negative values to the size of the shape. Check https://w3c.github.io/csswg-drafts/css-images/#valdef-rg-size-length-0'
+    )
+  })
 })

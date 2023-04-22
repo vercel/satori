@@ -88,11 +88,9 @@ GradientParser.parse = (function () {
     const res = { ...orientation }
 
     Object.assign(res, {
-      style: {
-        type: 'extent-keyword',
-        value: 'farthest-corner',
-        ...(res.style || {})
-      },
+      style: res.style?.length > 0
+        ? res.style
+        : [{ type: 'extent-keyword', value: 'farthest-corner' }],
       at: {
         type: 'position',
         value: {
@@ -113,7 +111,7 @@ GradientParser.parse = (function () {
     if (!orientation.value) {
       Object.assign(res, {
         type: 'shape',
-        value: ['%', 'extent-keyword'].includes(res.style.type)
+        value: res.style.some(v => ['%', 'extent-keyword'].includes(v.type))
           ? 'ellipse'
           : 'circle'
       })
@@ -217,15 +215,16 @@ GradientParser.parse = (function () {
   function preMatchRadialOrientation() {
     let rgEndingShape = matchCircle() || matchEllipse()
     let rgSize = matchExtentKeyword() || matchLength() || matchDistance()
+    const extra = match('%', tokens.percentageValue, 1)
 
     if (rgEndingShape) {
       return {
         ...rgEndingShape,
-        style: rgSize
+        style: [rgSize, extra].filter(v => v)
       }
     } else if (rgSize){
       return {
-        style: rgSize,
+        style: [rgSize, extra].filter(v => v),
         ...(matchCircle() || matchEllipse())
       }
     } else {

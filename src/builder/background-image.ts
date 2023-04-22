@@ -357,9 +357,11 @@ export default async function backgroundImage(
     // https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/radial-gradient()#values
     const spread = calcRadius(
       shape as Shape,
-      orientation.style.value,
+      orientation.style,
+      inheritableStyle.fontSize as number,
       { x: cx, y: cy },
-      [xDelta, yDelta]
+      [xDelta, yDelta],
+      inheritableStyle
     )
 
     // TODO: check for repeat-x/repeat-y
@@ -528,21 +530,56 @@ function calcPos(
 type Shape = 'circle' | 'ellipse'
 function calcRadius(
   shape: Shape,
-  endingShape:
-    | 'closest-side'
-    | 'farthest-side'
-    | 'closest-corner'
-    | 'farthest-corner',
+  endingShape: Array<{ type: string; value: string }>,
+  baseFontSize: number,
   centerAxis: { x: number; y: number },
-  length: [number, number]
+  length: [number, number],
+  inheritableStyle: Record<string, string | number>
 ) {
   const [xDelta, yDelta] = length
   const { x: cx, y: cy } = centerAxis
   const spread: Record<string, number> = {}
   let fx = 0
   let fy = 0
+  const isExtentKeyWord = endingShape.some((v) => v.type === 'extent-keyword')
 
-  switch (endingShape) {
+  if (!isExtentKeyWord) {
+    if (endingShape.some((v) => v.value.startsWith('-'))) {
+      throw new Error(
+        'disallow setting negative values to the size of the shape. Check https://w3c.github.io/csswg-drafts/css-images/#valdef-rg-size-length-0'
+      )
+    }
+    if (shape === 'circle') {
+      return {
+        r: lengthToNumber(
+          `${endingShape[0].value}${endingShape[0].type}`,
+          baseFontSize,
+          xDelta,
+          inheritableStyle,
+          true
+        ),
+      }
+    } else {
+      return {
+        rx: lengthToNumber(
+          `${endingShape[0].value}${endingShape[0].type}`,
+          baseFontSize,
+          xDelta,
+          inheritableStyle,
+          true
+        ),
+        ry: lengthToNumber(
+          `${endingShape[1].value}${endingShape[1].type}`,
+          baseFontSize,
+          yDelta,
+          inheritableStyle,
+          true
+        ),
+      }
+    }
+  }
+
+  switch (endingShape[0].value) {
     case 'farthest-corner':
       fx = Math.max(Math.abs(xDelta - cx), Math.abs(cx))
       fy = Math.max(Math.abs(yDelta - cy), Math.abs(cy))
