@@ -23,7 +23,7 @@ GradientParser.parse = (function () {
     positionKeywords: /^(left|center|right|top|bottom)/i,
     pixelValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))px/,
     percentageValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))\%/,
-    emValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))(r?em|vw|vh)/,
+    emLikeValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))(r?em|vw|vh)/,
     angleValue: /^(-?(([0-9]*\.[0-9]+)|([0-9]+\.?)))deg/,
     zeroValue: /[0]/,
     startCall: /^\(/,
@@ -88,7 +88,7 @@ GradientParser.parse = (function () {
     const res = { ...orientation }
 
     Object.assign(res, {
-      style: res.style?.length > 0
+      style: (res.style || []).length > 0
         ? res.style
         : [{ type: 'extent-keyword', value: 'farthest-corner' }],
       at: {
@@ -356,7 +356,7 @@ GradientParser.parse = (function () {
   }
 
   function matchLength() {
-    return match('px', tokens.pixelValue, 1) || matchRelativeLength(tokens.emValue, 1)
+    return match('px', tokens.pixelValue, 1) || matchRelativeLength(tokens.emLikeValue, 1)
   }
 
   function matchRelativeLength(pattern, captureIndex) {
