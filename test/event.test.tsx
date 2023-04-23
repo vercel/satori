@@ -7,7 +7,7 @@ describe('Event', () => {
   let fonts
   initFonts((f) => (fonts = f))
 
-  it('should trigger the onNodeAdded callback', async () => {
+  it('should trigger the onNodeDetected callback', async () => {
     const nodes = []
     await satori(
       <div style={{ width: '100%', height: 50, display: 'flex' }}>
@@ -18,7 +18,7 @@ describe('Event', () => {
         width: 100,
         height: 100,
         fonts,
-        onNodeAdded: (node) => {
+        onNodeDetected: (node) => {
           nodes.push(node)
         },
       }

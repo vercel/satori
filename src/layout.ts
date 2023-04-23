@@ -33,7 +33,7 @@ export interface LayoutContext {
   canLoadAdditionalAssets: boolean
   locale?: Locale
   getTwStyles: (tw: string, style: any) => any
-  onNodeAdded?: (node: SatoriNode) => void
+  onNodeDetected?: (node: SatoriNode) => void
 }
 
 export interface SatoriNode {
@@ -173,7 +173,7 @@ export default async function* layout(
       canLoadAdditionalAssets,
       locale: newLocale,
       getTwStyles,
-      onNodeAdded: context.onNodeAdded,
+      onNodeDetected: context.onNodeDetected,
     })
     if (canLoadAdditionalAssets) {
       segmentsMissingFont.push(...(((await iter.next()).value as any) || []))
@@ -200,7 +200,7 @@ export default async function* layout(
   // event handler because everything is already flattened, unless it's a text
   // node.
   const { children: childrenNode, ...restProps } = props
-  context.onNodeAdded?.({
+  context.onNodeDetected?.({
     left,
     top,
     width,

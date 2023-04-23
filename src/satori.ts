@@ -34,7 +34,7 @@ export type SatoriOptions = (
     segment: string
   ) => Promise<string | Array<FontOptions>>
   tailwindConfig?: TwConfig
-  onNodeAdded?: (node: SatoriNode) => void
+  onNodeDetected?: (node: SatoriNode) => void
 }
 export type { SatoriNode }
 
@@ -110,7 +110,7 @@ export default async function satori(
     debug: options.debug,
     graphemeImages,
     canLoadAdditionalAssets: !!options.loadAdditionalAsset,
-    onNodeAdded: options.onNodeAdded,
+    onNodeDetected: options.onNodeDetected,
     getTwStyles: (tw, style) => {
       const twToStyles = getTw({
         width: definedWidth,
