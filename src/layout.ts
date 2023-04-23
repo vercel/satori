@@ -4,6 +4,7 @@
 
 import type { ReactNode } from 'react'
 import type { Node as YogaNode } from 'yoga-wasm-web'
+import type { SatoriNode } from './types.js'
 
 import getYoga from './yoga/index.js'
 import {
@@ -33,6 +34,7 @@ export interface LayoutContext {
   canLoadAdditionalAssets: boolean
   locale?: Locale
   getTwStyles: (tw: string, style: any) => any
+  onNodeAdded?: (node: SatoriNode) => void
 }
 
 export default async function* layout(
@@ -64,7 +66,7 @@ export default async function* layout(
     return ''
   }
 
-  // Not a normal element.
+  // Not a regular element.
   if (!isReactElement(element) || typeof element.type === 'function') {
     let iter: ReturnType<typeof layout>
 
@@ -160,6 +162,7 @@ export default async function* layout(
       canLoadAdditionalAssets,
       locale: newLocale,
       getTwStyles,
+      onNodeAdded: context.onNodeAdded,
     })
     if (canLoadAdditionalAssets) {
       segmentsMissingFont.push(...(((await iter.next()).value as any) || []))
@@ -181,6 +184,21 @@ export default async function* layout(
   let childrenRenderResult = ''
   let baseRenderResult = ''
   let depsRenderResult = ''
+
+  // Emit event for the current node. We don't pass the children prop to the
+  // event handler because everything is already flattened, unless it's a text
+  // node.
+  const { children: childrenNode, ...restProps } = props
+  context.onNodeAdded?.({
+    left,
+    top,
+    width,
+    height,
+    type,
+    props: restProps,
+    key: element.key,
+    textContent: isReactElement(childrenNode) ? undefined : childrenNode,
+  })
 
   // Generate the rendered markup for the current node.
   if (type === 'img') {
