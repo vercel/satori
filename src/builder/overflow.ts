@@ -4,6 +4,7 @@
 
 import { buildXMLString } from '../utils.js'
 import mask from './content-mask.js'
+import { buildClipPath } from './clip-path.js'
 
 export default function overflow(
   {
@@ -27,10 +28,19 @@ export default function overflow(
     currentClipPath: string | string
     src?: string
   },
-  style: Record<string, string | number>
+  style: Record<string, string | number>,
+  inheritableStyle: Record<string, string | number>
 ) {
+  const clipPath =
+    style.clipPath && style.clipPath !== 'none'
+      ? buildClipPath(
+          { left, top, width, height, path, id, matrix, currentClipPath, src },
+          style as Record<string, number>,
+          inheritableStyle
+        )
+      : ''
   if (style.overflow !== 'hidden' && !src) {
-    return ''
+    return clipPath
   }
 
   const contentMask = mask(
@@ -46,11 +56,13 @@ export default function overflow(
     style
   )
 
+  const _id = `satori_cp-${id}`
+
   return (
     buildXMLString(
       'clipPath',
       {
-        id: `satori_cp-${id}`,
+        id: _id,
         'clip-path': currentClipPath,
       },
       buildXMLString(path ? 'path' : 'rect', {
@@ -60,6 +72,8 @@ export default function overflow(
         height,
         d: path ? path : undefined,
       })
-    ) + contentMask
+    ) +
+    contentMask +
+    clipPath
   )
 }
