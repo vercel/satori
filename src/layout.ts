@@ -4,7 +4,6 @@
 
 import type { ReactNode } from 'react'
 import type { Node as YogaNode } from 'yoga-wasm-web'
-import type { SatoriNode } from './types.js'
 
 import getYoga from './yoga/index.js'
 import {
@@ -35,6 +34,18 @@ export interface LayoutContext {
   locale?: Locale
   getTwStyles: (tw: string, style: any) => any
   onNodeAdded?: (node: SatoriNode) => void
+}
+
+export interface SatoriNode {
+  // Layout information.
+  left: number
+  top: number
+  width: number
+  height: number
+  type: string
+  key?: string | number
+  props: Record<string, any>
+  textContent?: string
 }
 
 export default async function* layout(

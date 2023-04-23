@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import type { SatoriOptions, SatoriNode } from './types.js'
+import type { TwConfig } from 'twrnc'
+import type { SatoriNode } from './layout.js'
 
 import getYoga, { init } from './yoga/index.js'
 import layout from './layout.js'
@@ -12,7 +13,31 @@ import getTw from './handler/tailwind.js'
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
 
-export type { SatoriOptions, SatoriNode }
+export type SatoriOptions = (
+  | {
+      width: number
+      height: number
+    }
+  | {
+      width: number
+    }
+  | {
+      height: number
+    }
+) & {
+  fonts: FontOptions[]
+  embedFont?: boolean
+  debug?: boolean
+  graphemeImages?: Record<string, string>
+  loadAdditionalAsset?: (
+    languageCode: string,
+    segment: string
+  ) => Promise<string | Array<FontOptions>>
+  tailwindConfig?: TwConfig
+  onNodeAdded?: (node: SatoriNode) => void
+}
+export type { SatoriNode }
+
 export { init }
 
 export default async function satori(
