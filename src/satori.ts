@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { TwConfig } from 'twrnc'
+import type { SatoriNode } from './layout.js'
 
 import getYoga, { init } from './yoga/index.js'
 import layout from './layout.js'
@@ -33,7 +34,9 @@ export type SatoriOptions = (
     segment: string
   ) => Promise<string | Array<FontOptions>>
   tailwindConfig?: TwConfig
+  onNodeDetected?: (node: SatoriNode) => void
 }
+export type { SatoriNode }
 
 export { init }
 
@@ -107,6 +110,7 @@ export default async function satori(
     debug: options.debug,
     graphemeImages,
     canLoadAdditionalAssets: !!options.loadAdditionalAsset,
+    onNodeDetected: options.onNodeDetected,
     getTwStyles: (tw, style) => {
       const twToStyles = getTw({
         width: definedWidth,

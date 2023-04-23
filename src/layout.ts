@@ -33,6 +33,19 @@ export interface LayoutContext {
   canLoadAdditionalAssets: boolean
   locale?: Locale
   getTwStyles: (tw: string, style: any) => any
+  onNodeDetected?: (node: SatoriNode) => void
+}
+
+export interface SatoriNode {
+  // Layout information.
+  left: number
+  top: number
+  width: number
+  height: number
+  type: string
+  key?: string | number
+  props: Record<string, any>
+  textContent?: string
 }
 
 export default async function* layout(
@@ -64,7 +77,7 @@ export default async function* layout(
     return ''
   }
 
-  // Not a normal element.
+  // Not a regular element.
   if (!isReactElement(element) || typeof element.type === 'function') {
     let iter: ReturnType<typeof layout>
 
@@ -160,6 +173,7 @@ export default async function* layout(
       canLoadAdditionalAssets,
       locale: newLocale,
       getTwStyles,
+      onNodeDetected: context.onNodeDetected,
     })
     if (canLoadAdditionalAssets) {
       segmentsMissingFont.push(...(((await iter.next()).value as any) || []))
@@ -181,6 +195,21 @@ export default async function* layout(
   let childrenRenderResult = ''
   let baseRenderResult = ''
   let depsRenderResult = ''
+
+  // Emit event for the current node. We don't pass the children prop to the
+  // event handler because everything is already flattened, unless it's a text
+  // node.
+  const { children: childrenNode, ...restProps } = props
+  context.onNodeDetected?.({
+    left,
+    top,
+    width,
+    height,
+    type,
+    props: restProps,
+    key: element.key,
+    textContent: isReactElement(childrenNode) ? undefined : childrenNode,
+  })
 
   // Generate the rendered markup for the current node.
   if (type === 'img') {
