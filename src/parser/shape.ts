@@ -1,5 +1,5 @@
 import { lengthToNumber } from '../utils.js'
-import { default as buildBorderRadius } from './border-radius.js'
+import { default as buildBorderRadius } from '../builder/border-radius.js'
 import { getStylesForProperty } from 'css-to-react-native'
 
 const regexMap = {

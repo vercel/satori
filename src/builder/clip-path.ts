@@ -1,5 +1,5 @@
 import { buildXMLString } from '../utils.js'
-import { createShapeParser } from './shape.js'
+import { createShapeParser } from '../parser/shape.js'
 
 export function genClipPathId(id: string) {
   return `satori_cp-${id}`
