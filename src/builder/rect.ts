@@ -125,10 +125,10 @@ export default async function rect(
   const currentClipPath =
     backgroundClip === 'text'
       ? `url(#satori_bct-${id})`
-      : style.clipPath
-      ? genClipPath(id)
       : clipPathId
       ? `url(#${clipPathId})`
+      : style.clipPath
+      ? genClipPath(id)
       : undefined
 
   const clip = overflow(
