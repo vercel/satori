@@ -167,6 +167,59 @@ describe('Image', () => {
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it('should scale image to fit max-width and max-height but maintain the aspect ratio', async () => {
+    // Hit max-width
+    const svg1 = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'blue',
+        }}
+      >
+        <img
+          src={PNG_SAMPLE}
+          style={{
+            maxWidth: '100%',
+            maxHeight: '100%',
+            background: 'red',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg1, 100)).toMatchImageSnapshot()
+
+    // Hit max-height
+    const svg2 = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'blue',
+          flexDirection: 'column',
+        }}
+      >
+        <img
+          src={PNG_SAMPLE}
+          style={{
+            maxWidth: '100%',
+            maxHeight: '100%',
+            background: 'red',
+          }}
+        />
+      </div>,
+      { width: 100, height: 50, fonts }
+    )
+    expect(toImage(svg2, 100)).toMatchImageSnapshot()
+  })
+
   it('should support styles', async () => {
     const svg = await satori(
       <div
