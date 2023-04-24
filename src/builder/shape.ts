@@ -8,7 +8,6 @@ const regexMap = {
   path: /path\((.+)\)/,
   polygon: /polygon\((.+)\)/,
   inset: /inset\((.+)\)/,
-  valueWithFillRule: /^(nonzero|evenodd)?,?(.+)/,
 }
 
 export function createShapeParser(
@@ -22,7 +21,7 @@ export function createShapeParser(
   style: Record<string, string | number>,
   inheritedStyle: Record<string, string | number>
 ) {
-  function matchCircle(str: string) {
+  function parseCircle(str: string) {
     const res = str.match(regexMap['circle'])
 
     if (!res) return null
@@ -56,7 +55,7 @@ export function createShapeParser(
       ),
     }
   }
-  function matchEllipse(str: string) {
+  function parseEllipse(str: string) {
     const res = str.match(regexMap['ellipse'])
 
     if (!res) return null
@@ -98,7 +97,7 @@ export function createShapeParser(
       ),
     }
   }
-  function matchPath(str: string) {
+  function parsePath(str: string) {
     const res = str.match(regexMap['path'])
 
     if (!res) return null
@@ -111,7 +110,7 @@ export function createShapeParser(
       'fill-rule': fillRule,
     }
   }
-  function matchPolygon(str: string) {
+  function parsePolygon(str: string) {
     const res = str.match(regexMap['polygon'])
 
     if (!res) return null
@@ -140,7 +139,7 @@ export function createShapeParser(
         .join(','),
     }
   }
-  function matchInset(str: string) {
+  function parseInset(str: string) {
     const res = str.match(regexMap['inset'])
 
     if (!res) return null
@@ -197,11 +196,11 @@ export function createShapeParser(
   }
 
   return {
-    matchCircle,
-    matchEllipse,
-    matchPath,
-    matchPolygon,
-    matchInset,
+    parseCircle,
+    parseEllipse,
+    parsePath,
+    parsePolygon,
+    parseInset,
   }
 }
 

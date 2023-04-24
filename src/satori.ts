@@ -185,9 +185,7 @@ export default async function satori(
 
   root.freeRecursive()
 
-  const str = svg({ width: computedWidth, height: computedHeight, content })
-
-  return str
+  return svg({ width: computedWidth, height: computedHeight, content })
 }
 
 function convertToLanguageCodes(
