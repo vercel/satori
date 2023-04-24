@@ -7,6 +7,7 @@ import transform from './transform.js'
 import overflow from './overflow.js'
 import { buildXMLString } from '../utils.js'
 import border, { getBorderClipPath } from './border.js'
+import { genClipPath } from './clip-path.js'
 
 export default async function rect(
   {
@@ -126,11 +127,14 @@ export default async function rect(
       ? `url(#satori_bct-${id})`
       : clipPathId
       ? `url(#${clipPathId})`
+      : style.clipPath
+      ? genClipPath(id)
       : undefined
 
   const clip = overflow(
     { left, top, width, height, path, id, matrix, currentClipPath, src },
-    style as Record<string, number>
+    style as Record<string, number>,
+    inheritableStyle
   )
 
   // Each background generates a new rectangle.
