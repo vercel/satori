@@ -4,7 +4,7 @@
 
 import { buildXMLString } from '../utils.js'
 import mask from './content-mask.js'
-import { buildClipPath } from './clip-path.js'
+import { buildClipPath, genClipPathId } from './clip-path.js'
 
 export default function overflow(
   {
@@ -31,6 +31,7 @@ export default function overflow(
   style: Record<string, string | number>,
   inheritableStyle: Record<string, string | number>
 ) {
+  let overflowClipPath = ''
   const clipPath =
     style.clipPath && style.clipPath !== 'none'
       ? buildClipPath(
@@ -39,26 +40,13 @@ export default function overflow(
           inheritableStyle
         )
       : ''
-  const contentMask = mask(
-    {
-      id: `satori_om-${id}`,
-      left,
-      top,
-      width,
-      height,
-      matrix,
-      borderOnly: src ? false : true,
-    },
-    style
-  )
+
   if (style.overflow !== 'hidden' && !src) {
-    return clipPath + contentMask
-  }
+    overflowClipPath = ''
+  } else {
+    const _id = clipPath ? `satori_ocp-${id}` : genClipPathId(id)
 
-  const _id = `satori_cp-${id}`
-
-  return (
-    buildXMLString(
+    overflowClipPath = buildXMLString(
       'clipPath',
       {
         id: _id,
@@ -71,8 +59,21 @@ export default function overflow(
         height,
         d: path ? path : undefined,
       })
-    ) +
-    clipPath +
-    contentMask
+    )
+  }
+
+  const contentMask = mask(
+    {
+      id: `satori_om-${id}`,
+      left,
+      top,
+      width,
+      height,
+      matrix,
+      borderOnly: src ? false : true,
+    },
+    style
   )
+
+  return clipPath + overflowClipPath + contentMask
 }

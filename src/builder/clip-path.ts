@@ -1,8 +1,11 @@
 import { buildXMLString } from '../utils.js'
 import { createShapeParser } from './shape.js'
 
+export function genClipPathId(id: string) {
+  return `satori_cp-${id}`
+}
 export function genClipPath(id: string) {
-  return `url(#satori_cp-${id})`
+  return `url(#${genClipPathId(id)})`
 }
 
 export function buildClipPath(
@@ -37,7 +40,8 @@ export function buildClipPath(
     return buildXMLString(
       'clipPath',
       {
-        id: `satori_cp-${v.id}`,
+        id: genClipPathId(v.id),
+        'clip-path': v.currentClipPath,
       },
       buildXMLString(type, rest)
     )
