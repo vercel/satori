@@ -140,7 +140,10 @@ export default async function* layout(
 
   // If the element has `overflow` set to `hidden`, we need to create a clip
   // path and use it in all its children.
-  if (computedStyle.overflow === 'hidden') {
+  if (
+    computedStyle.overflow === 'hidden' ||
+    (computedStyle.clipPath && computedStyle.clipPath !== 'none')
+  ) {
     newInheritableStyle._inheritedClipPathId = `satori_cp-${id}`
     newInheritableStyle._inheritedMaskId = `satori_om-${id}`
   }

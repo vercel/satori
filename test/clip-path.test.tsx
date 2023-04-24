@@ -1,0 +1,49 @@
+import { it, describe, expect } from 'vitest'
+
+import { initFonts, toImage } from './utils.js'
+import satori from '../src/index.js'
+
+describe('Border', () => {
+  let fonts
+  initFonts((f) => (fonts = f))
+
+  it('should render clip-path', async () => {
+    const svgs = await Promise.all(
+      [
+        'circle(20px)',
+        'circle(40px at bottom left)',
+        'ellipse(10px 0.625em at 10% 20%)',
+        'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)',
+        `path('M 0 200 L 0,75 A 5,5 0,0,1 150,75 L 200 200 z')`,
+        'inset(10px 20px)',
+        'inset(0.5rem round 20% 1em 1rem 2px)',
+      ].map((clipPath) =>
+        satori(
+          <div
+            style={{
+              height: '100%',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#fff',
+              clipPath,
+              fontSize: 32,
+              fontWeight: 600,
+            }}
+          >
+            <div style={{ marginTop: 40 }}>Hello, World</div>
+          </div>,
+          {
+            width: 100,
+            height: 100,
+            fonts,
+          }
+        )
+      )
+    )
+
+    svgs.forEach((svg) => expect(toImage(svg)).toMatchImageSnapshot())
+  })
+})
