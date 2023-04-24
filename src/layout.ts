@@ -138,7 +138,7 @@ export default async function* layout(
     ;(computedStyle.transform as any).__parent = inheritedStyle.transform
   }
 
-  // If the element has `overflow` set to `hidden`, we need to create a clip
+  // If the element has `overflow` set to `hidden` or clip-path is set, we need to create a clip
   // path and use it in all its children.
   if (
     computedStyle.overflow === 'hidden' ||
