@@ -66,20 +66,18 @@ export default async function handler(
     let contentBoxHeight = style.height || props.height
 
     const isAbsoluteContentSize =
-      typeof contentBoxWidth !== 'string' &&
-      typeof contentBoxHeight !== 'string'
+      typeof contentBoxWidth === 'number' &&
+      typeof contentBoxHeight === 'number'
 
-    if (typeof contentBoxWidth === 'number' && isAbsoluteContentSize) {
+    if (isAbsoluteContentSize) {
       contentBoxWidth -= extraHorizontal
-    }
-    if (typeof contentBoxHeight === 'number' && isAbsoluteContentSize) {
       contentBoxHeight -= extraVertical
     }
 
     // When no content size is defined, we use the image size as the content size.
     if (contentBoxWidth === undefined && contentBoxHeight === undefined) {
-      contentBoxWidth = imageWidth
-      contentBoxHeight = imageHeight
+      contentBoxWidth = '100%'
+      node.setAspectRatio(1 / r)
     } else {
       // If only one sisde is not defined, we can calculate the other one.
       if (contentBoxWidth === undefined) {
