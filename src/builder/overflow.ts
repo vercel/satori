@@ -39,10 +39,6 @@ export default function overflow(
           inheritableStyle
         )
       : ''
-  if (style.overflow !== 'hidden' && !src) {
-    return clipPath
-  }
-
   const contentMask = mask(
     {
       id: `satori_om-${id}`,
@@ -55,6 +51,9 @@ export default function overflow(
     },
     style
   )
+  if (style.overflow !== 'hidden' && !src) {
+    return clipPath + contentMask
+  }
 
   const _id = `satori_cp-${id}`
 
@@ -73,7 +72,7 @@ export default function overflow(
         d: path ? path : undefined,
       })
     ) +
-    contentMask +
-    clipPath
+    clipPath +
+    contentMask
   )
 }
