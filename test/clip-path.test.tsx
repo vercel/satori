@@ -11,7 +11,7 @@ describe('Border', () => {
     const svgs = await Promise.all(
       [
         'circle(20px)',
-        'circle(40px at bottom left)',
+        'circle(20% at bottom left)',
         'ellipse(10px 0.625em at 10% 20%)',
         'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)',
         `path('M 0 200 L 0,75 A 5,5 0,0,1 150,75 L 200 200 z')`,

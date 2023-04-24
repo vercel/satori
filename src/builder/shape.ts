@@ -36,7 +36,7 @@ export function createShapeParser(
       r: lengthToNumber(
         radius,
         inheritedStyle.fontSize as number,
-        width,
+        Math.sqrt(Math.pow(width, 2) + Math.pow(height, 2)) / Math.sqrt(2),
         inheritedStyle,
         true
       ),
