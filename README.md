@@ -233,6 +233,11 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <td>Supported</td>
 </tr>
 
+<tr>
+<td colspan="2"><code>clip-path</code></td>
+<td>Supported</td>
+</tr>
+
 </tbody>
 </table>
 
