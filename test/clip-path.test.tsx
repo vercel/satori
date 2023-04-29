@@ -2,9 +2,8 @@ import { it, describe, expect } from 'vitest'
 
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
-import { m } from 'vitest/dist/types-aac763a5.js'
 
-describe('Border', () => {
+describe('clipPath', () => {
   let fonts
   initFonts((f) => (fonts = f))
 
@@ -61,6 +60,34 @@ describe('Border', () => {
           backgroundColor: '#fff',
           overflow: 'hidden',
           clipPath: 'circle(60px)',
+          fontSize: 32,
+          fontWeight: 600,
+        }}
+      >
+        <div>Lynnnnnnnnnnnnnnnnnnnnn</div>
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+
+    expect(toImage(svg)).toMatchImageSnapshot()
+  })
+
+  it('should respect the position value', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          clipPath: 'circle(30px at 20px 30%)',
           fontSize: 32,
           fontWeight: 600,
         }}

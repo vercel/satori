@@ -227,9 +227,11 @@ function resolvePosition(position: string, xDelta: number, yDelta: number) {
       res.x = 0
     } else if (v === 'right') {
       res.x = xDelta
-    } else {
+    } else if (v === 'center') {
       res.x = xDelta / 2
       res.y = yDelta / 2
+    } else {
+      // do nothing
     }
   })
 
