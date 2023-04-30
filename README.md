@@ -139,10 +139,10 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>height</code></td><td>Supported</td></tr>
 
 <tr><td rowspan="5">Min & max size</td></tr>
-<tr><td><code>min-width</code></td><td>Supported</td></tr>
-<tr><td><code>min-height</code></td><td>Supported</td></tr>
-<tr><td><code>max-width</code></td><td>Supported</td></tr>
-<tr><td><code>max-height</code></td><td>Supported</td></tr>
+<tr><td><code>minWidth</code></td><td>Supported</td></tr>
+<tr><td><code>minHeight</code></td><td>Supported</td></tr>
+<tr><td><code>maxWidth</code></td><td>Supported</td></tr>
+<tr><td><code>maxHeight</code></td><td>Supported</td></tr>
 
 <tr><td rowspan="5"><code>border</code></td></tr>
 <tr><td>Width (<code>borderWidth</code>, <code>borderTopWidth</code>, ...)</td><td>Supported</td></tr>
@@ -234,7 +234,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 </tr>
 
 <tr>
-<td colspan="2"><code>clip-path</code></td>
+<td colspan="2"><code>clipPath</code></td>
 <td>Supported</td>
 </tr>
 
