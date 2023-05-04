@@ -166,9 +166,8 @@ export async function preProcessNode(node: ReactNode) {
   }
 
   walk(node)
-  const _list = Array.from(set)
 
-  return Promise.all(_list.map((s) => resolveImageData(s)))
+  return Promise.all(Array.from(set).map((s) => resolveImageData(s)))
 }
 
 export async function SVGNodeToImage(
