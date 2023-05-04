@@ -103,6 +103,45 @@ describe('Image', () => {
     expect(requests).toEqual(['https://via.placeholder.com/150'])
   })
 
+  it('should render svg with image', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 32,
+          fontWeight: 600,
+        }}
+      >
+        <svg
+          width='100'
+          height='100'
+          viewBox='0 0 100 100'
+          fill='none'
+          xmlns='http://www.w3.org/2000/svg'
+        >
+          <image
+            id='image0_1_2'
+            width='100'
+            height='100'
+            href='https://t3.ftcdn.net/jpg/02/95/26/46/360_F_295264675_clwKZxogAhxLS9sD163Tgkz1WMHsq1RJ.jpg'
+          />
+        </svg>
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+
+    expect(requests).toEqual([
+      'https://t3.ftcdn.net/jpg/02/95/26/46/360_F_295264675_clwKZxogAhxLS9sD163Tgkz1WMHsq1RJ.jpg',
+    ])
+  })
+
   it('should throw error when relative path is used', async () => {
     await expect(
       satori(
