@@ -307,3 +307,10 @@ export function splitByBreakOpportunities(
 
   return { words, requiredBreaks }
 }
+
+export const midline = (s: string) => {
+  return s.replaceAll(
+    /([A-Z])/g,
+    (_, letter: string) => `-${letter.toLowerCase()}`
+  )
+}

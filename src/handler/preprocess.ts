@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from 'react'
 import { resolveImageData, cache } from './image.js'
-import { isReactElement, parseViewBox } from '../utils.js'
+import { isReactElement, parseViewBox, midline } from '../utils.js'
 
 // Based on
 // https://raw.githubusercontent.com/facebook/react/master/packages/react-dom/src/shared/possibleStandardNames.js
@@ -115,18 +115,26 @@ function translateSVGNodeToSVGString(
 
   const { children, style, ...restProps } = node.props || {}
   const currentColor = style?.color || inheritedColor
-  return `<${type}${Object.entries(restProps)
+
+  const attrs = `${Object.entries(restProps)
     .map(([k, _v]) => {
       if (typeof _v === 'string' && _v.toLowerCase() === 'currentcolor') {
         _v = currentColor
       }
-
-      if (k === 'href' && type === 'image') {
-        return ` ${ATTRIBUTE_MAPPING[k] || k}="${cache.get(_v as string)[0]}"`
-      }
       return ` ${ATTRIBUTE_MAPPING[k] || k}="${_v}"`
     })
-    .join('')}>${translateSVGNodeToSVGString(children, currentColor)}</${type}>`
+    .join('')}`
+
+  const styles = style
+    ? ` style="${Object.entries(style)
+        .map(([k, _v]) => `${midline(k)}:${_v}`)
+        .join(';')}"`
+    : ''
+
+  return `<${type}${attrs}${styles}>${translateSVGNodeToSVGString(
+    children,
+    currentColor
+  )}</${type}>`
 }
 /**
  * pre process node and resolve absolute link to img data for image element
