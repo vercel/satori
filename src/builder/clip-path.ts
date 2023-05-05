@@ -42,6 +42,7 @@ export function buildClipPath(
       {
         id: genClipPathId(v.id),
         'clip-path': v.currentClipPath,
+        transform: `translate(${v.left}, ${v.top})`,
       },
       buildXMLString(type, rest)
     )
