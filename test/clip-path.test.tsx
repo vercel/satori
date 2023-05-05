@@ -104,7 +104,7 @@ describe('clipPath', () => {
     expect(toImage(svg)).toMatchImageSnapshot()
   })
 
-  it('should repect left and top', async () => {
+  it('should respect left and top', async () => {
     const svg = await satori(
       <div
         style={{
