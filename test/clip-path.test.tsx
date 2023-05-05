@@ -103,4 +103,38 @@ describe('clipPath', () => {
 
     expect(toImage(svg)).toMatchImageSnapshot()
   })
+
+  it('should respect left and top', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#ee7621',
+          fontSize: 32,
+          fontWeight: 600,
+        }}
+      >
+        <div
+          style={{
+            height: 20,
+            width: 20,
+            clipPath: 'circle(5px at 5px 5px)',
+            background: 'red',
+          }}
+        ></div>
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+
+    expect(toImage(svg)).toMatchImageSnapshot()
+  })
 })
