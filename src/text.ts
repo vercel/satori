@@ -114,16 +114,13 @@ export default async function* buildTextNodes(
     )
   }
 
-  // We can cache the measured width of each word as the measure function will be
-  // called multiple times.
-  const measureGrapheme = genMeasureGrapheme(engine, parentStyle)
-  const tabWidth = isString(tabSize)
-    ? lengthToNumber(tabSize, fontSize as number, 1, parentStyle)
-    : measureGrapheme(Space) * (tabSize as number)
-
   function isImage(s: string): boolean {
     return !!(graphemeImages && graphemeImages[s])
   }
+
+  // We can cache the measured width of each word as the measure function will be
+  // called multiple times.
+  const measureGrapheme = genMeasureGrapheme(engine, parentStyle)
 
   function measureGraphemeArray(segments: string[]): number {
     let width = 0
@@ -142,6 +139,10 @@ export default async function* buildTextNodes(
   function measureText(text: string): number {
     return measureGraphemeArray(segment(text, 'grapheme'))
   }
+
+  const tabWidth = isString(tabSize)
+    ? lengthToNumber(tabSize, fontSize as number, 1, parentStyle)
+    : measureGrapheme(Space) * (tabSize as number)
 
   const calc = (
     text: string,
@@ -483,9 +484,8 @@ export default async function* buildTextNodes(
   let mergedPath = ''
   let extra = ''
   let skippedLine = -1
-  let ellipsisWidth =
-    textOverflow === 'ellipsis' ? measureGraphemeArray(['…']) : 0
-  let spaceWidth = textOverflow === 'ellipsis' ? measureGraphemeArray([' ']) : 0
+  let ellipsisWidth = textOverflow === 'ellipsis' ? measureGrapheme('…') : 0
+  let spaceWidth = textOverflow === 'ellipsis' ? measureGrapheme(' ') : 0
   let decorationLines: Record<number, null | number[]> = {}
   let wordBuffer: string | null = null
   let bufferedOffset = 0
