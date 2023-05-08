@@ -12,6 +12,8 @@ import {
   buildXMLString,
   splitByBreakOpportunities,
   isUndefined,
+  isString,
+  lengthToNumber,
 } from './utils.js'
 import buildText, { container } from './builder/text.js'
 import { buildDropShadow } from './builder/shadow.js'
@@ -115,7 +117,9 @@ export default async function* buildTextNodes(
   // We can cache the measured width of each word as the measure function will be
   // called multiple times.
   const measureGrapheme = genMeasureGrapheme(engine, parentStyle)
-  const tabWidth = measureGrapheme(Space) * (tabSize as number)
+  const tabWidth = isString(tabSize)
+    ? lengthToNumber(tabSize, fontSize as number, 1, parentStyle)
+    : measureGrapheme(Space) * (tabSize as number)
 
   function isImage(s: string): boolean {
     return !!(graphemeImages && graphemeImages[s])
