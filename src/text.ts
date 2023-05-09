@@ -367,8 +367,6 @@ export default async function* buildTextNodes(
 
           x += _width
         }
-
-        x = currentWidth
       }
 
       i++
