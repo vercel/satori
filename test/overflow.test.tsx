@@ -95,6 +95,55 @@ describe('Overflow', () => {
             style={{
               width: 450,
               textOverflow: 'ellipsis',
+              overflow: 'hidden',
+            }}
+          >
+            {'LuciNyan 1 2 345'}
+          </div>
+          <div
+            style={{
+              width: 450,
+              textOverflow: 'ellipsis',
+              overflow: 'hidden',
+            }}
+          >
+            {'LuciNyan 1 2 345 6'}
+          </div>
+        </div>
+      </div>,
+      { width: 450, height: 450, fonts, embedFont: true }
+    )
+    expect(toImage(svg, 450)).toMatchImageSnapshot()
+  })
+
+  it("should not work when overflow is not 'hidden' and overflow property should not be inherited", async () => {
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          height: '100%',
+          width: '100%',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          backgroundColor: 'white',
+          fontSize: 60,
+          fontWeight: 400,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: 450,
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <div
+            style={{
+              width: 450,
+              textOverflow: 'ellipsis',
             }}
           >
             {'LuciNyan 1 2 345'}

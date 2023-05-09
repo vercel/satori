@@ -14,6 +14,7 @@ import {
   isUndefined,
   isString,
   lengthToNumber,
+  isNumber,
 } from './utils.js'
 import buildText, { container } from './builder/text.js'
 import { buildDropShadow } from './builder/shadow.js'
@@ -49,7 +50,6 @@ export default async function* buildTextNodes(
 
   const {
     textAlign,
-    textOverflow,
     whiteSpace,
     wordBreak,
     lineHeight,
@@ -73,6 +73,8 @@ export default async function* buildTextNodes(
     _content,
     wordBreak as string
   )
+
+  const lineLimit = processTextOverflow(parentStyle, allowSoftWrap)
 
   const textContainer = createTextContainerNode(Yoga, textAlign as string)
   parent.insertChild(textContainer, parent.getChildCount())
@@ -222,7 +224,7 @@ export default async function* buildTextNodes(
     // @TODO: Support different writing modes.
     // @TODO: Support RTL languages.
     let i = 0
-    while (i < words.length) {
+    while (i < words.length && lines < lineLimit) {
       let word = words[i]
       const forceBreak = requiredBreaks[i]
 
@@ -373,10 +375,12 @@ export default async function* buildTextNodes(
     }
 
     if (currentWidth) {
+      if (lines < lineLimit) {
+        height += currentLineHeight
+      }
       lines++
       lineWidths.push(currentWidth)
       baselines.push(currentBaselineOffset)
-      height += currentLineHeight
     }
 
     // @TODO: Support `line-height`.
@@ -482,8 +486,6 @@ export default async function* buildTextNodes(
   let mergedPath = ''
   let extra = ''
   let skippedLine = -1
-  let ellipsisWidth = textOverflow === 'ellipsis' ? measureGrapheme('…') : 0
-  let spaceWidth = textOverflow === 'ellipsis' ? measureGrapheme(' ') : 0
   let decorationLines: Record<number, null | number[]> = {}
   let wordBuffer: string | null = null
   let bufferedOffset = 0
@@ -538,8 +540,16 @@ export default async function* buildTextNodes(
       ]
     }
 
-    if (textOverflow === 'ellipsis') {
-      if (lineWidths[line] > parentContainerInnerWidth) {
+    if (lineLimit !== Infinity) {
+      const ellipsisWidth = measureGrapheme('…')
+      const spaceWidth = measureGrapheme(' ')
+      const isNotLastLine = line < lineWidths.length - 1
+      const isLastAllowedLine = line + 1 === lineLimit
+
+      if (
+        isLastAllowedLine &&
+        (isNotLastLine || lineWidths[line] > parentContainerInnerWidth)
+      ) {
         if (
           layout.x + width + ellipsisWidth + spaceWidth >
           parentContainerInnerWidth
@@ -692,6 +702,10 @@ export default async function* buildTextNodes(
       backgroundClipDef += shape
       decorationShape = ''
     }
+
+    if (isLastDisplayedBeforeEllipsis) {
+      break
+    }
   }
 
   // Embed the font as path.
@@ -762,6 +776,31 @@ function processTextTransform(
   }
 
   return content
+}
+
+function processTextOverflow(
+  parentStyle: Record<string, string | number>,
+  allowSoftWrap: boolean
+) {
+  const { textOverflow, WebkitLineClamp, WebkitBoxOrient, overflow, display } =
+    parentStyle
+
+  if (textOverflow !== 'ellipsis') return Infinity
+
+  if (
+    display === '-webkit-box' &&
+    WebkitBoxOrient === 'vertical' &&
+    isNumber(WebkitLineClamp) &&
+    WebkitLineClamp > 0
+  ) {
+    return WebkitLineClamp
+  }
+
+  if (overflow === 'hidden' && !allowSoftWrap) {
+    return 1
+  }
+
+  return Infinity
 }
 
 function processWordBreak(content, wordBreak: string) {
