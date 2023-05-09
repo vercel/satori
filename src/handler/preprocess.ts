@@ -134,7 +134,7 @@ function translateSVGNodeToSVGString(
  * @returns
  */
 export async function preProcessNode(node: ReactNode) {
-  const set = new Set<string>()
+  const set = new Set<string | Buffer | ArrayBuffer>()
   const walk = (_node: ReactNode) => {
     if (!_node) return
     if (!isReactElement(_node)) return

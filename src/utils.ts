@@ -243,10 +243,14 @@ export function createLRU<T>(max = 20) {
     store.set(key, entry)
     return entry
   }
+  function clear() {
+    store.clear()
+  }
 
   return {
     set,
     get,
+    clear,
   }
 }
 
