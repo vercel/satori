@@ -24,6 +24,7 @@ import { FontEngine } from './font.js'
 import { Space, Tab } from './characters.js'
 
 const skippedWordWhenFindingMissingFont = new Set([Tab])
+
 function shouldSkipWhenFindingMissingFont(word: string): boolean {
   return skippedWordWhenFindingMissingFont.has(word)
 }
