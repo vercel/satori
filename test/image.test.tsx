@@ -103,6 +103,41 @@ describe('Image', () => {
     expect(requests).toEqual(['https://via.placeholder.com/150'])
   })
 
+  it('should render svg with image', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 32,
+          fontWeight: 600,
+        }}
+      >
+        <svg
+          width='100'
+          height='100'
+          viewBox='0 0 100 100'
+          fill='none'
+          xmlns='http://www.w3.org/2000/svg'
+        >
+          <image
+            id='image0_1_2'
+            width='100'
+            height='100'
+            href='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNiAzNiI+PHBhdGggZmlsbD0iI0ZGQ0M0RCIgZD0iTTM2IDE4YzAgOS45NDEtOC4wNTkgMTgtMTggMTgtOS45NCAwLTE4LTguMDU5LTE4LTE4QzAgOC4wNiA4LjA2IDAgMTggMGM5Ljk0MSAwIDE4IDguMDYgMTggMTgiLz48ZWxsaXBzZSBmaWxsPSIjNjY0NTAwIiBjeD0iMTEuNSIgY3k9IjEyLjUiIHJ4PSIyLjUiIHJ5PSI1LjUiLz48ZWxsaXBzZSBmaWxsPSIjNjY0NTAwIiBjeD0iMjQuNSIgY3k9IjEyLjUiIHJ4PSIyLjUiIHJ5PSI1LjUiLz48cGF0aCBmaWxsPSIjNjY0NTAwIiBkPSJNMTggMjJjLTMuNjIzIDAtNi4wMjctLjQyMi05LTEtLjY3OS0uMTMxLTIgMC0yIDIgMCA0IDQuNTk1IDkgMTEgOSA2LjQwNCAwIDExLTUgMTEtOSAwLTItMS4zMjEtMi4xMzItMi0yLTIuOTczLjU3OC01LjM3NyAxLTkgMXoiLz48cGF0aCBmaWxsPSIjRkZGIiBkPSJNOSAyM3MzIDEgOSAxIDktMSA5LTEtMiA0LTkgNC05LTQtOS00eiIvPjwvc3ZnPg=='
+          />
+        </svg>
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
   it('should throw error when relative path is used', async () => {
     await expect(
       satori(

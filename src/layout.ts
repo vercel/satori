@@ -10,10 +10,10 @@ import {
   isReactElement,
   isClass,
   buildXMLString,
-  SVGNodeToImage,
   normalizeChildren,
   hasDangerouslySetInnerHTMLProp,
 } from './utils.js'
+import { SVGNodeToImage } from './handler/preprocess.js'
 import handler from './handler/index.js'
 import FontLoader from './font.js'
 import layoutText from './text.js'
@@ -235,7 +235,7 @@ export default async function* layout(
     // When entering a <svg> node, we need to convert it to a <img> with the
     // SVG data URL embedded.
     const currentColor = computedStyle.color as string
-    const src = SVGNodeToImage(element, currentColor)
+    const src = await SVGNodeToImage(element, currentColor)
     baseRenderResult = await rect(
       {
         id,

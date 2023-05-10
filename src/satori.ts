@@ -9,6 +9,8 @@ import svg from './builder/svg.js'
 import { segment } from './utils.js'
 import { detectLanguageCode, LangCode, Locale } from './language.js'
 import getTw from './handler/tailwind.js'
+import { preProcessNode } from './handler/preprocess.js'
+import { cache } from './handler/image.js'
 
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
@@ -86,6 +88,9 @@ export default async function satori(
   // the Chinese as missing font because we have removed the Chinese as a fallback.
   // To address this situation, we may need to add `processedWordsMissingFont`
   const processedWordsMissingFonts = new Set()
+
+  cache.clear()
+  await preProcessNode(element)
 
   const handler = layout(element, {
     id: 'id',

@@ -60,7 +60,7 @@ function parsePNG(buf: ArrayBuffer) {
 import { createLRU, parseViewBox } from '../utils.js'
 
 type ResolvedImageData = [string, number?, number?] | readonly []
-const cache = createLRU<ResolvedImageData>(100)
+export const cache = createLRU<ResolvedImageData>(100)
 const inflightRequests = new Map<string, Promise<ResolvedImageData>>()
 
 const ALLOWED_IMAGE_TYPES = [PNG, JPEG, GIF, SVG]
@@ -191,6 +191,7 @@ export async function resolveImageData(
           ? src
           : `data:image/svg+xml;base64,${btoa(utf8Src)}`
       let imageSize = parseSvgImageSize(src, utf8Src)
+      cache.set(src, [base64Src, ...imageSize])
       return [base64Src, ...imageSize]
     } else if (encodingType === 'base64') {
       let imageSize: [number, number]
@@ -206,9 +207,11 @@ export async function resolveImageData(
           imageSize = parseJPEG(data)
           break
       }
+      cache.set(src, [src, ...imageSize])
       return [src, ...imageSize]
     } else {
       console.warn('Image data URI resolved without size:' + src)
+      cache.set(src, [src])
       return [src]
     }
   }
@@ -258,6 +261,7 @@ export async function resolveImageData(
     })
     .catch((err) => {
       console.error(`Can't load image ${url}: ` + err.message)
+      cache.set(url, [])
       return [] as const
     })
 
