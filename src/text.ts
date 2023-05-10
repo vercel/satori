@@ -12,12 +12,20 @@ import {
   buildXMLString,
   splitByBreakOpportunities,
   isUndefined,
+  isString,
+  lengthToNumber,
 } from './utils.js'
 import buildText, { container } from './builder/text.js'
 import { buildDropShadow } from './builder/shadow.js'
 import buildDecoration from './builder/text-decoration.js'
 import { Locale } from './language.js'
 import { FontEngine } from './font.js'
+import { Space, Tab } from './characters.js'
+
+const skippedWordWhenFindingMissingFont = new Set([Tab])
+function shouldSkipWhenFindingMissingFont(word: string): boolean {
+  return skippedWordWhenFindingMissingFont.has(word)
+}
 
 export default async function* buildTextNodes(
   content: string,
@@ -49,6 +57,7 @@ export default async function* buildTextNodes(
     textWrap,
     fontSize,
     filter: cssFilter,
+    tabSize = 8,
     _inheritedBackgroundClipTextPath,
   } = parentStyle
 
@@ -56,7 +65,7 @@ export default async function* buildTextNodes(
 
   const {
     content: _content,
-    shouldCollapseWhitespace,
+    shouldCollapseTabsAndSpaces,
     allowSoftWrap,
   } = processWhiteSpace(content, whiteSpace as string)
 
@@ -83,7 +92,9 @@ export default async function* buildTextNodes(
 
   // Yield segments that are missing a font.
   const wordsMissingFont = canLoadAdditionalAssets
-    ? segment(content, 'grapheme').filter((word) => !engine.has(word))
+    ? segment(_content, 'grapheme').filter(
+        (word) => !shouldSkipWhenFindingMissingFont(word) && !engine.has(word)
+      )
     : []
 
   yield wordsMissingFont.map((word) => {
@@ -103,51 +114,77 @@ export default async function* buildTextNodes(
     )
   }
 
-  // We can cache the measured width of each word as the measure function will be
-  // called multiple times.
-  const measureWordWidth = genMeasureWordWidth(engine, parentStyle)
-
   function isImage(s: string): boolean {
     return !!(graphemeImages && graphemeImages[s])
   }
 
-  function measureWithCache(segments: string[]): number {
+  // We can cache the measured width of each word as the measure function will be
+  // called multiple times.
+  const measureGrapheme = genMeasureGrapheme(engine, parentStyle)
+
+  function measureGraphemeArray(segments: string[]): number {
     let width = 0
 
     for (const s of segments) {
       if (isImage(s)) {
         width += fontSize as number
       } else {
-        width += measureWordWidth(s)
+        width += measureGrapheme(s)
       }
     }
 
     return width
   }
 
+  function measureText(text: string): number {
+    return measureGraphemeArray(segment(text, 'grapheme'))
+  }
+
+  const tabWidth = isString(tabSize)
+    ? lengthToNumber(tabSize, fontSize as number, 1, parentStyle)
+    : measureGrapheme(Space) * (tabSize as number)
+
   const calc = (
-    seg: string
+    text: string,
+    currentWidth: number
   ): {
     originWidth: number
     endingSpacesWidth: number
+    text: string
   } => {
-    if (seg.length === 0) {
+    if (text.length === 0) {
       return {
         originWidth: 0,
         endingSpacesWidth: 0,
+        text,
       }
     }
 
-    const originWidth = measureWithCache(segment(seg, 'grapheme'))
+    const { index, tabCount } = detectTabs(text)
+    let originWidth = 0
+    let textBeforeTab = ''
+
+    if (tabCount > 0) {
+      textBeforeTab = text.slice(0, index)
+      const textAfterTab = text.slice(index + tabCount)
+      const textWidthBeforeTab = measureText(textBeforeTab)
+      const offsetBeforeTab = textWidthBeforeTab + currentWidth
+      const tabMoveDistance =
+        tabWidth === 0
+          ? textWidthBeforeTab
+          : (Math.floor(offsetBeforeTab / tabWidth) + tabCount) * tabWidth
+      originWidth = tabMoveDistance + measureText(textAfterTab)
+    } else {
+      originWidth = measureText(text)
+    }
 
     const afterTrimEndWidth =
-      seg.trimEnd() === seg
-        ? originWidth
-        : measureWithCache(segment(seg.trimEnd(), 'grapheme'))
+      text.trimEnd() === text ? originWidth : measureText(text.trimEnd())
 
     return {
       originWidth,
       endingSpacesWidth: originWidth - afterTrimEndWidth,
+      text,
     }
   }
 
@@ -169,10 +206,10 @@ export default async function* buildTextNodes(
   // With the given container width, compute the text layout.
   function flow(width: number) {
     let lines = 0
-    let _currentWidth = 0
     let maxWidth = 0
     let lineIndex = -1
     let height = 0
+    let currentWidth = 0
     let currentLineHeight = 0
     let currentBaselineOffset = 0
 
@@ -192,7 +229,12 @@ export default async function* buildTextNodes(
       let w = 0
       let lineEndingSpacesWidth = 0
 
-      const { originWidth, endingSpacesWidth } = calc(word)
+      const {
+        originWidth,
+        endingSpacesWidth,
+        text: _word,
+      } = calc(word, currentWidth)
+      word = _word
 
       w = originWidth
       lineEndingSpacesWidth = endingSpacesWidth
@@ -204,7 +246,7 @@ export default async function* buildTextNodes(
       }
 
       const allowedToPutAtBeginning = ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
-      const allowedToJustify = !_currentWidth
+      const allowedToJustify = !currentWidth
 
       const willWrap =
         i &&
@@ -217,7 +259,7 @@ export default async function* buildTextNodes(
         // When the break line happens at the end of the `bbb`, what we see looks like this
         // |aaa bbb|
         // |ccc    |
-        _currentWidth + w > width + lineEndingSpacesWidth &&
+        currentWidth + w > width + lineEndingSpacesWidth &&
         allowSoftWrap
 
       // Need to break the word if:
@@ -225,21 +267,19 @@ export default async function* buildTextNodes(
       // - the word is wider than the container width
       // - the word will be put at the beginning of the line
       const needToBreakWord =
-        allowBreakWord &&
-        w > width &&
-        (!_currentWidth || willWrap || forceBreak)
+        allowBreakWord && w > width && (!currentWidth || willWrap || forceBreak)
 
       if (needToBreakWord) {
         // Break the word into multiple segments and continue the loop.
         const chars = segment(word, 'grapheme')
         words.splice(i, 1, ...chars)
-        if (_currentWidth > 0) {
+        if (currentWidth > 0) {
           // Start a new line, spaces can be ignored.
-          lineWidths.push(_currentWidth)
+          lineWidths.push(currentWidth)
           baselines.push(currentBaselineOffset)
           lines++
           height += currentLineHeight
-          _currentWidth = 0
+          currentWidth = 0
           currentLineHeight = 0
           currentBaselineOffset = 0
           lineSegmentNumber.push(1)
@@ -250,14 +290,14 @@ export default async function* buildTextNodes(
       if (forceBreak || willWrap) {
         // Start a new line, spaces can be ignored.
         // @TODO Lack of support for Japanese spacing
-        if (shouldCollapseWhitespace && word === ' ') {
+        if (shouldCollapseTabsAndSpaces && word === ' ') {
           w = 0
         }
-        lineWidths.push(_currentWidth)
+        lineWidths.push(currentWidth)
         baselines.push(currentBaselineOffset)
         lines++
         height += currentLineHeight
-        _currentWidth = w
+        currentWidth = w
         currentLineHeight = w ? engine.height(word) : 0
         currentBaselineOffset = w ? engine.baseline(word) : 0
         lineSegmentNumber.push(1)
@@ -271,7 +311,7 @@ export default async function* buildTextNodes(
         }
       } else {
         // It fits into the current line.
-        _currentWidth += w
+        currentWidth += w
         const glyphHeight = engine.height(word)
         if (glyphHeight > currentLineHeight) {
           // Use the baseline of the highest segment as the baseline of the line.
@@ -287,9 +327,9 @@ export default async function* buildTextNodes(
         lineIndex++
       }
 
-      maxWidth = Math.max(maxWidth, _currentWidth)
+      maxWidth = Math.max(maxWidth, currentWidth)
 
-      let x = _currentWidth - w
+      let x = currentWidth - w
 
       if (w === 0) {
         wordPositionInLayout.push({
@@ -312,7 +352,7 @@ export default async function* buildTextNodes(
             _width = fontSize as number
             _isImage = true
           } else {
-            _width = measureWordWidth(_text)
+            _width = measureGrapheme(_text)
           }
 
           texts.push(_text)
@@ -332,9 +372,9 @@ export default async function* buildTextNodes(
       i++
     }
 
-    if (_currentWidth) {
+    if (currentWidth) {
       lines++
-      lineWidths.push(_currentWidth)
+      lineWidths.push(currentWidth)
       baselines.push(currentBaselineOffset)
       height += currentLineHeight
     }
@@ -442,8 +482,8 @@ export default async function* buildTextNodes(
   let mergedPath = ''
   let extra = ''
   let skippedLine = -1
-  let ellipsisWidth = textOverflow === 'ellipsis' ? measureWithCache(['…']) : 0
-  let spaceWidth = textOverflow === 'ellipsis' ? measureWithCache([' ']) : 0
+  let ellipsisWidth = textOverflow === 'ellipsis' ? measureGrapheme('…') : 0
+  let spaceWidth = textOverflow === 'ellipsis' ? measureGrapheme(' ') : 0
   let decorationLines: Record<number, null | number[]> = {}
   let wordBuffer: string | null = null
   let bufferedOffset = 0
@@ -508,7 +548,7 @@ export default async function* buildTextNodes(
           let subset = ''
           let resolvedWidth = 0
           for (const char of chars) {
-            const w = layout.x + measureWithCache([subset + char])
+            const w = layout.x + measureGraphemeArray([subset + char])
             if (
               // Keep at least one character:
               // > The first character or atomic inline-level element on a line
@@ -542,6 +582,7 @@ export default async function* buildTextNodes(
       // If the current word and the next word are on the same line, we try to
       // merge them together to better handle the kerning.
       if (
+        !text.includes(Tab) &&
         !wordSeparators.includes(text) &&
         texts[i + 1] &&
         wordPositionInLayout[i + 1] &&
@@ -561,7 +602,7 @@ export default async function* buildTextNodes(
         wordBuffer === null ? leftOffset : bufferedOffset
       const finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
 
-      path = engine.getSVG(finalizedSegment, {
+      path = engine.getSVG(finalizedSegment.replace(/(\t)+/g, ''), {
         ...parentStyle,
         left: left + finalizedLeftOffset,
         // Since we need to pass the baseline position, add the ascender to the top.
@@ -739,20 +780,22 @@ function processWhiteSpace(content: string, whiteSpace: string) {
     whiteSpace
   )
 
-  const shouldCollapseWhitespace = !['pre', 'pre-wrap'].includes(whiteSpace)
+  const shouldCollapseTabsAndSpaces = ['normal', 'nowrap', 'pre-line'].includes(
+    whiteSpace
+  )
 
   const allowSoftWrap = !['pre', 'nowrap'].includes(whiteSpace)
 
   if (!shouldKeepLinebreak) {
-    content = content.replace(/\n/g, ' ')
+    content = content.replace(/\n/g, Space)
   }
 
-  if (shouldCollapseWhitespace) {
-    content = content.replace(/[ ]+/g, ' ')
+  if (shouldCollapseTabsAndSpaces) {
+    content = content.replace(/([ ]|\t)+/g, Space)
     content = content.trim()
   }
 
-  return { content, shouldCollapseWhitespace, allowSoftWrap }
+  return { content, shouldCollapseTabsAndSpaces, allowSoftWrap }
 }
 
 function createTextContainerNode(
@@ -782,20 +825,41 @@ function createTextContainerNode(
   return textContainer
 }
 
-function genMeasureWordWidth(
+function genMeasureGrapheme(
   engine: FontEngine,
   parentStyle: any
 ): (s: string) => number {
-  const wordWidthCache = new Map<string, number>()
+  const cache = new Map<string, number>()
 
-  return function measureWordWidth(s: string): number {
-    if (wordWidthCache.has(s)) {
-      return wordWidthCache.get(s)
+  return function measureGrapheme(s: string): number {
+    if (cache.has(s)) {
+      return cache.get(s)
     }
 
     const width = engine.measure(s, parentStyle)
-    wordWidthCache.set(s, width)
+    cache.set(s, width)
 
     return width
   }
+}
+
+function detectTabs(text: string):
+  | {
+      index: null
+      tabCount: 0
+    }
+  | {
+      index: number
+      tabCount: number
+    } {
+  const result = /(\t)+/.exec(text)
+  return result
+    ? {
+        index: result.index,
+        tabCount: result[0].length,
+      }
+    : {
+        index: null,
+        tabCount: 0,
+      }
 }
