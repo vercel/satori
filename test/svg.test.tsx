@@ -295,6 +295,7 @@ describe('SVG', () => {
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  // TODO wait for @resvg/resvg-js to support mask-type
   it('should respect style on svg node', async () => {
     const svg = await satori(
       <div
