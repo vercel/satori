@@ -294,4 +294,30 @@ describe('SVG', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  // TODO wait for @resvg/resvg-js to support mask-type
+  it('should respect style on svg node', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 32,
+          fontWeight: 600,
+        }}
+      >
+        <svg xmlns='http://www.w3.org/2000/svg' width='30' height='30'>
+          <circle cx='50' cy='50' r='50' style={{ fill: 'gold' }} />
+        </svg>
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })
