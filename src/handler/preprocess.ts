@@ -121,6 +121,10 @@ function translateSVGNodeToSVGString(
       if (typeof _v === 'string' && _v.toLowerCase() === 'currentcolor') {
         _v = currentColor
       }
+
+      if (k === 'href' && type === 'image') {
+        return ` ${ATTRIBUTE_MAPPING[k] || k}="${cache.get(_v as string)[0]}"`
+      }
       return ` ${ATTRIBUTE_MAPPING[k] || k}="${_v}"`
     })
     .join('')}`
