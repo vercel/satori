@@ -494,6 +494,7 @@ export default async function* buildTextNodes(
   for (let i = 0; i < texts.length; i++) {
     // Skip whitespace and empty characters.
     const layout = wordPositionInLayout[i]
+    const nextLayout = wordPositionInLayout[i + 1]
 
     if (!layout) continue
 
@@ -547,6 +548,34 @@ export default async function* buildTextNodes(
       const isNotLastLine = line < lineWidths.length - 1
       const isLastAllowedLine = line + 1 === lineLimit
 
+      function calcEllipsis(baseWidth: number, _text: string) {
+        const chars = segment(_text, 'grapheme', locale)
+
+        let subset = ''
+        let resolvedWidth = 0
+
+        for (const char of chars) {
+          const w = baseWidth + measureGraphemeArray([subset + char])
+          if (
+            // Keep at least one character:
+            // > The first character or atomic inline-level element on a line
+            // must be clipped rather than ellipsed.
+            // https://drafts.csswg.org/css-overflow/#text-overflow
+            subset &&
+            w + ellipsisWidth > parentContainerInnerWidth
+          ) {
+            break
+          }
+          subset += char
+          resolvedWidth = w
+        }
+
+        return {
+          subset,
+          resolvedWidth,
+        }
+      }
+
       if (
         isLastAllowedLine &&
         (isNotLastLine || lineWidths[line] > parentContainerInnerWidth)
@@ -555,25 +584,21 @@ export default async function* buildTextNodes(
           layout.x + width + ellipsisWidth + spaceWidth >
           parentContainerInnerWidth
         ) {
-          const chars = segment(text, 'grapheme', locale)
-          let subset = ''
-          let resolvedWidth = 0
-          for (const char of chars) {
-            const w = layout.x + measureGraphemeArray([subset + char])
-            if (
-              // Keep at least one character:
-              // > The first character or atomic inline-level element on a line
-              // must be clipped rather than ellipsed.
-              // https://drafts.csswg.org/css-overflow/#text-overflow
-              subset &&
-              w + ellipsisWidth > parentContainerInnerWidth
-            ) {
-              break
-            }
-            subset += char
-            resolvedWidth = w
-          }
+          const { subset, resolvedWidth } = calcEllipsis(layout.x, text)
+
           text = subset + '…'
+          skippedLine = line
+          decorationLines[line][1] = resolvedWidth
+          isLastDisplayedBeforeEllipsis = true
+        } else if (nextLayout && nextLayout.line !== line) {
+          const nextLineText = texts[i + 1]
+
+          const { subset, resolvedWidth } = calcEllipsis(
+            width + layout.x,
+            nextLineText
+          )
+
+          text = text + subset + '…'
           skippedLine = line
           decorationLines[line][1] = resolvedWidth
           isLastDisplayedBeforeEllipsis = true
@@ -596,9 +621,9 @@ export default async function* buildTextNodes(
         !text.includes(Tab) &&
         !wordSeparators.includes(text) &&
         texts[i + 1] &&
-        wordPositionInLayout[i + 1] &&
-        !wordPositionInLayout[i + 1].isImage &&
-        topOffset === wordPositionInLayout[i + 1].y &&
+        nextLayout &&
+        !nextLayout.isImage &&
+        topOffset === nextLayout.y &&
         !isLastDisplayedBeforeEllipsis
       ) {
         if (wordBuffer === null) {
@@ -659,7 +684,7 @@ export default async function* buildTextNodes(
     // Get the decoration shape.
     if (parentStyle.textDecorationLine) {
       // If it's the last word in the current line.
-      if (line !== wordPositionInLayout[i + 1]?.line || skippedLine === line) {
+      if (line !== nextLayout?.line || skippedLine === line) {
         const deco = decorationLines[line]
         if (deco && !deco[2]) {
           decorationShape += buildDecoration(
