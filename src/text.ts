@@ -21,7 +21,7 @@ import { buildDropShadow } from './builder/shadow.js'
 import buildDecoration from './builder/text-decoration.js'
 import { Locale } from './language.js'
 import { FontEngine } from './font.js'
-import { Space, Tab } from './characters.js'
+import { HorizontalEllipsis, Space, Tab } from './characters.js'
 
 const skippedWordWhenFindingMissingFont = new Set([Tab])
 
@@ -75,7 +75,10 @@ export default async function* buildTextNodes(
     wordBreak as string
   )
 
-  const lineLimit = processTextOverflow(parentStyle, allowSoftWrap)
+  const [lineLimit, blockEllipsis] = processTextOverflow(
+    parentStyle,
+    allowSoftWrap
+  )
 
   const textContainer = createTextContainerNode(Yoga, textAlign as string)
   parent.insertChild(textContainer, parent.getChildCount())
@@ -543,8 +546,13 @@ export default async function* buildTextNodes(
     }
 
     if (lineLimit !== Infinity) {
-      const ellipsisWidth = measureGrapheme('…')
-      const spaceWidth = measureGrapheme(' ')
+      let _blockEllipsis = blockEllipsis
+      let ellipsisWidth = measureGrapheme(blockEllipsis)
+      if (ellipsisWidth > parentContainerInnerWidth) {
+        _blockEllipsis = HorizontalEllipsis
+        ellipsisWidth = measureGrapheme(_blockEllipsis)
+      }
+      const spaceWidth = measureGrapheme(Space)
       const isNotLastLine = line < lineWidths.length - 1
       const isLastAllowedLine = line + 1 === lineLimit
 
@@ -586,7 +594,7 @@ export default async function* buildTextNodes(
         ) {
           const { subset, resolvedWidth } = calcEllipsis(layout.x, text)
 
-          text = subset + '…'
+          text = subset + _blockEllipsis
           skippedLine = line
           decorationLines[line][1] = resolvedWidth
           isLastDisplayedBeforeEllipsis = true
@@ -598,7 +606,7 @@ export default async function* buildTextNodes(
             nextLineText
           )
 
-          text = text + subset + '…'
+          text = text + subset + _blockEllipsis
           skippedLine = line
           decorationLines[line][1] = resolvedWidth
           isLastDisplayedBeforeEllipsis = true
@@ -807,26 +815,38 @@ function processTextTransform(
 function processTextOverflow(
   parentStyle: Record<string, string | number>,
   allowSoftWrap: boolean
-) {
-  const { textOverflow, WebkitLineClamp, WebkitBoxOrient, overflow, display } =
-    parentStyle
+): [number, string?] {
+  const {
+    textOverflow,
+    lineClamp,
+    WebkitLineClamp,
+    WebkitBoxOrient,
+    overflow,
+    display,
+  } = parentStyle
 
-  if (textOverflow !== 'ellipsis') return Infinity
+  if (display === 'block' && lineClamp) {
+    const [lineLimit, blockEllipsis] = parseLineClamp(lineClamp)
+    if (lineLimit) {
+      return [lineLimit, blockEllipsis]
+    }
+  }
 
   if (
+    textOverflow === 'ellipsis' &&
     display === '-webkit-box' &&
     WebkitBoxOrient === 'vertical' &&
     isNumber(WebkitLineClamp) &&
     WebkitLineClamp > 0
   ) {
-    return WebkitLineClamp
+    return [WebkitLineClamp, HorizontalEllipsis]
   }
 
-  if (overflow === 'hidden' && !allowSoftWrap) {
-    return 1
+  if (textOverflow === 'ellipsis' && overflow === 'hidden' && !allowSoftWrap) {
+    return [1, HorizontalEllipsis]
   }
 
-  return Infinity
+  return [Infinity]
 }
 
 function processWordBreak(content, wordBreak: string) {
@@ -927,4 +947,27 @@ function detectTabs(text: string):
         index: null,
         tabCount: 0,
       }
+}
+
+function parseLineClamp(input: number | string): [number?, string?] {
+  if (typeof input === 'number') return [input]
+
+  const regex1 = /^(\d+)\s*"(.*)"$/
+  const regex2 = /^(\d+)\s*'(.*)'$/
+  const match1 = regex1.exec(input)
+  const match2 = regex2.exec(input)
+
+  if (match1) {
+    const number = +match1[1]
+    const text = match1[2]
+
+    return [number, text]
+  } else if (match2) {
+    const number = +match2[1]
+    const text = match2[2]
+
+    return [number, text]
+  }
+
+  return []
 }
