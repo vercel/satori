@@ -88,7 +88,6 @@ export function normalizeLocale(locale?: string): Locale | undefined {
   if (locale) {
     return locales.find(
       (l) =>
-        l.toLowerCase() === locale.toLowerCase() ||
         l.toLowerCase().startsWith(locale.toLowerCase())
     )
   }
