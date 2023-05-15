@@ -826,7 +826,8 @@ function processTextOverflow(
   } = parentStyle
 
   if (display === 'block' && lineClamp) {
-    const [lineLimit, blockEllipsis] = parseLineClamp(lineClamp)
+    const [lineLimit, blockEllipsis = HorizontalEllipsis] =
+      parseLineClamp(lineClamp)
     if (lineLimit) {
       return [lineLimit, blockEllipsis]
     }
