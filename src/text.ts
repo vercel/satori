@@ -589,27 +589,36 @@ export default async function* buildTextNodes(
         (isNotLastLine || lineWidths[line] > parentContainerInnerWidth)
       ) {
         if (
-          layout.x + width + ellipsisWidth + spaceWidth >
+          leftOffset + width + ellipsisWidth + spaceWidth >
           parentContainerInnerWidth
         ) {
-          const { subset, resolvedWidth } = calcEllipsis(layout.x, text)
+          const { subset, resolvedWidth } = calcEllipsis(leftOffset, text)
 
           text = subset + _blockEllipsis
           skippedLine = line
           decorationLines[line][1] = resolvedWidth
           isLastDisplayedBeforeEllipsis = true
         } else if (nextLayout && nextLayout.line !== line) {
-          const nextLineText = texts[i + 1]
+          if (textAlign === 'center') {
+            const { subset, resolvedWidth } = calcEllipsis(leftOffset, text)
 
-          const { subset, resolvedWidth } = calcEllipsis(
-            width + layout.x,
-            nextLineText
-          )
+            text = subset + _blockEllipsis
+            skippedLine = line
+            decorationLines[line][1] = resolvedWidth
+            isLastDisplayedBeforeEllipsis = true
+          } else {
+            const nextLineText = texts[i + 1]
 
-          text = text + subset + _blockEllipsis
-          skippedLine = line
-          decorationLines[line][1] = resolvedWidth
-          isLastDisplayedBeforeEllipsis = true
+            const { subset, resolvedWidth } = calcEllipsis(
+              width + leftOffset,
+              nextLineText
+            )
+
+            text = text + subset + _blockEllipsis
+            skippedLine = line
+            decorationLines[line][1] = resolvedWidth
+            isLastDisplayedBeforeEllipsis = true
+          }
         }
       }
     }
