@@ -7,7 +7,7 @@ describe('Line Clamp', () => {
   let fonts
   initFonts((f) => (fonts = f))
 
-  it('Should work', async () => {
+  it('Should work correctly', async () => {
     const svg = await satori(
       <div
         style={{
@@ -74,7 +74,7 @@ describe('Line Clamp', () => {
     expect(toImage(svg, 200)).toMatchImageSnapshot()
   })
 
-  it('Should replace custom block ellipsis with default ellipsis when too long\n', async () => {
+  it('Should replace custom block ellipsis with default ellipsis when too long', async () => {
     const svg = await satori(
       <div
         style={{
@@ -128,6 +128,36 @@ describe('Line Clamp', () => {
           eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
           minim veniam, quis nostrud exercitation ullamco laboris nisi ut
           aliquip ex ea commodo consequat.
+        </div>
+      </div>,
+      { width: 200, height: 200, fonts, embedFont: true }
+    )
+    expect(toImage(svg, 200)).toMatchImageSnapshot()
+  })
+
+  it('Should work correctly when `text-align: center`', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            display: 'block',
+            fontSize: 32,
+            textAlign: 'center',
+            lineClamp: 2,
+          }}
+        >
+          Making the Web. Superfast
         </div>
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
