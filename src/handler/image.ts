@@ -9,6 +9,7 @@
 
 const AVIF = 'image/avif'
 const WEBP = 'image/webp'
+const APNG = 'image/apng'
 const PNG = 'image/png'
 const JPEG = 'image/jpeg'
 const GIF = 'image/gif'
@@ -63,7 +64,7 @@ type ResolvedImageData = [string, number?, number?] | readonly []
 export const cache = createLRU<ResolvedImageData>(100)
 const inflightRequests = new Map<string, Promise<ResolvedImageData>>()
 
-const ALLOWED_IMAGE_TYPES = [PNG, JPEG, GIF, SVG]
+const ALLOWED_IMAGE_TYPES = [PNG, APNG, JPEG, GIF, SVG]
 
 function arrayBufferToBase64(buffer) {
   let binary = ''
@@ -120,6 +121,7 @@ function arrayBufferToDataUri(data: ArrayBuffer) {
 
   switch (imageType) {
     case PNG:
+    case APNG:
       imageSize = parsePNG(data)
       break
     case GIF:
@@ -198,6 +200,7 @@ export async function resolveImageData(
       const data = base64ToArrayBuffer(dataString)
       switch (imageType) {
         case PNG:
+        case APNG:
           imageSize = parsePNG(data)
           break
         case GIF:
@@ -283,6 +286,9 @@ function detectContentType(buffer: Uint8Array) {
       (b, i) => buffer[i] === b
     )
   ) {
+    if (detectAPNG(buffer)) {
+      return APNG
+    }
     return PNG
   }
   if ([0x47, 0x49, 0x46, 0x38].every((b, i) => buffer[i] === b)) {
@@ -306,4 +312,20 @@ function detectContentType(buffer: Uint8Array) {
     return AVIF
   }
   return null
+}
+
+function detectAPNG(bytes: Uint8Array) {
+  const dv = new DataView(bytes.buffer)
+  let type: string,
+    length: number,
+    off = 8,
+    isAPNG = false
+  while (!isAPNG && type !== 'IEND' && off < bytes.length) {
+    length = dv.getUint32(off)
+    const chars = bytes.subarray(off + 4, off + 8)
+    type = String.fromCharCode(...chars)
+    isAPNG = type === 'acTL'
+    off += 12 + length
+  }
+  return isAPNG
 }
