@@ -6,3 +6,4 @@ export function stringFromCode(code: string): string {
 
 export const Space = stringFromCode('U+0020')
 export const Tab = stringFromCode('U+0009')
+export const HorizontalEllipsis = stringFromCode('U+2026')

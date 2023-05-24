@@ -40,7 +40,7 @@ describe('Error', () => {
       }
     )
     expect(result).rejects.toThrowError(
-      `Invalid value for CSS property "display". Allowed values: "flex" | "none". Received: "inline-block".`
+      `Invalid value for CSS property "display". Allowed values: "flex" | "block" | "none" | "-webkit-box". Received: "inline-block".`
     )
   })
 

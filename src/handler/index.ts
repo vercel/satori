@@ -175,7 +175,9 @@ export default async function handler(
       style.display,
       {
         flex: Yoga.DISPLAY_FLEX,
+        block: Yoga.DISPLAY_FLEX,
         none: Yoga.DISPLAY_NONE,
+        '-webkit-box': Yoga.DISPLAY_FLEX,
       },
       Yoga.DISPLAY_FLEX,
       'display'
