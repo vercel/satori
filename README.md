@@ -91,7 +91,15 @@ await satori(
 
 When using `background-image`, the image will be stretched to fit the element by default if you don't specify the size.
 
-If you want to render the generated SVG to another image format such as PNG, it would be better to use base64 encoded image data directly as `props.src` so no extra I/O is needed.
+If you want to render the generated SVG to another image format such as PNG, it would be better to use base64 encoded image data (or buffer) directly as `props.src` so no extra I/O is needed in Satroi:
+
+```jsx
+await satori(
+  <img src="data:image/png;base64,..." width={200} height={300} />,
+  // Or src={arrayBuffer}, src={buffer}
+  options
+)
+```
 
 ### CSS
 
@@ -103,6 +111,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
   <th>Property</th>
   <th>Property Expanded</th>
   <th>Supported Values</th>
+  <th>Example</th>
 </tr>
 </thead>
 <tbody>
@@ -110,133 +119,149 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr>
 <td colspan="2"><code>display</code></td>
 <td><code>none</code> and <code>flex</code>, default to <code>flex</code></td>
+<td></td>
 </tr>
 
 <tr>
 <td colspan="2"><code>position</code></td>
 <td><code>relative</code> and <code>absolute</code>, default to <code>relative</code></td>
+<td></td>
 </tr>
 
 <tr>
 <td colspan="2"><code>color</code></td>
 <td>Supported</td>
+<td></td>
 </tr>
 
 <tr><td rowspan="5"><code>margin</code></td></tr>
-<tr><td><code>marginTop</code></td><td>Supported</td></tr>
-<tr><td><code>marginRight</code></td><td>Supported</td></tr>
-<tr><td><code>marginBottom</code></td><td>Supported</td></tr>
-<tr><td><code>marginLeft</code></td><td>Supported</td></tr>
+<tr><td><code>marginTop</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>marginRight</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>marginBottom</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>marginLeft</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="5">Position</td></tr>
-<tr><td><code>top</code></td><td>Supported</td></tr>
-<tr><td><code>right</code></td><td>Supported</td></tr>
-<tr><td><code>bottom</code></td><td>Supported</td></tr>
-<tr><td><code>left</code></td><td>Supported</td></tr>
+<tr><td><code>top</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>right</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>bottom</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>left</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="3">Size</td></tr>
-<tr><td><code>width</code></td><td>Supported</td></tr>
-<tr><td><code>height</code></td><td>Supported</td></tr>
+<tr><td><code>width</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>height</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="5">Min & max size</td></tr>
-<tr><td><code>minWidth</code></td><td>Supported</td></tr>
-<tr><td><code>minHeight</code></td><td>Supported</td></tr>
-<tr><td><code>maxWidth</code></td><td>Supported</td></tr>
-<tr><td><code>maxHeight</code></td><td>Supported</td></tr>
+<tr><td><code>minWidth</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>minHeight</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>maxWidth</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>maxHeight</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="5"><code>border</code></td></tr>
-<tr><td>Width (<code>borderWidth</code>, <code>borderTopWidth</code>, ...)</td><td>Supported</td></tr>
-<tr><td>Style (<code>borderStyle</code>, <code>borderTopStyle</code>, ...)</td><td><code>solid</code> and <code>dashed</code>, default to <code>solid</code></td></tr>
-<tr><td>Color (<code>borderColor</code>, <code>borderTopColor</code>, ...)</td><td>Supported</td></tr>
+<tr><td>Width (<code>borderWidth</code>, <code>borderTopWidth</code>, ...)</td><td>Supported</td><td></td></tr>
+<tr><td>Style (<code>borderStyle</code>, <code>borderTopStyle</code>, ...)</td><td><code>solid</code> and <code>dashed</code>, default to <code>solid</code></td><td></td></tr>
+<tr><td>Color (<code>borderColor</code>, <code>borderTopColor</code>, ...)</td><td>Supported</td><td></td></tr>
 <tr><td>
   Shorthand (<code>border</code>, <code>borderTop</code>, ...)</td><td>Supported, i.e. <code>1px solid gray</code><br/>
-</td></tr>
+</td><td></td></tr>
 
 <tr><td rowspan="6"><code>borderRadius</code></td></tr>
-<tr><td><code>borderTopLeftRadius</code></td><td>Supported</td></tr>
-<tr><td><code>borderTopRightRadius</code></td><td>Supported</td></tr>
-<tr><td><code>borderBottomLeftRadius</code></td><td>Supported</td></tr>
-<tr><td><code>borderBottomRightRadius</code></td><td>Supported</td></tr>
-<tr><td>Shorthand</td><td>Supported, i.e. <code>5px</code>, <code>50% / 5px</code></td></tr>
+<tr><td><code>borderTopLeftRadius</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>borderTopRightRadius</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>borderBottomLeftRadius</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>borderBottomRightRadius</code></td><td>Supported</td><td></td></tr>
+<tr><td>Shorthand</td><td>Supported, i.e. <code>5px</code>, <code>50% / 5px</code></td><td></td></tr>
 
 <tr><td rowspan="11">Flex</td></tr>
-<tr><td><code>flexDirection</code></td><td><code>column</code>, <code>row</code>, <code>row-reverse</code>, <code>column-reverse</code>, default to <code>row</code></td></tr>
-<tr><td><code>flexWrap</code></td><td><code>wrap</code>, <code>nowrap</code>, <code>wrap-reverse</code>, default to <code>wrap</code></td></tr>
-<tr><td><code>flexGrow</code></td><td>Supported</td></tr>
-<tr><td><code>flexShrink</code></td><td>Supported</td></tr>
-<tr><td><code>flexBasis</code></td><td>Supported except for <code>auto</code></td></tr>
-<tr><td><code>alignItems</code></td><td>Supported</td></tr>
-<tr><td><code>alignContent</code></td><td>Supported</td></tr>
-<tr><td><code>alignSelf</code></td><td>Supported</td></tr>
-<tr><td><code>justifyContent</code></td><td>Supported</td></tr>
-<tr><td><code>gap</code></td><td>Supported</td></tr>
+<tr><td><code>flexDirection</code></td><td><code>column</code>, <code>row</code>, <code>row-reverse</code>, <code>column-reverse</code>, default to <code>row</code></td><td></td></tr>
+<tr><td><code>flexWrap</code></td><td><code>wrap</code>, <code>nowrap</code>, <code>wrap-reverse</code>, default to <code>wrap</code></td><td></td></tr>
+<tr><td><code>flexGrow</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>flexShrink</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>flexBasis</code></td><td>Supported except for <code>auto</code></td><td></td></tr>
+<tr><td><code>alignItems</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>alignContent</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>alignSelf</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>justifyContent</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>gap</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="5">Font</td></tr>
-<tr><td><code>fontFamily</code></td><td>Supported</td></tr>
-<tr><td><code>fontSize</code></td><td>Supported</td></tr>
-<tr><td><code>fontWeight</code></td><td>Supported</td></tr>
-<tr><td><code>fontStyle</code></td><td>Supported</td></tr>
+<tr><td><code>fontFamily</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>fontSize</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>fontWeight</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>fontStyle</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="12">Text</td></tr>
-<tr><td><code>tabSize</code></td><td>Supported</td></tr>
-<tr><td><code>textAlign</code></td><td><code>start</code>, <code>end</code>, <code>left</code>, <code>right</code>, <code>center</code>, <code>justify</code>, default to <code>start</code></td></tr>
-<tr><td><code>textTransform</code></td><td><code>none</code>, <code>lowercase</code>, <code>uppercase</code>, <code>capitalize</code>, defaults to <code>none</code></td></tr>
-<tr><td><code>textOverflow</code></td><td><code>clip</code>, <code>ellipsis</code>, defaults to <code>clip</code></td></tr>
-<tr><td><code>textDecoration</code></td><td>Support line types <code>underline</code> and <code>line-through</code>, and styles <code>dotted</code>, <code>dashed</code>, <code>solid</code></td></tr>
-<tr><td><code>textShadow</code></td><td>Supported</td></tr>
-<tr><td><code>lineHeight</code></td><td>Supported</td></tr>
-<tr><td><code>letterSpacing</code></td><td>Supported</td></tr>
-<tr><td><code>whiteSpace</code></td><td><code>normal</code>, <code>pre</code>, <code>pre-wrap</code>, <code>pre-line</code>, <code>nowrap</code>, defaults to <code>normal</code></td></tr>
-<tr><td><code>wordBreak</code></td><td><code>normal</code>, <code>break-all</code>, <code>break-word</code>, <code>keep-all</code>, defaults to <code>normal</code></td></tr>
-<tr><td><code>textWrap</code></td><td><code>wrap</code>, <code>balance</code>, defaults to <code>wrap</code></td></tr>
+<tr><td><code>tabSize</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>textAlign</code></td><td><code>start</code>, <code>end</code>, <code>left</code>, <code>right</code>, <code>center</code>, <code>justify</code>, default to <code>start</code></td><td></td></tr>
+<tr><td><code>textTransform</code></td><td><code>none</code>, <code>lowercase</code>, <code>uppercase</code>, <code>capitalize</code>, defaults to <code>none</code></td><td></td></tr>
+<tr><td><code>textOverflow</code></td><td><code>clip</code>, <code>ellipsis</code>, defaults to <code>clip</code></td><td></td></tr>
+<tr><td><code>textDecoration</code></td><td>Support line types <code>underline</code> and <code>line-through</code>, and styles <code>dotted</code>, <code>dashed</code>, <code>solid</code></td><td><a href="https://og-playground.vercel.app/?share=nVLLTsMwEPwVaxHqJYgUOCCr9EL5Ajj24mQ3icH1Ro5DW6L8O3ZeQpwKJ-_M7ox25O0gZySQsEH9ubdCNP5s6KnrYi1ERbqsvBSrdZper5KRPGr01S8OdVMbdQ5sYeg0s7HeaUe512xDL2fTHuzcrRWitqUU63RiMpV_lI5bi89s2AXFVVEUixtb_6q_SIr7u4kqVR3lEfT93m5jEZMsMYSnk99Rzk5NO1i2tArT21hsbsPwJaqwEjmjJ-mCLtbH4RtfhWxlNVj8JP6-hUD2nlA4wsFthP_aRqBqqmCVmXYMN-LZa34hAa6jvAHZwXACIB_TNIHxRkA-RICUtSXIQpmGEqADv-u3cx0PzB8HFHziP74cMkKQ3rXUJ-BVFiYqMoaP7AxC_w0">Example</a></td></tr>
+<tr><td><code>textShadow</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>lineHeight</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>letterSpacing</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>whiteSpace</code></td><td><code>normal</code>, <code>pre</code>, <code>pre-wrap</code>, <code>pre-line</code>, <code>nowrap</code>, defaults to <code>normal</code></td><td></td></tr>
+<tr><td><code>wordBreak</code></td><td><code>normal</code>, <code>break-all</code>, <code>break-word</code>, <code>keep-all</code>, defaults to <code>normal</code></td><td></td></tr>
+<tr><td><code>textWrap</code></td><td><code>wrap</code>, <code>balance</code>, defaults to <code>wrap</code></td><td></td></tr>
 
 <tr><td rowspan="7">Background</td></tr>
-<tr><td><code>backgroundColor</code></td><td>Supported, single value</td></tr>
-<tr><td><code>backgroundImage</code></td><td><code>linear-gradient</code>, <code>radial-gradient</code>, <code>url</code>, single value</td></tr>
-<tr><td><code>backgroundPosition</code></td><td>Support single value</td></tr>
-<tr><td><code>backgroundSize</code></td><td>Support two-value size i.e. `10px 20%`</td></tr>
-<tr><td><code>backgroundClip</code></td><td><code>border-box</code>, <code>text</code></td></tr>
-<tr><td><code>backgroundRepeat</code></td><td><code>repeat</code>, <code>repeat-x</code>, <code>repeat-y</code>, <code>no-repeat</code>, defaults to <code>repeat</code></td></tr>
+<tr><td><code>backgroundColor</code></td><td>Supported, single value</td><td></td></tr>
+<tr><td><code>backgroundImage</code></td><td><code>linear-gradient</code>, <code>radial-gradient</code>, <code>url</code>, single value</td><td></td></tr>
+<tr><td><code>backgroundPosition</code></td><td>Support single value</td><td></td></tr>
+<tr><td><code>backgroundSize</code></td><td>Support two-value size i.e. `10px 20%`</td><td></td></tr>
+<tr><td><code>backgroundClip</code></td><td><code>border-box</code>, <code>text</code></td><td></td></tr>
+<tr><td><code>backgroundRepeat</code></td><td><code>repeat</code>, <code>repeat-x</code>, <code>repeat-y</code>, <code>no-repeat</code>, defaults to <code>repeat</code></td><td></td></tr>
 
 <tr><td rowspan="5"><code>transform</code></td></tr>
-<tr><td>Translate (<code>translate</code>, <code>translateX</code>, <code>translateY</code>)</td><td>Supported</td></tr>
-<tr><td>Rotate</td><td>Supported</td></tr>
-<tr><td>Scale (<code>scale</code>, <code>scaleX</code>, <code>scaleY</code>)</td><td>Supported</td></tr>
-<tr><td>Skew (<code>skew</code>, <code>skewX</code>, <code>skewY</code>)</td><td>Supported</td></tr>
+<tr><td>Translate (<code>translate</code>, <code>translateX</code>, <code>translateY</code>)</td><td>Supported</td><td></td></tr>
+<tr><td>Rotate</td><td>Supported</td><td></td></tr>
+<tr><td>Scale (<code>scale</code>, <code>scaleX</code>, <code>scaleY</code>)</td><td>Supported</td><td></td></tr>
+<tr><td>Skew (<code>skew</code>, <code>skewX</code>, <code>skewY</code>)</td><td>Supported</td><td></td></tr>
 
 <tr>
 <td colspan="2"><code>transformOrigin</code></td>
 <td>Support one-value and two-value syntax (both relative and absolute values)</td>
+<td></td>
 </tr>
 
 <tr>
 <td colspan="2"><code>objectFit</code></td>
 <td><code>contain</code>, <code>cover</code>, <code>none</code>, default to <code>none</code></td>
+<td></td>
 </tr>
 
 <tr>
 <td colspan="2"><code>opacity</code></td>
 <td>Supported</td>
+<td></td>
 </tr>
 
 <tr>
 <td colspan="2"><code>boxShadow</code></td>
 <td>Supported</td>
+<td></td>
 </tr>
 
 <tr>
 <td colspan="2"><code>overflow</code></td>
 <td><code>visible</code> and <code>hidden</code>, default to <code>visible</code></td>
+<td></td>
 </tr>
 
 <tr>
 <td colspan="2"><code>filter</code></td>
 <td>Supported</td>
+<td></td>
 </tr>
 
 <tr>
 <td colspan="2"><code>clipPath</code></td>
 <td>Supported</td>
+<td><a href="https://og-playground.vercel.app/?share=XVJNb9wgEP0rI6poW8lJnX6pstpe0h7aQ1UlrXLJBZvBZosZBDgbZ7X_PQMbZze5wPCGmXmPx1Z0pFA04osytzcOIKbZ4tftNscAA5p-SA2szuv6ZFXtwY1RaXiBKRO9lTOj2uLdgub4uwnYJUOOcx3ZaXRLVlrTu58Jx5hT6BKGJbWeYjJ6viAGXZ7_PN3K7n8faHLqgiwFzr_SWj9N5aorc48NvH93BF0_avlU1wXd7W7ctxws0l-KP8j_8FhypP4Y8lIp4_oGzg_YgSKzY6FDau2EC0WAzhr_R5Z39GTnntzrj_UJ1BU34Z3jKi_lVEGd4zerfXEmDlCoA_yLqKCdIdKIQBrSgLChYNUqgpWhx5igo9FLZzBW8Bvv0tk6AjrZWoww0wSJoAsoE4KerD2NianDNbYgvbemk9m8mGdwLbqstEyxXMHNL1F2CTTXTyFPkE6BYbP6wIV81dMGAzeGS_b0tJWZ7y95K6-6YHzi4WTzNU2hdNUylrbtZKyKZ8Wft2wQy112UQnyhZRotqL4IZrP7IfY-yWabI5Q2E69aLS0ESuBI63N39nnv5425cR98r_4MbaoRJPChLtKJNnyjQGtpfKMYvcA">Example</a></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>lineClamp</code></td>
+<td>Supported</td>
+<td><a href="https://og-playground.vercel.app/?share=XVE9b9wwDP0rhIriFid12g6FkHYJunTokA9kuUWyKFuJLAoSnYtzuP8eykmWbOQD33t85FEN5FBpdenC0z4BVF4j_j4eWw0wYRgn1rC76Puvu-4NPATH0yfMhZqjWQW1kYbHDzgb50IaNVz074g1w-NYaEnuiiIVIXzx3n_Me0p8E15Qw4_v71AMCa-imbNgDTmd9ulPK-4qOrArVJoRyANPCAcq0e0qRFNGrAwDzdmkgLWD__jM5w8VMBkbscJKCzDBUNAwgl9iPKssy8E9WjA5xzAYDpRq8xAuppZkc4nCEPFrNAODF_5SmoNJDkJiHIsQZTTTAYsIw_VS-cyatu8_82RuhhIyizlJtlEyl03Vm7rJ2iVEV8_36fKb_ESiqk5R3lZR-qi26yv9q-879fYepX-2xqFdRqW9iRU7hTM9hNs1t9_yYetEp93372zRKc1lwVOn2FiZmDBG2o6nTq8">Example</a></td>
 </tr>
 
 </tbody>
