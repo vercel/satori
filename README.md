@@ -91,7 +91,15 @@ await satori(
 
 When using `background-image`, the image will be stretched to fit the element by default if you don't specify the size.
 
-If you want to render the generated SVG to another image format such as PNG, it would be better to use base64 encoded image data directly as `props.src` so no extra I/O is needed.
+If you want to render the generated SVG to another image format such as PNG, it would be better to use base64 encoded image data (or buffer) directly as `props.src` so no extra I/O is needed in Satroi:
+
+```jsx
+await satori(
+  <img src="data:image/png;base64,..." width={200} height={300} />,
+  // Or src={arrayBuffer}, src={buffer}
+  options
+)
+```
 
 ### CSS
 
@@ -236,6 +244,11 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 <tr>
 <td colspan="2"><code>clipPath</code></td>
+<td>Supported</td>
+</tr>
+
+<tr>
+<td colspan="2"><code>lineClamp</code><sup><a href="https://og-playground.vercel.app/?share=XVE9b9wwDP0rhIriFid12g6FkHYJunTokA9kuUWyKFuJLAoSnYtzuP8eykmWbOQD33t85FEN5FBpdenC0z4BVF4j_j4eWw0wYRgn1rC76Puvu-4NPATH0yfMhZqjWQW1kYbHDzgb50IaNVz074g1w-NYaEnuiiIVIXzx3n_Me0p8E15Qw4_v71AMCa-imbNgDTmd9ulPK-4qOrArVJoRyANPCAcq0e0qRFNGrAwDzdmkgLWD__jM5w8VMBkbscJKCzDBUNAwgl9iPKssy8E9WjA5xzAYDpRq8xAuppZkc4nCEPFrNAODF_5SmoNJDkJiHIsQZTTTAYsIw_VS-cyatu8_82RuhhIyizlJtlEyl03Vm7rJ2iVEV8_36fKb_ESiqk5R3lZR-qi26yv9q-879fYepX-2xqFdRqW9iRU7hTM9hNs1t9_yYetEp93372zRKc1lwVOn2FiZmDBG2o6nTq8">example</a></sup></td>
 <td>Supported</td>
 </tr>
 
