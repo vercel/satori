@@ -46,7 +46,7 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --quiet --cache",
     "lint:fix": "pnpm lint --fix",
     "prettier-check": "prettier --check .",
-    "prettier-fix": "prettier --write . --cache",
+    "prettier-fix": "prettier --write --list-different . --cache",
     "ci-check": "concurrently \"pnpm prettier-check\" \"pnpm test-type\" \"pnpm lint\""
   },
   "lint-staged": {
