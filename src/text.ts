@@ -14,15 +14,17 @@ import {
   isUndefined,
   isString,
   lengthToNumber,
+  isNumber,
 } from './utils.js'
 import buildText, { container } from './builder/text.js'
 import { buildDropShadow } from './builder/shadow.js'
 import buildDecoration from './builder/text-decoration.js'
 import { Locale } from './language.js'
 import { FontEngine } from './font.js'
-import { Space, Tab } from './characters.js'
+import { HorizontalEllipsis, Space, Tab } from './characters.js'
 
 const skippedWordWhenFindingMissingFont = new Set([Tab])
+
 function shouldSkipWhenFindingMissingFont(word: string): boolean {
   return skippedWordWhenFindingMissingFont.has(word)
 }
@@ -49,7 +51,6 @@ export default async function* buildTextNodes(
 
   const {
     textAlign,
-    textOverflow,
     whiteSpace,
     wordBreak,
     lineHeight,
@@ -72,6 +73,11 @@ export default async function* buildTextNodes(
   const { words, requiredBreaks, allowBreakWord } = processWordBreak(
     _content,
     wordBreak as string
+  )
+
+  const [lineLimit, blockEllipsis] = processTextOverflow(
+    parentStyle,
+    allowSoftWrap
   )
 
   const textContainer = createTextContainerNode(Yoga, textAlign as string)
@@ -222,7 +228,7 @@ export default async function* buildTextNodes(
     // @TODO: Support different writing modes.
     // @TODO: Support RTL languages.
     let i = 0
-    while (i < words.length) {
+    while (i < words.length && lines < lineLimit) {
       let word = words[i]
       const forceBreak = requiredBreaks[i]
 
@@ -373,10 +379,12 @@ export default async function* buildTextNodes(
     }
 
     if (currentWidth) {
+      if (lines < lineLimit) {
+        height += currentLineHeight
+      }
       lines++
       lineWidths.push(currentWidth)
       baselines.push(currentBaselineOffset)
-      height += currentLineHeight
     }
 
     // @TODO: Support `line-height`.
@@ -482,8 +490,6 @@ export default async function* buildTextNodes(
   let mergedPath = ''
   let extra = ''
   let skippedLine = -1
-  let ellipsisWidth = textOverflow === 'ellipsis' ? measureGrapheme('…') : 0
-  let spaceWidth = textOverflow === 'ellipsis' ? measureGrapheme(' ') : 0
   let decorationLines: Record<number, null | number[]> = {}
   let wordBuffer: string | null = null
   let bufferedOffset = 0
@@ -491,6 +497,7 @@ export default async function* buildTextNodes(
   for (let i = 0; i < texts.length; i++) {
     // Skip whitespace and empty characters.
     const layout = wordPositionInLayout[i]
+    const nextLayout = wordPositionInLayout[i + 1]
 
     if (!layout) continue
 
@@ -538,34 +545,80 @@ export default async function* buildTextNodes(
       ]
     }
 
-    if (textOverflow === 'ellipsis') {
-      if (lineWidths[line] > parentContainerInnerWidth) {
+    if (lineLimit !== Infinity) {
+      let _blockEllipsis = blockEllipsis
+      let ellipsisWidth = measureGrapheme(blockEllipsis)
+      if (ellipsisWidth > parentContainerInnerWidth) {
+        _blockEllipsis = HorizontalEllipsis
+        ellipsisWidth = measureGrapheme(_blockEllipsis)
+      }
+      const spaceWidth = measureGrapheme(Space)
+      const isNotLastLine = line < lineWidths.length - 1
+      const isLastAllowedLine = line + 1 === lineLimit
+
+      function calcEllipsis(baseWidth: number, _text: string) {
+        const chars = segment(_text, 'grapheme', locale)
+
+        let subset = ''
+        let resolvedWidth = 0
+
+        for (const char of chars) {
+          const w = baseWidth + measureGraphemeArray([subset + char])
+          if (
+            // Keep at least one character:
+            // > The first character or atomic inline-level element on a line
+            // must be clipped rather than ellipsed.
+            // https://drafts.csswg.org/css-overflow/#text-overflow
+            subset &&
+            w + ellipsisWidth > parentContainerInnerWidth
+          ) {
+            break
+          }
+          subset += char
+          resolvedWidth = w
+        }
+
+        return {
+          subset,
+          resolvedWidth,
+        }
+      }
+
+      if (
+        isLastAllowedLine &&
+        (isNotLastLine || lineWidths[line] > parentContainerInnerWidth)
+      ) {
         if (
-          layout.x + width + ellipsisWidth + spaceWidth >
+          leftOffset + width + ellipsisWidth + spaceWidth >
           parentContainerInnerWidth
         ) {
-          const chars = segment(text, 'grapheme', locale)
-          let subset = ''
-          let resolvedWidth = 0
-          for (const char of chars) {
-            const w = layout.x + measureGraphemeArray([subset + char])
-            if (
-              // Keep at least one character:
-              // > The first character or atomic inline-level element on a line
-              // must be clipped rather than ellipsed.
-              // https://drafts.csswg.org/css-overflow/#text-overflow
-              subset &&
-              w + ellipsisWidth > parentContainerInnerWidth
-            ) {
-              break
-            }
-            subset += char
-            resolvedWidth = w
-          }
-          text = subset + '…'
+          const { subset, resolvedWidth } = calcEllipsis(leftOffset, text)
+
+          text = subset + _blockEllipsis
           skippedLine = line
           decorationLines[line][1] = resolvedWidth
           isLastDisplayedBeforeEllipsis = true
+        } else if (nextLayout && nextLayout.line !== line) {
+          if (textAlign === 'center') {
+            const { subset, resolvedWidth } = calcEllipsis(leftOffset, text)
+
+            text = subset + _blockEllipsis
+            skippedLine = line
+            decorationLines[line][1] = resolvedWidth
+            isLastDisplayedBeforeEllipsis = true
+          } else {
+            const nextLineText = texts[i + 1]
+
+            const { subset, resolvedWidth } = calcEllipsis(
+              width + leftOffset,
+              nextLineText
+            )
+
+            text = text + subset + _blockEllipsis
+            skippedLine = line
+            decorationLines[line][1] = resolvedWidth
+            isLastDisplayedBeforeEllipsis = true
+          }
         }
       }
     }
@@ -585,9 +638,9 @@ export default async function* buildTextNodes(
         !text.includes(Tab) &&
         !wordSeparators.includes(text) &&
         texts[i + 1] &&
-        wordPositionInLayout[i + 1] &&
-        !wordPositionInLayout[i + 1].isImage &&
-        topOffset === wordPositionInLayout[i + 1].y &&
+        nextLayout &&
+        !nextLayout.isImage &&
+        topOffset === nextLayout.y &&
         !isLastDisplayedBeforeEllipsis
       ) {
         if (wordBuffer === null) {
@@ -648,7 +701,7 @@ export default async function* buildTextNodes(
     // Get the decoration shape.
     if (parentStyle.textDecorationLine) {
       // If it's the last word in the current line.
-      if (line !== wordPositionInLayout[i + 1]?.line || skippedLine === line) {
+      if (line !== nextLayout?.line || skippedLine === line) {
         const deco = decorationLines[line]
         if (deco && !deco[2]) {
           decorationShape += buildDecoration(
@@ -691,6 +744,10 @@ export default async function* buildTextNodes(
       result += t
       backgroundClipDef += shape
       decorationShape = ''
+    }
+
+    if (isLastDisplayedBeforeEllipsis) {
+      break
     }
   }
 
@@ -762,6 +819,44 @@ function processTextTransform(
   }
 
   return content
+}
+
+function processTextOverflow(
+  parentStyle: Record<string, string | number>,
+  allowSoftWrap: boolean
+): [number, string?] {
+  const {
+    textOverflow,
+    lineClamp,
+    WebkitLineClamp,
+    WebkitBoxOrient,
+    overflow,
+    display,
+  } = parentStyle
+
+  if (display === 'block' && lineClamp) {
+    const [lineLimit, blockEllipsis = HorizontalEllipsis] =
+      parseLineClamp(lineClamp)
+    if (lineLimit) {
+      return [lineLimit, blockEllipsis]
+    }
+  }
+
+  if (
+    textOverflow === 'ellipsis' &&
+    display === '-webkit-box' &&
+    WebkitBoxOrient === 'vertical' &&
+    isNumber(WebkitLineClamp) &&
+    WebkitLineClamp > 0
+  ) {
+    return [WebkitLineClamp, HorizontalEllipsis]
+  }
+
+  if (textOverflow === 'ellipsis' && overflow === 'hidden' && !allowSoftWrap) {
+    return [1, HorizontalEllipsis]
+  }
+
+  return [Infinity]
 }
 
 function processWordBreak(content, wordBreak: string) {
@@ -862,4 +957,27 @@ function detectTabs(text: string):
         index: null,
         tabCount: 0,
       }
+}
+
+function parseLineClamp(input: number | string): [number?, string?] {
+  if (typeof input === 'number') return [input]
+
+  const regex1 = /^(\d+)\s*"(.*)"$/
+  const regex2 = /^(\d+)\s*'(.*)'$/
+  const match1 = regex1.exec(input)
+  const match2 = regex2.exec(input)
+
+  if (match1) {
+    const number = +match1[1]
+    const text = match1[2]
+
+    return [number, text]
+  } else if (match2) {
+    const number = +match2[1]
+    const text = match2[2]
+
+    return [number, text]
+  }
+
+  return []
 }
