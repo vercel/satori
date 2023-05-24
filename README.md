@@ -194,7 +194,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>textAlign</code></td><td><code>start</code>, <code>end</code>, <code>left</code>, <code>right</code>, <code>center</code>, <code>justify</code>, default to <code>start</code></td><td></td></tr>
 <tr><td><code>textTransform</code></td><td><code>none</code>, <code>lowercase</code>, <code>uppercase</code>, <code>capitalize</code>, defaults to <code>none</code></td><td></td></tr>
 <tr><td><code>textOverflow</code></td><td><code>clip</code>, <code>ellipsis</code>, defaults to <code>clip</code></td><td></td></tr>
-<tr><td><code>textDecoration</code></td><td>Support line types <code>underline</code> and <code>line-through</code>, and styles <code>dotted</code>, <code>dashed</code>, <code>solid</code></td><td></td></tr>
+<tr><td><code>textDecoration</code></td><td>Support line types <code>underline</code> and <code>line-through</code>, and styles <code>dotted</code>, <code>dashed</code>, <code>solid</code></td><td><a href="https://og-playground.vercel.app/?share=nVLLTsMwEPwVaxHqJYgUOCCr9EL5Ajj24mQ3icH1Ro5DW6L8O3ZeQpwKJ-_M7ox25O0gZySQsEH9ubdCNP5s6KnrYi1ERbqsvBSrdZper5KRPGr01S8OdVMbdQ5sYeg0s7HeaUe512xDL2fTHuzcrRWitqUU63RiMpV_lI5bi89s2AXFVVEUixtb_6q_SIr7u4kqVR3lEfT93m5jEZMsMYSnk99Rzk5NO1i2tArT21hsbsPwJaqwEjmjJ-mCLtbH4RtfhWxlNVj8JP6-hUD2nlA4wsFthP_aRqBqqmCVmXYMN-LZa34hAa6jvAHZwXACIB_TNIHxRkA-RICUtSXIQpmGEqADv-u3cx0PzB8HFHziP74cMkKQ3rXUJ-BVFiYqMoaP7AxC_w0">Example</a></td></tr>
 <tr><td><code>textShadow</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>lineHeight</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>letterSpacing</code></td><td>Supported</td><td></td></tr>
