@@ -2,7 +2,7 @@ import { getPropertyName } from 'css-to-react-native'
 
 function getMaskProperty(style: Record<string, string | number>, name: string) {
   const key = getPropertyName(`mask-${name}`)
-  return (style[key] || style[`-webkit${key.toUpperCase()}`]) as string
+  return (style[key] || style[`WebkitM${key.substring(1)}`]) as string
 }
 
 export interface MaskProperty {

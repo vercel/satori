@@ -301,7 +301,7 @@ export default function expand(
     transformedStyle.backgroundImage = backgrounds
   }
 
-  if (transformedStyle.maskImage) {
+  if (transformedStyle.maskImage || transformedStyle['WebkitMaskImage']) {
     const mask = parseMask(transformedStyle)
     transformedStyle.maskImage = mask
   }
