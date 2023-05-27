@@ -264,6 +264,12 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <td><a href="https://og-playground.vercel.app/?share=XVE9b9wwDP0rhIriFid12g6FkHYJunTokA9kuUWyKFuJLAoSnYtzuP8eykmWbOQD33t85FEN5FBpdenC0z4BVF4j_j4eWw0wYRgn1rC76Puvu-4NPATH0yfMhZqjWQW1kYbHDzgb50IaNVz074g1w-NYaEnuiiIVIXzx3n_Me0p8E15Qw4_v71AMCa-imbNgDTmd9ulPK-4qOrArVJoRyANPCAcq0e0qRFNGrAwDzdmkgLWD__jM5w8VMBkbscJKCzDBUNAwgl9iPKssy8E9WjA5xzAYDpRq8xAuppZkc4nCEPFrNAODF_5SmoNJDkJiHIsQZTTTAYsIw_VS-cyatu8_82RuhhIyizlJtlEyl03Vm7rJ2iVEV8_36fKb_ESiqk5R3lZR-qi26yv9q-879fYepX-2xqFdRqW9iRU7hTM9hNs1t9_yYetEp93372zRKc1lwVOn2FiZmDBG2o6nTq8">Example</a></td>
 </tr>
 
+<tr><td rowspan="7">Mask</td></tr>
+<tr><td><code>maskImage</code></td><td><code>linear-gradient</code>, <code>radial-gradient</code>, single value</td><td></td></tr>
+<tr><td><code>maskPosition</code></td><td>Support single value</td><td></td></tr>
+<tr><td><code>maskSize</code></td><td>Support two-value size i.e. `10px 20%`</td><td></td></tr>
+<tr><td><code>maskRepeat</code></td><td><code>repeat</code>, <code>repeat-x</code>, <code>repeat-y</code>, <code>no-repeat</code>, defaults to <code>repeat</code></td><td></td></tr>
+
 </tbody>
 </table>
 
