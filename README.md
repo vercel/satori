@@ -265,7 +265,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 </tr>
 
 <tr><td rowspan="7">Mask</td></tr>
-<tr><td><code>maskImage</code></td><td><code>linear-gradient</code>, <code>radial-gradient</code>, single value</td><td></td></tr>
+<tr><td><code>maskImage</code></td><td><code>linear-gradient</code>, <code>radial-gradient</code>, <code>url</code>, single value</td><td></td></tr>
 <tr><td><code>maskPosition</code></td><td>Support single value</td><td></td></tr>
 <tr><td><code>maskSize</code></td><td>Support two-value size i.e. `10px 20%`</td><td></td></tr>
 <tr><td><code>maskRepeat</code></td><td><code>repeat</code>, <code>repeat-x</code>, <code>repeat-y</code>, <code>no-repeat</code>, defaults to <code>repeat</code></td><td></td></tr>
