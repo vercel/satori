@@ -452,8 +452,14 @@ export default async function backgroundImage(
     const [src, imageWidth, imageHeight] = await resolveImageData(
       image.slice(4, -1)
     )
-    const resolvedWidth = dimensionsWithoutFallback[0] || imageWidth
-    const resolvedHeight = dimensionsWithoutFallback[1] || imageHeight
+    const resolvedWidth =
+      from === 'mask'
+        ? imageWidth || dimensionsWithoutFallback[0]
+        : dimensionsWithoutFallback[0] || imageWidth
+    const resolvedHeight =
+      from === 'mask'
+        ? imageHeight || dimensionsWithoutFallback[1]
+        : dimensionsWithoutFallback[1] || imageHeight
 
     return [
       `satori_bi${id}`,

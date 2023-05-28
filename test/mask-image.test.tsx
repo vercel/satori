@@ -89,6 +89,7 @@ describe('Mask-*', () => {
       [
         'linear-gradient(to right, blue, transparent)',
         'radial-gradient(circle at 50% 50%, blue, transparent)',
+        'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjgwMCIgdmVyc2lvbj0iMS4xIiB2aWV3Qm94PSIwIDAgMTIwMCAxMjAwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMCwzNSBBMjAsMjAsMCwwLDEsNTAsMzUgQTIwLDIwLDAsMCwxLDkwLDM1IFE5MCw2NSw1MCw5NSBRMTAsNjUsMTAsMzUgWiIgZmlsbD0id2hpdGUiIC8+PC9zdmc+)',
       ].map((maskImage) =>
         satori(
           <div

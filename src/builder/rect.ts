@@ -36,7 +36,6 @@ export default async function rect(
   if (style.display === 'none') return ''
 
   const isImage = !!src
-  const masks: string[] = []
 
   let type: 'rect' | 'path' = 'rect'
   let matrix = ''
