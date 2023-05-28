@@ -14,11 +14,11 @@ export default async function buildMaskImage(
   },
   style: Record<string, string | number>,
   inheritedStyle: Record<string, string | number>
-) {
-  if (!style.maskImage) return []
+): Promise<[string, string]> {
+  if (!style.maskImage) return ['', '']
   const { left, top, width, height, id } = v
   const maskImage = style.maskImage as unknown as MaskProperty[]
-  if (maskImage.every((m) => m.image === 'none')) return []
+  if (maskImage.every((m) => m.image === 'none')) return ['', '']
   const length = maskImage.length
   const miId = genMaskImageId(id)
 
