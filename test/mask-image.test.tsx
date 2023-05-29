@@ -182,4 +182,23 @@ describe('Mask-*', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should support mask-image on text', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          backgroundImage: `url(${PNG_SAMPLE})`,
+          maskImage: 'linear-gradient(to right, blue, transparent)',
+          color: 'white',
+        }}
+      >
+        Lynnnnn6666666
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })
