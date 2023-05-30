@@ -12,9 +12,7 @@ import {
   buildXMLString,
   splitByBreakOpportunities,
   isUndefined,
-  isString,
   lengthToNumber,
-  isNumber,
 } from './utils.js'
 import buildText, { container } from './builder/text.js'
 import { buildDropShadow } from './builder/shadow.js'
@@ -146,9 +144,10 @@ export default async function* buildTextNodes(
     return measureGraphemeArray(segment(text, 'grapheme'))
   }
 
-  const tabWidth = isString(tabSize)
-    ? lengthToNumber(tabSize, fontSize as number, 1, parentStyle)
-    : measureGrapheme(Space) * (tabSize as number)
+  const tabWidth =
+    typeof tabSize === 'string'
+      ? lengthToNumber(tabSize, fontSize as number, 1, parentStyle)
+      : measureGrapheme(Space) * (tabSize as number)
 
   const calc = (
     text: string,
@@ -846,7 +845,7 @@ function processTextOverflow(
     textOverflow === 'ellipsis' &&
     display === '-webkit-box' &&
     WebkitBoxOrient === 'vertical' &&
-    isNumber(WebkitLineClamp) &&
+    typeof WebkitLineClamp === 'number' &&
     WebkitLineClamp > 0
   ) {
     return [WebkitLineClamp, HorizontalEllipsis]
