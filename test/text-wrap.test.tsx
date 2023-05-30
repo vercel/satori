@@ -54,4 +54,39 @@ describe('text-wrap', () => {
 
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should properly align text when there is no whitespace with text-wrap: balance', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: 100,
+          height: 100,
+          fontSize: 18,
+          color: 'red',
+          background: 'green',
+        }}
+      >
+        <span
+          style={{
+            background: 'blue',
+            // @ts-ignore: This isn't a valid CSS property supported by browsers yet.
+            textWrap: 'balance',
+          }}
+        >
+          Playground
+        </span>
+        <span style={{ background: 'yellow' }}>Playground</span>
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })
