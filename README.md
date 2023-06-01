@@ -91,7 +91,7 @@ await satori(
 
 When using `background-image`, the image will be stretched to fit the element by default if you don't specify the size.
 
-If you want to render the generated SVG to another image format such as PNG, it would be better to use base64 encoded image data (or buffer) directly as `props.src` so no extra I/O is needed in Satroi:
+If you want to render the generated SVG to another image format such as PNG, it would be better to use base64 encoded image data (or buffer) directly as `props.src` so no extra I/O is needed in Satori:
 
 ```jsx
 await satori(
