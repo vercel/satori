@@ -201,4 +201,24 @@ describe('Mask-*', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should support multiple mask-image', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          backgroundImage: `url(${PNG_SAMPLE})`,
+          maskImage: [
+            'url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjgwMCIgdmVyc2lvbj0iMS4xIiB2aWV3Qm94PSIwIDAgMTIwMCAxMjAwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMCwzNSBBMjAsMjAsMCwwLDEsNTAsMzUgQTIwLDIwLDAsMCwxLDkwLDM1IFE5MCw2NSw1MCw5NSBRMTAsNjUsMTAsMzUgWiIgZmlsbD0id2hpdGUiIC8+PC9zdmc+)',
+            'radial-gradient(circle at 100% 100%, blue, transparent)',
+          ].join(','),
+          color: 'white',
+        }}
+      ></div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })

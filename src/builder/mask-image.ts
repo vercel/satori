@@ -18,15 +18,14 @@ export default async function buildMaskImage(
   if (!style.maskImage) return ['', '']
   const { left, top, width, height, id } = v
   const maskImage = style.maskImage as unknown as MaskProperty[]
-  if (maskImage.every((m) => m.image === 'none')) return ['', '']
   const length = maskImage.length
+  if (!length) return ['', '']
   const miId = genMaskImageId(id)
 
   let mask = ''
 
   for (let i = 0; i < length; i++) {
     const m = maskImage[i]
-    if (!m.image || m.image === 'none') continue
 
     const [_id, def] = await buildBackgroundImage(
       { id: `${miId}-${i}`, left, top, width, height },
