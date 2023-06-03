@@ -279,7 +279,7 @@ describe('Color Models', () => {
     })
   })
 
-  it('should support css4 synatx color in hsl', async () => {
+  it('should support css4 syntax color in hsl', async () => {
     const svg = await satori(
       <div
         style={{
@@ -308,7 +308,7 @@ describe('Color Models', () => {
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
-  it('should support css4 synatx color in hsl if inherited', async () => {
+  it('should support css4 syntax color in hsl if inherited', async () => {
     const svg = await satori(
       <div
         style={{
