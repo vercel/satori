@@ -10,7 +10,7 @@ import cssColorParse from 'parse-css-color'
 
 import CssDimension from '../vendor/parse-css-dimension/index.js'
 import parseTransformOrigin from '../transform-origin.js'
-import { isString, lengthToNumber, v } from '../utils.js'
+import { lengthToNumber, v } from '../utils.js'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
@@ -221,6 +221,7 @@ function getErrorHint(name: string) {
 }
 
 const RGB_SLASH = /rgb\((\d+)\s+(\d+)\s+(\d+)\s*\/\s*([\.\d]+)\)/
+
 function normalizeColor(value: string | object) {
   if (typeof value === 'string') {
     if (RGB_SLASH.test(value.trim())) {
@@ -429,7 +430,7 @@ function preprocess(
   value: string | number,
   currentColor: string
 ): string | number {
-  if (isString(value)) {
+  if (typeof value === 'string') {
     value = convertCurrentColorToActualValue(value, currentColor)
   }
 

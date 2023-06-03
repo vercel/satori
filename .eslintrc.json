@@ -22,6 +22,22 @@
       "rules": {
         "react/jsx-key": "off"
       }
+    },
+    {
+      "files": ["**/*.{js,jsx,ts,tsx}"],
+      "rules": {
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "CallExpression[callee.name='isNumber']",
+            "message": "use native typeof === 'number' check"
+          },
+          {
+            "selector": "CallExpression[callee.name='isString']",
+            "message": "use native typeof === 'string' check"
+          }
+        ]
+      }
     }
   ],
   "parser": "@typescript-eslint/parser",
