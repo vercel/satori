@@ -11,6 +11,7 @@ import cssColorParse from 'parse-css-color'
 import CssDimension from '../vendor/parse-css-dimension/index.js'
 import parseTransformOrigin from '../transform-origin.js'
 import { isString, lengthToNumber, v } from '../utils.js'
+import { parseMask } from '../parser/mask.js'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
@@ -298,6 +299,11 @@ export default function expand(
   if (transformedStyle.backgroundImage) {
     const { backgrounds } = parseElementStyle(transformedStyle)
     transformedStyle.backgroundImage = backgrounds
+  }
+
+  if (transformedStyle.maskImage || transformedStyle['WebkitMaskImage']) {
+    const mask = parseMask(transformedStyle)
+    transformedStyle.maskImage = mask
   }
 
   // Calculate the base font size.

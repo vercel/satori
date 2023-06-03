@@ -1,15 +1,16 @@
 import CssDimension from '../vendor/parse-css-dimension/index.js'
 import { buildXMLString, lengthToNumber } from '../utils.js'
+import cssColorParse from 'parse-css-color'
 
 import gradient from '../vendor/gradient-parser/index.js'
 import { resolveImageData } from '../handler/image.js'
 
 interface Background {
-  attachment: string
+  attachment?: string
   color?: string
   clip: string
   image: string
-  origin: string
+  origin?: string
   position: string
   size: string
   repeat: string
@@ -88,7 +89,11 @@ function parseLengthPairs(
   ).map((v, index) => toAbsoluteValue(v, [x, y][index]))
 }
 
-function normalizeStops(totalLength: number, colorStops: any[]) {
+function normalizeStops(
+  totalLength: number,
+  colorStops: any[],
+  from?: 'background' | 'mask'
+) {
   // Resolve the color stops based on the spec:
   // https://drafts.csswg.org/css-images/#color-stop-syntax
   const stops = []
@@ -156,6 +161,17 @@ function normalizeStops(totalLength: number, colorStops: any[]) {
     }
   }
 
+  if (from === 'mask') {
+    return stops.map((stop) => {
+      const color = cssColorParse(stop.color)
+      if (color.alpha === 0) {
+        return { ...stop, color: `rgba(0, 0, 0, 1)` }
+      } else {
+        return { ...stop, color: `rgba(255, 255, 255, ${color.alpha})` }
+      }
+    })
+  }
+
   return stops
 }
 
@@ -168,10 +184,12 @@ export default async function backgroundImage(
     top,
   }: { id: string; width: number; height: number; left: number; top: number },
   { image, size, position, repeat }: Background,
-  inheritableStyle: Record<string, number | string>
+  inheritableStyle: Record<string, number | string>,
+  from?: 'background' | 'mask'
 ): Promise<string[]> {
   // Default to `repeat`.
   repeat = repeat || 'repeat'
+  from = from || 'background'
 
   const repeatX = repeat === 'repeat-x' || repeat === 'repeat'
   const repeatY = repeat === 'repeat-y' || repeat === 'repeat'
@@ -270,7 +288,7 @@ export default async function backgroundImage(
       calc((+parsed.orientation.value / 180) * Math.PI)
     }
 
-    const stops = normalizeStops(length, parsed.colorStops)
+    const stops = normalizeStops(length, parsed.colorStops, from)
 
     const gradientId = `satori_bi${id}`
     const patternId = `satori_pattern_${id}`
@@ -347,7 +365,7 @@ export default async function backgroundImage(
       throw new Error('orientation.type not implemented: ' + orientation.type)
     }
 
-    const stops = normalizeStops(width, parsed.colorStops)
+    const stops = normalizeStops(width, parsed.colorStops, from)
 
     const gradientId = `satori_radial_${id}`
     const patternId = `satori_pattern_${id}`
@@ -434,8 +452,14 @@ export default async function backgroundImage(
     const [src, imageWidth, imageHeight] = await resolveImageData(
       image.slice(4, -1)
     )
-    const resolvedWidth = dimensionsWithoutFallback[0] || imageWidth
-    const resolvedHeight = dimensionsWithoutFallback[1] || imageHeight
+    const resolvedWidth =
+      from === 'mask'
+        ? imageWidth || dimensionsWithoutFallback[0]
+        : dimensionsWithoutFallback[0] || imageWidth
+    const resolvedHeight =
+      from === 'mask'
+        ? imageHeight || dimensionsWithoutFallback[1]
+        : dimensionsWithoutFallback[1] || imageHeight
 
     return [
       `satori_bi${id}`,
