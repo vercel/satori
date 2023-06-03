@@ -886,8 +886,7 @@ function processWhiteSpace(content: string, whiteSpace: string) {
   }
 
   if (shouldCollapseTabsAndSpaces) {
-    content = content.replace(/([ ]|\t)+/g, Space)
-    content = content.trim()
+    content = content.replace(/([ ]|\t)+/g, Space).trim()
   }
 
   return { content, shouldCollapseTabsAndSpaces, allowSoftWrap }
