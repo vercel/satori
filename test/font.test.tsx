@@ -147,7 +147,7 @@ describe('Font', () => {
     })
   })
 
-  it('should handle escape html', async () => {
+  it('should handle escape html when embedFont is false', async () => {
     const svg = await satori(
       <div
         style={{
