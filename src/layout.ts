@@ -148,6 +148,10 @@ export default async function* layout(
     newInheritableStyle._inheritedMaskId = `satori_om-${id}`
   }
 
+  if (computedStyle.maskImage) {
+    newInheritableStyle._inheritedMaskId = `satori_mi-${id}`
+  }
+
   // If the element has `background-clip: text` set, we need to create a clip
   // path and use it in all its children.
   if (computedStyle.backgroundClip === 'text') {

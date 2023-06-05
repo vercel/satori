@@ -8,6 +8,7 @@ import overflow from './overflow.js'
 import { buildXMLString } from '../utils.js'
 import border, { getBorderClipPath } from './border.js'
 import { genClipPath } from './clip-path.js'
+import buildMaskImage from './mask-image.js'
 
 export default async function rect(
   {
@@ -95,6 +96,19 @@ export default async function rect(
     }
   }
 
+  const [miId, mi] = await buildMaskImage(
+    { id, left, top, width, height },
+    style,
+    inheritableStyle
+  )
+
+  defs += mi
+  const maskId = miId
+    ? `url(#${miId})`
+    : style._inheritedMaskId
+    ? `url(#${style._inheritedMaskId})`
+    : undefined
+
   const path = radius(
     { left, top, width, height },
     style as Record<string, number>
@@ -104,7 +118,6 @@ export default async function rect(
   }
 
   const clipPathId = style._inheritedClipPathId as number | undefined
-  const overflowMaskId = style._inheritedMaskId as number | undefined
 
   if (debug) {
     extra = buildXMLString('rect', {
@@ -152,7 +165,7 @@ export default async function rect(
         transform: matrix ? matrix : undefined,
         'clip-path': currentClipPath,
         style: cssFilter ? `filter:${cssFilter}` : undefined,
-        mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
+        mask: maskId,
       })
     )
     .join('')
@@ -204,7 +217,7 @@ export default async function rect(
       transform: matrix ? matrix : undefined,
       style: cssFilter ? `filter:${cssFilter}` : undefined,
       'clip-path': `url(#satori_cp-${id})`,
-      mask: `url(#satori_om-${id})`,
+      mask: miId ? `url(#${miId})` : `url(#satori_om-${id})`,
     })
   }
 
@@ -247,7 +260,7 @@ export default async function rect(
         d: path ? path : undefined,
         transform: matrix ? matrix : undefined,
         'clip-path': currentClipPath,
-        mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
+        mask: maskId,
       }),
     },
     style
