@@ -1,3 +1,4 @@
+import escapeHTML from 'escape-html'
 import type { ParsedTransformOrigin } from '../transform-origin.js'
 import transform from './transform.js'
 import { buildXMLString } from '../utils.js'
@@ -141,11 +142,11 @@ export default function buildText(
           fill: style.color,
           opacity: opacity !== 1 ? opacity : undefined,
         },
-        content
+        escapeHTML(content)
       ) +
       (decorationShape || '') +
       (filter ? '</g>' : '') +
       extra,
-    shape ? buildXMLString('text', shapeProps, content) : '',
+    shape ? buildXMLString('text', shapeProps, escapeHTML(content)) : '',
   ]
 }
