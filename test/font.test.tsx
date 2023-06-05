@@ -146,4 +146,24 @@ describe('Font', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
+
+  it('should handle escape html when embedFont is false', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          fontSize: '16px',
+        }}
+      >
+        {`Hello<>&'" world`}
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+        embedFont: false,
+      }
+    )
+
+    expect(toImage(svg)).toMatchImageSnapshot()
+  })
 })
