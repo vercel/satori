@@ -6,3 +6,4 @@ node_modules
 src/vendor/
 pnpm-lock.yaml
 *.md
+coverage/
