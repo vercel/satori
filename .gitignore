@@ -9,6 +9,7 @@ dist
 .pnpm-debug.log
 __diff_output__
 .eslintcache
+coverage
 
 playground/public/yoga.wasm
 playground/tsconfig.tsbuildinfo
