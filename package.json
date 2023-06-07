@@ -78,7 +78,6 @@
     "@types/react": "^17.0.38",
     "@typescript-eslint/eslint-plugin": "^5.40.0",
     "@typescript-eslint/parser": "^5.40.0",
-    "@vitest/coverage-v8": "^0.32.0",
     "@vitest/ui": "^0.32.0",
     "concurrently": "^7.3.0",
     "esbuild-plugin-replace": "^1.2.0",
