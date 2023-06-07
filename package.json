@@ -41,6 +41,7 @@
     "build:default": "tsup",
     "build:wasm": "WASM=1 tsup",
     "test": "NODE_ENV=test vitest run",
+    "test:ui": "NODE_ENV=test vitest --ui",
     "test-type": "tsc -p tsconfig.json --noEmit && tsc -p playground/tsconfig.json --noEmit",
     "dev:test": "NODE_ENV=test vitest --update",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --quiet --cache",
