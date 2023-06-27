@@ -396,7 +396,7 @@ function LiveEditor({ id }: { id: string }) {
               enabled: false,
             },
             smoothScrolling: true,
-            cursorSmoothCaretAnimation: true,
+            cursorSmoothCaretAnimation: 'on',
             contextmenu: false,
             automaticLayout: true,
           }}
