@@ -55,6 +55,7 @@ jobs:
       - run: pnpm install
       - run: pnpm build
       - run: pnpm test
+      - run: pnpm attw
       - name: Maybe Release
         if: matrix.os == 'ubuntu-latest' && matrix.node == 18 && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
