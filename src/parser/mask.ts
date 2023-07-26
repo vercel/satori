@@ -14,11 +14,33 @@ export interface MaskProperty {
   clip: string
 }
 
+function splitMaskImages(maskImage) {
+  let maskImages = []
+  let start = 0
+  let parenCount = 0
+
+  for (let i = 0; i < maskImage.length; i++) {
+    if (maskImage[i] === '(') {
+      parenCount++
+    } else if (maskImage[i] === ')') {
+      parenCount--
+    }
+
+    if (parenCount === 0 && maskImage[i] === ',') {
+      maskImages.push(maskImage.slice(start, i).trim())
+      start = i + 1
+    }
+  }
+
+  maskImages.push(maskImage.slice(start).trim())
+
+  return maskImages
+}
+
 /**
  * url(https:a.png), linear-gradient(blue, red) => [url(https:a.png), linear-gradient(blue, red)]
  * rgba(0,0,0,.7) => [rgba(0,0,0,.7)]
  */
-const SPILIT_SOURCE_COMMOA_RE = /(?<=\))(?:\s*,\s*)/
 
 export function parseMask(
   style: Record<string, string | number>
@@ -33,16 +55,10 @@ export function parseMask(
     clip: getMaskProperty(style, 'origin') || 'border-box',
   }
 
-  return (
-    maskImage
-      .split(SPILIT_SOURCE_COMMOA_RE)
-      // https://www.w3.org/TR/css-backgrounds-3/#layering
-      .reverse()
-      .map((v) => v.trim())
-      .filter((v) => v && v !== 'none')
-      .map((m) => ({
-        image: m,
-        ...common,
-      }))
-  )
+  let maskImages = splitMaskImages(maskImage).filter((v) => v && v !== 'none')
+
+  return maskImages.reverse().map((m) => ({
+    image: m,
+    ...common,
+  }))
 }
