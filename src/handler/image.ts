@@ -182,7 +182,7 @@ export async function resolveImageData(
       return [src]
     }
 
-    const { imageType, encodingType = '', dataString } = decodedURI
+    const { imageType, encodingType, dataString } = decodedURI
     if (imageType === SVG) {
       const utf8Src =
         encodingType === 'base64'
