@@ -174,7 +174,7 @@ export async function resolveImageData(
 
     try {
       decodedURI =
-        /data:(?<imageType>[a-z/+]+)(;(?<encodingType>base64|utf8))?,(?<dataString>.*)/g.exec(
+        /data:(?<imageType>[a-z/+]+)(;(charset=)?(?<encodingType>.*))?,(?<dataString>.*)/g.exec(
           src
         ).groups as typeof decodedURI
     } catch (err) {

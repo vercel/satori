@@ -620,4 +620,22 @@ describe('background-image: url()', () => {
 
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should handle charset=utf-8', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          width: '100px',
+          height: '100px',
+          display: 'flex',
+          backgroundImage:
+            'url(\'data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><circle cx="20" cy="20" r="15" fill="#ee7621"/></svg>\')',
+          backgroundSize: '100px 100px',
+        }}
+      ></div>,
+      { width: 100, height: 100, fonts }
+    )
+
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })
