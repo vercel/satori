@@ -228,12 +228,12 @@ export default async function* buildTextNodes(
     // @TODO: Support different writing modes.
     // @TODO: Support RTL languages.
     let i = 0
+    let prevLineEndingSpacesWidth = 0
     while (i < words.length && lines < lineLimit) {
       let word = words[i]
       const forceBreak = requiredBreaks[i]
 
       let w = 0
-      let lineEndingSpacesWidth = 0
 
       const {
         originWidth,
@@ -243,7 +243,7 @@ export default async function* buildTextNodes(
       word = _word
 
       w = originWidth
-      lineEndingSpacesWidth = endingSpacesWidth
+      const lineEndingSpacesWidth = endingSpacesWidth
 
       // When starting a new line from an empty line, we should push one extra
       // line height.
@@ -281,7 +281,7 @@ export default async function* buildTextNodes(
         words.splice(i, 1, ...chars)
         if (currentWidth > 0) {
           // Start a new line, spaces can be ignored.
-          lineWidths.push(currentWidth)
+          lineWidths.push(currentWidth - prevLineEndingSpacesWidth)
           baselines.push(currentBaselineOffset)
           lines++
           height += currentLineHeight
@@ -291,6 +291,7 @@ export default async function* buildTextNodes(
           lineSegmentNumber.push(1)
           lineIndex = -1
         }
+        prevLineEndingSpacesWidth = lineEndingSpacesWidth
         continue
       }
       if (forceBreak || willWrap) {
@@ -299,7 +300,8 @@ export default async function* buildTextNodes(
         if (shouldCollapseTabsAndSpaces && word === ' ') {
           w = 0
         }
-        lineWidths.push(currentWidth)
+
+        lineWidths.push(currentWidth - prevLineEndingSpacesWidth)
         baselines.push(currentBaselineOffset)
         lines++
         height += currentLineHeight
@@ -376,6 +378,7 @@ export default async function* buildTextNodes(
       }
 
       i++
+      prevLineEndingSpacesWidth = lineEndingSpacesWidth
     }
 
     if (currentWidth) {

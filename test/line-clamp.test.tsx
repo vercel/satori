@@ -155,6 +155,8 @@ describe('Line Clamp', () => {
             fontSize: 32,
             textAlign: 'center',
             lineClamp: 2,
+            backgroundColor: '#ff6c2f',
+            color: 'white',
           }}
         >
           Making the Web. Superfast
