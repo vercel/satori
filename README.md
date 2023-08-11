@@ -151,10 +151,10 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>height</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="5">Min & max size</td></tr>
-<tr><td><code>minWidth</code></td><td>Supported</td><td></td></tr>
-<tr><td><code>minHeight</code></td><td>Supported</td><td></td></tr>
-<tr><td><code>maxWidth</code></td><td>Supported</td><td></td></tr>
-<tr><td><code>maxHeight</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>minWidth</code></td><td>Supported except for <code>min-content</code> and <code>max-content</code></td><td></td></tr>
+<tr><td><code>minHeight</code></td><td>Supported except for <code>min-content</code> and <code>max-content</code></td><td></td></tr>
+<tr><td><code>maxWidth</code></td><td>Supported except for <code>min-content</code> and <code>max-content</code></td><td></td></tr>
+<tr><td><code>maxHeight</code></td><td>Supported except for <code>min-content</code> and <code>max-content</code></td><td></td></tr>
 
 <tr><td rowspan="5"><code>border</code></td></tr>
 <tr><td>Width (<code>borderWidth</code>, <code>borderTopWidth</code>, ...)</td><td>Supported</td><td></td></tr>
