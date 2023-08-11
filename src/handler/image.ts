@@ -174,7 +174,7 @@ export async function resolveImageData(
 
     try {
       decodedURI =
-        /data:(?<imageType>[a-z/+]+)(;(?<encodingType>base64|utf8))?,(?<dataString>.*)/g.exec(
+        /data:(?<imageType>[a-z/+]+)(;(charset=)?(?<encodingType>.*))?,(?<dataString>.*)/g.exec(
           src
         ).groups as typeof decodedURI
     } catch (err) {
@@ -182,7 +182,7 @@ export async function resolveImageData(
       return [src]
     }
 
-    const { imageType, encodingType, dataString } = decodedURI
+    const { imageType, encodingType = '', dataString } = decodedURI
     if (imageType === SVG) {
       const utf8Src =
         encodingType === 'base64'
