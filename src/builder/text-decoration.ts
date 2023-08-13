@@ -21,6 +21,7 @@ export default function buildDecoration(
     textDecorationStyle,
     textDecorationLine,
     fontSize,
+    color,
   } = style
   if (!textDecorationLine || textDecorationLine === 'none') return ''
 
@@ -30,7 +31,7 @@ export default function buildDecoration(
 
   const y =
     textDecorationLine === 'line-through'
-      ? top + ascender * 0.5
+      ? top + ascender * 0.7
       : textDecorationLine === 'underline'
       ? top + ascender * 1.1
       : top
@@ -47,7 +48,7 @@ export default function buildDecoration(
     y1: y,
     x2: left + width,
     y2: y,
-    stroke: textDecorationColor,
+    stroke: textDecorationColor || color,
     'stroke-width': height,
     'stroke-dasharray': dasharray,
     'stroke-linecap': textDecorationStyle === 'dotted' ? 'round' : 'square',
