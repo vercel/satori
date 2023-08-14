@@ -1,13 +1,13 @@
 import { it, describe, expect } from 'vitest'
 
-import { initFonts, toImage } from './utils.js'
+import { initFonts, loadDynamicAsset, toImage } from './utils.js'
 import satori from '../src/index.js'
 
 describe('Text Decoration', () => {
   let fonts
   initFonts((f) => (fonts = f))
 
-  it('Should work correctly when `text-decoration-line: line-through`', async () => {
+  it('Should work correctly when `text-decoration-line: line-through` and `text-align: right`', async () => {
     const svg = await satori(
       <div
         style={{
@@ -28,18 +28,26 @@ describe('Text Decoration', () => {
             backgroundColor: '#91a8d0',
             textDecorationLine: 'line-through',
             color: 'white',
+            textAlign: 'center',
           }}
         >
-          It doesn’t exist, it never has. I’m nostalgic for a place that never
-          existed.
+          你好! It doesn’t 안녕! exist, it never has. I’m nostalgic for a place
+          that never existed.
         </div>
       </div>,
-      { width: 200, height: 200, fonts, embedFont: true }
+      {
+        width: 200,
+        height: 200,
+        fonts,
+        loadAdditionalAsset: (languageCode: string, segment: string) => {
+          return loadDynamicAsset(languageCode, segment) as any
+        },
+      }
     )
     expect(toImage(svg, 200)).toMatchImageSnapshot()
   })
 
-  it('Should work correctly when `text-decoration-line: underline`', async () => {
+  it('Should work correctly when `text-decoration-line: underline` and `text-align: right`', async () => {
     const svg = await satori(
       <div
         style={{
@@ -60,13 +68,21 @@ describe('Text Decoration', () => {
             backgroundColor: '#91a8d0',
             textDecorationLine: 'underline',
             color: 'white',
+            textAlign: 'right',
           }}
         >
-          It doesn’t exist, it never has. I’m nostalgic for a place that never
-          existed.
+          你好! It doesn’t 안녕! exist, it never has. I’m nostalgic for a place
+          that never existed.
         </div>
       </div>,
-      { width: 200, height: 200, fonts, embedFont: true }
+      {
+        width: 200,
+        height: 200,
+        fonts,
+        loadAdditionalAsset: (languageCode: string, segment: string) => {
+          return loadDynamicAsset(languageCode, segment) as any
+        },
+      }
     )
     expect(toImage(svg, 200)).toMatchImageSnapshot()
   })
@@ -99,7 +115,7 @@ describe('Text Decoration', () => {
           existed.
         </div>
       </div>,
-      { width: 200, height: 200, fonts, embedFont: true }
+      { width: 200, height: 200, fonts }
     )
     expect(toImage(svg, 200)).toMatchImageSnapshot()
   })
@@ -132,7 +148,7 @@ describe('Text Decoration', () => {
           existed.
         </div>
       </div>,
-      { width: 200, height: 200, fonts, embedFont: true }
+      { width: 200, height: 200, fonts }
     )
     expect(toImage(svg, 200)).toMatchImageSnapshot()
   })
