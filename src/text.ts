@@ -550,6 +550,7 @@ export default async function* buildTextNodes(
       decorationLines[line] = [
         leftOffset,
         top + topOffset + baselineDelta,
+        baselineOfWord,
         extendedWidth ? containerWidth : lineWidths[line],
       ]
     }
@@ -704,22 +705,19 @@ export default async function* buildTextNodes(
 
     // Get the decoration shape.
     if (parentStyle.textDecorationLine) {
-      // If it's the last word in the current line.
-      if (line !== nextLayout?.line || skippedLine === line) {
-        const deco = decorationLines[line]
-        if (deco && !deco[3]) {
-          decorationShape += buildDecoration(
-            {
-              left: left + deco[0],
-              top: deco[1],
-              width: deco[2],
-              ascender: baselineOfWord,
-              clipPathId,
-            },
-            parentStyle
-          )
-          deco[3] = 1
-        }
+      const deco = decorationLines[line]
+      if (deco && !deco[4]) {
+        decorationShape += buildDecoration(
+          {
+            left: left + deco[0],
+            top: deco[1],
+            width: deco[3],
+            ascender: deco[2],
+            clipPathId,
+          },
+          parentStyle
+        )
+        deco[4] = 1
       }
     }
 
