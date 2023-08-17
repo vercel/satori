@@ -401,7 +401,7 @@ Overall there are many trade-offs between each choice, and it's better to pick t
 
 By default, Satori renders the text as `<path>` in SVG, instead of `<text>`. That means it embeds the font path data as inlined information, so succeeding processes (e.g. render the SVG on another platform) don’t need to deal with font files anymore.
 
-You can turn off this behavior by setting `embedFonts` to `false`, and Satori will use `<text>` instead:
+You can turn off this behavior by setting `embedFont` to `false`, and Satori will use `<text>` instead:
 
 ```jsx
 const svg = await satori(
