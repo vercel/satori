@@ -541,9 +541,16 @@ export default async function* buildTextNodes(
       }
     }
 
+    const baselineOfLine = baselines[line]
+    const baselineOfWord = engine.baseline(text)
+    const heightOfWord = engine.height(text)
+    const baselineDelta = baselineOfLine - baselineOfWord
+
     if (!decorationLines[line]) {
       decorationLines[line] = [
         leftOffset,
+        top + topOffset + baselineDelta,
+        baselineOfWord,
         extendedWidth ? containerWidth : lineWidths[line],
       ]
     }
@@ -599,7 +606,7 @@ export default async function* buildTextNodes(
 
           text = subset + _blockEllipsis
           skippedLine = line
-          decorationLines[line][1] = resolvedWidth
+          decorationLines[line][2] = resolvedWidth
           isLastDisplayedBeforeEllipsis = true
         } else if (nextLayout && nextLayout.line !== line) {
           if (textAlign === 'center') {
@@ -607,7 +614,7 @@ export default async function* buildTextNodes(
 
             text = subset + _blockEllipsis
             skippedLine = line
-            decorationLines[line][1] = resolvedWidth
+            decorationLines[line][2] = resolvedWidth
             isLastDisplayedBeforeEllipsis = true
           } else {
             const nextLineText = texts[i + 1]
@@ -619,17 +626,12 @@ export default async function* buildTextNodes(
 
             text = text + subset + _blockEllipsis
             skippedLine = line
-            decorationLines[line][1] = resolvedWidth
+            decorationLines[line][2] = resolvedWidth
             isLastDisplayedBeforeEllipsis = true
           }
         }
       }
     }
-
-    const baselineOfLine = baselines[line]
-    const baselineOfWord = engine.baseline(text)
-    const heightOfWord = engine.height(text)
-    const baselineDelta = baselineOfLine - baselineOfWord
 
     if (image) {
       // For images, we remove the baseline offset.
@@ -703,22 +705,19 @@ export default async function* buildTextNodes(
 
     // Get the decoration shape.
     if (parentStyle.textDecorationLine) {
-      // If it's the last word in the current line.
-      if (line !== nextLayout?.line || skippedLine === line) {
-        const deco = decorationLines[line]
-        if (deco && !deco[2]) {
-          decorationShape += buildDecoration(
-            {
-              left: left + deco[0],
-              top: top + heightOfWord * +line,
-              width: deco[1],
-              ascender: engine.baseline(text),
-              clipPathId,
-            },
-            parentStyle
-          )
-          deco[2] = 1
-        }
+      const deco = decorationLines[line]
+      if (deco && !deco[4]) {
+        decorationShape += buildDecoration(
+          {
+            left: left + deco[0],
+            top: deco[1],
+            width: deco[3],
+            ascender: deco[2],
+            clipPathId,
+          },
+          parentStyle
+        )
+        deco[4] = 1
       }
     }
 
