@@ -44,12 +44,11 @@ function handleFallbackColor(
 }
 
 function purify(name: string, value?: string | number) {
-  if (typeof value === 'number') {
-    if (!optOutPx.has(name)) return value + 'px'
-    if (keepNumber.has(name)) return value
-    return String(value)
-  }
-  return value
+  const num = Number(value)
+  if (isNaN(num)) return value
+  if (!optOutPx.has(name)) return num + 'px'
+  if (keepNumber.has(name)) return num
+  return String(value)
 }
 
 function handleSpecialCase(
