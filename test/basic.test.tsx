@@ -105,6 +105,7 @@ describe('Basic', () => {
           display: 'flex',
           height: '100%',
           width: '100%',
+          background: 'white',
         }}
       >
         Hi {0} <div>hi</div> {0} {false} {undefined} {0} {null} {0} {true} {'x'}{' '}

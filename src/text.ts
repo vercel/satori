@@ -419,11 +419,15 @@ export default async function* buildTextNodes(
       }
       flow(r)
       measuredTextSize = { width: r, height }
-      return { width: r, height }
+      return { width: Math.ceil(r), height }
     }
-
     measuredTextSize = { width, height }
-    return { width, height }
+    // This may be a temporary fix, I didn't dig deep into yoga.
+    // But when the return value of width here doesn't change (assuming the value of width is 216.9),
+    // when we later get the width through `parent.getComputedWidth()`, sometimes it returns 216 and sometimes 217.
+    // I'm not sure if this is a yoga bug, but it seems related to the entire page width.
+    // So I use Math.ceil.
+    return { width: Math.ceil(width), height }
   })
 
   const [x, y] = yield

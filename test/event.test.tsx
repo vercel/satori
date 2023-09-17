@@ -59,7 +59,7 @@ describe('Event', () => {
           "textContent": "World",
           "top": 0,
           "type": "div",
-          "width": 41,
+          "width": 42,
         },
       ]
     `)
