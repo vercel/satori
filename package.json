@@ -79,7 +79,7 @@
   "homepage": "https://github.com/vercel/satori#readme",
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.4.2",
-    "@resvg/resvg-js": "^2.1.0",
+    "@resvg/resvg-js": "^2.4.1",
     "@types/node": "^16",
     "@types/opentype.js": "^1.3.3",
     "@types/react": "^17.0.38",
@@ -115,7 +115,7 @@
     "postcss-value-parser": "^4.2.0",
     "yoga-wasm-web": "^0.3.3"
   },
-  "packageManager": "pnpm@7.11.0",
+  "packageManager": "pnpm@8.7.5",
   "engines": {
     "node": ">=16"
   }

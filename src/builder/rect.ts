@@ -133,7 +133,15 @@ export default async function rect(
     })
   }
 
-  const { backgroundClip, filter: cssFilter } = style
+  const { backgroundClip, filter: cssFilter, mixBlendMode } = style
+
+  const inlineStyle =
+    [
+      cssFilter ? `filter: ${cssFilter}` : undefined,
+      mixBlendMode ? `mix-blend-mode: ${mixBlendMode}` : undefined,
+    ]
+      .filter((v) => v)
+      .join(';') || undefined
 
   const currentClipPath =
     backgroundClip === 'text'
@@ -164,7 +172,7 @@ export default async function rect(
         d: path ? path : undefined,
         transform: matrix ? matrix : undefined,
         'clip-path': currentClipPath,
-        style: cssFilter ? `filter:${cssFilter}` : undefined,
+        style: inlineStyle,
         mask: maskId,
       })
     )
@@ -215,7 +223,7 @@ export default async function rect(
       href: src,
       preserveAspectRatio,
       transform: matrix ? matrix : undefined,
-      style: cssFilter ? `filter:${cssFilter}` : undefined,
+      style: inlineStyle,
       'clip-path': `url(#satori_cp-${id})`,
       mask: miId ? `url(#${miId})` : `url(#satori_om-${id})`,
     })
