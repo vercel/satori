@@ -177,7 +177,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>flexGrow</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>flexShrink</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>flexBasis</code></td><td>Supported except for <code>auto</code></td><td></td></tr>
-<tr><td><code>alignItems</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>alignItems</code></td><td><code>stretch</code>, <code>center</code>, <code>flex-start</code>, <code>flex-end</code>, <code>baseline</code>, <code>normal</code>, default to <code>stretch</code></td><td></td></tr>
 <tr><td><code>alignContent</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>alignSelf</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>justifyContent</code></td><td>Supported</td><td></td></tr>
