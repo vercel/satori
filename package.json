@@ -115,7 +115,7 @@
     "postcss-value-parser": "^4.2.0",
     "yoga-wasm-web": "^0.3.3"
   },
-  "packageManager": "pnpm@7.11.0",
+  "packageManager": "pnpm@8.7.0",
   "engines": {
     "node": ">=16"
   }
