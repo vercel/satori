@@ -1,3 +1,5 @@
+import { SerializedStyle } from './expand.js'
+
 const list = new Set([
   'color',
   'font',
@@ -33,8 +35,8 @@ const list = new Set([
   '_inheritedBackgroundClipTextPath',
 ])
 
-export default function inheritable(style: Record<string, any>) {
-  const inheritedStyle: Record<string, any> = {}
+export default function inheritable(style: SerializedStyle): SerializedStyle {
+  const inheritedStyle: SerializedStyle = {}
   for (const prop in style) {
     if (list.has(prop)) {
       inheritedStyle[prop] = style[prop]

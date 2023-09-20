@@ -14,16 +14,17 @@ import {
   hasDangerouslySetInnerHTMLProp,
 } from './utils.js'
 import { SVGNodeToImage } from './handler/preprocess.js'
-import handler from './handler/index.js'
+import computeStyle from './handler/compute.js'
 import FontLoader from './font.js'
-import layoutText from './text.js'
+import buildTextNodes from './text.js'
 import rect from './builder/rect.js'
 import { Locale, normalizeLocale } from './language.js'
+import { SerializedStyle } from './handler/expand.js'
 
 export interface LayoutContext {
   id: string
-  parentStyle: Record<string, number | string>
-  inheritedStyle: Record<string, number | string>
+  parentStyle: SerializedStyle
+  inheritedStyle: SerializedStyle
   isInheritingTransform?: boolean
   parent: YogaNode
   font: FontLoader
@@ -83,7 +84,7 @@ export default async function* layout(
 
     if (!isReactElement(element)) {
       // Process as text node.
-      iter = layoutText(String(element), context)
+      iter = buildTextNodes(String(element), context)
       yield (await iter.next()).value as { word: string; locale?: Locale }[]
     } else {
       if (isClass(element.type as Function)) {
@@ -121,7 +122,7 @@ export default async function* layout(
   const node = Yoga.Node.create()
   parent.insertChild(node, parent.getChildCount())
 
-  const [computedStyle, newInheritableStyle] = await handler(
+  const [computedStyle, newInheritableStyle] = await computeStyle(
     node,
     type,
     inheritedStyle,
@@ -238,7 +239,7 @@ export default async function* layout(
   } else if (type === 'svg') {
     // When entering a <svg> node, we need to convert it to a <img> with the
     // SVG data URL embedded.
-    const currentColor = computedStyle.color as string
+    const currentColor = computedStyle.color
     const src = await SVGNodeToImage(element, currentColor)
     baseRenderResult = await rect(
       {

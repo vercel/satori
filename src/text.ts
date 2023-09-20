@@ -62,17 +62,17 @@ export default async function* buildTextNodes(
     _inheritedBackgroundClipTextPath,
   } = parentStyle
 
-  content = processTextTransform(content, textTransform as string, locale)
+  content = processTextTransform(content, textTransform, locale)
 
   const {
     content: _content,
     shouldCollapseTabsAndSpaces,
     allowSoftWrap,
-  } = processWhiteSpace(content, whiteSpace as string)
+  } = processWhiteSpace(content, whiteSpace)
 
   const { words, requiredBreaks, allowBreakWord } = processWordBreak(
     _content,
-    wordBreak as string
+    wordBreak
   )
 
   const [lineLimit, blockEllipsis] = processTextOverflow(
@@ -80,7 +80,7 @@ export default async function* buildTextNodes(
     allowSoftWrap
   )
 
-  const textContainer = createTextContainerNode(Yoga, textAlign as string)
+  const textContainer = createTextContainerNode(Yoga, textAlign)
   parent.insertChild(textContainer, parent.getChildCount())
 
   if (isUndefined(parentStyle.flexShrink)) {
@@ -89,12 +89,7 @@ export default async function* buildTextNodes(
 
   // Get the correct font according to the container style.
   // https://www.w3.org/TR/CSS2/visudet.html
-  let engine = font.getEngine(
-    fontSize as number,
-    lineHeight as number,
-    parentStyle as any,
-    locale
-  )
+  let engine = font.getEngine(fontSize, lineHeight, parentStyle as any, locale)
 
   // Yield segments that are missing a font.
   const wordsMissingFont = canLoadAdditionalAssets
@@ -112,12 +107,7 @@ export default async function* buildTextNodes(
 
   if (wordsMissingFont.length) {
     // Reload the engine with additional fonts.
-    engine = font.getEngine(
-      fontSize as number,
-      lineHeight as number,
-      parentStyle as any,
-      locale
-    )
+    engine = font.getEngine(fontSize, lineHeight, parentStyle as any, locale)
   }
 
   function isImage(s: string): boolean {
@@ -133,7 +123,7 @@ export default async function* buildTextNodes(
 
     for (const s of segments) {
       if (isImage(s)) {
-        width += fontSize as number
+        width += fontSize
       } else {
         width += measureGrapheme(s)
       }
@@ -147,8 +137,8 @@ export default async function* buildTextNodes(
   }
 
   const tabWidth = isString(tabSize)
-    ? lengthToNumber(tabSize, fontSize as number, 1, parentStyle)
-    : measureGrapheme(Space) * (tabSize as number)
+    ? lengthToNumber(tabSize, fontSize, 1, parentStyle)
+    : measureGrapheme(Space) * tabSize
 
   const calc = (
     text: string,
@@ -357,7 +347,7 @@ export default async function* buildTextNodes(
           let _isImage = false
 
           if (isImage(_text)) {
-            _width = fontSize as number
+            _width = fontSize
             _isImage = true
           } else {
             _width = measureGrapheme(_text)
