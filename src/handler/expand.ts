@@ -13,7 +13,7 @@ import parseTransformOrigin, {
   ParsedTransformOrigin,
 } from '../transform-origin.js'
 import { isString, lengthToNumber, v, splitEffects } from '../utils.js'
-import { MaskProperty, parseMask } from '../parser/mask.js'
+import { MaskParsedRes, parseMask } from '../parser/mask.js'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
@@ -225,7 +225,7 @@ type MainStyle = {
   color: string
   fontSize: number
   transformOrigin: ParsedTransformOrigin
-  maskImage: MaskProperty[]
+  maskImage: MaskParsedRes
   opacity: number
   textTransform: string
   whiteSpace: string

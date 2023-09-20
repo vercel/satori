@@ -1,6 +1,6 @@
 import { buildXMLString } from '../utils.js'
 import buildBackgroundImage from './background-image.js'
-import type { MaskProperty } from '../parser/mask.js'
+import type { MaskParsedRes } from '../parser/mask.js'
 
 const genMaskImageId = (id: string) => `satori_mi-${id}`
 
@@ -17,15 +17,16 @@ export default async function buildMaskImage(
 ): Promise<[string, string]> {
   if (!style.maskImage) return ['', '']
   const { left, top, width, height, id } = v
-  const maskImage = style.maskImage as unknown as MaskProperty[]
-  const length = maskImage.length
+  const maskImage = style.maskImage as unknown as MaskParsedRes
+  const images = maskImage.detail
+  const length = images.length
   if (!length) return ['', '']
   const miId = genMaskImageId(id)
 
   let mask = ''
 
   for (let i = 0; i < length; i++) {
-    const m = maskImage[i]
+    const m = images[i]
 
     const [_id, def] = await buildBackgroundImage(
       { id: `${miId}-${i}`, left, top, width, height },
@@ -45,7 +46,19 @@ export default async function buildMaskImage(
       })
   }
 
-  mask = buildXMLString('mask', { id: miId }, mask)
+  mask = buildXMLString(
+    'mask',
+    {
+      id: miId,
+      // FIXME: although mask-type's default value is luminance, but we can get the same result with what browser renders unless
+      // i set mask-type with alpha
+      style: [
+        `mask-type: ${maskImage.type}`,
+        `-webkit-mask-type: ${maskImage.type}`,
+      ].join(';'),
+    },
+    mask
+  )
 
   return [miId, mask]
 }
