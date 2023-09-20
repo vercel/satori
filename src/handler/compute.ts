@@ -9,23 +9,23 @@ import type { Node as YogaNode } from 'yoga-wasm-web'
 import getYoga from '../yoga/index.js'
 import presets from './presets.js'
 import inheritable from './inheritable.js'
-import expand from './expand.js'
+import expand, { SerializedStyle } from './expand.js'
 import { lengthToNumber, parseViewBox, v } from '../utils.js'
 import { resolveImageData } from './image.js'
 
 type SatoriElement = keyof typeof presets
 
-export default async function handler(
+export default async function compute(
   node: YogaNode,
   type: SatoriElement | string,
-  inheritedStyle: Record<string, string | number>,
+  inheritedStyle: SerializedStyle,
   definedStyle: Record<string, string | number>,
   props: Record<string, any>
-): Promise<[Record<string, string | number>, Record<string, string | number>]> {
+): Promise<[SerializedStyle, SerializedStyle]> {
   const Yoga = await getYoga()
 
   // Extend the default style with defined and inherited styles.
-  const style = {
+  const style: SerializedStyle = {
     ...inheritedStyle,
     ...expand(presets[type], inheritedStyle),
     ...expand(definedStyle, inheritedStyle),
@@ -52,15 +52,15 @@ export default async function handler(
     // we must subtract the padding and border due to how box model works.
     // TODO: Ensure these are absolute length values, not relative values.
     let extraHorizontal =
-      ((style.borderLeftWidth as number) || 0) +
-      ((style.borderRightWidth as number) || 0) +
-      ((style.paddingLeft as number) || 0) +
-      ((style.paddingRight as number) || 0)
+      (style.borderLeftWidth || 0) +
+      (style.borderRightWidth || 0) +
+      (style.paddingLeft || 0) +
+      (style.paddingRight || 0)
     let extraVertical =
-      ((style.borderTopWidth as number) || 0) +
-      ((style.borderBottomWidth as number) || 0) +
-      ((style.paddingTop as number) || 0) +
-      ((style.paddingBottom as number) || 0)
+      (style.borderTopWidth || 0) +
+      (style.borderBottomWidth || 0) +
+      (style.paddingTop || 0) +
+      (style.paddingBottom || 0)
 
     let contentBoxWidth = style.width || props.width
     let contentBoxHeight = style.height || props.height
@@ -122,7 +122,7 @@ export default async function handler(
       } else {
         height = lengthToNumber(
           height,
-          inheritedStyle.fontSize as number,
+          inheritedStyle.fontSize,
           1,
           inheritedStyle
         )
@@ -136,7 +136,7 @@ export default async function handler(
       } else {
         width = lengthToNumber(
           width,
-          inheritedStyle.fontSize as number,
+          inheritedStyle.fontSize,
           1,
           inheritedStyle
         )
@@ -145,21 +145,13 @@ export default async function handler(
     } else {
       if (typeof width !== 'undefined') {
         width =
-          lengthToNumber(
-            width,
-            inheritedStyle.fontSize as number,
-            1,
-            inheritedStyle
-          ) || width
+          lengthToNumber(width, inheritedStyle.fontSize, 1, inheritedStyle) ||
+          width
       }
       if (typeof height !== 'undefined') {
         height =
-          lengthToNumber(
-            height,
-            inheritedStyle.fontSize as number,
-            1,
-            inheritedStyle
-          ) || height
+          lengthToNumber(height, inheritedStyle.fontSize, 1, inheritedStyle) ||
+          height
       }
       width ||= viewBoxSize?.[2]
       height ||= viewBoxSize?.[3]
@@ -275,15 +267,15 @@ export default async function handler(
   )
 
   if (typeof style.gap !== 'undefined') {
-    node.setGap(Yoga.GUTTER_ALL, style.gap as number)
+    node.setGap(Yoga.GUTTER_ALL, style.gap)
   }
 
   if (typeof style.rowGap !== 'undefined') {
-    node.setGap(Yoga.GUTTER_ROW, style.rowGap as number)
+    node.setGap(Yoga.GUTTER_ROW, style.rowGap)
   }
 
   if (typeof style.columnGap !== 'undefined') {
-    node.setGap(Yoga.GUTTER_COLUMN, style.columnGap as number)
+    node.setGap(Yoga.GUTTER_COLUMN, style.columnGap)
   }
 
   // @TODO: node.setFlex
@@ -291,11 +283,9 @@ export default async function handler(
   if (typeof style.flexBasis !== 'undefined') {
     node.setFlexBasis(style.flexBasis)
   }
-  node.setFlexGrow(
-    typeof style.flexGrow === 'undefined' ? 0 : (style.flexGrow as number)
-  )
+  node.setFlexGrow(typeof style.flexGrow === 'undefined' ? 0 : style.flexGrow)
   node.setFlexShrink(
-    typeof style.flexShrink === 'undefined' ? 0 : (style.flexShrink as number)
+    typeof style.flexShrink === 'undefined' ? 0 : style.flexShrink
   )
 
   if (typeof style.maxHeight !== 'undefined') {
@@ -328,10 +318,10 @@ export default async function handler(
   node.setMargin(Yoga.EDGE_LEFT, style.marginLeft || 0)
   node.setMargin(Yoga.EDGE_RIGHT, style.marginRight || 0)
 
-  node.setBorder(Yoga.EDGE_TOP, (style.borderTopWidth as number) || 0)
-  node.setBorder(Yoga.EDGE_BOTTOM, (style.borderBottomWidth as number) || 0)
-  node.setBorder(Yoga.EDGE_LEFT, (style.borderLeftWidth as number) || 0)
-  node.setBorder(Yoga.EDGE_RIGHT, (style.borderRightWidth as number) || 0)
+  node.setBorder(Yoga.EDGE_TOP, style.borderTopWidth || 0)
+  node.setBorder(Yoga.EDGE_BOTTOM, style.borderBottomWidth || 0)
+  node.setBorder(Yoga.EDGE_LEFT, style.borderLeftWidth || 0)
+  node.setBorder(Yoga.EDGE_RIGHT, style.borderRightWidth || 0)
 
   node.setPadding(Yoga.EDGE_TOP, style.paddingTop || 0)
   node.setPadding(Yoga.EDGE_BOTTOM, style.paddingBottom || 0)

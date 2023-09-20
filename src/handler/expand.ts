@@ -9,9 +9,11 @@ import { parse as parseBoxShadow } from 'css-box-shadow'
 import cssColorParse from 'parse-css-color'
 
 import CssDimension from '../vendor/parse-css-dimension/index.js'
-import parseTransformOrigin from '../transform-origin.js'
+import parseTransformOrigin, {
+  ParsedTransformOrigin,
+} from '../transform-origin.js'
 import { isString, lengthToNumber, v } from '../utils.js'
-import { parseMask } from '../parser/mask.js'
+import { MaskProperty, parseMask } from '../parser/mask.js'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
@@ -242,24 +244,58 @@ function normalizeColor(value: string | object) {
   return value
 }
 
+type MainStyle = {
+  color: string
+  fontSize: number
+  transformOrigin: ParsedTransformOrigin
+  maskImage: MaskProperty[]
+  opacity: number
+  textTransform: string
+  whiteSpace: string
+  wordBreak: string
+  textAlign: string
+  lineHeight: number
+
+  borderTopWidth: number
+  borderLeftWidth: number
+  borderRightWidth: number
+  borderBottomWidth: number
+
+  paddingTop: number
+  paddingLeft: number
+  paddingRight: number
+  paddingBottom: number
+
+  flexGrow: number
+  flexShrink: number
+
+  gap: number
+  rowGap: number
+  columnGap: number
+}
+
+type OtherStyle = Exclude<Record<PropertyKey, string | number>, keyof MainStyle>
+
+export type SerializedStyle = Partial<MainStyle & OtherStyle>
+
 export default function expand(
   style: Record<string, string | number> | undefined,
-  inheritedStyle: Record<string, string | number>
-): Record<string, string | number> {
-  const transformedStyle = {} as any
+  inheritedStyle: SerializedStyle
+): SerializedStyle {
+  const serializedStyle: SerializedStyle = {}
 
   if (style) {
     const currentColor = getCurrentColor(
       style.color as string,
-      inheritedStyle.color as string
+      inheritedStyle.color
     )
 
-    transformedStyle.color = currentColor
+    serializedStyle.color = currentColor
 
     for (const prop in style) {
       // Internal properties.
       if (prop.startsWith('_')) {
-        transformedStyle[prop] = style[prop]
+        serializedStyle[prop] = style[prop]
         continue
       }
 
@@ -280,7 +316,7 @@ export default function expand(
             currentColor
           )
 
-        Object.assign(transformedStyle, resolvedStyle)
+        Object.assign(serializedStyle, resolvedStyle)
       } catch (err) {
         throw new Error(
           err.message +
@@ -295,39 +331,38 @@ export default function expand(
   }
 
   // Parse background images.
-  if (transformedStyle.backgroundImage) {
-    const { backgrounds } = parseElementStyle(transformedStyle)
-    transformedStyle.backgroundImage = backgrounds
+  if (serializedStyle.backgroundImage) {
+    const { backgrounds } = parseElementStyle(serializedStyle)
+    serializedStyle.backgroundImage = backgrounds
   }
 
-  if (transformedStyle.maskImage || transformedStyle['WebkitMaskImage']) {
-    const mask = parseMask(transformedStyle)
-    transformedStyle.maskImage = mask
+  if (serializedStyle.maskImage || serializedStyle['WebkitMaskImage']) {
+    serializedStyle.maskImage = parseMask(serializedStyle)
   }
 
   // Calculate the base font size.
   const baseFontSize = calcBaseFontSize(
-    transformedStyle.fontSize,
-    inheritedStyle.fontSize as number
+    serializedStyle.fontSize,
+    inheritedStyle.fontSize
   )
-  if (typeof transformedStyle.fontSize !== 'undefined') {
-    transformedStyle.fontSize = baseFontSize
+  if (typeof serializedStyle.fontSize !== 'undefined') {
+    serializedStyle.fontSize = baseFontSize
   }
 
-  if (transformedStyle.transformOrigin) {
-    transformedStyle.transformOrigin = parseTransformOrigin(
-      transformedStyle.transformOrigin,
+  if (serializedStyle.transformOrigin) {
+    serializedStyle.transformOrigin = parseTransformOrigin(
+      serializedStyle.transformOrigin as any,
       baseFontSize
     )
   }
 
-  for (const prop in transformedStyle) {
-    let value = transformedStyle[prop]
+  for (const prop in serializedStyle) {
+    let value = serializedStyle[prop]
 
     // Line height needs to be relative.
     if (prop === 'lineHeight') {
       if (typeof value === 'string') {
-        value = transformedStyle[prop] =
+        value = serializedStyle[prop] =
           lengthToNumber(
             value,
             baseFontSize,
@@ -345,25 +380,26 @@ export default function expand(
           baseFontSize,
           inheritedStyle
         )
-        if (typeof len !== 'undefined') transformedStyle[prop] = len
-        value = transformedStyle[prop]
+        if (typeof len !== 'undefined') serializedStyle[prop] = len
+        value = serializedStyle[prop]
       }
 
       if (typeof value === 'string' || typeof value === 'object') {
         const color = normalizeColor(value)
-        if (color) transformedStyle[prop] = color
-        value = transformedStyle[prop]
+        if (color) {
+          serializedStyle[prop] = color as any
+        }
+        value = serializedStyle[prop]
       }
     }
 
     // Inherit the opacity.
-    if (prop === 'opacity') {
-      value = transformedStyle[prop] =
-        value * (inheritedStyle.opacity as number)
+    if (prop === 'opacity' && typeof value === 'number') {
+      serializedStyle.opacity = value * inheritedStyle.opacity
     }
 
     if (prop === 'transform') {
-      const transforms = value as { [type: string]: number | string }[]
+      const transforms = value as any as { [type: string]: number | string }[]
 
       for (const transform of transforms) {
         const type = Object.keys(transform)[0]
@@ -380,10 +416,13 @@ export default function expand(
     }
   }
 
-  return transformedStyle
+  return serializedStyle
 }
 
-function calcBaseFontSize(size: number | string, inheritedSize: number) {
+function calcBaseFontSize(
+  size: number | string,
+  inheritedSize: number
+): number {
   if (typeof size === 'number') return size
 
   try {
@@ -415,7 +454,10 @@ function refineHSL(color: string) {
   return color
 }
 
-function getCurrentColor(color: string | undefined, inheritedColor: string) {
+function getCurrentColor(
+  color: string | undefined,
+  inheritedColor: string
+): string {
   if (color && color.toLowerCase() !== 'currentcolor') {
     return refineHSL(color)
   }
