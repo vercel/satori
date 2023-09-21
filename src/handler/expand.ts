@@ -12,7 +12,7 @@ import CssDimension from '../vendor/parse-css-dimension/index.js'
 import parseTransformOrigin, {
   ParsedTransformOrigin,
 } from '../transform-origin.js'
-import { isString, lengthToNumber, v } from '../utils.js'
+import { isString, lengthToNumber, v, splitEffects } from '../utils.js'
 import { MaskProperty, parseMask } from '../parser/mask.js'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
@@ -173,7 +173,7 @@ function handleSpecialCase(
     // Handle multiple text shadows if provided.
     value = value.toString().trim()
     if (value.includes(',')) {
-      const shadows = splitTextShadow(value)
+      const shadows = splitEffects(value)
       const result = {}
       for (const shadow of shadows) {
         const styles = getStylesForProperty('textShadow', shadow, true)
@@ -190,29 +190,6 @@ function handleSpecialCase(
   }
 
   return
-}
-
-function splitTextShadow(str: string) {
-  const result: string[] = []
-  let skip = false
-  let startPos = 0
-  const len = str.length
-
-  for (let i = 0; i < len; ++i) {
-    const t = str[i]
-    if (t === ')') skip = false
-    if (skip) continue
-    if (t === '(') skip = true
-
-    if (t === ',') {
-      result.push(str.substring(startPos, i))
-      startPos = i + 1
-    }
-  }
-
-  result.push(str.substring(startPos, len))
-
-  return result.map((s) => s.trim())
 }
 
 function getErrorHint(name: string) {
