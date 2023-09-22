@@ -14,6 +14,7 @@ import parseTransformOrigin, {
 } from '../transform-origin.js'
 import { isString, lengthToNumber, v, splitEffects } from '../utils.js'
 import { MaskProperty, parseMask } from '../parser/mask.js'
+import { FontWeight, FontStyle } from '../font.js'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
@@ -232,6 +233,11 @@ type MainStyle = {
   wordBreak: string
   textAlign: string
   lineHeight: number
+  letterSpacing: number
+
+  fontFamily: string | string[]
+  fontWeight: FontWeight
+  fontStyle: FontStyle
 
   borderTopWidth: number
   borderLeftWidth: number

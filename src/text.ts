@@ -59,6 +59,7 @@ export default async function* buildTextNodes(
     fontSize,
     filter: cssFilter,
     tabSize = 8,
+    letterSpacing,
     _inheritedBackgroundClipTextPath,
   } = parentStyle
 
@@ -89,7 +90,7 @@ export default async function* buildTextNodes(
 
   // Get the correct font according to the container style.
   // https://www.w3.org/TR/CSS2/visudet.html
-  let engine = font.getEngine(fontSize, lineHeight, parentStyle as any, locale)
+  let engine = font.getEngine(fontSize, lineHeight, parentStyle, locale)
 
   // Yield segments that are missing a font.
   const wordsMissingFont = canLoadAdditionalAssets
@@ -107,7 +108,7 @@ export default async function* buildTextNodes(
 
   if (wordsMissingFont.length) {
     // Reload the engine with additional fonts.
-    engine = font.getEngine(fontSize, lineHeight, parentStyle as any, locale)
+    engine = font.getEngine(fontSize, lineHeight, parentStyle, locale)
   }
 
   function isImage(s: string): boolean {
@@ -116,7 +117,10 @@ export default async function* buildTextNodes(
 
   // We can cache the measured width of each word as the measure function will be
   // called multiple times.
-  const measureGrapheme = genMeasureGrapheme(engine, parentStyle)
+  const measureGrapheme = genMeasureGrapheme(engine, {
+    fontSize,
+    letterSpacing,
+  })
 
   function measureGraphemeArray(segments: string[]): number {
     let width = 0
@@ -655,11 +659,11 @@ export default async function* buildTextNodes(
       const finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
 
       path = engine.getSVG(finalizedSegment.replace(/(\t)+/g, ''), {
-        ...parentStyle,
+        fontSize,
         left: left + finalizedLeftOffset,
         // Since we need to pass the baseline position, add the ascender to the top.
         top: top + topOffset + baselineOfWord + baselineDelta,
-        letterSpacing: parentStyle.letterSpacing,
+        letterSpacing,
       })
 
       wordBuffer = null
@@ -917,7 +921,10 @@ function createTextContainerNode(
 
 function genMeasureGrapheme(
   engine: FontEngine,
-  parentStyle: any
+  parentStyle: {
+    fontSize: number
+    letterSpacing: number
+  }
 ): (s: string) => number {
   const cache = new Map<string, number>()
 
