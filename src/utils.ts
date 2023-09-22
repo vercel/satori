@@ -318,3 +318,30 @@ export const midline = (s: string) => {
     (_, letter: string) => `-${letter.toLowerCase()}`
   )
 }
+
+export function splitEffects(
+  input: string,
+  separator: string | RegExp = ','
+): string[] {
+  const result = []
+  let l = 0
+  let parenCount = 0
+  separator = new RegExp(separator)
+
+  for (let i = 0; i < input.length; i++) {
+    if (input[i] === '(') {
+      parenCount++
+    } else if (input[i] === ')') {
+      parenCount--
+    }
+
+    if (parenCount === 0 && separator.test(input[i])) {
+      result.push(input.slice(l, i).trim())
+      l = i + 1
+    }
+  }
+
+  result.push(input.slice(l).trim())
+
+  return result
+}

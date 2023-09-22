@@ -2,6 +2,7 @@ import { it, describe, expect } from 'vitest'
 
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
+import { splitEffects } from '../src/utils.js'
 
 describe('Units', () => {
   let fonts
@@ -132,5 +133,38 @@ describe('Units', () => {
       }
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should support split multiple effect', () => {
+    const tests = {
+      'url(https:a.png), linear-gradient(blue, red)': [
+        'url(https:a.png)',
+        'linear-gradient(blue, red)',
+      ],
+      'rgba(0,0,0,.7)': ['rgba(0,0,0,.7)'],
+      '1px 1px 2px black, 0 0 1em blue': ['1px 1px 2px black', '0 0 1em blue'],
+      '2px 2px red, 4px 4px #4bf542, 6px 6px rgba(186, 147, 17, 30%)': [
+        '2px 2px red',
+        '4px 4px #4bf542',
+        '6px 6px rgba(186, 147, 17, 30%)',
+      ],
+    }
+
+    for (const [k, v] of Object.entries(tests)) {
+      expect(splitEffects(k, ',')).toEqual(v)
+    }
+
+    ;[' ', /\s{1}/].forEach((v) => {
+      expect(
+        splitEffects(
+          'drop-shadow(4px 4px 10px blue) blur(4px) saturate(150%)',
+          v
+        )
+      ).toEqual([
+        'drop-shadow(4px 4px 10px blue)',
+        'blur(4px)',
+        'saturate(150%)',
+      ])
+    })
   })
 })
