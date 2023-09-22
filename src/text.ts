@@ -859,7 +859,10 @@ function processTextOverflow(
   return [Infinity]
 }
 
-function processWordBreak(content, wordBreak: string) {
+function processWordBreak(
+  content,
+  wordBreak: string
+): { words: string[]; requiredBreaks: boolean[]; allowBreakWord: boolean } {
   const allowBreakWord = ['break-all', 'break-word'].includes(wordBreak)
 
   const { words, requiredBreaks } = splitByBreakOpportunities(
@@ -870,7 +873,14 @@ function processWordBreak(content, wordBreak: string) {
   return { words, requiredBreaks, allowBreakWord }
 }
 
-function processWhiteSpace(content: string, whiteSpace: string) {
+function processWhiteSpace(
+  content: string,
+  whiteSpace: string
+): {
+  content: string
+  shouldCollapseTabsAndSpaces: boolean
+  allowSoftWrap: boolean
+} {
   const shouldKeepLinebreak = ['pre', 'pre-wrap', 'pre-line'].includes(
     whiteSpace
   )
