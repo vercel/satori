@@ -173,9 +173,9 @@ function handleSpecialCase(
   if (name === 'textShadow') {
     // Handle multiple text shadows if provided.
     value = value.toString().trim()
+    const result = {}
     if (value.includes(',')) {
       const shadows = splitEffects(value)
-      const result = {}
       for (const shadow of shadows) {
         const styles = getStylesForProperty('textShadow', shadow, true)
         for (const k in styles) {
@@ -186,8 +186,14 @@ function handleSpecialCase(
           }
         }
       }
-      return result
+    } else {
+      const styles = getStylesForProperty('textShadow', value, true)
+      for (const k in styles) {
+        result[k] = [styles[k]]
+      }
     }
+
+    return result
   }
 
   return
@@ -255,6 +261,13 @@ type MainStyle = {
   gap: number
   rowGap: number
   columnGap: number
+
+  textShadowOffset: {
+    width: number
+    height: number
+  }[]
+  textShadowColor: string[]
+  textShadowRadius: number[]
 }
 
 type OtherStyle = Exclude<Record<PropertyKey, string | number>, keyof MainStyle>
@@ -288,7 +301,7 @@ export default function expand(
 
       const name = getPropertyName(prop)
       const value = preprocess(style[prop], currentColor)
-
+      console.log('::;name', name)
       try {
         const resolvedStyle =
           handleSpecialCase(name, value, currentColor) ||
@@ -300,6 +313,8 @@ export default function expand(
           )
 
         Object.assign(serializedStyle, resolvedStyle)
+
+        console.log(':::resolvedStyle', resolvedStyle)
       } catch (err) {
         throw new Error(
           err.message +

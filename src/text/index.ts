@@ -439,13 +439,9 @@ export default async function* buildTextNodes(
 
   let filter = ''
   if (parentStyle.textShadowOffset) {
-    let { textShadowColor, textShadowOffset, textShadowRadius } =
-      parentStyle as any
-    if (!Array.isArray(parentStyle.textShadowOffset)) {
-      textShadowColor = [textShadowColor]
-      textShadowOffset = [textShadowOffset]
-      textShadowRadius = [textShadowRadius]
-    }
+    const { textShadowColor, textShadowOffset, textShadowRadius } = parentStyle
+
+    console.log(':::parentStyle', parentStyle)
 
     filter = buildDropShadow(
       {
