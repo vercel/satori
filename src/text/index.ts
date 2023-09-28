@@ -441,8 +441,6 @@ export default async function* buildTextNodes(
   if (parentStyle.textShadowOffset) {
     const { textShadowColor, textShadowOffset, textShadowRadius } = parentStyle
 
-    console.log(':::parentStyle', parentStyle)
-
     filter = buildDropShadow(
       {
         width: measuredTextSize.width,

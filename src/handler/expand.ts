@@ -174,22 +174,17 @@ function handleSpecialCase(
     // Handle multiple text shadows if provided.
     value = value.toString().trim()
     const result = {}
-    if (value.includes(',')) {
-      const shadows = splitEffects(value)
-      for (const shadow of shadows) {
-        const styles = getStylesForProperty('textShadow', shadow, true)
-        for (const k in styles) {
-          if (!result[k]) {
-            result[k] = [styles[k]]
-          } else {
-            result[k].push(styles[k])
-          }
-        }
-      }
-    } else {
-      const styles = getStylesForProperty('textShadow', value, true)
+
+    const shadows = value.includes(',') ? splitEffects(value) : [value]
+
+    for (const shadow of shadows) {
+      const styles = getStylesForProperty('textShadow', shadow, true)
       for (const k in styles) {
-        result[k] = [styles[k]]
+        if (!result[k]) {
+          result[k] = [styles[k]]
+        } else {
+          result[k].push(styles[k])
+        }
       }
     }
 
@@ -301,7 +296,7 @@ export default function expand(
 
       const name = getPropertyName(prop)
       const value = preprocess(style[prop], currentColor)
-      console.log('::;name', name)
+
       try {
         const resolvedStyle =
           handleSpecialCase(name, value, currentColor) ||
@@ -313,8 +308,6 @@ export default function expand(
           )
 
         Object.assign(serializedStyle, resolvedStyle)
-
-        console.log(':::resolvedStyle', resolvedStyle)
       } catch (err) {
         throw new Error(
           err.message +
@@ -411,6 +404,14 @@ export default function expand(
             : _v
         transform[type] = len
       }
+    }
+
+    if (prop === 'textShadowRadius') {
+      const textShadowRadius = value as unknown as Array<number | string>
+
+      serializedStyle.textShadowRadius = textShadowRadius.map((_v) =>
+        lengthToNumber(_v, baseFontSize, 0, inheritedStyle, false)
+      )
     }
   }
 
