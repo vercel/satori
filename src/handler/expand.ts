@@ -413,6 +413,26 @@ export default function expand(
         lengthToNumber(_v, baseFontSize, 0, inheritedStyle, false)
       )
     }
+
+    if (prop === 'textShadowOffset') {
+      const textShadowOffset = value as unknown as Array<{
+        width: number | string
+        height: number | string
+      }>
+
+      serializedStyle.textShadowOffset = textShadowOffset.map(
+        ({ height, width }) => ({
+          height: lengthToNumber(
+            height,
+            baseFontSize,
+            0,
+            inheritedStyle,
+            false
+          ),
+          width: lengthToNumber(width, baseFontSize, 0, inheritedStyle, false),
+        })
+      )
+    }
   }
 
   return serializedStyle
