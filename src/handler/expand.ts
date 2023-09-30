@@ -175,7 +175,7 @@ function handleSpecialCase(
     value = value.toString().trim()
     const result = {}
 
-    const shadows = value.includes(',') ? splitEffects(value) : [value]
+    const shadows = splitEffects(value)
 
     for (const shadow of shadows) {
       const styles = getStylesForProperty('textShadow', shadow, true)
