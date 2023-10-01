@@ -394,7 +394,7 @@ export default async function* buildTextNodes(
     // When doing `text-wrap: balance`, we reflow the text multiple times
     // using binary search to find the best width.
     // https://www.w3.org/TR/css-text-4/#valdef-text-wrap-balance
-    if (textWrap === 'balance') {
+    if (textWrap === 'balance' && content.includes(' ')) {
       let l = width / 2
       let r = width
       let m: number = width
