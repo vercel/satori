@@ -14,6 +14,7 @@ import parseTransformOrigin, {
 } from '../transform-origin.js'
 import { isString, lengthToNumber, v, splitEffects } from '../utils.js'
 import { MaskProperty, parseMask } from '../parser/mask.js'
+import { FontWeight, FontStyle } from '../font.js'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
@@ -172,21 +173,22 @@ function handleSpecialCase(
   if (name === 'textShadow') {
     // Handle multiple text shadows if provided.
     value = value.toString().trim()
-    if (value.includes(',')) {
-      const shadows = splitEffects(value)
-      const result = {}
-      for (const shadow of shadows) {
-        const styles = getStylesForProperty('textShadow', shadow, true)
-        for (const k in styles) {
-          if (!result[k]) {
-            result[k] = [styles[k]]
-          } else {
-            result[k].push(styles[k])
-          }
+    const result = {}
+
+    const shadows = splitEffects(value)
+
+    for (const shadow of shadows) {
+      const styles = getStylesForProperty('textShadow', shadow, true)
+      for (const k in styles) {
+        if (!result[k]) {
+          result[k] = [styles[k]]
+        } else {
+          result[k].push(styles[k])
         }
       }
-      return result
     }
+
+    return result
   }
 
   return
@@ -232,6 +234,11 @@ type MainStyle = {
   wordBreak: string
   textAlign: string
   lineHeight: number
+  letterSpacing: number
+
+  fontFamily: string | string[]
+  fontWeight: FontWeight
+  fontStyle: FontStyle
 
   borderTopWidth: number
   borderLeftWidth: number
@@ -249,6 +256,13 @@ type MainStyle = {
   gap: number
   rowGap: number
   columnGap: number
+
+  textShadowOffset: {
+    width: number
+    height: number
+  }[]
+  textShadowColor: string[]
+  textShadowRadius: number[]
 }
 
 type OtherStyle = Exclude<Record<PropertyKey, string | number>, keyof MainStyle>
@@ -390,6 +404,34 @@ export default function expand(
             : _v
         transform[type] = len
       }
+    }
+
+    if (prop === 'textShadowRadius') {
+      const textShadowRadius = value as unknown as Array<number | string>
+
+      serializedStyle.textShadowRadius = textShadowRadius.map((_v) =>
+        lengthToNumber(_v, baseFontSize, 0, inheritedStyle, false)
+      )
+    }
+
+    if (prop === 'textShadowOffset') {
+      const textShadowOffset = value as unknown as Array<{
+        width: number | string
+        height: number | string
+      }>
+
+      serializedStyle.textShadowOffset = textShadowOffset.map(
+        ({ height, width }) => ({
+          height: lengthToNumber(
+            height,
+            baseFontSize,
+            0,
+            inheritedStyle,
+            false
+          ),
+          width: lengthToNumber(width, baseFontSize, 0, inheritedStyle, false),
+        })
+      )
     }
   }
 
