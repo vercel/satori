@@ -6,6 +6,7 @@
 import { defineConfig } from 'tsup'
 import { join } from 'path'
 import { replace } from 'esbuild-plugin-replace'
+import { readFile } from 'node:fs/promises'
 
 export default defineConfig({
   entry: ['src/index.ts'],
@@ -55,6 +56,17 @@ export default defineConfig({
             path: join(__dirname, 'src', 'vendor', 'twrnc', 'deprecate.js'),
           }
         })
+
+        build.onLoad({ filter: /hb.wasm$/ }, async (args) => {
+          const wasm = await readFile(args.path)
+
+          const contents = Buffer.from(wasm, 'binary').toString('base64')
+
+          return {
+            contents,
+            loader: 'text',
+          }
+        })
       },
     },
     // We don't like `Function`.
@@ -64,3 +76,22 @@ export default defineConfig({
     }),
   ],
 })
+
+function asciiToBinary(str) {
+  if (typeof atob === 'function') {
+    // this works in the browser
+    return atob(str)
+  } else {
+    // this works in node
+    return new Buffer(str, 'base64').toString('binary')
+  }
+}
+
+function decode(encoded: string): ArrayBuffer {
+  const binaryString = asciiToBinary(encoded)
+  const bytes = new Uint8Array(binaryString.length)
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
+  }
+  return bytes.buffer
+}

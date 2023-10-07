@@ -21,6 +21,9 @@ import { Locale } from '../language.js'
 import { HorizontalEllipsis, Space, Tab } from './characters.js'
 import { genMeasurer } from './measurer.js'
 import { preprocess } from './processor.js'
+import { initHB } from './font/index.js'
+
+initHB()
 
 const skippedWordWhenFindingMissingFont = new Set([Tab])
 
