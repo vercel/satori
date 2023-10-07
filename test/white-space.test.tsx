@@ -14,19 +14,14 @@ describe('white-space', () => {
       const svg = await satori(
         <div
           style={{
-            width: '100%',
-            height: '100%',
             whiteSpace: 'normal',
-            background: 'white',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}
         >
           <div>{'hello'}</div>
           <div>{' hello '}</div>
-          <div>{'hello' + EnSpace}</div>
+          <div>{EnSpace + 'hello'}</div>
         </div>,
         {
           width: 100,
