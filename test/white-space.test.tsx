@@ -9,13 +9,24 @@ describe('white-space', () => {
 
   describe('normal', () => {
     it('should not render extra spaces with `white-space: normal`', async () => {
+      const EnSpace = String.fromCodePoint(Number('0x2002'))
+
       const svg = await satori(
         <div
           style={{
+            width: '100%',
+            height: '100%',
             whiteSpace: 'normal',
+            background: 'white',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          {' hello '}
+          <div>{'hello'}</div>
+          <div>{' hello '}</div>
+          <div>{'hello' + EnSpace}</div>
         </div>,
         {
           width: 100,
