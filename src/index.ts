@@ -1,7 +1,7 @@
 export type {
   FontOptions as Font,
   Weight as FontWeight,
-  Style as FontStyle,
+  FontStyle,
 } from './font.js'
 export type { Locale } from './language.js'
 

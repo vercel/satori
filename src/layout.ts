@@ -16,7 +16,7 @@ import {
 import { SVGNodeToImage } from './handler/preprocess.js'
 import computeStyle from './handler/compute.js'
 import FontLoader from './font.js'
-import buildTextNodes from './text.js'
+import buildTextNodes from './text/index.js'
 import rect from './builder/rect.js'
 import { Locale, normalizeLocale } from './language.js'
 import { SerializedStyle } from './handler/expand.js'

@@ -2,26 +2,25 @@
  * This module calculates the layout of a text string. Currently the only
  * supported inline node is text. All other nodes are using block layout.
  */
-import type { LayoutContext } from './layout.js'
+import type { LayoutContext } from '../layout.js'
 import type { Yoga } from 'yoga-wasm-web'
-import getYoga from './yoga/index.js'
+import getYoga from '../yoga/index.js'
 import {
   v,
   segment,
   wordSeparators,
   buildXMLString,
-  splitByBreakOpportunities,
   isUndefined,
   isString,
   lengthToNumber,
-  isNumber,
-} from './utils.js'
-import buildText, { container } from './builder/text.js'
-import { buildDropShadow } from './builder/shadow.js'
-import buildDecoration from './builder/text-decoration.js'
-import { Locale } from './language.js'
-import { FontEngine } from './font.js'
+} from '../utils.js'
+import buildText, { container } from '../builder/text.js'
+import { buildDropShadow } from '../builder/shadow.js'
+import buildDecoration from '../builder/text-decoration.js'
+import { Locale } from '../language.js'
 import { HorizontalEllipsis, Space, Tab } from './characters.js'
+import { genMeasurer } from './measurer.js'
+import { preprocess } from './processor.js'
 
 const skippedWordWhenFindingMissingFont = new Set([Tab])
 
@@ -51,49 +50,41 @@ export default async function* buildTextNodes(
 
   const {
     textAlign,
-    whiteSpace,
-    wordBreak,
     lineHeight,
-    textTransform,
     textWrap,
     fontSize,
     filter: cssFilter,
     tabSize = 8,
+    letterSpacing,
     _inheritedBackgroundClipTextPath,
+    flexShrink,
   } = parentStyle
 
-  content = processTextTransform(content, textTransform, locale)
-
   const {
-    content: _content,
-    shouldCollapseTabsAndSpaces,
+    words,
+    requiredBreaks,
     allowSoftWrap,
-  } = processWhiteSpace(content, whiteSpace)
-
-  const { words, requiredBreaks, allowBreakWord } = processWordBreak(
-    _content,
-    wordBreak
-  )
-
-  const [lineLimit, blockEllipsis] = processTextOverflow(
-    parentStyle,
-    allowSoftWrap
-  )
+    allowBreakWord,
+    processedContent,
+    shouldCollapseTabsAndSpaces,
+    lineLimit,
+    blockEllipsis,
+  } = preprocess(content, parentStyle, locale)
 
   const textContainer = createTextContainerNode(Yoga, textAlign)
   parent.insertChild(textContainer, parent.getChildCount())
 
-  if (isUndefined(parentStyle.flexShrink)) {
+  if (isUndefined(flexShrink)) {
     parent.setFlexShrink(1)
   }
 
   // Get the correct font according to the container style.
   // https://www.w3.org/TR/CSS2/visudet.html
-  let engine = font.getEngine(fontSize, lineHeight, parentStyle as any, locale)
+  let engine = font.getEngine(fontSize, lineHeight, parentStyle, locale)
 
   // Yield segments that are missing a font.
   const wordsMissingFont = canLoadAdditionalAssets
-    ? segment(_content, 'grapheme').filter(
+    ? segment(processedContent, 'grapheme').filter(
         (word) => !shouldSkipWhenFindingMissingFont(word) && !engine.has(word)
       )
     : []
@@ -107,34 +98,21 @@ export default async function* buildTextNodes(
 
   if (wordsMissingFont.length) {
     // Reload the engine with additional fonts.
-    engine = font.getEngine(fontSize, lineHeight, parentStyle as any, locale)
+    engine = font.getEngine(fontSize, lineHeight, parentStyle, locale)
   }
 
   function isImage(s: string): boolean {
     return !!(graphemeImages && graphemeImages[s])
   }
 
-  // We can cache the measured width of each word as the measure function will be
-  // called multiple times.
-  const measureGrapheme = genMeasureGrapheme(engine, parentStyle)
-
-  function measureGraphemeArray(segments: string[]): number {
-    let width = 0
-
-    for (const s of segments) {
-      if (isImage(s)) {
-        width += fontSize
-      } else {
-        width += measureGrapheme(s)
-      }
+  const { measureGrapheme, measureGraphemeArray, measureText } = genMeasurer(
+    engine,
+    isImage,
+    {
+      fontSize,
+      letterSpacing,
     }
-
-    return width
-  }
-
-  function measureText(text: string): number {
-    return measureGraphemeArray(segment(text, 'grapheme'))
-  }
+  )
 
   const tabWidth = isString(tabSize)
     ? lengthToNumber(tabSize, fontSize, 1, parentStyle)
@@ -157,11 +135,11 @@ export default async function* buildTextNodes(
     }
 
     const { index, tabCount } = detectTabs(text)
+
     let originWidth = 0
-    let textBeforeTab = ''
 
     if (tabCount > 0) {
-      textBeforeTab = text.slice(0, index)
+      const textBeforeTab = text.slice(0, index)
       const textAfterTab = text.slice(index + tabCount)
       const textWidthBeforeTab = measureText(textBeforeTab)
       const offsetBeforeTab = textWidthBeforeTab + currentWidth
@@ -189,7 +167,7 @@ export default async function* buildTextNodes(
   let lineWidths = []
   let baselines = []
   let lineSegmentNumber = []
-  let texts = []
+  let texts: string[] = []
   let wordPositionInLayout: (null | {
     x: number
     y: number
@@ -287,7 +265,7 @@ export default async function* buildTextNodes(
       if (forceBreak || willWrap) {
         // Start a new line, spaces can be ignored.
         // @TODO Lack of support for Japanese spacing
-        if (shouldCollapseTabsAndSpaces && word === ' ') {
+        if (shouldCollapseTabsAndSpaces && word === Space) {
           w = 0
         }
 
@@ -408,16 +386,18 @@ export default async function* buildTextNodes(
         }
       }
       flow(r)
-      measuredTextSize = { width: r, height }
-      return { width: Math.ceil(r), height }
+      const _width = Math.ceil(r)
+      measuredTextSize = { width: _width, height }
+      return { width: _width, height }
     }
-    measuredTextSize = { width, height }
+    const _width = Math.ceil(width)
+    measuredTextSize = { width: _width, height }
     // This may be a temporary fix, I didn't dig deep into yoga.
     // But when the return value of width here doesn't change (assuming the value of width is 216.9),
     // when we later get the width through `parent.getComputedWidth()`, sometimes it returns 216 and sometimes 217.
     // I'm not sure if this is a yoga bug, but it seems related to the entire page width.
     // So I use Math.ceil.
-    return { width: Math.ceil(width), height }
+    return { width: _width, height }
   })
 
   const [x, y] = yield
@@ -459,13 +439,7 @@ export default async function* buildTextNodes(
 
   let filter = ''
   if (parentStyle.textShadowOffset) {
-    let { textShadowColor, textShadowOffset, textShadowRadius } =
-      parentStyle as any
-    if (!Array.isArray(parentStyle.textShadowOffset)) {
-      textShadowColor = [textShadowColor]
-      textShadowOffset = [textShadowOffset]
-      textShadowRadius = [textShadowRadius]
-    }
+    const { textShadowColor, textShadowOffset, textShadowRadius } = parentStyle
 
     filter = buildDropShadow(
       {
@@ -655,11 +629,11 @@ export default async function* buildTextNodes(
       const finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
 
       path = engine.getSVG(finalizedSegment.replace(/(\t)+/g, ''), {
-        ...parentStyle,
+        fontSize,
         left: left + finalizedLeftOffset,
         // Since we need to pass the baseline position, add the ascender to the top.
         top: top + topOffset + baselineOfWord + baselineDelta,
-        letterSpacing: parentStyle.letterSpacing,
+        letterSpacing,
       })
 
       wordBuffer = null
@@ -790,104 +764,6 @@ export default async function* buildTextNodes(
   return result
 }
 
-function processTextTransform(
-  content: string,
-  textTransform: string,
-  locale?: Locale
-): string {
-  if (textTransform === 'uppercase') {
-    content = content.toLocaleUpperCase(locale)
-  } else if (textTransform === 'lowercase') {
-    content = content.toLocaleLowerCase(locale)
-  } else if (textTransform === 'capitalize') {
-    content = segment(content, 'word', locale)
-      // For each word...
-      .map((word) => {
-        // ...split into graphemes...
-        return segment(word, 'grapheme', locale)
-          .map((grapheme, index) => {
-            // ...and make the first grapheme uppercase
-            return index === 0 ? grapheme.toLocaleUpperCase(locale) : grapheme
-          })
-          .join('')
-      })
-      .join('')
-  }
-
-  return content
-}
-
-function processTextOverflow(
-  parentStyle: Record<string, string | number>,
-  allowSoftWrap: boolean
-): [number, string?] {
-  const {
-    textOverflow,
-    lineClamp,
-    WebkitLineClamp,
-    WebkitBoxOrient,
-    overflow,
-    display,
-  } = parentStyle
-
-  if (display === 'block' && lineClamp) {
-    const [lineLimit, blockEllipsis = HorizontalEllipsis] =
-      parseLineClamp(lineClamp)
-    if (lineLimit) {
-      return [lineLimit, blockEllipsis]
-    }
-  }
-
-  if (
-    textOverflow === 'ellipsis' &&
-    display === '-webkit-box' &&
-    WebkitBoxOrient === 'vertical' &&
-    isNumber(WebkitLineClamp) &&
-    WebkitLineClamp > 0
-  ) {
-    return [WebkitLineClamp, HorizontalEllipsis]
-  }
-
-  if (textOverflow === 'ellipsis' && overflow === 'hidden' && !allowSoftWrap) {
-    return [1, HorizontalEllipsis]
-  }
-
-  return [Infinity]
-}
-
-function processWordBreak(content, wordBreak: string) {
-  const allowBreakWord = ['break-all', 'break-word'].includes(wordBreak)
-
-  const { words, requiredBreaks } = splitByBreakOpportunities(
-    content,
-    wordBreak
-  )
-
-  return { words, requiredBreaks, allowBreakWord }
-}
-
-function processWhiteSpace(content: string, whiteSpace: string) {
-  const shouldKeepLinebreak = ['pre', 'pre-wrap', 'pre-line'].includes(
-    whiteSpace
-  )
-
-  const shouldCollapseTabsAndSpaces = ['normal', 'nowrap', 'pre-line'].includes(
-    whiteSpace
-  )
-
-  const allowSoftWrap = !['pre', 'nowrap'].includes(whiteSpace)
-
-  if (!shouldKeepLinebreak) {
-    content = content.replace(/\n/g, Space)
-  }
-
-  if (shouldCollapseTabsAndSpaces) {
-    content = content.replace(/([ ]|\t)+/g, Space).trim()
-  }
-
-  return { content, shouldCollapseTabsAndSpaces, allowSoftWrap }
-}
-
 function createTextContainerNode(
   Yoga: Yoga,
   textAlign: string
@@ -915,24 +791,6 @@ function createTextContainerNode(
   return textContainer
 }
 
-function genMeasureGrapheme(
-  engine: FontEngine,
-  parentStyle: any
-): (s: string) => number {
-  const cache = new Map<string, number>()
-
-  return function measureGrapheme(s: string): number {
-    if (cache.has(s)) {
-      return cache.get(s)
-    }
-
-    const width = engine.measure(s, parentStyle)
-    cache.set(s, width)
-
-    return width
-  }
-}
-
 function detectTabs(text: string):
   | {
       index: null
@@ -952,27 +810,4 @@ function detectTabs(text: string):
         index: null,
         tabCount: 0,
       }
-}
-
-function parseLineClamp(input: number | string): [number?, string?] {
-  if (typeof input === 'number') return [input]
-
-  const regex1 = /^(\d+)\s*"(.*)"$/
-  const regex2 = /^(\d+)\s*'(.*)'$/
-  const match1 = regex1.exec(input)
-  const match2 = regex2.exec(input)
-
-  if (match1) {
-    const number = +match1[1]
-    const text = match1[2]
-
-    return [number, text]
-  } else if (match2) {
-    const number = +match2[1]
-    const text = match2[2]
-
-    return [number, text]
-  }
-
-  return []
 }
