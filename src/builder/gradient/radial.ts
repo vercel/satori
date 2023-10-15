@@ -54,7 +54,6 @@ export function buildRadialGradient(
   const patternId = `satori_pattern_${id}`
   const maskId = `satori_mask_${id}`
 
-  // We currently only support `farthest-corner`:
   // https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/radial-gradient()#values
   const spread = calcRadius(
     shape as Shape,
