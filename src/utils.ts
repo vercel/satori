@@ -108,8 +108,6 @@ export function lengthToNumber(
 export function calcDegree(deg: string) {
   const parsed = new CssDimension(deg)
 
-  console.log(parsed)
-
   switch (parsed.unit) {
     case 'deg':
       return parsed.value
