@@ -17,6 +17,9 @@ importers:
       css-box-shadow:
         specifier: 1.0.0-3
         version: 1.0.0-3
+      css-gradient-parser:
+        specifier: ^0.0.16
+        version: 0.0.16
       css-to-react-native:
         specifier: ^3.0.0
         version: 3.0.0
@@ -4286,6 +4289,11 @@ packages:
     engines: {node: '>=4'}
     dev: false
 
+  /css-gradient-parser@0.0.16:
+    resolution: {integrity: sha512-3O5QdqgFRUbXvK1x5INf1YkBz1UKSWqrd63vWsum8MNHDBYD5urm3QtxZbKU259OrEXNM26lP/MPY3d1IGkBgA==}
+    engines: {node: '>=16'}
+    dev: false
+
   /css-to-react-native@3.0.0:
     resolution: {integrity: sha512-Ro1yETZA813eoyUp2GDBhG2j+YggidUmzO1/v9eYBKR2EHVEniE2MI/NqpTQ954BMpTPZFsGNPm46qFB9dpaPQ==}
     dependencies:
@@ -5684,7 +5692,7 @@ packages:
       '@babel/parser': 7.22.16
       '@istanbuljs/schema': 0.1.3
       istanbul-lib-coverage: 3.2.0
-      semver: 6.3.0
+      semver: 6.3.1
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -5788,7 +5796,7 @@ packages:
       jest-config: 29.7.0(@types/node@16.11.59)
       jest-util: 29.7.0
       jest-validate: 29.7.0
-      yargs: 17.5.1
+      yargs: 17.7.2
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -7856,7 +7864,7 @@ packages:
     dependencies:
       object-assign: 4.1.1
       react: 17.0.2
-      react-is: 17.0.2
+      react-is: 18.2.0
     dev: true
 
   /react-simple-code-editor@0.11.3(react-dom@17.0.2)(react@17.0.2):

@@ -94,14 +94,7 @@ export function lengthToNumber(
           return parsed.value
       }
     } else if (parsed.type === 'angle') {
-      switch (parsed.unit) {
-        case 'deg':
-          return parsed.value
-        case 'rad':
-          return (parsed.value * 180) / Math.PI
-        default:
-          return parsed.value
-      }
+      return calcDegree(length)
     } else if (parsed.type === 'percentage') {
       if (percentage) {
         return (parsed.value / 100) * baseLength
@@ -109,6 +102,23 @@ export function lengthToNumber(
     }
   } catch {
     // Not a length unit, silently ignore.
+  }
+}
+
+export function calcDegree(deg: string) {
+  const parsed = new CssDimension(deg)
+
+  console.log(parsed)
+
+  switch (parsed.unit) {
+    case 'deg':
+      return parsed.value
+    case 'rad':
+      return (parsed.value * 180) / Math.PI
+    case 'turn':
+      return parsed.value * 360
+    case 'grad':
+      return 0.9 * parsed.value
   }
 }
 
