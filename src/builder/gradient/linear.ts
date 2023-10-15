@@ -98,12 +98,6 @@ export function buildLinearGradient(
       length = diagonal * cosA
     }
 
-    console.log(
-      calcDegree(
-        `${parsed.orientation.value.value}${parsed.orientation.value.unit}`
-      ),
-      parsed.orientation
-    )
     calc(
       (calcDegree(
         `${parsed.orientation.value.value}${parsed.orientation.value.unit}`
