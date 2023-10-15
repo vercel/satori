@@ -17,6 +17,9 @@ importers:
       css-box-shadow:
         specifier: 1.0.0-3
         version: 1.0.0-3
+      css-gradient-parser:
+        specifier: ^0.0.16
+        version: 0.0.16
       css-to-react-native:
         specifier: ^3.0.0
         version: 3.0.0
@@ -4284,6 +4287,11 @@ packages:
   /css-color-keywords@1.0.0:
     resolution: {integrity: sha512-FyyrDHZKEjXDpNJYvVsV960FiqQyXc/LlYmsxl2BcdMb2WPx0OGRVgTg55rPSyLSNMqP52R9r8geSp7apN3Ofg==}
     engines: {node: '>=4'}
+    dev: false
+
+  /css-gradient-parser@0.0.16:
+    resolution: {integrity: sha512-3O5QdqgFRUbXvK1x5INf1YkBz1UKSWqrd63vWsum8MNHDBYD5urm3QtxZbKU259OrEXNM26lP/MPY3d1IGkBgA==}
+    engines: {node: '>=16'}
     dev: false
 
   /css-to-react-native@3.0.0:
