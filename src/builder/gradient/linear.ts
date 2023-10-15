@@ -98,13 +98,29 @@ export function buildLinearGradient(
       length = diagonal * cosA
     }
 
-    calc(
+    // calc(
+    //   (calcDegree(
+    //     `${parsed.orientation.value.value}${parsed.orientation.value.unit}`
+    //   ) /
+    //     180) *
+    //     Math.PI
+    // )
+
+    const point = calcPoint(
       (calcDegree(
         `${parsed.orientation.value.value}${parsed.orientation.value.unit}`
       ) /
         180) *
-        Math.PI
+        Math.PI,
+        imageWidth,
+        imageHeight
     )
+
+    x1 = point.x1
+    x2 = point.x2
+    y1 = point.y1
+    y2 = point.y2
+    length = point.length
   }
 
   const stops = normalizeStops(length, parsed.stops, inheritableStyle, from)
@@ -174,4 +190,68 @@ function resolveXYFromDirection(dir: string) {
   }
 
   return [x1, y1, x2, y2]
+}
+
+/**
+ * calc start point and end point of linear gradient
+ */
+function calcPoint(angle: number, w: number, h: number) {
+  const r = Math.pow(h / w, 2)
+
+  // make sure angle is 0 <= angle <= 360
+  angle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
+
+  let x1, y1, x2, y2, length, tmp
+  
+  const dfs = (angle: number) => {
+    if (angle === 0) {
+      x1 = 0
+      y1 = 1
+      x2 = 0
+      y2 = 0
+      return
+    } else if (angle === Math.PI / 2) {
+      x1 = 0
+      y1 = 0
+      x2 = 1
+      y2 = 0
+      return
+    }
+    if (angle > 0 && angle < Math.PI / 2) {
+      x1 = (r * w / 2 / Math.tan(angle) - h / 2) / (Math.tan(angle) + r / Math.tan(angle))
+      y1 = Math.tan(angle) * x1 + h
+      x2 = Math.abs(w / 2 - x1) + w / 2
+      y2 = h / 2 - Math.abs(y1 - h / 2)
+      length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
+      return
+    } else if (angle > Math.PI / 2 && angle < Math.PI) {
+      x1 = (h / 2 + r * w / 2 / Math.tan(angle)) / (Math.tan(angle) + r / Math.tan(angle))
+      y1 = Math.tan(angle) * x1
+      x2 = Math.abs(w / 2 - x1) + w / 2
+      y2 = h / 2 + Math.abs(y1 - h / 2)
+      return
+    } else if (
+      (angle >= Math.PI && angle <= 1.5 * Math.PI) ||
+      (angle >= 1.5 * Math.PI && angle <= 2 * Math.PI)
+    ) {
+      dfs(angle - Math.PI)
+  
+      tmp = x1
+      x1 = x2
+      x2 = tmp
+      tmp = y1
+      y1 = y2
+      y2 = tmp
+    }
+  }
+
+  dfs(angle)
+
+  return {
+    x1: x1 / w,
+    y1: y1 / h,
+    x2: x2 / w,
+    y2: y2 / h,
+    length
+  }
 }
