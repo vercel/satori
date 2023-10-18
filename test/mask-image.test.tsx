@@ -209,4 +209,33 @@ describe('Mask-*', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should support mask-image on positioned elements', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: 20,
+            left: 20,
+            height: 100,
+            width: 100,
+            display: 'flex',
+            background: 'green',
+            maskImage:
+              "url(data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Crect fill='white' width='100' height='100' /%3E%3C/svg%3E)",
+            border: '1px solid red',
+          }}
+        ></div>
+      </div>,
+      { width: 120, height: 120, fonts }
+    )
+    expect(toImage(svg, 120)).toMatchImageSnapshot()
+  })
 })
