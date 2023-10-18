@@ -1,6 +1,6 @@
-import { parseLinearGradient } from 'css-gradient-parser'
+import { parseLinearGradient, ColorStop } from 'css-gradient-parser'
 import { normalizeStops } from './utils.js'
-import { buildXMLString, calcDegree } from '../../utils.js'
+import { buildXMLString, calcDegree, lengthToNumber } from '../../utils.js'
 
 export function buildLinearGradient(
   {
@@ -24,106 +24,44 @@ export function buildLinearGradient(
 ) {
   const parsed = parseLinearGradient(image)
   const [imageWidth, imageHeight] = dimensions
+  const repeating = image.startsWith('repeating')
 
   // Calculate the direction.
-  let x1, y1, x2, y2, length
+  let points, length, xys
 
   if (parsed.orientation.type === 'directional') {
-    ;[x1, y1, x2, y2] = resolveXYFromDirection(parsed.orientation.value)
+    points = resolveXYFromDirection(parsed.orientation.value)
 
     length = Math.sqrt(
-      Math.pow((x2 - x1) * imageWidth, 2) + Math.pow((y2 - y1) * imageHeight, 2)
+      Math.pow((points.x2 - points.x1) * imageWidth, 2) +
+        Math.pow((points.y2 - points.y1) * imageHeight, 2)
     )
   } else if (parsed.orientation.type === 'angular') {
-    const EPS = 0.000001
-    const r = imageWidth / imageHeight
-
-    function calc(angle) {
-      angle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
-
-      if (Math.abs(angle - Math.PI / 2) < EPS) {
-        x1 = 0
-        y1 = 0
-        x2 = 1
-        y2 = 0
-        length = imageWidth
-        return
-      } else if (Math.abs(angle) < EPS) {
-        x1 = 0
-        y1 = 1
-        x2 = 0
-        y2 = 0
-        length = imageHeight
-        return
-      }
-
-      // Assuming 0 <= angle < PI / 2.
-      if (angle >= Math.PI / 2 && angle < Math.PI) {
-        calc(Math.PI - angle)
-        y1 = 1 - y1
-        y2 = 1 - y2
-        return
-      } else if (angle >= Math.PI) {
-        calc(angle - Math.PI)
-        let tmp = x1
-        x1 = x2
-        x2 = tmp
-        tmp = y1
-        y1 = y2
-        y2 = tmp
-        return
-      }
-
-      // Remap SVG distortion
-      const tan = Math.tan(angle)
-      const tanTexture = tan * r
-      const angleTexture = Math.atan(tanTexture)
-      const l = Math.sqrt(2) * Math.cos(Math.PI / 4 - angleTexture)
-      x1 = 0
-      y1 = 1
-      x2 = Math.sin(angleTexture) * l
-      y2 = 1 - Math.cos(angleTexture) * l
-
-      // Get the angle between the distored gradient direction and diagonal.
-      const x = 1
-      const y = 1 / tan
-      const cosA = Math.abs(
-        (x * r + y) / Math.sqrt(x * x + y * y) / Math.sqrt(r * r + 1)
-      )
-
-      // Get the distored gradient length.
-      const diagonal = Math.sqrt(
-        imageWidth * imageWidth + imageHeight * imageHeight
-      )
-      length = diagonal * cosA
-    }
-
-    // calc(
-    //   (calcDegree(
-    //     `${parsed.orientation.value.value}${parsed.orientation.value.unit}`
-    //   ) /
-    //     180) *
-    //     Math.PI
-    // )
-
-    const point = calcPoint(
+    const { length: l, ...p } = calcNormalPoint(
       (calcDegree(
         `${parsed.orientation.value.value}${parsed.orientation.value.unit}`
       ) /
         180) *
         Math.PI,
-        imageWidth,
-        imageHeight
+      imageWidth,
+      imageHeight
     )
 
-    x1 = point.x1
-    x2 = point.x2
-    y1 = point.y1
-    y2 = point.y2
-    length = point.length
+    length = l
+    points = p
   }
 
-  const stops = normalizeStops(length, parsed.stops, inheritableStyle, from)
+  xys = repeating
+    ? calcPercentage(parsed.stops, length, points, inheritableStyle)
+    : points
+
+  const stops = normalizeStops(
+    length,
+    parsed.stops,
+    inheritableStyle,
+    repeating,
+    from
+  )
 
   const gradientId = `satori_bi${id}`
   const patternId = `satori_pattern_${id}`
@@ -142,10 +80,8 @@ export function buildLinearGradient(
       'linearGradient',
       {
         id: gradientId,
-        x1,
-        y1,
-        x2,
-        y2,
+        ...xys,
+        spreadMethod: repeating ? 'repeat' : 'pad',
       },
       stops
         .map((stop) =>
@@ -189,53 +125,70 @@ function resolveXYFromDirection(dir: string) {
     y1 = 1
   }
 
-  return [x1, y1, x2, y2]
+  return { x1, y1, x2, y2 }
 }
 
 /**
  * calc start point and end point of linear gradient
  */
-function calcPoint(angle: number, w: number, h: number) {
+function calcNormalPoint(v: number, w: number, h: number) {
   const r = Math.pow(h / w, 2)
 
   // make sure angle is 0 <= angle <= 360
-  angle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
+  v = ((v % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)
 
-  let x1, y1, x2, y2, length, tmp
-  
+  let x1, y1, x2, y2, length, tmp, a, b
+
   const dfs = (angle: number) => {
     if (angle === 0) {
       x1 = 0
-      y1 = 1
+      y1 = h
       x2 = 0
       y2 = 0
+      length = h
       return
     } else if (angle === Math.PI / 2) {
       x1 = 0
       y1 = 0
-      x2 = 1
+      x2 = w
       y2 = 0
+      length = w
       return
     }
     if (angle > 0 && angle < Math.PI / 2) {
-      x1 = (r * w / 2 / Math.tan(angle) - h / 2) / (Math.tan(angle) + r / Math.tan(angle))
+      x1 =
+        ((r * w) / 2 / Math.tan(angle) - h / 2) /
+        (Math.tan(angle) + r / Math.tan(angle))
       y1 = Math.tan(angle) * x1 + h
       x2 = Math.abs(w / 2 - x1) + w / 2
       y2 = h / 2 - Math.abs(y1 - h / 2)
       length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
+      // y = -1 / tan * x = h / 2 +1 / tan * w/2
+      // y = tan * x + h
+      a =
+        (w / 2 / Math.tan(angle) - h / 2) /
+        (Math.tan(angle) + 1 / Math.tan(angle))
+      b = Math.tan(angle) * a + h
+      length = 2 * Math.sqrt(Math.pow(w / 2 - a, 2) + Math.pow(h / 2 - b, 2))
       return
     } else if (angle > Math.PI / 2 && angle < Math.PI) {
-      x1 = (h / 2 + r * w / 2 / Math.tan(angle)) / (Math.tan(angle) + r / Math.tan(angle))
+      x1 =
+        (h / 2 + (r * w) / 2 / Math.tan(angle)) /
+        (Math.tan(angle) + r / Math.tan(angle))
       y1 = Math.tan(angle) * x1
       x2 = Math.abs(w / 2 - x1) + w / 2
       y2 = h / 2 + Math.abs(y1 - h / 2)
+      // y = -1 / tan * x + h / 2 + 1 / tan * w / 2
+      // y = tan * x
+      a =
+        (w / 2 / Math.tan(angle) + h / 2) /
+        (Math.tan(angle) + 1 / Math.tan(angle))
+      b = Math.tan(angle) * a
+      length = 2 * Math.sqrt(Math.pow(w / 2 - a, 2) + Math.pow(h / 2 - b, 2))
       return
-    } else if (
-      (angle >= Math.PI && angle <= 1.5 * Math.PI) ||
-      (angle >= 1.5 * Math.PI && angle <= 2 * Math.PI)
-    ) {
+    } else if (angle >= Math.PI) {
       dfs(angle - Math.PI)
-  
+
       tmp = x1
       x1 = x2
       x2 = tmp
@@ -245,13 +198,61 @@ function calcPoint(angle: number, w: number, h: number) {
     }
   }
 
-  dfs(angle)
+  dfs(v)
 
   return {
     x1: x1 / w,
     y1: y1 / h,
     x2: x2 / w,
     y2: y2 / h,
-    length
+    length,
+  }
+}
+
+function calcPercentage(
+  stops: ColorStop[],
+  length: number,
+  points: {
+    x1: number
+    y1: number
+    x2: number
+    y2: number
+  },
+  inheritableStyle: Record<string, string | number>
+) {
+  const { x1, x2, y1, y2 } = points
+  const p1 = !stops[0].offset
+    ? 0
+    : stops[0].offset.unit === '%'
+    ? Number(stops[0].offset.value) / 100
+    : lengthToNumber(
+        `${stops[0].offset.value}${stops[0].offset.unit}`,
+        inheritableStyle.fontSize as number,
+        length,
+        inheritableStyle,
+        true
+      ) / length
+  const p2 = !stops.at(-1).offset
+    ? 1
+    : stops.at(-1).offset.unit === '%'
+    ? Number(stops.at(-1).offset.value) / 100
+    : lengthToNumber(
+        `${stops.at(-1).offset.value}${stops.at(-1).offset.unit}`,
+        inheritableStyle.fontSize as number,
+        length,
+        inheritableStyle,
+        true
+      ) / length
+
+  const sx = (x2 - x1) * p1 + x1
+  const sy = (y2 - y1) * p1 + y1
+  const ex = (x2 - x1) * p2 + x1
+  const ey = (y2 - y1) * p2 + y1
+
+  return {
+    x1: sx,
+    y1: sy,
+    x2: ex,
+    y2: ey,
   }
 }
