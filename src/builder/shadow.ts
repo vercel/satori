@@ -24,7 +24,14 @@ const SCALE = 1.1
 
 export function buildDropShadow(
   { id, width, height }: { id: string; width: number; height: number },
-  style: Record<string, any>
+  style: {
+    shadowColor: string[]
+    shadowOffset: {
+      width: number
+      height: number
+    }[]
+    shadowRadius: number[]
+  }
 ) {
   if (
     !style.shadowColor ||

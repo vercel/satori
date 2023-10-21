@@ -5,15 +5,16 @@ import opentype from '@shuding/opentype.js'
 import { Locale, locales, isValidLocale } from './language.js'
 
 export type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
-type WeightName = 'normal' | 'bold'
-export type Style = 'normal' | 'italic'
+export type WeightName = 'normal' | 'bold'
+export type FontWeight = Weight | WeightName
+export type FontStyle = 'normal' | 'italic'
 const SUFFIX_WHEN_LANG_NOT_SET = 'unknown'
 
 export interface FontOptions {
   data: Buffer | ArrayBuffer
   name: string
   weight?: Weight
-  style?: Style
+  style?: FontStyle
   lang?: string
 }
 
@@ -21,8 +22,22 @@ export type FontEngine = {
   has: (s: string) => boolean
   baseline: (s?: string, resolvedFont?: any) => number
   height: (s?: string, resolvedFont?: any) => number
-  measure: (s: string, style: any) => number
-  getSVG: (s: string, style: any) => string
+  measure: (
+    s: string,
+    style: {
+      fontSize: number
+      letterSpacing: number
+    }
+  ) => number
+  getSVG: (
+    s: string,
+    style: {
+      fontSize: number
+      top: number
+      left: number
+      letterSpacing: number
+    }
+  ) => string
 }
 
 function compareFont(
@@ -74,7 +89,7 @@ function compareFont(
 
 export default class FontLoader {
   defaultFont: opentype.Font
-  fonts = new Map<string, [opentype.Font, Weight?, Style?][]>()
+  fonts = new Map<string, [opentype.Font, Weight?, FontStyle?][]>()
   constructor(fontOptions: FontOptions[]) {
     this.addFonts(fontOptions)
   }
@@ -87,7 +102,7 @@ export default class FontLoader {
   }: {
     name: string
     weight: Weight | WeightName
-    style: Style
+    style: FontStyle
   }) {
     if (!this.fonts.has(name)) {
       return null
@@ -175,8 +190,8 @@ export default class FontLoader {
       fontStyle = 'normal',
     }: {
       fontFamily?: string | string[]
-      fontWeight?: Weight | WeightName
-      fontStyle?: Style
+      fontWeight?: FontWeight
+      fontStyle?: FontStyle
     },
     locale: Locale | undefined
   ): FontEngine {
@@ -351,10 +366,24 @@ export default class FontLoader {
           (lineHeight / 1.2)
         )
       },
-      measure: (s: string, style: any) => {
+      measure: (
+        s: string,
+        style: {
+          fontSize: number
+          letterSpacing: number
+        }
+      ) => {
         return this.measure(resolveFont, s, style)
       },
-      getSVG: (s: string, style: any) => {
+      getSVG: (
+        s: string,
+        style: {
+          fontSize: number
+          top: number
+          left: number
+          letterSpacing: number
+        }
+      ) => {
         return this.getSVG(resolveFont, s, style)
       },
     }
