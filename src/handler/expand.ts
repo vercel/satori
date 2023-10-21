@@ -227,10 +227,7 @@ type MainStyle = {
   color: string
   fontSize: number
   transformOrigin: ParsedTransformOrigin
-  maskImage: 
-  
-  
-  
+  maskImage: MaskParsedRes
   opacity: number
   textTransform: string
   whiteSpace: string
