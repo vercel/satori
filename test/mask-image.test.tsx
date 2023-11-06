@@ -209,4 +209,29 @@ describe('Mask-*', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should render correctly with real image as mask-image', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 32,
+          fontWeight: 600,
+          background: 'red',
+          maskImage:
+            'url(https://fxbssdl.kgimg.com/bss/fxams/f2846cbe8d1c89ce84191b5c05ce1df9.png)',
+          maskSize: '50px 50px',
+          maskRepeat: 'no-repeat', // just for reference in html
+        }}
+      ></div>,
+      { width: 100, height: 100, fonts }
+    )
+
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })
