@@ -161,17 +161,6 @@ function normalizeStops(
     }
   }
 
-  if (from === 'mask') {
-    return stops.map((stop) => {
-      const color = cssColorParse(stop.color)
-      if (color.alpha === 0) {
-        return { ...stop, color: `rgba(0, 0, 0, 1)` }
-      } else {
-        return { ...stop, color: `rgba(255, 255, 255, ${color.alpha})` }
-      }
-    })
-  }
-
   return stops
 }
 
@@ -452,14 +441,8 @@ export default async function backgroundImage(
     const [src, imageWidth, imageHeight] = await resolveImageData(
       image.slice(4, -1)
     )
-    const resolvedWidth =
-      from === 'mask'
-        ? imageWidth || dimensionsWithoutFallback[0]
-        : dimensionsWithoutFallback[0] || imageWidth
-    const resolvedHeight =
-      from === 'mask'
-        ? imageHeight || dimensionsWithoutFallback[1]
-        : dimensionsWithoutFallback[1] || imageHeight
+    const resolvedWidth = dimensionsWithoutFallback[0] || imageWidth
+    const resolvedHeight = dimensionsWithoutFallback[1] || imageHeight
 
     return [
       `satori_bi${id}`,
