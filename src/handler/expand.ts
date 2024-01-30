@@ -164,7 +164,11 @@ function handleSpecialCase(
 
   if (name === 'background') {
     value = value.toString().trim()
-    if (/^(linear-gradient|radial-gradient|url)\(/.test(value)) {
+    if (
+      /^(linear-gradient|radial-gradient|url|repeating-linear-gradient)\(/.test(
+        value
+      )
+    ) {
       return getStylesForProperty('backgroundImage', value, true)
     }
     return getStylesForProperty('background', value, true)
