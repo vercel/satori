@@ -1,5 +1,5 @@
 {
-  "name": "@edenstrom/satori-hack",
+  "name": "satori-bg-hack",
   "version": "0.10.13",
   "description": "Enlightened library to convert HTML and CSS to SVG.",
   "module": "./dist/index.js",
