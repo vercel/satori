@@ -175,6 +175,7 @@ export default async function* buildTextNodes(
     line: number
     lineIndex: number
     isImage: boolean
+    isHighlighted?: boolean
   })[] = []
 
   // With the given container width, compute the text layout.
@@ -197,8 +198,32 @@ export default async function* buildTextNodes(
     // @TODO: Support RTL languages.
     let i = 0
     let prevLineEndingSpacesWidth = 0
+    let isHighlighted = false
+    let endHighlightNext = false
     while (i < words.length && lines < lineLimit) {
       let word = words[i]
+
+      if (endHighlightNext) {
+        isHighlighted = false
+        endHighlightNext = false
+      }
+
+      if (word.startsWith('<em>')) {
+        word = word.slice(4)
+        isHighlighted = true
+        endHighlightNext = false
+      } else if (word.endsWith('<end> ')) {
+        word = `${word.slice(0, -6)} `
+        endHighlightNext = true
+      } else if (word.endsWith('<end>')) {
+        word = word.slice(0, -5)
+        endHighlightNext = true
+      } else if (word.startsWith('<end>')) {
+        word = word.slice(5)
+        endHighlightNext = false
+        isHighlighted = false
+      }
+
       const forceBreak = requiredBreaks[i]
 
       let w = 0
@@ -314,6 +339,7 @@ export default async function* buildTextNodes(
           line: lines,
           lineIndex,
           isImage: false,
+          isHighlighted,
         })
       } else {
         const _texts = segment(word, 'word')
@@ -338,6 +364,7 @@ export default async function* buildTextNodes(
             line: lines,
             lineIndex,
             isImage: _isImage,
+            isHighlighted,
           })
 
           x += _width
@@ -458,6 +485,7 @@ export default async function* buildTextNodes(
 
   let decorationShape = ''
   let mergedPath = ''
+  let background = ''
   let extra = ''
   let skippedLine = -1
   let decorationLines: Record<number, null | number[]> = {}
@@ -637,6 +665,20 @@ export default async function* buildTextNodes(
 
       wordBuffer = null
 
+      if (layout.isHighlighted) {
+        background +=
+          // Glyph
+          buildXMLString('rect', {
+            x: left + finalizedLeftOffset,
+            y: top + topOffset + baselineDelta,
+            width: finalizedWidth,
+            height: heightOfWord,
+            fill: '#e5e5ff',
+            transform: matrix ? matrix : undefined,
+            'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+          })
+      }
+
       if (debug) {
         extra +=
           // Glyph
@@ -757,6 +799,7 @@ export default async function* buildTextNodes(
     }
 
     result +=
+      background +
       (filter
         ? filter +
           buildXMLString(
@@ -764,7 +807,8 @@ export default async function* buildTextNodes(
             { filter: `url(#satori_s-${id})` },
             p + decorationShape
           )
-        : p + decorationShape) + extra
+        : p + decorationShape) +
+      extra
   }
 
   // Attach information to the parent node.

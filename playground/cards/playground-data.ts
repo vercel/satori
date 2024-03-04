@@ -24,7 +24,7 @@ const playgroundTabs: Tabs = {
   >
     <path d="M37.59.25l36.95 64H.64l36.95-64z"></path>
   </svg>
-  <div style={{ marginTop: 40 }}>Hello, World</div>
+  <div style={{ marginTop: 40 }}>{"Hello world with a <em>little highlight<end> in! the middle."}</div>
 </div>
 `,
   Vercel: `<div
