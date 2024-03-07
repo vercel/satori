@@ -314,11 +314,26 @@ export default class FontLoader {
         resolvedFont.ascender
       return (_ascender / resolvedFont.unitsPerEm) * fontSize
     }
+
     const descender = (resolvedFont: opentype.Font, useOS2Table = false) => {
       const _descender =
         (useOS2Table ? resolvedFont.tables?.os2?.sTypoDescender : 0) ||
         resolvedFont.descender
       return (_descender / resolvedFont.unitsPerEm) * fontSize
+    }
+
+    const height = (resolvedFont: opentype.Font, useOS2Table = false) => {
+      if ('normal' === lineHeight) {
+        const _lineGap =
+          (useOS2Table ? resolvedFont.tables?.os2?.sTypoLineGap : 0) || 0
+        return (
+          ascender(resolvedFont, useOS2Table) -
+          descender(resolvedFont, useOS2Table) +
+          (_lineGap / resolvedFont.unitsPerEm) * fontSize
+        )
+      } else {
+        return fontSize * lineHeight
+      }
     }
 
     const resolve = (s: string) => {
@@ -343,13 +358,14 @@ export default class FontLoader {
         const asc = ascender(resolvedFont)
         const desc = descender(resolvedFont)
         const contentHeight = asc - desc
-        return asc + (fontSize * lineHeight - contentHeight) / 2
+
+        return asc + (height(resolvedFont) - contentHeight) / 2
       },
       height: (
         s?: string,
         resolvedFont = typeof s === 'undefined' ? fonts[0] : resolveFont(s)
       ) => {
-        return fontSize * lineHeight
+        return height(resolvedFont)
       },
       measure: (
         s: string,

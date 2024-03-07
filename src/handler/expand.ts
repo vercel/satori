@@ -352,7 +352,7 @@ export default function expand(
 
     // Line height needs to be relative.
     if (prop === 'lineHeight') {
-      if (typeof value === 'string') {
+      if (typeof value === 'string' && value !== 'normal') {
         value = serializedStyle[prop] =
           lengthToNumber(
             value,
