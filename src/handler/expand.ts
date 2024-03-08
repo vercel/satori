@@ -233,7 +233,7 @@ type MainStyle = {
   whiteSpace: string
   wordBreak: string
   textAlign: string
-  lineHeight: number
+  lineHeight: number | string
   letterSpacing: number
 
   fontFamily: string | string[]

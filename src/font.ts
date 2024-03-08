@@ -183,7 +183,7 @@ export default class FontLoader {
 
   public getEngine(
     fontSize = 16,
-    lineHeight = 1.2,
+    lineHeight: number | string = 'normal',
     {
       fontFamily = 'sans-serif',
       fontWeight = 400,
@@ -323,7 +323,7 @@ export default class FontLoader {
     }
 
     const height = (resolvedFont: opentype.Font, useOS2Table = false) => {
-      if ('normal' === lineHeight) {
+      if ('string' === typeof lineHeight && 'normal' === lineHeight) {
         const _lineGap =
           (useOS2Table ? resolvedFont.tables?.os2?.sTypoLineGap : 0) || 0
         return (
@@ -331,7 +331,7 @@ export default class FontLoader {
           descender(resolvedFont, useOS2Table) +
           (_lineGap / resolvedFont.unitsPerEm) * fontSize
         )
-      } else {
+      } else if ('number' === typeof lineHeight) {
         return fontSize * lineHeight
       }
     }
