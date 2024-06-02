@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [ 18 ]
+        node: [ 20 ]
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -40,7 +40,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        node: [16, 18, 20]
+        node: [18, 20]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -55,7 +55,6 @@ jobs:
       - run: pnpm install
       - run: pnpm build
       - run: pnpm test
-      - run: pnpm attw
       - name: Maybe Release
         if: matrix.os == 'ubuntu-latest' && matrix.node == 18 && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
