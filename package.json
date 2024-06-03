@@ -105,6 +105,7 @@
     "@shuding/opentype.js": "1.4.0-beta.0",
     "css-background-parser": "^0.1.0",
     "css-box-shadow": "1.0.0-3",
+    "css-gradient-parser": "^0.0.16",
     "css-to-react-native": "^3.0.0",
     "emoji-regex": "^10.2.1",
     "escape-html": "^1.0.3",
