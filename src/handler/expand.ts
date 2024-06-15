@@ -233,7 +233,7 @@ type MainStyle = {
   whiteSpace: string
   wordBreak: string
   textAlign: string
-  lineHeight: number
+  lineHeight: number | string
   letterSpacing: number
 
   fontFamily: string | string[]
@@ -352,7 +352,7 @@ export default function expand(
 
     // Line height needs to be relative.
     if (prop === 'lineHeight') {
-      if (typeof value === 'string') {
+      if (typeof value === 'string' && value !== 'normal') {
         value = serializedStyle[prop] =
           lengthToNumber(
             value,
