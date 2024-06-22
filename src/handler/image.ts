@@ -45,6 +45,51 @@ function parseJPEG(buf: ArrayBuffer) {
   throw new TypeError('Invalid JPEG')
 }
 
+/**
+ * Parses a WEBP file and extracts the width and height of the image.
+ * @param {ArrayBuffer} arrayBuffer - The ArrayBuffer containing the WEBP file data.
+ * @returns {[number, number]} An array containing the width and height of the image.
+ * @throws {Error} If the file is not a valid WEBP file or if no VP8/VP8L/VP8X chunk is found.
+ */
+function parseWEBP(arrayBuffer) {
+  const dataView = new DataView(arrayBuffer)
+
+  // Check WEBP header
+  if (dataView.getUint32(8, true) !== 0x50424557) {
+    throw new Error('Not a WEBP file')
+  }
+
+  const formatChunk = dataView.getUint32(12, true)
+  const chunkDataStart = 12 + 8
+
+  // VP8 Chunk
+  if (formatChunk === 0x20385056) {
+    // 'VP8 '
+    const width = dataView.getUint16(chunkDataStart + 6, true) & 0x3fff
+    const height = dataView.getUint16(chunkDataStart + 8, true) & 0x3fff
+    return [width, height] as [number, number]
+  }
+
+  // VP8L Chunk
+  if (formatChunk === 0x4c385056) {
+    // 'VP8L'
+    const bits = dataView.getUint32(chunkDataStart + 1, true)
+    const width = (bits & 0x3fff) + 1
+    const height = ((bits >> 14) & 0x3fff) + 1
+    return [width, height] as [number, number]
+  }
+
+  // VP8X Chunk
+  if (formatChunk === 0x58385056) {
+    // 'VP8X'
+    const width = (dataView.getUint32(chunkDataStart + 4, true) & 0xffffff) + 1
+    const height = (dataView.getUint32(chunkDataStart + 7, true) & 0xffffff) + 1
+    return [width, height] as [number, number]
+  }
+
+  throw new Error('No VP8/VP8L/VP8X chunk found')
+}
+
 function parseGIF(buf: ArrayBuffer) {
   const view = new Uint8Array(buf.slice(6, 10))
   return [view[0] | (view[1] << 8), view[2] | (view[3] << 8)] as [
@@ -64,7 +109,7 @@ type ResolvedImageData = [string, number?, number?] | readonly []
 export const cache = createLRU<ResolvedImageData>(100)
 const inflightRequests = new Map<string, Promise<ResolvedImageData>>()
 
-const ALLOWED_IMAGE_TYPES = [PNG, APNG, JPEG, GIF, SVG]
+const ALLOWED_IMAGE_TYPES = [PNG, APNG, JPEG, GIF, SVG, WEBP]
 
 function arrayBufferToBase64(buffer) {
   let binary = ''
@@ -129,6 +174,9 @@ function arrayBufferToDataUri(data: ArrayBuffer) {
       break
     case JPEG:
       imageSize = parseJPEG(data)
+      break
+    case WEBP:
+      imageSize = parseWEBP(data)
       break
   }
 
@@ -208,6 +256,9 @@ export async function resolveImageData(
           break
         case JPEG:
           imageSize = parseJPEG(data)
+          break
+        case WEBP:
+          imageSize = parseWEBP(data)
           break
       }
       cache.set(src, [src, ...imageSize])
