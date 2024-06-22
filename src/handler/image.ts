@@ -67,7 +67,7 @@ function parseWEBP(arrayBuffer) {
     // 'VP8 '
     const width = dataView.getUint16(chunkDataStart + 6, true) & 0x3fff
     const height = dataView.getUint16(chunkDataStart + 8, true) & 0x3fff
-    return [width, height]
+    return [width, height] as [number, number]
   }
 
   // VP8L Chunk
@@ -76,7 +76,7 @@ function parseWEBP(arrayBuffer) {
     const bits = dataView.getUint32(chunkDataStart + 1, true)
     const width = (bits & 0x3fff) + 1
     const height = ((bits >> 14) & 0x3fff) + 1
-    return [width, height]
+    return [width, height] as [number, number]
   }
 
   // VP8X Chunk
@@ -84,7 +84,7 @@ function parseWEBP(arrayBuffer) {
     // 'VP8X'
     const width = (dataView.getUint32(chunkDataStart + 4, true) & 0xffffff) + 1
     const height = (dataView.getUint32(chunkDataStart + 7, true) & 0xffffff) + 1
-    return [width, height]
+    return [width, height] as [number, number]
   }
 
   throw new Error('No VP8/VP8L/VP8X chunk found')
