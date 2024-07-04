@@ -120,6 +120,35 @@ describe('Gradient', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support other degree unit', async () => {
+      const svgs = await Promise.all(
+        [
+          'linear-gradient(0.5turn, red, blue)',
+          `linear-gradient(${Math.PI}rad, red, blue)`,
+          `linear-gradient(200grad, red, blue)`,
+        ].map((background) =>
+          satori(
+            <div
+              style={{
+                background,
+                height: '100%',
+                width: '100%',
+              }}
+            ></div>,
+            {
+              width: 100,
+              height: 100,
+              fonts,
+            }
+          )
+        )
+      )
+
+      for (const svg of svgs) {
+        expect(toImage(svg, 100)).toMatchImageSnapshot()
+      }
+    })
   })
 
   describe('radial-gradient', () => {
