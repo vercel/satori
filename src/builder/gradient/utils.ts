@@ -11,6 +11,7 @@ export function normalizeStops(
   totalLength: number,
   colorStops: ColorStop[],
   inheritedStyle: Record<string, string | number>,
+  repeating: boolean,
   from?: 'background' | 'mask'
 ) {
   // Resolve the color stops based on the spec:
@@ -61,6 +62,11 @@ export function normalizeStops(
   if (lastStop.offset !== 1) {
     if (typeof lastStop.offset === 'undefined') {
       lastStop.offset = 1
+    } else if (repeating) {
+      stops[stops.length - 1] = {
+        offset: 1,
+        color: lastStop.color,
+      }
     } else {
       stops.push({
         offset: 1,

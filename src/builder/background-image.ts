@@ -88,7 +88,10 @@ export default async function backgroundImage(
     defaultY: 0,
   })
 
-  if (image.startsWith('linear-gradient(')) {
+  if (
+    image.startsWith('linear-gradient(') ||
+    image.startsWith('repeating-linear-gradient(')
+  ) {
     return buildLinearGradient(
       { id, width, height, repeatX, repeatY },
       image,
