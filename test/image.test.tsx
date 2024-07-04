@@ -427,6 +427,55 @@ describe('Image', () => {
 
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should convert objectFit', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+        }}
+      >
+        <img
+          width='100%'
+          height='100%'
+          src='https://via.placeholder.com/150'
+          style={{
+            objectFit: 'cover',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+
+    expect(svg).toContain('preserveAspectRatio="xMidYMid slice"')
+  })
+
+  it('should convert objectPosition', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+        }}
+      >
+        <img
+          width='100%'
+          height='100%'
+          src='https://via.placeholder.com/150'
+          style={{
+            objectFit: 'cover',
+            objectPosition: 'right top',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+
+    expect(svg).toContain('preserveAspectRatio="xMaxYMin slice"')
+  })
 })
 
 describe('background-image: url()', () => {
