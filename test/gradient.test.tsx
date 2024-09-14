@@ -455,4 +455,105 @@ describe('Gradient', () => {
     )
     expect(toImage(svg, 300)).toMatchImageSnapshot()
   })
+
+  describe('repeating-linear-gradient', async () => {
+    it('should support repeating-linear-gradient', async () => {
+      const svgs = await Promise.all(
+        [
+          'repeating-linear-gradient(to right, red, blue 50%)',
+          'repeating-linear-gradient(to right top, red, blue 30%)',
+        ].map((backgroundImage) =>
+          satori(
+            <div
+              style={{
+                backgroundColor: 'white',
+                backgroundImage,
+                width: '100%',
+                height: '100%',
+              }}
+            ></div>,
+            {
+              width: 100,
+              height: 100,
+              fonts,
+            }
+          )
+        )
+      )
+      svgs.forEach((svg) => {
+        expect(toImage(svg, 100)).toMatchImageSnapshot()
+      })
+    })
+
+    it('should support degree', async () => {
+      const svgs = await Promise.all(
+        [
+          'repeating-linear-gradient(30deg, red, blue 50%)',
+          'repeating-linear-gradient(150deg, red, blue 30%)',
+          'repeating-linear-gradient(-15deg, red, blue 30%)',
+          'repeating-linear-gradient(210deg, red, blue 30%)',
+        ].map((backgroundImage) =>
+          satori(
+            <div
+              style={{
+                backgroundColor: 'white',
+                backgroundImage,
+                width: '100%',
+                height: '100%',
+              }}
+            ></div>,
+            {
+              width: 200,
+              height: 100,
+              fonts,
+            }
+          )
+        )
+      )
+
+      svgs.forEach((svg) => {
+        expect(toImage(svg, 100)).toMatchImageSnapshot()
+      })
+    })
+
+    it('should support background-size and background-repeat', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            backgroundColor: 'white',
+            backgroundImage: 'repeating-linear-gradient(30deg, red, blue 30%)',
+            backgroundSize: '50px 25px',
+            height: '100%',
+            width: '100%',
+          }}
+        ></div>,
+        {
+          width: 200,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support multiple repeating-linear-gradient', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            backgroundColor: 'white',
+            backgroundImage:
+              'repeating-linear-gradient(rgba(77, 159, 12, .1), #4d9f0c 40px), repeating-linear-gradient(0.25turn, rgba(63, 135, 166, .3), #3f87a6 20px)',
+            height: '100%',
+            width: '100%',
+          }}
+        ></div>,
+        {
+          width: 200,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+  })
 })

@@ -48,7 +48,7 @@ export function buildRadialGradient(
   cx = pos.x
   cy = pos.y
 
-  const stops = normalizeStops(width, colorStops, inheritableStyle, from)
+  const stops = normalizeStops(width, colorStops, inheritableStyle, false, from)
 
   const gradientId = `satori_radial_${id}`
   const patternId = `satori_pattern_${id}`
