@@ -58,6 +58,14 @@ export default function overflow(
         width,
         height,
         d: path ? path : undefined,
+        // add transformation matrix to clip path if overflow is hidden AND a
+        // transformation style is defined, otherwise children will be clipped
+        // relative to the parent's original plane instead of the transformed
+        // plane
+        transform:
+          style.overflow === 'hidden' && style.transform && matrix
+            ? matrix
+            : undefined,
       })
     )
   }

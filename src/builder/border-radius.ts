@@ -5,7 +5,7 @@
 // TODO: Support the `border-radius: 10px / 20px` syntax.
 // https://developer.mozilla.org/en-US/docs/Web/CSS/border-radius
 
-import { lengthToNumber } from '../utils.js'
+import { buildXMLString, lengthToNumber } from '../utils.js'
 
 // Getting the intersection of a 45deg ray with the elliptical arc x^2/rx^2 + y^2/ry^2 = 1.
 // Reference:
@@ -65,6 +65,44 @@ function resolveRadius(
 
 const radiusZeroOrNull = (_radius?: [number, number]) =>
   _radius && _radius[0] !== 0 && _radius[1] !== 0
+
+export function getBorderRadiusClipPath(
+  {
+    id,
+    borderRadiusPath,
+    borderType,
+    left,
+    top,
+    width,
+    height,
+  }: {
+    id: string
+    borderRadiusPath?: string
+    borderType?: 'rect' | 'path'
+    left: number
+    top: number
+    width: number
+    height: number
+  },
+  style: Record<string, number | string>
+) {
+  const rectClipId = `satori_brc-${id}`
+  const defs = buildXMLString(
+    'clipPath',
+    {
+      id: rectClipId,
+    },
+    buildXMLString(borderType, {
+      x: left,
+      y: top,
+      width,
+      height,
+      d: borderRadiusPath ? borderRadiusPath : undefined,
+    })
+  )
+
+  return [defs, rectClipId]
+}
 
 export default function radius(
   {
