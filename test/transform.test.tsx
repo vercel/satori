@@ -176,4 +176,34 @@ describe('transform', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
+
+  describe('behavior with parent overflow', () => {
+    it('should not inherit parent clip-path', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            width: 20,
+            height: 20,
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              width: 15,
+              height: 15,
+              backgroundColor: 'red',
+              transform: 'rotate(45deg) translate(15px, 5px)',
+            }}
+          />
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+  })
 })

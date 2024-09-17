@@ -53,6 +53,13 @@ export default function contentMask(
     buildXMLString('rect', {
       ...contentArea,
       fill: '#fff',
+      // add transformation matrix to mask if overflow is hidden AND a
+      // transformation style is defined, otherwise children will be clipped
+      // incorrectly
+      transform:
+        style.overflow === 'hidden' && style.transform && matrix
+          ? matrix
+          : undefined,
       mask: style._inheritedMaskId
         ? `url(#${style._inheritedMaskId})`
         : undefined,

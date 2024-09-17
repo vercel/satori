@@ -367,6 +367,31 @@ describe('Image', () => {
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it('should have a separate border radius clip path when transform is used', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          overflow: 'hidden',
+        }}
+      >
+        <img
+          width='100%'
+          height='100%'
+          src='https://via.placeholder.com/150'
+          style={{
+            transform: 'rotate(45deg) translate(30px, 15px)',
+            borderRadius: '20px',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
   it('should support transparent image with background', async () => {
     const svg = await satori(
       <div

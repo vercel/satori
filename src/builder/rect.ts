@@ -1,7 +1,7 @@
 import type { ParsedTransformOrigin } from '../transform-origin.js'
 
 import backgroundImage from './background-image.js'
-import radius from './border-radius.js'
+import radius, { getBorderRadiusClipPath } from './border-radius.js'
 import { boxShadow } from './shadow.js'
 import transform from './transform.js'
 import overflow from './overflow.js'
@@ -163,9 +163,9 @@ export default async function rect(
         fill,
         d: path ? path : undefined,
         transform: matrix ? matrix : undefined,
-        'clip-path': currentClipPath,
+        'clip-path': style.transform ? undefined : currentClipPath,
         style: cssFilter ? `filter:${cssFilter}` : undefined,
-        mask: maskId,
+        mask: style.transform ? undefined : maskId,
       })
     )
     .join('')
@@ -183,6 +183,9 @@ export default async function rect(
     },
     style
   )
+
+  // border radius for images with transform property
+  let imageBorderRadius = undefined
 
   // If it's an image (<img>) tag, we add an extra layer of the image itself.
   if (isImage) {
@@ -207,6 +210,21 @@ export default async function rect(
         ? 'xMidYMid slice'
         : 'none'
 
+    if (style.transform) {
+      imageBorderRadius = getBorderRadiusClipPath(
+        {
+          id,
+          borderRadiusPath: path,
+          borderType: type,
+          left,
+          top,
+          width,
+          height,
+        },
+        style
+      )
+    }
+
     shape += buildXMLString('image', {
       x: left + offsetLeft,
       y: top + offsetTop,
@@ -216,8 +234,16 @@ export default async function rect(
       preserveAspectRatio,
       transform: matrix ? matrix : undefined,
       style: cssFilter ? `filter:${cssFilter}` : undefined,
-      'clip-path': `url(#satori_cp-${id})`,
-      mask: miId ? `url(#${miId})` : `url(#satori_om-${id})`,
+      'clip-path': style.transform
+        ? imageBorderRadius
+          ? `url(#${imageBorderRadius[1]})`
+          : undefined
+        : `url(#satori_cp-${id})`,
+      mask: style.transform
+        ? undefined
+        : miId
+        ? `url(#${miId})`
+        : `url(#satori_om-${id})`,
     })
   }
 
@@ -269,9 +295,14 @@ export default async function rect(
   return (
     (defs ? buildXMLString('defs', {}, defs) : '') +
     (shadow ? shadow[0] : '') +
+    (imageBorderRadius ? imageBorderRadius[0] : '') +
     clip +
     (opacity !== 1 ? `<g opacity="${opacity}">` : '') +
+    (style.transform && currentClipPath && maskId
+      ? `<g clip-path="${currentClipPath}" mask="${maskId}">`
+      : '') +
     (backgroundShapes || shape) +
+    (style.transform && currentClipPath && maskId ? '</g>' : '') +
     (opacity !== 1 ? `</g>` : '') +
     (shadow ? shadow[1] : '') +
     extra
