@@ -9,6 +9,7 @@ import { buildXMLString } from '../utils.js'
 import border, { getBorderClipPath } from './border.js'
 import { genClipPath } from './clip-path.js'
 import buildMaskImage from './mask-image.js'
+import { getPreserveAspectRatio } from './image.js'
 
 export default async function rect(
   {
@@ -203,12 +204,10 @@ export default async function rect(
       ((style.borderBottomWidth as number) || 0) +
       ((style.paddingBottom as number) || 0)
 
-    const preserveAspectRatio =
-      style.objectFit === 'contain'
-        ? 'xMidYMid'
-        : style.objectFit === 'cover'
-        ? 'xMidYMid slice'
-        : 'none'
+    const preserveAspectRatio = getPreserveAspectRatio(
+      String(style.objectFit),
+      String(style.objectPosition)
+    )
 
     if (style.transform) {
       imageBorderRadius = getBorderRadiusClipPath(
