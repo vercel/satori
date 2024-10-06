@@ -317,6 +317,11 @@ await satori(
 
 Multiple fonts can be passed to Satori and used in `fontFamily`.
 
+> [!TIP]
+> We recommend you define global fonts instead of creating a new object and pass it to satori for better performace, if your fonts do not change. [Read it for more detail](https://github.com/vercel/satori/issues/590)
+
+
+
 #### Emojis
 
 To render custom images for specific graphemes, you can use `graphemeImages` option to map the grapheme to an image source:
