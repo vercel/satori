@@ -681,6 +681,7 @@ export default async function* buildTextNodes(
             width: deco[3],
             ascender: deco[2],
             clipPathId,
+            matrix,
           },
           parentStyle
         )

@@ -7,12 +7,14 @@ export default function buildDecoration(
     top,
     ascender,
     clipPathId,
+    matrix,
   }: {
     width: number
     left: number
     top: number
     ascender: number
     clipPathId?: string
+    matrix?: string
   },
   style: Record<string, any>
 ) {
@@ -43,15 +45,19 @@ export default function buildDecoration(
       ? `0 ${height * 2}`
       : undefined
 
-  return buildXMLString('line', {
-    x1: left,
-    y1: y,
-    x2: left + width,
-    y2: y,
-    stroke: textDecorationColor || color,
-    'stroke-width': height,
-    'stroke-dasharray': dasharray,
-    'stroke-linecap': textDecorationStyle === 'dotted' ? 'round' : 'square',
-    'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-  })
+  return (
+    (clipPathId ? `<g clip-path="url(#${clipPathId})">` : '') +
+    buildXMLString('line', {
+      x1: left,
+      y1: y,
+      x2: left + width,
+      y2: y,
+      stroke: textDecorationColor || color,
+      'stroke-width': height,
+      'stroke-dasharray': dasharray,
+      'stroke-linecap': textDecorationStyle === 'dotted' ? 'round' : 'square',
+      transform: matrix,
+    }) +
+    (clipPathId ? '</g>' : '')
+  )
 }

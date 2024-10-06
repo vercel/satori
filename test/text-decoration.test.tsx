@@ -152,4 +152,39 @@ describe('Text Decoration', () => {
     )
     expect(toImage(svg, 200)).toMatchImageSnapshot()
   })
+
+  it('Should work correctly with `text-decoration` and `transform`', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          padding: 10,
+          backgroundColor: '#fff',
+          fontSize: 32,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            transform: 'translate(5px, 5px)',
+            padding: 10,
+            textDecoration: 'underline',
+          }}
+        >
+          lynn
+        </div>
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+        loadAdditionalAsset: (languageCode: string, segment: string) => {
+          return loadDynamicAsset(languageCode, segment) as any
+        },
+      }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })
