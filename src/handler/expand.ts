@@ -452,16 +452,6 @@ export default function expand(
         })
       )
     }
-
-    if (prop === 'textStroke') {
-      const textStroke = value as unknown as {
-        width: number
-        color: string
-      }
-
-      serializedStyle.textStrokeWidth = textStroke.width
-      serializedStyle.textStrokeColor = textStroke.color
-    }
   }
 
   return serializedStyle
