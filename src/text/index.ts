@@ -734,6 +734,21 @@ export default async function* buildTextNodes(
             mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
 
             style: cssFilter ? `filter:${cssFilter}` : undefined,
+            'stroke-width':
+              (inheritedStyle.textStrokeWidth as number) > 0
+                ? `${inheritedStyle.textStrokeWidth}px`
+                : undefined,
+            stroke: inheritedStyle.textStrokeColor
+              ? inheritedStyle.textStrokeColor
+              : undefined,
+            'stroke-linejoin':
+              (inheritedStyle.textStrokeWidth as number) > 0
+                ? 'round'
+                : undefined,
+            'paint-order':
+              (inheritedStyle.textStrokeWidth as number) > 0
+                ? 'stroke'
+                : undefined,
           })
         : ''
 

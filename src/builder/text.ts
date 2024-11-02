@@ -132,6 +132,14 @@ export default function buildText(
     transform: matrix || undefined,
     'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
     style: style.filter ? `filter:${style.filter}` : undefined,
+    'stroke-width':
+      (style.textStrokeWidth as number) > 0
+        ? `${style.textStrokeWidth}px`
+        : undefined,
+    stroke: style.textStrokeColor ? style.textStrokeColor : undefined,
+    'stroke-linejoin':
+      (style.textStrokeWidth as number) > 0 ? 'round' : undefined,
+    'paint-order': (style.textStrokeWidth as number) > 0 ? 'stroke' : undefined,
   }
   return [
     (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +

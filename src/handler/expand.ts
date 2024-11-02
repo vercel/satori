@@ -195,6 +195,19 @@ function handleSpecialCase(
     return result
   }
 
+  if (name === 'textStroke') {
+    value = value.toString().trim()
+    const values = value.split(' ')
+    if (values.length !== 2) {
+      throw new Error('Invalid `textStroke` value.')
+    }
+
+    return {
+      textStrokeWidth: purify(name, values[0]),
+      textStrokeColor: purify(name, values[1]),
+    }
+  }
+
   return
 }
 
@@ -267,6 +280,8 @@ type MainStyle = {
   }[]
   textShadowColor: string[]
   textShadowRadius: number[]
+  textStrokeWidth: number
+  textStrokeColor: string
 }
 
 type OtherStyle = Exclude<Record<PropertyKey, string | number>, keyof MainStyle>
@@ -436,6 +451,16 @@ export default function expand(
           width: lengthToNumber(width, baseFontSize, 0, inheritedStyle, false),
         })
       )
+    }
+
+    if (prop === 'textStroke') {
+      const textStroke = value as unknown as {
+        width: number
+        color: string
+      }
+
+      serializedStyle.textStrokeWidth = textStroke.width
+      serializedStyle.textStrokeColor = textStroke.color
     }
   }
 

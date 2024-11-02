@@ -14,6 +14,8 @@ const list = new Set([
   'textShadowOffset',
   'textShadowColor',
   'textShadowRadius',
+  'textStrokeWidth',
+  'textStrokeColor',
   'textDecorationLine',
   'textDecorationStyle',
   'textDecorationColor',
