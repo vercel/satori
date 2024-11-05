@@ -195,6 +195,19 @@ function handleSpecialCase(
     return result
   }
 
+  if (name === 'WebkitTextStroke') {
+    value = value.toString().trim()
+    const values = value.split(' ')
+    if (values.length !== 2) {
+      throw new Error('Invalid `WebkitTextStroke` value.')
+    }
+
+    return {
+      WebkitTextStrokeWidth: purify(name, values[0]),
+      WebkitTextStrokeColor: purify(name, values[1]),
+    }
+  }
+
   return
 }
 
@@ -267,6 +280,8 @@ type MainStyle = {
   }[]
   textShadowColor: string[]
   textShadowRadius: number[]
+  WebkitTextStrokeWidth: number
+  WebkitTextStrokeColor: string
 }
 
 type OtherStyle = Exclude<Record<PropertyKey, string | number>, keyof MainStyle>
