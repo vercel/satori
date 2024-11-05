@@ -132,12 +132,14 @@ export default function buildText(
     transform: matrix || undefined,
     'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
     style: style.filter ? `filter:${style.filter}` : undefined,
-    'stroke-width': style.textStrokeWidth
-      ? `${style.textStrokeWidth}px`
+    'stroke-width': style.WebkitTextStrokeWidth
+      ? `${style.WebkitTextStrokeWidth}px`
       : undefined,
-    stroke: style.textStrokeWidth ? style.textStrokeColor : undefined,
-    'stroke-linejoin': style.textStrokeWidth ? 'round' : undefined,
-    'paint-order': style.textStrokeWidth ? 'stroke' : undefined,
+    stroke: style.WebkitTextStrokeWidth
+      ? style.WebkitTextStrokeColor
+      : undefined,
+    'stroke-linejoin': style.WebkitTextStrokeWidth ? 'round' : undefined,
+    'paint-order': style.WebkitTextStrokeWidth ? 'stroke' : undefined,
   }
   return [
     (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
