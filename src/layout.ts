@@ -47,6 +47,8 @@ export interface SatoriNode {
   key?: string | number
   props: Record<string, any>
   textContent?: string
+  className?: string
+  htmlId?: string
 }
 
 export default async function* layout(
@@ -110,7 +112,14 @@ export default async function* layout(
       'dangerouslySetInnerHTML property is not supported. See documentation for more information https://github.com/vercel/satori#jsx.'
     )
   }
-  let { style, children, tw, lang: _newLocale = locale } = props || {}
+  let {
+    style,
+    children,
+    tw,
+    lang: _newLocale = locale,
+    className,
+    id: htmlId,
+  } = props || {}
   const newLocale = normalizeLocale(_newLocale)
 
   // Extend Tailwind styles.
@@ -217,6 +226,8 @@ export default async function* layout(
     props: restProps,
     key: element.key,
     textContent: isReactElement(childrenNode) ? undefined : childrenNode,
+    className,
+    htmlId,
   })
 
   // Generate the rendered markup for the current node.
@@ -232,6 +243,8 @@ export default async function* layout(
         src,
         isInheritingTransform,
         debug,
+        className,
+        htmlId,
       },
       computedStyle,
       newInheritableStyle
@@ -251,6 +264,8 @@ export default async function* layout(
         src,
         isInheritingTransform,
         debug,
+        className,
+        htmlId,
       },
       computedStyle,
       newInheritableStyle
@@ -269,7 +284,17 @@ export default async function* layout(
       )
     }
     baseRenderResult = await rect(
-      { id, left, top, width, height, isInheritingTransform, debug },
+      {
+        id,
+        left,
+        top,
+        width,
+        height,
+        isInheritingTransform,
+        debug,
+        className,
+        htmlId,
+      },
       computedStyle,
       newInheritableStyle
     )
