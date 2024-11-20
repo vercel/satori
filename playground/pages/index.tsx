@@ -432,38 +432,31 @@ const LiveSatori = withLive(function ({
     (node: HTMLIFrameElement) => {
       if (node) {
         if (node.contentWindow?.document) {
-          /* Force tailwindcss to create stylesheets on first render */
-          const forceUpdate = () => {
-            return setTimeout(() => {
-              const div = doc.createElement('div')
-              div.classList.add('hidden')
-              doc.body.appendChild(div)
-              setTimeout(() => {
-                doc.body.removeChild(div)
-              }, 300)
-            }, 200)
-          }
           const doc = node.contentWindow.document
           const script = doc.createElement('script')
           script.src = 'https://cdn.tailwindcss.com'
           doc.head.appendChild(script)
           script.addEventListener('load', () => {
-            const configScript = doc.createElement('script')
-            configScript.text = `
-            tailwind.config = {
-              plugins: [{
-                handler({ addBase }) {
-                  addBase({
-                    'html': {
-                      'line-height': 1.2,
-                    }
-                  })
-                }
-              }]
+            ;(node.contentWindow as any).tailwind.config = {
+              plugins: [
+                {
+                  handler({ addBase }: { addBase: (style: any) => void }) {
+                    addBase(
+                      Object.create(null, {
+                        html: {
+                          value: {
+                            'line-height': 1.2,
+                          },
+                          enumerable: true,
+                        },
+                      })
+                    )
+                  },
+                },
+              ],
             }
-          `
-            doc.head.appendChild(configScript)
           })
+
           const updateClass = () => {
             Array.from(doc.querySelectorAll('[tw]')).forEach((v) => {
               const tw = v.getAttribute('tw')
@@ -473,7 +466,6 @@ const LiveSatori = withLive(function ({
               }
             })
           }
-          forceUpdate()
           const observer = new MutationObserver(updateClass)
           observer.observe(doc.body, { childList: true, subtree: true })
           setIframeNode(doc.body)
