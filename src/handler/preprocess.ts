@@ -123,7 +123,7 @@ function translateSVGNodeToSVGString(
       }
 
       if (k === 'href' && type === 'image') {
-        return ` ${ATTRIBUTE_MAPPING[k] || k}="${cache.get(_v as string)[0]}"`
+        return ` ${ATTRIBUTE_MAPPING[k] || k}="${cache.get(_v as string)?.[0]}"`
       }
       return ` ${ATTRIBUTE_MAPPING[k] || k}="${_v}"`
     })
