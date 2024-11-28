@@ -10,7 +10,7 @@ import { segment } from './utils.js'
 import { detectLanguageCode, LangCode, Locale } from './language.js'
 import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
-import { cache } from './handler/image.js'
+import { cache, inflightRequests } from './handler/image.js'
 
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
@@ -90,6 +90,7 @@ export default async function satori(
   const processedWordsMissingFonts = new Set()
 
   cache.clear()
+  inflightRequests.clear()
   await preProcessNode(element)
 
   const handler = layout(element, {

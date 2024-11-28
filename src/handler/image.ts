@@ -62,7 +62,7 @@ import { createLRU, parseViewBox } from '../utils.js'
 
 type ResolvedImageData = [string, number?, number?] | readonly []
 export const cache = createLRU<ResolvedImageData>(100)
-const inflightRequests = new Map<string, Promise<ResolvedImageData>>()
+export const inflightRequests = new Map<string, Promise<ResolvedImageData>>()
 
 const ALLOWED_IMAGE_TYPES = [PNG, APNG, JPEG, GIF, SVG]
 
