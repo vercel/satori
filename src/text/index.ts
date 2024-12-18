@@ -214,14 +214,14 @@ export default async function* buildTextNodes(
 
       if (!word.startsWith(START_HIGHLIGHT) && word.includes(START_HIGHLIGHT)) {
         const parts = word.split(START_HIGHLIGHT)
-        parts[1] = `<em>${parts[1]}`
+        parts[1] = `${START_HIGHLIGHT}${parts[1]}`
 
         words.splice(i, 1, ...parts)
         continue
       }
       if (!word.endsWith(END_HIGHLIGHT) && word.includes(END_HIGHLIGHT)) {
         const parts = word.split(END_HIGHLIGHT)
-        parts[0] = `${parts[0]}<end>`
+        parts[0] = `${parts[0]}${END_HIGHLIGHT}`
         words.splice(i, 1, ...parts)
         continue
       }
