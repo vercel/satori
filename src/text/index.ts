@@ -222,6 +222,13 @@ export default async function* buildTextNodes(
       if (!word.endsWith(END_HIGHLIGHT) && word.includes(END_HIGHLIGHT)) {
         const parts = word.split(END_HIGHLIGHT)
         parts[0] = `${parts[0]}${END_HIGHLIGHT}`
+
+        // super edge case where the space is not included in the highlight
+        // This lone space won't render if it's not included in a word.
+        // So we need to include it in the next word.
+        if (parts[1] === ' ' && words[i + 1]) {
+          words[i + 1] = ` ${words[i + 1]}`
+        }
         words.splice(i, 1, ...parts)
         continue
       }
@@ -234,8 +241,8 @@ export default async function* buildTextNodes(
         }
         isHighlighted = true
         endHighlightNext = endsWithEnd
-      } else if (word.endsWith('<end>')) {
-        word = word.slice(0, -END_HIGHLIGHT.length)
+      } else if (word.includes(END_HIGHLIGHT)) {
+        word = word.replace(END_HIGHLIGHT, '')
         endHighlightNext = true
       }
 
