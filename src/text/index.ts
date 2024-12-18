@@ -200,6 +200,7 @@ export default async function* buildTextNodes(
     let prevLineEndingSpacesWidth = 0
     let isHighlighted = false
     let endHighlightNext = false
+
     while (i < words.length && lines < lineLimit) {
       let word = words[i]
 
@@ -208,10 +209,31 @@ export default async function* buildTextNodes(
         endHighlightNext = false
       }
 
+      if (!word.startsWith('<em>') && word.includes('<em>')) {
+        const parts = word.split('<em>')
+        parts[1] = `<em>${parts[1]}`
+
+        words.splice(i, 1, ...parts)
+        continue
+      }
+      if (!word.endsWith('<end>') && word.includes('<end>')) {
+        const parts = word.split('<end>')
+        parts[0] = `${parts[0]}<end>`
+        words.splice(i, 1, ...parts)
+        continue
+      }
+
       if (word.startsWith('<em>')) {
+        const endsWithEnd = word.endsWith('<end>')
         word = word.slice(4)
+        if (endsWithEnd) {
+          word = word.slice(0, -5)
+        }
         isHighlighted = true
-        endHighlightNext = false
+        endHighlightNext = endsWithEnd
+      } else if (word.endsWith('<end>,')) {
+        word = `${word.slice(0, -6)},`
+        endHighlightNext = true
       } else if (word.endsWith('<end> ')) {
         word = `${word.slice(0, -6)} `
         endHighlightNext = true
@@ -638,8 +660,10 @@ export default async function* buildTextNodes(
         !text.includes(Tab) &&
         !wordSeparators.includes(text) &&
         texts[i + 1] &&
+        !layout.isHighlighted &&
         nextLayout &&
         !nextLayout.isImage &&
+        !nextLayout.isHighlighted &&
         topOffset === nextLayout.y &&
         !isLastDisplayedBeforeEllipsis
       ) {
@@ -666,12 +690,13 @@ export default async function* buildTextNodes(
       wordBuffer = null
 
       if (layout.isHighlighted) {
+        const padding = 1
         background +=
           // Glyph
           buildXMLString('rect', {
-            x: left + finalizedLeftOffset,
+            x: left + finalizedLeftOffset - padding / 2,
             y: top + topOffset + baselineDelta,
-            width: finalizedWidth,
+            width: finalizedWidth + padding,
             height: heightOfWord,
             fill: '#e5e5ff',
             transform: matrix ? matrix : undefined,

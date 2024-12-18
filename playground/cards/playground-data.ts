@@ -12,19 +12,12 @@ const playgroundTabs: Tabs = {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff',
-    fontSize: 32,
-    fontWeight: 600,
+    fontSize: 12,
+    fontWeight: 400,
+    padding: 32
   }}
 >
-  <svg
-    width="75"
-    viewBox="0 0 75 65"
-    fill="#000"
-    style={{ margin: '0 75px' }}
-  >
-    <path d="M37.59.25l36.95 64H.64l36.95-64z"></path>
-  </svg>
-  <div style={{ marginTop: 40 }}>{"Hello world with a <em>little highlight<end> in! the middle."}</div>
+  <div style={{ marginTop: 40 }}>{"Yes. Yes, I app<em>recia<end>te the question. We are very pleased with our performance in both the server side and also on the PC side, as you know, in the server CPU market starting from like a very low single-digit market share a few years ago to now last Q3, we reported the earnings, we got to 34% of the market this year. So it has been tremendous. I think when you look at that success first thing is AMD is always focused on product -- innovative product, generation-by-generation. So when you look at the server side from <em>first-generation Naple<end> until each generation now at the Genoa and Bergamo <em>fourth generation family<end>, we got a <em>tremendous TCO performance not only performance per watt, but the performance per dollar.<end> And now we launched Gen 5, which is the Turin family product will continue to drive the leadership performance. So technology-wise, it's about the leadership of not only architecture, process technology, chiplet and also packaging technology. But also if you look at the team's history, it's always about consistent execution. So each generation of road map we delivered on time with the leading performance. Third thing I would say is our team is really good to work with the customer closely."}</div>
 </div>
 `,
   Vercel: `<div

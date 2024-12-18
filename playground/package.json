@@ -24,7 +24,7 @@
     "react-hot-toast": "^2.3.0",
     "react-live": "^2.4.1",
     "react-resizable-panels": "^0.0.30",
-    "satori": "workspace:*",
+    "satori-bg": "workspace:*",
     "svg-to-pdfkit": "^0.1.8"
   },
   "devDependencies": {

@@ -1,12 +1,12 @@
 import React from 'react'
-import satori from 'satori'
+import satori from 'satori-bg'
 import { LiveProvider, LiveContext, withLive } from 'react-live'
 import { useEffect, useState, useRef, useContext, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Editor, { useMonaco } from '@monaco-editor/react'
 import toast, { Toaster } from 'react-hot-toast'
 import copy from 'copy-to-clipboard'
-import packageJson from 'satori/package.json'
+import packageJson from 'satori-bg/package.json'
 import * as fflate from 'fflate'
 import { Base64 } from 'js-base64'
 import PDFDocument from 'pdfkit/js/pdfkit.standalone'
@@ -804,8 +804,8 @@ const LiveSatori = withLive(function ({
               <button
                 id='reset'
                 onClick={() => {
-                  setWidth(800)
-                  setHeight(400)
+                  setWidth(600)
+                  setHeight(600)
                 }}
               >
                 Reset
