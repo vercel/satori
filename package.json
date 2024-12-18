@@ -1,6 +1,6 @@
 {
   "name": "satori-bg",
-  "version": "0.10.13",
+  "version": "1.0.0",
   "description": "Enlightened library to convert HTML and CSS to SVG.",
   "module": "./dist/index.js",
   "main": "./dist/index.js",
