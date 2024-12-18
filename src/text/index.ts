@@ -22,6 +22,9 @@ import { HorizontalEllipsis, Space, Tab } from './characters.js'
 import { genMeasurer } from './measurer.js'
 import { preprocess } from './processor.js'
 
+const START_HIGHLIGHT = '[start]'
+const END_HIGHLIGHT = '[end]'
+
 const skippedWordWhenFindingMissingFont = new Set([Tab])
 
 function shouldSkipWhenFindingMissingFont(word: string): boolean {
@@ -175,6 +178,7 @@ export default async function* buildTextNodes(
     line: number
     lineIndex: number
     isImage: boolean
+    isHighlighted?: boolean
   })[] = []
 
   // With the given container width, compute the text layout.
@@ -197,8 +201,44 @@ export default async function* buildTextNodes(
     // @TODO: Support RTL languages.
     let i = 0
     let prevLineEndingSpacesWidth = 0
+    let isHighlighted = false
+    let endHighlightNext = false
+
     while (i < words.length && lines < lineLimit) {
       let word = words[i]
+
+      if (endHighlightNext) {
+        isHighlighted = false
+        endHighlightNext = false
+      }
+
+      if (!word.startsWith(START_HIGHLIGHT) && word.includes(START_HIGHLIGHT)) {
+        const parts = word.split(START_HIGHLIGHT)
+        parts[1] = `<em>${parts[1]}`
+
+        words.splice(i, 1, ...parts)
+        continue
+      }
+      if (!word.endsWith(END_HIGHLIGHT) && word.includes(END_HIGHLIGHT)) {
+        const parts = word.split(END_HIGHLIGHT)
+        parts[0] = `${parts[0]}<end>`
+        words.splice(i, 1, ...parts)
+        continue
+      }
+
+      if (word.startsWith(START_HIGHLIGHT)) {
+        const endsWithEnd = word.endsWith(END_HIGHLIGHT)
+        word = word.slice(START_HIGHLIGHT.length)
+        if (endsWithEnd) {
+          word = word.slice(0, -END_HIGHLIGHT.length)
+        }
+        isHighlighted = true
+        endHighlightNext = endsWithEnd
+      } else if (word.endsWith('<end>')) {
+        word = word.slice(0, -END_HIGHLIGHT.length)
+        endHighlightNext = true
+      }
+
       const forceBreak = requiredBreaks[i]
 
       let w = 0
@@ -314,6 +354,7 @@ export default async function* buildTextNodes(
           line: lines,
           lineIndex,
           isImage: false,
+          isHighlighted,
         })
       } else {
         const _texts = segment(word, 'word')
@@ -338,6 +379,7 @@ export default async function* buildTextNodes(
             line: lines,
             lineIndex,
             isImage: _isImage,
+            isHighlighted,
           })
 
           x += _width
@@ -458,6 +500,7 @@ export default async function* buildTextNodes(
 
   let decorationShape = ''
   let mergedPath = ''
+  let background = ''
   let extra = ''
   let skippedLine = -1
   let decorationLines: Record<number, null | number[]> = {}
@@ -610,8 +653,10 @@ export default async function* buildTextNodes(
         !text.includes(Tab) &&
         !wordSeparators.includes(text) &&
         texts[i + 1] &&
+        !layout.isHighlighted &&
         nextLayout &&
         !nextLayout.isImage &&
+        !nextLayout.isHighlighted &&
         topOffset === nextLayout.y &&
         !isLastDisplayedBeforeEllipsis
       ) {
@@ -636,6 +681,21 @@ export default async function* buildTextNodes(
       })
 
       wordBuffer = null
+
+      if (layout.isHighlighted) {
+        const padding = 1
+        background +=
+          // Glyph
+          buildXMLString('rect', {
+            x: left + finalizedLeftOffset - padding / 2,
+            y: top + topOffset + baselineDelta,
+            width: finalizedWidth + padding,
+            height: heightOfWord,
+            fill: '#e5e5ff',
+            transform: matrix ? matrix : undefined,
+            'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+          })
+      }
 
       if (debug) {
         extra +=
@@ -757,6 +817,7 @@ export default async function* buildTextNodes(
     }
 
     result +=
+      background +
       (filter
         ? filter +
           buildXMLString(
@@ -764,7 +825,8 @@ export default async function* buildTextNodes(
             { filter: `url(#satori_s-${id})` },
             p + decorationShape
           )
-        : p + decorationShape) + extra
+        : p + decorationShape) +
+      extra
   }
 
   // Attach information to the parent node.

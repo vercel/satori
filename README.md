@@ -1,3 +1,6 @@
+> :warning: this is a fork of Satori.
+> Includes a basic support for super specific highlights.
+
 ![Satori](.github/card.png)
 
 **Satori**: Enlightened library to convert HTML and CSS to SVG.

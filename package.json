@@ -1,6 +1,6 @@
 {
-  "name": "satori",
-  "version": "0.0.0-development",
+  "name": "satori-bg",
+  "version": "1.0.0",
   "description": "Enlightened library to convert HTML and CSS to SVG.",
   "module": "./dist/index.js",
   "main": "./dist/index.js",
@@ -114,7 +114,7 @@
     "postcss-value-parser": "^4.2.0",
     "yoga-wasm-web": "^0.3.3"
   },
-  "packageManager": "pnpm@8.7.0",
+  "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=16"
   }
