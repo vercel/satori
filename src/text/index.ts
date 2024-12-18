@@ -22,6 +22,9 @@ import { HorizontalEllipsis, Space, Tab } from './characters.js'
 import { genMeasurer } from './measurer.js'
 import { preprocess } from './processor.js'
 
+const START_HIGHLIGHT = '[start]'
+const END_HIGHLIGHT = '[end]'
+
 const skippedWordWhenFindingMissingFont = new Set([Tab])
 
 function shouldSkipWhenFindingMissingFont(word: string): boolean {
@@ -209,41 +212,31 @@ export default async function* buildTextNodes(
         endHighlightNext = false
       }
 
-      if (!word.startsWith('<em>') && word.includes('<em>')) {
-        const parts = word.split('<em>')
+      if (!word.startsWith(START_HIGHLIGHT) && word.includes(START_HIGHLIGHT)) {
+        const parts = word.split(START_HIGHLIGHT)
         parts[1] = `<em>${parts[1]}`
 
         words.splice(i, 1, ...parts)
         continue
       }
-      if (!word.endsWith('<end>') && word.includes('<end>')) {
-        const parts = word.split('<end>')
+      if (!word.endsWith(END_HIGHLIGHT) && word.includes(END_HIGHLIGHT)) {
+        const parts = word.split(END_HIGHLIGHT)
         parts[0] = `${parts[0]}<end>`
         words.splice(i, 1, ...parts)
         continue
       }
 
-      if (word.startsWith('<em>')) {
-        const endsWithEnd = word.endsWith('<end>')
-        word = word.slice(4)
+      if (word.startsWith(START_HIGHLIGHT)) {
+        const endsWithEnd = word.endsWith(END_HIGHLIGHT)
+        word = word.slice(START_HIGHLIGHT.length)
         if (endsWithEnd) {
-          word = word.slice(0, -5)
+          word = word.slice(0, -END_HIGHLIGHT.length)
         }
         isHighlighted = true
         endHighlightNext = endsWithEnd
-      } else if (word.endsWith('<end>,')) {
-        word = `${word.slice(0, -6)},`
-        endHighlightNext = true
-      } else if (word.endsWith('<end> ')) {
-        word = `${word.slice(0, -6)} `
-        endHighlightNext = true
       } else if (word.endsWith('<end>')) {
-        word = word.slice(0, -5)
+        word = word.slice(0, -END_HIGHLIGHT.length)
         endHighlightNext = true
-      } else if (word.startsWith('<end>')) {
-        word = word.slice(5)
-        endHighlightNext = false
-        isHighlighted = false
       }
 
       const forceBreak = requiredBreaks[i]
