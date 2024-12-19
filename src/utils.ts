@@ -356,120 +356,56 @@ export function splitEffects(
 
   return result
 }
-
 export function addHighlights(
   originalContent: string,
-  words: string[],
-  wordBreak: string
+  words: string[]
 ): string[] {
-  const startTag = '[s]'
-  const endTag = '[e]'
+  // Find all highlight positions in original content
+  const highlights: { start: number; end?: number }[] = []
+  let cleanIndex = 0
 
-  // Find all highlighted sections in the original content
-  const highlightedSections: {
-    startIdx: number
-    endIdx: number
-    text: string
-  }[] = []
-  let searchStart = 0
-
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const startIdx = originalContent.indexOf(startTag, searchStart)
-    if (startIdx === -1) break
-    const endIdx = originalContent.indexOf(endTag, startIdx)
-    if (endIdx === -1) break
-
-    const highlightedText = originalContent
-      .substring(startIdx + startTag.length, endIdx)
-      .trim()
-    highlightedSections.push({
-      startIdx,
-      endIdx: endIdx + endTag.length,
-      text: highlightedText,
-    })
-    searchStart = endIdx + endTag.length
+  for (let i = 0; i < originalContent.length; i++) {
+    if (originalContent.slice(i, i + 3) === '[s]') {
+      highlights.push({ start: cleanIndex })
+      i += 2
+    } else if (originalContent.slice(i, i + 3) === '[e]') {
+      highlights[highlights.length - 1].end = cleanIndex - 1
+      i += 2
+    } else {
+      cleanIndex++
+    }
   }
 
-  // Prepare the result array
-  const result: string[] = []
-  let currentIndex = 0
+  let currentPos = 0
+  const mappedWords = words.map((word) => {
+    const wordStart = currentPos
+    const trimmedWord = word.trim()
+    const wordEnd = wordStart + trimmedWord.length - 1
+    let result = word
 
-  // Regular expression to split word and trailing punctuation
-  const wordWithPunctuation = /(\w+)(\W*)/
-
-  // Iterate over the words array
-  for (const word of words) {
-    const match = word.match(wordWithPunctuation)
-    if (!match) {
-      result.push(word)
-      continue
-    }
-
-    const [_, coreWord, punctuation] = match
-    const wordStartIndex = originalContent.indexOf(coreWord, currentIndex)
-
-    if (wordStartIndex === -1) {
-      // If the word is not found, just add it and continue
-      result.push(word)
-      currentIndex += word.length
-      continue
-    }
-
-    // Update the current index to the position after this word
-    currentIndex = wordStartIndex + coreWord.length
-
-    // Check each highlighted section to see if this word is part of it
-    let isHighlighted = false
-    for (const section of highlightedSections) {
-      const highlightStart = section.startIdx + startTag.length
-      const highlightEnd = section.endIdx - endTag.length
-
-      if (wordStartIndex >= highlightStart && wordStartIndex < highlightEnd) {
-        const { words: highlightWords } = splitByBreakOpportunities(
-          section.text,
-          wordBreak
-        )
-        const highlightWordStart = originalContent.indexOf(
-          highlightWords[0],
-          highlightStart
-        )
-        const highlightWordEnd = originalContent.indexOf(
-          highlightWords[highlightWords.length - 1],
-          highlightStart
-        )
-
-        if (wordStartIndex === highlightWordStart) {
-          // If it's the start of the highlighted section
-          result.push(`[s]${coreWord}${punctuation}`)
-          isHighlighted = true
-          break
-        }
-        if (
-          wordStartIndex + coreWord.length ===
-            highlightWordEnd +
-              highlightWords[highlightWords.length - 1].length ||
-          wordStartIndex + word.trim().length ===
-            highlightWordEnd + highlightWords[highlightWords.length - 1].length
-        ) {
-          // If it's the end of the highlighted section
-          result.push(`${coreWord}[e]${punctuation}`)
-          isHighlighted = true
-          break
+    // Check if this word intersects with any highlight
+    for (const highlight of highlights) {
+      if (wordStart <= highlight.end && wordEnd >= highlight.start) {
+        if (wordStart === highlight.start) {
+          result = `[s]${word}`
+        } else if (wordStart < highlight.start && wordEnd >= highlight.start) {
+          // Handle case where highlight starts within the word
+          const preHighlight = word.slice(0, highlight.start - wordStart)
+          const postHighlight = word.slice(highlight.start - wordStart)
+          result = `${preHighlight}[s]${postHighlight}`
         }
 
-        // If it's within the highlighted section
-        result.push(`${coreWord}${punctuation}`)
-        isHighlighted = true
-        break
+        if (wordEnd === highlight.end) {
+          const before = result.replace(/\s+$/, '')
+          const after = word.match(/\s+$/)?.[0] || ''
+          result = `${before}[e]${after}`
+        }
       }
     }
 
-    // If the word was not part of any highlighted section, add it normally
-    if (!isHighlighted) {
-      result.push(word)
-    }
-  }
+    currentPos += word.length
+    return result
+  })
 
-  return result
+  return mappedWords
 }

@@ -17,8 +17,7 @@ const playgroundTabs: Tabs = {
     padding: 32
   }}
 >
-  <div style={{ marginTop: 12 }}>{"So when you look at the server side from [s]first-generation Naple[e] until each generation now at the Genoa and Bergamo [s]fourth generation family[e], [s]we got a tremendous TCO performance not only performance per watt, but the performance per dollar.[e] And now we launched Gen 5, which is the Turin family product will continue to drive the leadership performance."}</div>
-</div>
+  <div style={{ marginTop: 12 }}>{"We have some r[s]eally big customers[e] that are signing up right now that on the old seat model, we'd be signing up for $3 million, $4 million but -- annually, but in the consumption model, you sign them up for $400,000 and then another $500,000 and then you get to a couple of million bucks and you still get to the same spot, you get them more efficiently, more effectively. There's not as many -- not as much [s]hemming[e] and hawing."}</div> </div>
 `,
   Vercel: `<div
   style={{
