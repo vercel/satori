@@ -17,7 +17,7 @@ const playgroundTabs: Tabs = {
     padding: 32
   }}
 >
-  <div style={{ marginTop: 12 }}>{"So the extension of the shelter in place or, frankly, I would call it, forcibly imprisoning people in their homes against all their constitutional rights, that in my opinion, and breaking people's freedoms in ways that are horrible and wrong is not why people came to America or built this country, [start]what the fuck? Excuse me.[end] But outrage -- it’s an outrage."}</div>
+  <div style={{ marginTop: 12 }}>{"So when you look at the server side from [s]first-generation Naple[e] until each generation now at the Genoa and Bergamo [s]fourth generation family[e], [s]we got a tremendous TCO performance not only performance per watt, but the performance per dollar.[e] And now we launched Gen 5, which is the Turin family product will continue to drive the leadership performance."}</div>
 </div>
 `,
   Vercel: `<div

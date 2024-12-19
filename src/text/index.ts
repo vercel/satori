@@ -22,8 +22,8 @@ import { HorizontalEllipsis, Space, Tab } from './characters.js'
 import { genMeasurer } from './measurer.js'
 import { preprocess } from './processor.js'
 
-const START_HIGHLIGHT = '[start]'
-const END_HIGHLIGHT = '[end]'
+const START_HIGHLIGHT = '[s]'
+const END_HIGHLIGHT = '[e]'
 
 const skippedWordWhenFindingMissingFont = new Set([Tab])
 
@@ -226,23 +226,27 @@ export default async function* buildTextNodes(
         // super edge case where the space is not included in the highlight
         // This lone space won't render if it's not included in a word.
         // So we need to include it in the next word.
-        if (parts[1] === ' ' && words[i + 1]) {
+
+        if (parts[1] === ' ' && words[i + 1] && words[i + 1][0] !== ' ') {
           words[i + 1] = ` ${words[i + 1]}`
+          parts.splice(1, 1)
         }
         words.splice(i, 1, ...parts)
         continue
       }
 
       if (word.startsWith(START_HIGHLIGHT)) {
-        const endsWithEnd = word.endsWith(END_HIGHLIGHT)
         word = word.slice(START_HIGHLIGHT.length)
+        isHighlighted = true
+
+        const endsWithEnd = word.endsWith(END_HIGHLIGHT)
+        endHighlightNext = endsWithEnd
+
         if (endsWithEnd) {
           word = word.slice(0, -END_HIGHLIGHT.length)
         }
-        isHighlighted = true
-        endHighlightNext = endsWithEnd
-      } else if (word.includes(END_HIGHLIGHT)) {
-        word = word.replace(END_HIGHLIGHT, '')
+      } else if (word.endsWith(END_HIGHLIGHT)) {
+        word = word.slice(0, -END_HIGHLIGHT.length)
         endHighlightNext = true
       }
 

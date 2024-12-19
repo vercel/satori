@@ -484,7 +484,7 @@ const LiveSatori = withLive(function ({
   ) // eslint-disable-line]
   useEffect(() => {
     if (overrideOptions) {
-      setWidth(Math.min(overrideOptions.width || 800, 2000))
+      setWidth(Math.min(overrideOptions.width || 657, 2000))
       setHeight(Math.min(overrideOptions.height || 800, 2000))
       setDebug(!!overrideOptions.debug)
       setEmojiType(overrideOptions.emojiType || 'twemoji')

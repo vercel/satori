@@ -185,33 +185,32 @@ export function segment(
 
   if (granularity === 'grapheme') {
     return [...graphemeSegmenter.segment(content)].map((seg) => seg.segment)
-  } else {
-    const segmented = [...wordSegmenter.segment(content)].map(
-      (seg) => seg.segment
-    ) as string[]
-
-    const output = []
-
-    let i = 0
-    // When there is a non-breaking space, join the previous and next words together.
-    // This change causes them to be treated as a single segment.
-    while (i < segmented.length) {
-      const s = segmented[i]
-
-      if (s == '\u00a0') {
-        const previousWord = i === 0 ? '' : output.pop()
-        const nextWord = i === segmented.length - 1 ? '' : segmented[i + 1]
-
-        output.push(previousWord + '\u00a0' + nextWord)
-        i += 2
-      } else {
-        output.push(s)
-        i++
-      }
-    }
-
-    return output
   }
+  const segmented = [...wordSegmenter.segment(content)].map(
+    (seg) => seg.segment
+  ) as string[]
+
+  const output = []
+
+  let i = 0
+  // When there is a non-breaking space, join the previous and next words together.
+  // This change causes them to be treated as a single segment.
+  while (i < segmented.length) {
+    const s = segmented[i]
+
+    if (s == '\u00a0') {
+      const previousWord = i === 0 ? '' : output.pop()
+      const nextWord = i === segmented.length - 1 ? '' : segmented[i + 1]
+
+      output.push(`${previousWord}\u00a0${nextWord}`)
+      i += 2
+    } else {
+      output.push(s)
+      i++
+    }
+  }
+
+  return output
 }
 
 export function buildXMLString(
@@ -297,14 +296,18 @@ export function splitByBreakOpportunities(
     return { words: segment(content, 'word'), requiredBreaks: [] }
   }
 
-  const breaker = new LineBreaker(content)
+  const contentWithoutStartEnd = content
+    .replace(/\[s\]/g, '')
+    .replace(/\[e\]/g, '')
+
+  const breaker = new LineBreaker(contentWithoutStartEnd)
   let last = 0
   let bk = breaker.nextBreak()
   const words = []
   const requiredBreaks = [false]
 
   while (bk) {
-    const word = content.slice(last, bk.position)
+    const word = contentWithoutStartEnd.slice(last, bk.position)
     words.push(word)
 
     if (bk.required) {
@@ -350,6 +353,123 @@ export function splitEffects(
   }
 
   result.push(input.slice(l).trim())
+
+  return result
+}
+
+export function addHighlights(
+  originalContent: string,
+  words: string[],
+  wordBreak: string
+): string[] {
+  const startTag = '[s]'
+  const endTag = '[e]'
+
+  // Find all highlighted sections in the original content
+  const highlightedSections: {
+    startIdx: number
+    endIdx: number
+    text: string
+  }[] = []
+  let searchStart = 0
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const startIdx = originalContent.indexOf(startTag, searchStart)
+    if (startIdx === -1) break
+    const endIdx = originalContent.indexOf(endTag, startIdx)
+    if (endIdx === -1) break
+
+    const highlightedText = originalContent
+      .substring(startIdx + startTag.length, endIdx)
+      .trim()
+    highlightedSections.push({
+      startIdx,
+      endIdx: endIdx + endTag.length,
+      text: highlightedText,
+    })
+    searchStart = endIdx + endTag.length
+  }
+
+  // Prepare the result array
+  const result: string[] = []
+  let currentIndex = 0
+
+  // Regular expression to split word and trailing punctuation
+  const wordWithPunctuation = /(\w+)(\W*)/
+
+  // Iterate over the words array
+  for (const word of words) {
+    const match = word.match(wordWithPunctuation)
+    if (!match) {
+      result.push(word)
+      continue
+    }
+
+    const [_, coreWord, punctuation] = match
+    const wordStartIndex = originalContent.indexOf(coreWord, currentIndex)
+
+    if (wordStartIndex === -1) {
+      // If the word is not found, just add it and continue
+      result.push(word)
+      currentIndex += word.length
+      continue
+    }
+
+    // Update the current index to the position after this word
+    currentIndex = wordStartIndex + coreWord.length
+
+    // Check each highlighted section to see if this word is part of it
+    let isHighlighted = false
+    for (const section of highlightedSections) {
+      const highlightStart = section.startIdx + startTag.length
+      const highlightEnd = section.endIdx - endTag.length
+
+      if (wordStartIndex >= highlightStart && wordStartIndex < highlightEnd) {
+        const { words: highlightWords } = splitByBreakOpportunities(
+          section.text,
+          wordBreak
+        )
+        const highlightWordStart = originalContent.indexOf(
+          highlightWords[0],
+          highlightStart
+        )
+        const highlightWordEnd = originalContent.indexOf(
+          highlightWords[highlightWords.length - 1],
+          highlightStart
+        )
+
+        if (wordStartIndex === highlightWordStart) {
+          // If it's the start of the highlighted section
+          result.push(`[s]${coreWord}${punctuation}`)
+          isHighlighted = true
+          break
+        }
+        if (
+          wordStartIndex + coreWord.length ===
+            highlightWordEnd +
+              highlightWords[highlightWords.length - 1].length ||
+          wordStartIndex + word.trim().length ===
+            highlightWordEnd + highlightWords[highlightWords.length - 1].length
+        ) {
+          // If it's the end of the highlighted section
+          result.push(`${coreWord}[e]${punctuation}`)
+          isHighlighted = true
+          break
+        }
+
+        // If it's within the highlighted section
+        result.push(`${coreWord}${punctuation}`)
+        isHighlighted = true
+        break
+      }
+    }
+
+    // If the word was not part of any highlighted section, add it normally
+    if (!isHighlighted) {
+      result.push(word)
+    }
+  }
 
   return result
 }

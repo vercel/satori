@@ -1,5 +1,10 @@
 import { Locale } from '../language.js'
-import { isNumber, segment, splitByBreakOpportunities } from '../utils.js'
+import {
+  addHighlights,
+  isNumber,
+  segment,
+  splitByBreakOpportunities,
+} from '../utils.js'
 import { HorizontalEllipsis, Space } from './characters.js'
 import { SerializedStyle } from '../handler/expand.js'
 
@@ -122,7 +127,9 @@ function processWordBreak(
     wordBreak
   )
 
-  return { words, requiredBreaks, allowBreakWord }
+  const newWords = addHighlights(content, words, wordBreak)
+
+  return { words: newWords, requiredBreaks, allowBreakWord }
 }
 
 function processWhiteSpace(
