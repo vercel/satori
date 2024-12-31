@@ -126,8 +126,6 @@ export default async function rect(
       width,
       height,
       fill: 'transparent',
-      stroke: '#ff5757',
-      'stroke-width': 1,
       transform: matrix || undefined,
       'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
     })
