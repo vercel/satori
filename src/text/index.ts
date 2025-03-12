@@ -389,6 +389,39 @@ export default async function* buildTextNodes(
       measuredTextSize = { width: _width, height }
       return { width: _width, height }
     }
+
+    // When doing `text-wrap: pretty`, we try to avoid ending a paragraph with a single word
+    // by reshaping all lines in a way that achieves more balanced line lengths
+    // This "pretty" line breaking algorithm tries to achieve optimal line breaks
+    // that avoid orphans (single words at the end of a paragraph) and create
+    // visually pleasing line lengths.
+    if (textWrap === 'pretty') {
+      // Check if the last line has a single word or is very short
+      // (typically less than 1/3 of the container width)
+      const lastLineWidth = lineWidths[lineWidths.length - 1]
+      const isLastLineShort = lastLineWidth < width / 3
+
+      if (isLastLineShort) {
+        // Reflow the paragraph with slightly adjusted line breaks
+        // to avoid orphans and create more even line lengths
+        // This is a simplified approach - a real implementation would use a
+        // more sophisticated algorithm to find optimal line breaks
+
+        // We'll just reflow once with slightly reduced width to force
+        // redistribution of words. This is much simplified from the actual
+        // paragraph-level line breaking algorithm which would compute scores
+        // for different line break combinations.
+        const adjustedWidth = width * 0.9
+        const result = flow(adjustedWidth)
+
+        // Use the result if it reduces orphans without adding too many lines
+        if (result.height <= height * 1.3) {
+          measuredTextSize = { width, height: result.height }
+          return { width, height: result.height }
+        }
+      }
+    }
+
     const _width = Math.ceil(width)
     measuredTextSize = { width: _width, height }
     // This may be a temporary fix, I didn't dig deep into yoga.
