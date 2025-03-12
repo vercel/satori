@@ -20,6 +20,8 @@ export default async function rect(
     isInheritingTransform,
     src,
     debug,
+    className,
+    htmlId,
   }: {
     id: string
     left: number
@@ -29,6 +31,8 @@ export default async function rect(
     isInheritingTransform: boolean
     src?: string
     debug?: boolean
+    className?: string
+    htmlId?: string
   },
   style: Record<string, number | string>,
   inheritableStyle: Record<string, number | string>
@@ -293,6 +297,9 @@ export default async function rect(
   )
 
   return (
+    `<g${className ? ` class="${className}"` : ''}${
+      htmlId ? ` id="${htmlId}"` : ''
+    }>` +
     (defs ? buildXMLString('defs', {}, defs) : '') +
     (shadow ? shadow[0] : '') +
     (imageBorderRadius ? imageBorderRadius[0] : '') +
@@ -307,6 +314,7 @@ export default async function rect(
     (style.transform && (currentClipPath || maskId) ? '</g>' : '') +
     (opacity !== 1 ? `</g>` : '') +
     (shadow ? shadow[1] : '') +
-    extra
+    extra +
+    '</g>'
   )
 }
