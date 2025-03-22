@@ -555,5 +555,33 @@ describe('Gradient', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should compute correct cycle', async () => {
+      const svgs = await Promise.all(
+        [
+          `repeating-linear-gradient(45deg, #606dbc, #606dbc 5px, #465298 5px, #465298 10px)`,
+          `repeating-linear-gradient(45deg, #606dbc, #606dbc 5px, #465298 5px, #465298 10%)`,
+        ].map((backgroundImage) =>
+          satori(
+            <div
+              style={{
+                backgroundColor: 'white',
+                backgroundImage,
+                width: '100px',
+                height: '100px',
+              }}
+            ></div>,
+            {
+              width: 100,
+              height: 100,
+              fonts,
+            }
+          )
+        )
+      )
+      svgs.forEach((svg) => {
+        expect(toImage(svg, 100)).toMatchImageSnapshot()
+      })
+    })
   })
 })

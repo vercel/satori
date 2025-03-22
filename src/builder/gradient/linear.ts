@@ -56,7 +56,7 @@ export function buildLinearGradient(
     : points
 
   const stops = normalizeStops(
-    length,
+    repeating ? resolveRepeatingCycle(parsed.stops, length) : length,
     parsed.stops,
     inheritableStyle,
     repeating,
@@ -101,6 +101,16 @@ export function buildLinearGradient(
       })
   )
   return [patternId, defs]
+}
+
+function resolveRepeatingCycle(stops: ColorStop[], length: number) {
+  const last = stops[stops.length - 1]
+  const { offset } = last
+  if (!offset) return length
+
+  if (offset.unit === '%') return (Number(offset.value) / 100) * length
+
+  return Number(offset.value)
 }
 
 function resolveXYFromDirection(dir: string) {
