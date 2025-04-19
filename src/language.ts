@@ -7,10 +7,12 @@
 // - https://unicode.org/reports/tr18/#General_Category_Property
 // - https://tc39.es/ecma262/multipage/text-processing.html#table-unicode-script-values
 
-import createEmojiRegex from 'emoji-regex'
+import createEmojiRegex from 'emoji-regex-xs'
 
-// Remove the "g" flag
-const emojiRegex = new RegExp(createEmojiRegex(), '')
+const originalPattern = createEmojiRegex()
+
+// Remove the "g" flag by rebuilding the pattern from source
+const emojiRegex = new RegExp(originalPattern.source, 'u')
 
 // Supported languages. The order matters.
 // Usually, this is only for "special cases" like CJKV languages as latin

@@ -107,7 +107,7 @@
     "css-box-shadow": "1.0.0-3",
     "css-gradient-parser": "^0.0.16",
     "css-to-react-native": "^3.0.0",
-    "emoji-regex": "^10.2.1",
+    "emoji-regex-xs": "^1.0.0",
     "escape-html": "^1.0.3",
     "linebreak": "^1.1.0",
     "parse-css-color": "^0.2.1",
