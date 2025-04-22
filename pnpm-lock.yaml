@@ -24,8 +24,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       emoji-regex-xs:
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^2.0.1
+        version: 2.0.1
       escape-html:
         specifier: ^1.0.3
         version: 1.0.3
@@ -4441,8 +4441,9 @@ packages:
     engines: {node: '>=12'}
     dev: true
 
-  /emoji-regex-xs@1.0.0:
-    resolution: {integrity: sha512-LRlerrMYoIDrT6jgpeZ2YYl/L8EulRTt5hQcYjy5AInh7HWXKimpqx68aknBFpGL2+/IcogTcaydJEgaTmOpDg==}
+  /emoji-regex-xs@2.0.1:
+    resolution: {integrity: sha512-1QFuh8l7LqUcKe24LsPUNzjrzJQ7pgRwp1QMcZ5MX6mFplk2zQ08NVCM84++1cveaUUYtcCYHmeFEuNg16sU4g==}
+    engines: {node: '>=10.0.0'}
     dev: false
 
   /emoji-regex@8.0.0:
