@@ -9,10 +9,7 @@
 
 import createEmojiRegex from 'emoji-regex-xs'
 
-const originalPattern = createEmojiRegex()
-
-// Remove the "g" flag by rebuilding the pattern from source
-const emojiRegex = new RegExp(originalPattern.source, 'u')
+const emojiRegex = new RegExp(createEmojiRegex(), 'u')
 
 // Supported languages. The order matters.
 // Usually, this is only for "special cases" like CJKV languages as latin
