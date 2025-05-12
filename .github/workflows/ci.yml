@@ -42,6 +42,11 @@ jobs:
         os: [ubuntu-latest]
         node: [18, 20]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write # to be able to publish a GitHub release
+      issues: write # to be able to comment on released issues
+      pull-requests: write # to be able to comment on released pull requests
+      id-token: write # to enable use of OIDC for npm provenance
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -56,8 +61,9 @@ jobs:
       - run: pnpm build
       - run: pnpm test
       - name: Maybe Release
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 18 && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20 && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
-        run: pnpm dlx semantic-release@19.0.5
+          NPM_CONFIG_PROVENANCE: 'true'
+        run: pnpm dlx semantic-release@24.2.3
