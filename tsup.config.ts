@@ -17,7 +17,7 @@ export default defineConfig({
   },
   minify: process.env.NODE_ENV !== 'development',
   format: ['esm', 'cjs'],
-  noExternal: ['twrnc', 'emoji-regex'],
+  noExternal: ['twrnc', 'emoji-regex-xs'],
   esbuildOptions(options) {
     if (process.env.WASM) {
       options.outExtension = {
