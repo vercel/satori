@@ -219,12 +219,12 @@ export default async function* buildTextNodes(
         currentLineHeight = engine.height(word)
       }
 
-      const allowedToPutAtBeginning = ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
+      // const allowedToPutAtBeginning = ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
       const allowedToJustify = !currentWidth
 
       const willWrap =
         i &&
-        allowedToPutAtBeginning &&
+        // allowedToPutAtBeginning &&
         // When determining whether a line break is necessary, the width of the
         // trailing spaces is not included in the calculation, as the end boundary
         // can be closely adjacent to the last non-space character.
