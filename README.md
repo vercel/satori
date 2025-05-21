@@ -429,6 +429,20 @@ const svg = await satori(
 )
 ```
 
+### Pixel Grid Rounding
+
+Set `pointScaleFactor` to control how layout values are rounded to the pixel grid. This parameter is passed directly to [Yoga’s `pointScaleFactor`](https://www.yogalayout.dev/docs/getting-started/configuring-yoga#point-scale-factor) and improves rendering precision on high-DPI displays.
+
+```jsx
+const svg = await satori(
+  <div style={{ color: 'black' }}>hello, world</div>,
+  {
+    ...,
+    pointScaleFactor: 2,
+  },
+)
+```
+
 ### Debug
 
 To draw the bounding box for debugging, you can pass `debug: true` as an option:
