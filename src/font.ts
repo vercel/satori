@@ -36,8 +36,9 @@ export type FontEngine = {
       top: number
       left: number
       letterSpacing: number
-    }
-  ) => string
+    },
+    getWidth: (s: string) => number
+  ) => { path: string; translateX: number; translateY: number }[]
 }
 
 function compareFont(
@@ -88,6 +89,11 @@ function compareFont(
 }
 
 export default class FontLoader {
+  // TODO : remove cacheTextPaths to prevent overflow
+  static cacheTextPaths = new Map<
+    string,
+    { width: number; path: string; left: number; top: number }
+  >()
   defaultFont: opentype.Font
   fonts = new Map<string, [opentype.Font, Weight?, FontStyle?][]>()
   constructor(fontOptions: FontOptions[]) {
@@ -383,9 +389,10 @@ export default class FontLoader {
           top: number
           left: number
           letterSpacing: number
-        }
+        },
+        getWidth: (s: string) => number
       ) => {
-        return this.getSVG(resolveFont, s, style)
+        return this.getSVG(resolveFont, s, style, getWidth)
       },
     }
 
@@ -471,7 +478,6 @@ export default class FontLoader {
       unpatch()
     }
   }
-
   private getSVG(
     resolveFont: (word: string, fallback?: boolean) => opentype.Font,
     content: string,
@@ -485,20 +491,63 @@ export default class FontLoader {
       top: number
       left: number
       letterSpacing: number
-    }
+    },
+    getWidth: (s: string) => number
   ) {
     const font = resolveFont(content)
     const unpatch = this.patchFontFallbackResolver(font, resolveFont)
 
     try {
-      if (fontSize === 0) {
-        return ''
-      }
-      return font
-        .getPath(content.replace(/\n/g, ''), left, top, fontSize, {
-          letterSpacing: letterSpacing / fontSize,
+      if (fontSize === 0) return []
+      const cache = FontLoader.cacheTextPaths
+      const paths: { path: string; translateX: number; translateY: number }[] =
+        []
+      const spacingRatio = letterSpacing / fontSize
+
+      let x = left
+      const y = top
+      const text = content.replace(/\n/g, '')
+      const textLen = text.length
+
+      for (let i = 0; i < textLen; ++i) {
+        const char = text[i]
+        const cacheKey = `${char}_${fontSize}_${spacingRatio}`
+        let cached = cache.get(cacheKey)
+        let path: string
+        let width: number
+        let dx = 0
+        let dy = 0
+
+        if (cached) {
+          ;({ path, width } = cached)
+          dx = x - cached.left
+          dy = y - cached.top
+        } else {
+          const glyphPath = font.getPath(char, x, y, fontSize, {
+            letterSpacing: spacingRatio,
+          })
+
+          path = glyphPath.toPathData(1)
+          width = getWidth(char)
+
+          cache.set(cacheKey, {
+            path,
+            width,
+            left: x,
+            top: y,
+          })
+        }
+
+        paths.push({
+          path,
+          translateX: dx,
+          translateY: dy,
         })
-        .toPathData(1)
+
+        x += width
+      }
+
+      return paths
     } finally {
       unpatch()
     }
