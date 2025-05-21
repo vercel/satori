@@ -119,4 +119,52 @@ describe('Basic', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should respect points scale factor', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          backgroundColor: 'white',
+          height: '300px',
+          width: '100%',
+        }}
+      >
+        <div
+          style={{
+            top: '0.666px',
+            position: 'absolute',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <div
+            style={{
+              width: '100px',
+              height: '100px',
+              backgroundColor: 'red',
+              borderWidth: '0.5px',
+              borderColor: 'blue',
+            }}
+          ></div>
+          <div
+            style={{
+              width: '100px',
+              height: '100px',
+              backgroundColor: 'red',
+              borderWidth: '0.5px',
+              borderColor: 'blue',
+            }}
+          ></div>
+        </div>
+      </div>,
+      {
+        width: 100,
+        height: 300,
+        fonts,
+        pointScaleFactor: 2,
+      }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })
