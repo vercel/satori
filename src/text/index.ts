@@ -490,7 +490,8 @@ export default async function* buildTextNodes(
   }
 
   let decorationShape = ''
-  let mergedPath = ''
+  let mergedPath: { path: string; translateX: number; translateY: number }[] =
+    []
   let extra = ''
   let skippedLine = -1
   let decorationLines: Record<number, null | number[]> = {}
@@ -505,7 +506,9 @@ export default async function* buildTextNodes(
     if (!layout) continue
 
     let text = texts[i]
-    let path: string | null = null
+    let paths:
+      | { path: string; translateX: number; translateY: number }[]
+      | null = null
     let isLastDisplayedBeforeEllipsis = false
 
     const image = graphemeImages ? graphemeImages[text] : null
@@ -660,13 +663,17 @@ export default async function* buildTextNodes(
         wordBuffer === null ? leftOffset : bufferedOffset
       const finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
 
-      path = engine.getSVG(finalizedSegment.replace(/(\t)+/g, ''), {
-        fontSize,
-        left: left + finalizedLeftOffset,
-        // Since we need to pass the baseline position, add the ascender to the top.
-        top: top + topOffset + baselineOfWord + baselineDelta,
-        letterSpacing,
-      })
+      paths = engine.getSVG(
+        finalizedSegment.replace(/(\t)+/g, ''),
+        {
+          fontSize,
+          left: left + finalizedLeftOffset,
+          // Since we need to pass the baseline position, add the ascender to the top.
+          top: top + topOffset + baselineOfWord + baselineDelta,
+          letterSpacing,
+        },
+        measureGrapheme
+      )
 
       wordBuffer = null
 
@@ -722,8 +729,8 @@ export default async function* buildTextNodes(
       }
     }
 
-    if (path !== null) {
-      mergedPath += path + ' '
+    if (paths !== null) {
+      Array.prototype.push.apply(mergedPath, paths)
     } else {
       const [t, shape] = buildText(
         {
@@ -756,37 +763,68 @@ export default async function* buildTextNodes(
 
   // Embed the font as path.
   if (mergedPath) {
-    const p =
-      parentStyle.color !== 'transparent' && opacity !== 0
-        ? buildXMLString('path', {
-            fill: parentStyle.color,
-            d: mergedPath,
-            transform: matrix ? matrix : undefined,
-            opacity: opacity !== 1 ? opacity : undefined,
-            'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-            mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
+    let p = ''
+    const useStroke = inheritedStyle.WebkitTextStrokeWidth
 
-            style: cssFilter ? `filter:${cssFilter}` : undefined,
-            'stroke-width': inheritedStyle.WebkitTextStrokeWidth
-              ? `${inheritedStyle.WebkitTextStrokeWidth}px`
-              : undefined,
-            stroke: inheritedStyle.WebkitTextStrokeWidth
-              ? inheritedStyle.WebkitTextStrokeColor
-              : undefined,
-            'stroke-linejoin': inheritedStyle.WebkitTextStrokeWidth
-              ? 'round'
-              : undefined,
-            'paint-order': inheritedStyle.WebkitTextStrokeWidth
-              ? 'stroke'
-              : undefined,
-          })
-        : ''
+    const strokeWidth = useStroke
+      ? `${inheritedStyle.WebkitTextStrokeWidth}px`
+      : undefined
+    const strokeColor = useStroke
+      ? inheritedStyle.WebkitTextStrokeColor
+      : undefined
+    const strokeJoin = useStroke ? 'round' : undefined
+    const paintOrder = useStroke ? 'stroke' : undefined
 
+    if (
+      parentStyle.color !== 'transparent' &&
+      opacity !== 0 &&
+      mergedPath.length > 0
+    ) {
+      for (let i = 0; i < mergedPath.length; i++) {
+        const { path, translateX, translateY } = mergedPath[i]
+        p += buildXMLString('path', {
+          d: path,
+          transform:
+            translateX || translateY
+              ? `translate(${translateX}, ${translateY})`
+              : undefined,
+        })
+      }
+      p = buildXMLString(
+        'g',
+        {
+          fill: parentStyle.color,
+          transform: matrix ? matrix : undefined,
+          opacity: opacity !== 1 ? opacity : undefined,
+          'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+          mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
+          style: cssFilter ? `filter:${cssFilter}` : undefined,
+          'stroke-width': strokeWidth,
+          stroke: strokeColor,
+          'stroke-linejoin': strokeJoin,
+          'paint-order': paintOrder,
+        },
+        p
+      )
+    }
+
+    // Background clip paths
     if (_inheritedBackgroundClipTextPath) {
-      backgroundClipDef = buildXMLString('path', {
-        d: mergedPath,
-        transform: matrix ? matrix : undefined,
-      })
+      for (let i = 0; i < mergedPath.length; i++) {
+        const { path, translateX, translateY } = mergedPath[i]
+        backgroundClipDef += buildXMLString('path', {
+          d: path,
+          transform: matrix
+            ? applyTranslationToMatrix(
+                matrix ? matrix : undefined,
+                translateX,
+                translateY
+              )
+            : translateX || translateY
+            ? `translate(${translateX}, ${translateY})`
+            : undefined,
+        })
+      }
     }
 
     result +=
@@ -855,4 +893,32 @@ function detectTabs(text: string):
         index: null,
         tabCount: 0,
       }
+}
+
+function applyTranslationToMatrix(
+  matrixStr: string,
+  dx: number,
+  dy: number
+): string {
+  let i = 7 // Skip "matrix("
+  const values = new Float64Array(6)
+  let valueIndex = 0
+  let numStart = i
+  const len = matrixStr.length
+
+  while (i <= len && valueIndex < 6) {
+    const char = matrixStr[i]
+    if (char === ',' || char === ')') {
+      const numStr = matrixStr.slice(numStart, i).trim()
+      values[valueIndex++] = +numStr
+      numStart = i + 1
+    }
+    i++
+  }
+
+  const [a, b, c, d, e, f] = values
+  const newE = a * dx + c * dy + e
+  const newF = b * dx + d * dy + f
+
+  return `matrix(${a},${b},${c},${d},${newE},${newF})`
 }
