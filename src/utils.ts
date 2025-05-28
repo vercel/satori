@@ -297,8 +297,8 @@ export function splitByBreakOpportunities(
   }
 
   const contentWithoutStartEnd = content
-    .replace(/\[s\]/g, '')
-    .replace(/\[e\]/g, '')
+    .replace(/\[s(?:\]|\s*:\s*\{.*?\}\s*\])/g, '')
+    .replace(/\[e(?:\]|\s*:\e*\{.*?\}\e*\])/g, '')
 
   const breaker = new LineBreaker(contentWithoutStartEnd)
   let last = 0
@@ -356,56 +356,149 @@ export function splitEffects(
 
   return result
 }
-export function addHighlights(
-  originalContent: string,
-  words: string[]
-): string[] {
-  // Find all highlight positions in original content
-  const highlights: { start: number; end?: number }[] = []
-  let cleanIndex = 0
 
-  for (let i = 0; i < originalContent.length; i++) {
-    if (originalContent.slice(i, i + 3) === '[s]') {
-      highlights.push({ start: cleanIndex })
-      i += 2
-    } else if (originalContent.slice(i, i + 3) === '[e]') {
-      highlights[highlights.length - 1].end = cleanIndex - 1
-      i += 2
-    } else {
-      cleanIndex++
+export function getHighlightedOptions(
+  originalContent: string
+): { start: number; end: number; options: Record<string, any> }[] {
+  type Highlight = { start: number; end: number; options: Record<string, any> }
+  const result: Highlight[] = []
+  const stack: { start: number; options: Record<string, any> }[] = []
+
+  let i = 0 // position in the original string
+  let visible = 0 // position in the rendered text (tags removed)
+
+  while (i < originalContent.length) {
+    // -----------  [s:{ … }]  --------------------------------------------
+    if (originalContent.startsWith('[s:{', i)) {
+      const close = originalContent.indexOf(']', i)
+      const raw = originalContent.slice(i + 3, close).trim() // after "[s:"
+      let options: Record<string, any> = {}
+
+      try {
+        options = JSON.parse(raw)
+      } catch {
+        /* ignore parse errors */
+      }
+
+      stack.push({ start: visible, options })
+      i = close + 1
+      continue
+    }
+
+    // -----------  [s]  ---------------------------------------------------
+    if (originalContent.startsWith('[s]', i)) {
+      stack.push({ start: visible, options: {} })
+      i += 3
+      continue
+    }
+
+    if (originalContent.startsWith('[e:{', i)) {
+      const close = originalContent.indexOf(']', i)
+      const raw = originalContent.slice(i + 3, close).trim() // after "[s:"
+      let options: Record<string, any> = {}
+
+      try {
+        options = JSON.parse(raw)
+      } catch {
+        /* ignore parse errors */
+      }
+      if (stack.length) {
+        const index = stack.findIndex((e) => e.options.id == options['id'])
+        const value = stack[index]
+        if (value) {
+          stack.splice(index, 1)
+          result.push({
+            start: value.start,
+            end: visible,
+            options: value.options,
+          })
+        } else {
+          const shifted = stack.shift()
+          result.push({
+            start: shifted.start,
+            end: visible,
+            options: shifted.options,
+          })
+        }
+      }
+
+      i = close + 1
+      continue
+    }
+
+    // -----------  [e]  ---------------------------------------------------
+    if (originalContent.startsWith('[e]', i)) {
+      if (stack.length) {
+        const value = stack.shift()
+        result.push({
+          start: value.start,
+          end: visible,
+          options: value.options,
+        })
+      }
+      i += 3
+      continue
+    }
+
+    // -----------  normal character  --------------------------------------
+    visible++
+    i++
+  }
+
+  // Return highlights ordered by their starting index
+  return result.sort((a, b) => a.start - b.start)
+}
+
+/**
+ * Converts character–based highlight ranges to a map whose keys are `words`
+ * indices and whose values are the corresponding `options`.
+ *
+ * * If the word touched by `start` **or** the word touched by `end` is a blank
+ *   token (`words[i].trim() === ''`) that particular index is dropped.
+ * * Later items in `highlights` win whenever two ranges overlap.
+ * * Ranges whose `options` object is empty (`{}`) are ignored.
+ */
+export function buildHighlightMap(
+  highlights: { start: number; end: number; options: Record<string, any> }[],
+  words: string[]
+): Record<number, Record<string, unknown>> {
+  /* ---------- 1 . word-start lookup table (prefix-sum) ---------- */
+  const prefix: number[] = [0]
+  for (let i = 0; i < words.length; i++) {
+    prefix[i + 1] = prefix[i] + words[i].length
+  }
+
+  // binary-search “character → word” (O(log n))
+  const charToWord = (ch: number): number => {
+    let lo = 0,
+      hi = words.length - 1
+    while (lo <= hi) {
+      const mid = (lo + hi) >>> 1
+      if (ch < prefix[mid]) hi = mid - 1
+      else if (ch >= prefix[mid + 1]) lo = mid + 1
+      else return mid
+    }
+    throw new RangeError(`Character index ${ch} is outside the text`)
+  }
+
+  /* ---------- 2 . iterate ranges, later ones overwrite ---------- */
+  const result: Record<number, Record<string, unknown>> = {}
+
+  for (const { start, end, options } of highlights) {
+    // ignore ranges whose option bag is empty
+    const first = charToWord(start)
+    const last = charToWord(end) // `end` is *inclusive*
+
+    // build [first … last] and trim blank tokens at both ends
+    let from = first
+    let to = last
+    if (words[from].trim() === '') from++
+    if (from <= to && words[to].trim() === '') to--
+
+    for (let i = from; i <= to; i++) {
+      result[i] = options // later ranges overwrite earlier ones
     }
   }
 
-  let currentPos = 0
-  const mappedWords = words.map((word) => {
-    const wordStart = currentPos
-    const trimmedWord = word.trim()
-    const wordEnd = wordStart + trimmedWord.length - 1
-    let result = word
-
-    // Check if this word intersects with any highlight
-    for (const highlight of highlights) {
-      if (wordStart <= highlight.end && wordEnd >= highlight.start) {
-        if (wordStart === highlight.start) {
-          result = `[s]${word}`
-        } else if (wordStart < highlight.start && wordEnd >= highlight.start) {
-          // Handle case where highlight starts within the word
-          const preHighlight = word.slice(0, highlight.start - wordStart)
-          const postHighlight = word.slice(highlight.start - wordStart)
-          result = `${preHighlight}[s]${postHighlight}`
-        }
-
-        if (wordEnd === highlight.end) {
-          const before = result.replace(/\s+$/, '')
-          const after = word.match(/\s+$/)?.[0] || ''
-          result = `${before}[e]${after}`
-        }
-      }
-    }
-
-    currentPos += word.length
-    return result
-  })
-
-  return mappedWords
+  return result
 }
