@@ -17,7 +17,7 @@ const playgroundTabs: Tabs = {
     padding: 32
   }}
 >
-  <div style={{ marginTop: 12 }}>{"We have some r[s]eally big customers[e] that are signing up right now that on the old seat model, we'd be signing up for $3 million, $4 million but -- annually, but in the consumption model, you sign them up for $400,000 and then another $500,000 and then you get to a couple of million bucks and you still get to the same spot, you get them more efficiently, more effectively. There's not as many -- not as much [s]hemming[e] and hawing."}</div> </div>
+  <div style={{ marginTop: 12 }}>{\`We have some r[s:{"fill":"#FF0000"}]eally big [s:{"id": "1","fill":"#00FF00"}]customers[e:{"id":"1"}] that are signing[e] up right now that on the old seat model, we'd be signing up for $3 million, $4 million but -- annually, but in the consumption model, you sign them up for $400,000 and then another $500,000 and then you get to a couple of million bucks and you still get to the same spot, you get them more efficiently, more effectively. There's not as many -- not as much [s]hemming[e] and hawing.\`}</div> </div>
 `,
   Vercel: `<div
   style={{

@@ -13,6 +13,7 @@ import {
   isUndefined,
   isString,
   lengthToNumber,
+  buildHighlightMap,
 } from '../utils.js'
 import buildText, { container } from '../builder/text.js'
 import { buildDropShadow } from '../builder/shadow.js'
@@ -21,9 +22,6 @@ import { Locale } from '../language.js'
 import { HorizontalEllipsis, Space, Tab } from './characters.js'
 import { genMeasurer } from './measurer.js'
 import { preprocess } from './processor.js'
-
-const START_HIGHLIGHT = '[s]'
-const END_HIGHLIGHT = '[e]'
 
 const skippedWordWhenFindingMissingFont = new Set([Tab])
 
@@ -72,6 +70,7 @@ export default async function* buildTextNodes(
     shouldCollapseTabsAndSpaces,
     lineLimit,
     blockEllipsis,
+    highlightedOptions,
   } = preprocess(content, parentStyle, locale)
 
   const textContainer = createTextContainerNode(Yoga, textAlign)
@@ -178,7 +177,6 @@ export default async function* buildTextNodes(
     line: number
     lineIndex: number
     isImage: boolean
-    isHighlighted?: boolean
   })[] = []
 
   // With the given container width, compute the text layout.
@@ -201,57 +199,10 @@ export default async function* buildTextNodes(
     // @TODO: Support RTL languages.
     let i = 0
     let prevLineEndingSpacesWidth = 0
-    let isHighlighted = false
-    let endHighlightNext = false
 
     while (i < words.length && lines < lineLimit) {
       let word = words[i]
-
-      if (endHighlightNext) {
-        isHighlighted = false
-        endHighlightNext = false
-      }
-
-      if (!word.startsWith(START_HIGHLIGHT) && word.includes(START_HIGHLIGHT)) {
-        const parts = word.split(START_HIGHLIGHT)
-        parts[1] = `${START_HIGHLIGHT}${parts[1]}`
-
-        words.splice(i, 1, ...parts)
-        continue
-      }
-      if (!word.endsWith(END_HIGHLIGHT) && word.includes(END_HIGHLIGHT)) {
-        const parts = word.split(END_HIGHLIGHT)
-        parts[0] = `${parts[0]}${END_HIGHLIGHT}`
-
-        // super edge case where the space is not included in the highlight
-        // This lone space won't render if it's not included in a word.
-        // So we need to include it in the next word.
-
-        if (parts[1] === ' ' && words[i + 1] && words[i + 1][0] !== ' ') {
-          words[i + 1] = ` ${words[i + 1]}`
-          parts.splice(1, 1)
-        }
-        words.splice(i, 1, ...parts)
-        continue
-      }
-
-      if (word.startsWith(START_HIGHLIGHT)) {
-        word = word.slice(START_HIGHLIGHT.length)
-        isHighlighted = true
-
-        const endsWithEnd = word.endsWith(END_HIGHLIGHT)
-        endHighlightNext = endsWithEnd
-
-        if (endsWithEnd) {
-          word = word.slice(0, -END_HIGHLIGHT.length)
-        }
-      } else if (word.endsWith(END_HIGHLIGHT)) {
-        word = word.slice(0, -END_HIGHLIGHT.length)
-        endHighlightNext = true
-      }
-
       const forceBreak = requiredBreaks[i]
-
       let w = 0
 
       const {
@@ -259,8 +210,8 @@ export default async function* buildTextNodes(
         endingSpacesWidth,
         text: _word,
       } = calc(word, currentWidth)
-      word = _word
 
+      word = _word
       w = originWidth
       const lineEndingSpacesWidth = endingSpacesWidth
 
@@ -365,7 +316,6 @@ export default async function* buildTextNodes(
           line: lines,
           lineIndex,
           isImage: false,
-          isHighlighted,
         })
       } else {
         const _texts = segment(word, 'word')
@@ -390,7 +340,6 @@ export default async function* buildTextNodes(
             line: lines,
             lineIndex,
             isImage: _isImage,
-            isHighlighted,
           })
 
           x += _width
@@ -518,10 +467,14 @@ export default async function* buildTextNodes(
   let wordBuffer: string | null = null
   let bufferedOffset = 0
 
+  const highlightedOptionsMap = buildHighlightMap(highlightedOptions, texts)
+
   for (let i = 0; i < texts.length; i++) {
     // Skip whitespace and empty characters.
     const layout = wordPositionInLayout[i]
     const nextLayout = wordPositionInLayout[i + 1]
+    const currentHighlightedOptions = highlightedOptionsMap[i]
+    const nextHighlightedOptions = highlightedOptionsMap[i + 1]
 
     if (!layout) continue
 
@@ -664,10 +617,10 @@ export default async function* buildTextNodes(
         !text.includes(Tab) &&
         !wordSeparators.includes(text) &&
         texts[i + 1] &&
-        !layout.isHighlighted &&
+        !currentHighlightedOptions &&
         nextLayout &&
         !nextLayout.isImage &&
-        !nextLayout.isHighlighted &&
+        !nextHighlightedOptions &&
         topOffset === nextLayout.y &&
         !isLastDisplayedBeforeEllipsis
       ) {
@@ -693,7 +646,7 @@ export default async function* buildTextNodes(
 
       wordBuffer = null
 
-      if (layout.isHighlighted) {
+      if (currentHighlightedOptions) {
         const padding = 1
         background +=
           // Glyph
@@ -705,6 +658,7 @@ export default async function* buildTextNodes(
             fill: '#e5e5ff',
             transform: matrix ? matrix : undefined,
             'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+            ...currentHighlightedOptions,
           })
       }
 

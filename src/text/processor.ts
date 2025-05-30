@@ -1,9 +1,9 @@
 import { Locale } from '../language.js'
 import {
-  addHighlights,
   isNumber,
   segment,
   splitByBreakOpportunities,
+  getHighlightedOptions,
 } from '../utils.js'
 import { HorizontalEllipsis, Space } from './characters.js'
 import { SerializedStyle } from '../handler/expand.js'
@@ -21,6 +21,11 @@ export function preprocess(
   shouldCollapseTabsAndSpaces: boolean
   lineLimit: number
   blockEllipsis: string
+  highlightedOptions?: {
+    start: number
+    end: number
+    options: Record<string, any>
+  }[]
 } {
   const { textTransform, whiteSpace, wordBreak } = style
 
@@ -38,6 +43,7 @@ export function preprocess(
   )
 
   const [lineLimit, blockEllipsis] = processTextOverflow(style, allowSoftWrap)
+  const highlightedOptions = getHighlightedOptions(content)
 
   return {
     words,
@@ -48,6 +54,7 @@ export function preprocess(
     shouldCollapseTabsAndSpaces,
     lineLimit,
     blockEllipsis,
+    highlightedOptions,
   }
 }
 
@@ -121,15 +128,12 @@ function processWordBreak(
   wordBreak: string
 ): { words: string[]; requiredBreaks: boolean[]; allowBreakWord: boolean } {
   const allowBreakWord = ['break-all', 'break-word'].includes(wordBreak)
-
   const { words, requiredBreaks } = splitByBreakOpportunities(
     content,
     wordBreak
   )
 
-  const newWords = addHighlights(content, words, wordBreak)
-
-  return { words: newWords, requiredBreaks, allowBreakWord }
+  return { words, requiredBreaks, allowBreakWord }
 }
 
 function processWhiteSpace(
