@@ -273,8 +273,8 @@ export default async function* buildTextNodes(
         lines++
         height += currentLineHeight
         currentWidth = w
-        currentLineHeight = w ? engine.height(word) : 0
-        currentBaselineOffset = w ? engine.baseline(word) : 0
+        currentLineHeight = w ? Math.round(engine.height(word)) : 0
+        currentBaselineOffset = w ? Math.round(engine.baseline(word)) : 0
         lineSegmentNumber.push(1)
         lineIndex = -1
 
@@ -287,11 +287,11 @@ export default async function* buildTextNodes(
       } else {
         // It fits into the current line.
         currentWidth += w
-        const glyphHeight = engine.height(word)
+        const glyphHeight = Math.round(engine.height(word))
         if (glyphHeight > currentLineHeight) {
           // Use the baseline of the highest segment as the baseline of the line.
           currentLineHeight = glyphHeight
-          currentBaselineOffset = engine.baseline(word)
+          currentBaselineOffset = Math.round(engine.baseline(word))
         }
         if (allowedToJustify) {
           lineSegmentNumber[lineSegmentNumber.length - 1]++
@@ -539,6 +539,8 @@ export default async function* buildTextNodes(
           extendedWidth = true
         }
       }
+
+      leftOffset = Math.round(leftOffset)
     }
 
     const baselineOfLine = baselines[line]
