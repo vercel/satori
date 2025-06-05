@@ -760,14 +760,14 @@ export default async function* buildTextNodes(
   if (mergedPath) {
     const p =
       parentStyle.color !== 'transparent' && opacity !== 0
-        ? buildXMLString('path', {
+        ? `<g ${overflowMaskId ? `mask="url(#${overflowMaskId})"` : ''} ${
+            clipPathId ? `clip-path="url(#${clipPathId})"` : ''
+          }>` +
+          buildXMLString('path', {
             fill: parentStyle.color,
             d: mergedPath,
             transform: matrix ? matrix : undefined,
             opacity: opacity !== 1 ? opacity : undefined,
-            'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-            mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
-
             style: cssFilter ? `filter:${cssFilter}` : undefined,
             'stroke-width': inheritedStyle.WebkitTextStrokeWidth
               ? `${inheritedStyle.WebkitTextStrokeWidth}px`
@@ -781,7 +781,8 @@ export default async function* buildTextNodes(
             'paint-order': inheritedStyle.WebkitTextStrokeWidth
               ? 'stroke'
               : undefined,
-          })
+          }) +
+          '</g>'
         : ''
 
     if (_inheritedBackgroundClipTextPath) {

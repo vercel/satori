@@ -114,6 +114,27 @@ describe('transform', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+    it('should rotate text with overflow', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            transform: 'rotate(40deg)',
+            width: '200px',
+            height: '20px',
+            overflow: 'hidden',
+            backgroundColor: 'red',
+          }}
+        >
+          Hello, World Hello, World
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 
   describe('scale', () => {
