@@ -59,6 +59,13 @@ function handleSpecialCase(
   value: string | number,
   currentColor: string
 ) {
+  if (name === 'zIndex') {
+    console.warn(
+      'z-index is not supported in SVG. Elements are painted in the order they appear in the document.'
+    )
+    return { [name]: value }
+  }
+
   if (name === 'lineHeight') {
     return { lineHeight: purify(name, value) }
   }
