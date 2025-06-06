@@ -146,4 +146,38 @@ describe('Text Align', () => {
     )
     expect(toImage(svg, 200)).toMatchImageSnapshot()
   })
+  it('Should work correctly when `text-align: justify`', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 20,
+          fontWeight: 600,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            maxWidth: '190px',
+            textAlign: 'justify',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#ff6c2f',
+            color: 'white',
+            letterSpacing: '1px',
+          }}
+        >
+          God kisses the finite in his love and man the infinite
+        </div>
+      </div>,
+      { width: 200, height: 200, fonts, embedFont: true }
+    )
+    expect(toImage(svg, 200)).toMatchImageSnapshot()
+  })
 })

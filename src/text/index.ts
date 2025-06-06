@@ -220,7 +220,7 @@ export default async function* buildTextNodes(
       }
 
       const allowedToPutAtBeginning = ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
-      const allowedToJustify = !currentWidth
+      const allowedToJustify = textAlign === 'justify'
 
       const willWrap =
         i &&
