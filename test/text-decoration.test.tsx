@@ -187,4 +187,45 @@ describe('Text Decoration', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('Should work correctly when `text-decoration-style: double`', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 20,
+          fontWeight: 600,
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: '#91a8d0',
+            textDecoration: 'underline double',
+            color: 'white',
+          }}
+        >
+          It doesn’t exist, it never has. I’m nostalgic for a place that never
+          existed.
+        </div>
+        <div
+          style={{
+            backgroundColor: '#000',
+            textDecoration: 'line-through double',
+            color: 'white',
+          }}
+        >
+          It doesn’t exist, it never has. I’m nostalgic for a place that never
+          existed.
+        </div>
+      </div>,
+      { width: 200, height: 200, fonts }
+    )
+    expect(toImage(svg, 200)).toMatchImageSnapshot()
+  })
 })

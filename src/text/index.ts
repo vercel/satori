@@ -219,7 +219,7 @@ export default async function* buildTextNodes(
         currentLineHeight = engine.height(word)
       }
 
-      const allowedToJustify = !currentWidth
+      const allowedToJustify = textAlign === 'justify'
 
       const willWrap =
         i &&
@@ -271,8 +271,8 @@ export default async function* buildTextNodes(
         lines++
         height += currentLineHeight
         currentWidth = w
-        currentLineHeight = w ? engine.height(word) : 0
-        currentBaselineOffset = w ? engine.baseline(word) : 0
+        currentLineHeight = w ? Math.round(engine.height(word)) : 0
+        currentBaselineOffset = w ? Math.round(engine.baseline(word)) : 0
         lineSegmentNumber.push(1)
         lineIndex = -1
 
@@ -285,11 +285,11 @@ export default async function* buildTextNodes(
       } else {
         // It fits into the current line.
         currentWidth += w
-        const glyphHeight = engine.height(word)
+        const glyphHeight = Math.round(engine.height(word))
         if (glyphHeight > currentLineHeight) {
           // Use the baseline of the highest segment as the baseline of the line.
           currentLineHeight = glyphHeight
-          currentBaselineOffset = engine.baseline(word)
+          currentBaselineOffset = Math.round(engine.baseline(word))
         }
         if (allowedToJustify) {
           lineSegmentNumber[lineSegmentNumber.length - 1]++
@@ -537,6 +537,8 @@ export default async function* buildTextNodes(
           extendedWidth = true
         }
       }
+
+      leftOffset = Math.round(leftOffset)
     }
 
     const baselineOfLine = baselines[line]
@@ -756,14 +758,14 @@ export default async function* buildTextNodes(
   if (mergedPath) {
     const p =
       parentStyle.color !== 'transparent' && opacity !== 0
-        ? buildXMLString('path', {
+        ? `<g ${overflowMaskId ? `mask="url(#${overflowMaskId})"` : ''} ${
+            clipPathId ? `clip-path="url(#${clipPathId})"` : ''
+          }>` +
+          buildXMLString('path', {
             fill: parentStyle.color,
             d: mergedPath,
             transform: matrix ? matrix : undefined,
             opacity: opacity !== 1 ? opacity : undefined,
-            'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-            mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
-
             style: cssFilter ? `filter:${cssFilter}` : undefined,
             'stroke-width': inheritedStyle.WebkitTextStrokeWidth
               ? `${inheritedStyle.WebkitTextStrokeWidth}px`
@@ -777,7 +779,8 @@ export default async function* buildTextNodes(
             'paint-order': inheritedStyle.WebkitTextStrokeWidth
               ? 'stroke'
               : undefined,
-          })
+          }) +
+          '</g>'
         : ''
 
     if (_inheritedBackgroundClipTextPath) {
