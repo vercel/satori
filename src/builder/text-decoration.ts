@@ -45,6 +45,23 @@ export default function buildDecoration(
       ? `0 ${height * 2}`
       : undefined
 
+  // https://www.w3.org/TR/css-backgrounds-3/#valdef-line-style-double
+  const extraLine =
+    textDecorationStyle === 'double'
+      ? buildXMLString('line', {
+          x1: left,
+          y1: y + height + 1,
+          x2: left + width,
+          y2: y + height + 1,
+          stroke: textDecorationColor || color,
+          'stroke-width': height,
+          'stroke-dasharray': dasharray,
+          'stroke-linecap':
+            textDecorationStyle === 'dotted' ? 'round' : 'square',
+          transform: matrix,
+        })
+      : ''
+
   return (
     (clipPathId ? `<g clip-path="url(#${clipPathId})">` : '') +
     buildXMLString('line', {
@@ -58,6 +75,7 @@ export default function buildDecoration(
       'stroke-linecap': textDecorationStyle === 'dotted' ? 'round' : 'square',
       transform: matrix,
     }) +
+    extraLine +
     (clipPathId ? '</g>' : '')
   )
 }
