@@ -98,6 +98,55 @@ describe('Basic', () => {
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it('should support custom components', async () => {
+    function MyComponent() {
+      return <h1 style={{ fontSize: 16 }}>Hello from My Component</h1>
+    }
+
+    const svg = await satori(
+      <div
+        style={{
+          backgroundColor: '#ff0',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+        }}
+      >
+        <MyComponent />
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+
+    async function MyAsyncComponent() {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      return <h1 style={{ fontSize: 16 }}>Hello from My Async Component</h1>
+    }
+    const svg2 = await satori(
+      <div
+        style={{
+          backgroundColor: '#ff0',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+        }}
+      >
+        {/* @ts-ignore */}
+        <MyAsyncComponent />
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg2, 100)).toMatchImageSnapshot()
+  })
+
   it('should combine textNodes correctly', async () => {
     const svg = await satori(
       <div

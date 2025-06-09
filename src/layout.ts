@@ -94,7 +94,7 @@ export default async function* layout(
       // stateless, and not relying on any React APIs such as hooks or suspense.
       // So we can safely evaluate it to render. Otherwise, an error will be
       // thrown by React.
-      iter = layout((element.type as Function)(element.props), context)
+      iter = layout(await (element.type as Function)(element.props), context)
       yield (await iter.next()).value as { word: string; locale?: string }[]
     }
 
