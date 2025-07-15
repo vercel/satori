@@ -4,9 +4,7 @@
  * also returns the inherited style for children of the element.
  */
 
-import type { Node as YogaNode } from 'yoga-wasm-web'
-
-import getYoga from '../yoga/index.js'
+import Yoga, { type Node as YogaNode } from 'yoga-layout'
 import presets from './presets.js'
 import inheritable from './inheritable.js'
 import expand, { SerializedStyle } from './expand.js'
@@ -22,8 +20,6 @@ export default async function compute(
   definedStyle: Record<string, string | number>,
   props: Record<string, any>
 ): Promise<[SerializedStyle, SerializedStyle]> {
-  const Yoga = await getYoga()
-
   // Extend the default style with defined and inherited styles.
   const style: SerializedStyle = {
     ...inheritedStyle,

@@ -112,7 +112,7 @@
     "linebreak": "^1.1.0",
     "parse-css-color": "^0.2.1",
     "postcss-value-parser": "^4.2.0",
-    "yoga-wasm-web": "^0.3.3"
+    "yoga-layout": "^3.2.1"
   },
   "packageManager": "pnpm@8.7.0",
   "engines": {

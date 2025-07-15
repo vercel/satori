@@ -5,9 +5,6 @@
     "moduleResolution": "node16",
     "esModuleInterop": true,
     "lib": ["esnext", "dom"],
-    "baseUrl": ".",
-    "paths": {
-      "@yoga": ["src/yoga/yoga-prebuilt.wasm.ts"]
-    }
+    "baseUrl": "."
   }
 }

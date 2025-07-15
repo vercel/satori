@@ -3,9 +3,7 @@
  */
 
 import type { ReactNode } from 'react'
-import type { Node as YogaNode } from 'yoga-wasm-web'
-
-import getYoga from './yoga/index.js'
+import Yoga, { type Node as YogaNode } from 'yoga-layout'
 import {
   isReactElement,
   isClass,
@@ -57,7 +55,6 @@ export default async function* layout(
   string,
   [number, number]
 > {
-  const Yoga = await getYoga()
   const {
     id,
     inheritedStyle,

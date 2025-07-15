@@ -7,10 +7,7 @@
     "target": "ES2021",
     "lib": ["esnext", "dom"],
     "baseUrl": ".",
-    "skipLibCheck": true,
-    "paths": {
-      "@yoga": ["src/yoga/yoga-prebuilt.ts"]
-    }
+    "skipLibCheck": true
   },
   "include": ["src/*", "test/*"]
 }

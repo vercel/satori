@@ -1,9 +1,7 @@
 import { it, describe, expect } from 'vitest'
 
-import { initYogaWasm, toImage } from './utils.js'
+import { toImage } from './utils.js'
 import satori from '../src/index.js'
-
-initYogaWasm()
 
 const items = [
   'red',
