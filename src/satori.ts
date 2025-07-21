@@ -2,16 +2,14 @@ import type { ReactNode } from 'react'
 import type { TwConfig } from 'twrnc'
 import type { SatoriNode } from './layout.js'
 
-import getYoga, { init } from './yoga/index.js'
 import layout from './layout.js'
 import FontLoader, { FontOptions } from './font.js'
 import svg from './builder/svg.js'
-import { segment } from './utils.js'
+import { getYoga, segment, TYoga } from './utils.js'
 import { detectLanguageCode, LangCode, Locale } from './language.js'
 import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
 import { cache, inflightRequests } from './handler/image.js'
-import type { Yoga } from 'yoga-wasm-web'
 
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
@@ -41,8 +39,6 @@ export type SatoriOptions = (
   pointScaleFactor?: number
 }
 export type { SatoriNode }
-
-export { init }
 
 export default async function satori(
   element: ReactNode,
@@ -197,7 +193,7 @@ export default async function satori(
 }
 
 function getRootNode(
-  Yoga: Yoga,
+  Yoga: TYoga,
   pointScaleFactor?: SatoriOptions['pointScaleFactor']
 ) {
   if (!pointScaleFactor) {

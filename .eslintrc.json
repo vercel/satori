@@ -25,13 +25,6 @@
     }
   ],
   "parser": "@typescript-eslint/parser",
-  "parserOptions": {
-    "project": [
-      "./tsconfig.json",
-      "./playground/tsconfig.json",
-      "./tsconfig.wasm.json"
-    ]
-  },
   "plugins": ["react", "react-hooks", "@typescript-eslint"],
   "rules": {
     "no-inner-declarations": 0,

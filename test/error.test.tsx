@@ -24,7 +24,7 @@ describe('Error', () => {
       error = err
     }
     expect(error?.message).toBe(
-      'Expected <div> to have explicit "display: flex" or "display: none" if it has more than one child node.'
+      'Expected <div> to have explicit "display: flex", "display: contents", or "display: none" if it has more than one child node.'
     )
   })
 
@@ -40,7 +40,7 @@ describe('Error', () => {
       }
     )
     expect(result).rejects.toThrowError(
-      `Invalid value for CSS property "display". Allowed values: "flex" | "block" | "none" | "-webkit-box". Received: "inline-block".`
+      `Invalid value for CSS property "display". Allowed values: "flex" | "block" | "contents" | "none" | "-webkit-box". Received: "inline-block".`
     )
   })
 
@@ -55,7 +55,7 @@ describe('Error', () => {
       }
     )
     expect(result).rejects.toThrowError(
-      `Invalid value for CSS property "position". Allowed values: "absolute" | "relative". Received: "fixed".`
+      `Invalid value for CSS property "position". Allowed values: "absolute" | "relative" | "static". Received: "fixed".`
     )
   })
 

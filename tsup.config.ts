@@ -19,12 +19,7 @@ export default defineConfig({
   format: ['esm', 'cjs'],
   noExternal: ['twrnc', 'emoji-regex-xs'],
   esbuildOptions(options) {
-    if (process.env.WASM) {
-      options.outExtension = {
-        '.js': `.wasm.${options.format === 'cjs' ? 'cjs' : 'js'}`,
-      }
-    }
-    options.tsconfig = process.env.WASM ? 'tsconfig.wasm.json' : 'tsconfig.json'
+    options.tsconfig = 'tsconfig.json'
     options.legalComments = 'external'
   },
   esbuildPlugins: [

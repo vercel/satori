@@ -118,13 +118,13 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 <tr>
 <td colspan="2"><code>display</code></td>
-<td><code>none</code> and <code>flex</code>, default to <code>flex</code></td>
+<td><code>flex</code>, <code>contents</code>, <code>none</code>, default to <code>flex</code></td>
 <td></td>
 </tr>
 
 <tr>
 <td colspan="2"><code>position</code></td>
-<td><code>relative</code> and <code>absolute</code>, default to <code>relative</code></td>
+<td><code>relative</code>, <code>static</code> and <code>absolute</code>, default to <code>relative</code></td>
 <td></td>
 </tr>
 
@@ -235,6 +235,12 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 </tr>
 
 <tr>
+<td colspan="2"><code>boxSizing</code></td>
+<td>Supported</td>
+<td></td>
+</tr>
+
+<tr>
 <td colspan="2"><code>boxShadow</code></td>
 <td>Supported</td>
 <td></td>
@@ -289,9 +295,8 @@ Note:
 
 1. Three-dimensional transforms are not supported.
 2. There is no `z-index` support in SVG. Elements that come later in the document will be painted on top.
-3. `box-sizing` is set to `border-box` for all elements.
-4. `calc` isn't supported.
-5. `currentcolor` support is only available for the `color` property.
+3. `calc` isn't supported.
+4. `currentColor` support is only available for the `color` property.
 
 ### Language and Typography
 
@@ -389,29 +394,9 @@ await satori(
 )
 ```
 
-### Runtime and WASM
+### Runtime Support
 
 Satori can be used in browser, Node.js (>= 16), and Web Workers.
-
-By default, Satori depends on asm.js for the browser runtime, and native module in Node.js. However, you can optionally load WASM instead by importing `satori/wasm` and provide the initialized WASM module instance of Yoga to Satori:
-
-```js
-import satori, { init } from 'satori/wasm'
-import initYoga from 'yoga-wasm-web'
-
-const yoga = initYoga(await fetch('/yoga.wasm').then(res => res.arrayBuffer()))
-init(yoga)
-
-await satori(...)
-```
-
-When running in the browser or in the Node.js environment, WASM files need to be hosted and fetched before initializing. asm.js can be bundled together with the lib. In this case WASM should be faster.
-
-When running on the Node.js server, native modules should be faster. However there are Node.js environments where native modules are not supported (e.g. StackBlitz's WebContainers), or other JS runtimes that support WASM (e.g. Vercel's Edge Runtime, Cloudflare Workers, or Deno).
-
-Additionally, there are other difference between asm.js, native and WASM, such as security and compatibility.
-
-Overall there are many trade-offs between each choice, and it's better to pick the one that works the best for your use case.
 
 ### Font Embedding
 

@@ -3,8 +3,6 @@
  * supported inline node is text. All other nodes are using block layout.
  */
 import type { LayoutContext } from '../layout.js'
-import type { Yoga } from 'yoga-wasm-web'
-import getYoga from '../yoga/index.js'
 import {
   v,
   segment,
@@ -13,6 +11,9 @@ import {
   isUndefined,
   isString,
   lengthToNumber,
+  getYoga,
+  TYoga,
+  YogaNode,
 } from '../utils.js'
 import buildText, { container } from '../builder/text.js'
 import { buildDropShadow } from '../builder/shadow.js'
@@ -810,10 +811,7 @@ export default async function* buildTextNodes(
   return result
 }
 
-function createTextContainerNode(
-  Yoga: Yoga,
-  textAlign: string
-): ReturnType<Yoga['Node']['create']> {
+function createTextContainerNode(Yoga: TYoga, textAlign: string): YogaNode {
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
   textContainer.setAlignItems(Yoga.ALIGN_BASELINE)

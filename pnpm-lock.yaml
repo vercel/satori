@@ -38,9 +38,9 @@ importers:
       postcss-value-parser:
         specifier: ^4.2.0
         version: 4.2.0
-      yoga-wasm-web:
-        specifier: ^0.3.3
-        version: 0.3.3
+      yoga-layout:
+        specifier: ^3.2.1
+        version: 3.2.1
     devDependencies:
       '@resvg/resvg-js':
         specifier: ^2.1.0
@@ -9340,6 +9340,6 @@ packages:
     engines: {node: '>=12.20'}
     dev: true
 
-  /yoga-wasm-web@0.3.3:
-    resolution: {integrity: sha512-N+d4UJSJbt/R3wqY7Coqs5pcV0aUj2j9IaQ3rNj9bVCLld8tTGKRa2USARjnvZJWVx1NDmQev8EknoczaOQDOA==}
+  /yoga-layout@3.2.1:
+    resolution: {integrity: sha512-0LPOt3AxKqMdFBZA3HBAt/t/8vIKq7VaQYbuA8WxCgung+p9TVyKRYdpvCb80HcdTN2NkbIKbhNwKUfm3tQywQ==}
     dev: false

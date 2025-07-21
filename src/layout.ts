@@ -3,15 +3,14 @@
  */
 
 import type { ReactNode } from 'react'
-import type { Node as YogaNode } from 'yoga-wasm-web'
-
-import getYoga from './yoga/index.js'
 import {
   isReactElement,
   isClass,
   buildXMLString,
   normalizeChildren,
   hasDangerouslySetInnerHTMLProp,
+  getYoga,
+  YogaNode,
 } from './utils.js'
 import { SVGNodeToImage } from './handler/preprocess.js'
 import computeStyle from './handler/compute.js'
@@ -262,10 +261,11 @@ export default async function* layout(
       children &&
       typeof children !== 'string' &&
       display !== 'flex' &&
-      display !== 'none'
+      display !== 'none' &&
+      display !== 'contents'
     ) {
       throw new Error(
-        `Expected <div> to have explicit "display: flex" or "display: none" if it has more than one child node.`
+        `Expected <div> to have explicit "display: flex", "display: contents", or "display: none" if it has more than one child node.`
       )
     }
     baseRenderResult = await rect(
