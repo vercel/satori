@@ -118,7 +118,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 <tr>
 <td colspan="2"><code>display</code></td>
-<td><code>none</code> and <code>flex</code>, default to <code>flex</code></td>
+<td><code>flex</code>, <code>contents</code>, <code>none</code>, default to <code>flex</code></td>
 <td></td>
 </tr>
 
@@ -235,6 +235,12 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 </tr>
 
 <tr>
+<td colspan="2"><code>boxSizing</code></td>
+<td>Supported</td>
+<td></td>
+</tr>
+
+<tr>
 <td colspan="2"><code>boxShadow</code></td>
 <td>Supported</td>
 <td></td>
@@ -289,9 +295,8 @@ Note:
 
 1. Three-dimensional transforms are not supported.
 2. There is no `z-index` support in SVG. Elements that come later in the document will be painted on top.
-3. `box-sizing` is set to `border-box` for all elements.
-4. `calc` isn't supported.
-5. `currentcolor` support is only available for the `color` property.
+3. `calc` isn't supported.
+4. `currentColor` support is only available for the `color` property.
 
 ### Language and Typography
 

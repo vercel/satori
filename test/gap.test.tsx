@@ -72,4 +72,32 @@ describe('flex gap', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should support percentage values as gap', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexWrap: 'wrap',
+          backgroundColor: '#e2e2e2',
+          gap: '10%',
+        }}
+      >
+        {items.map((color, index) => (
+          <div
+            key={index}
+            style={{
+              width: 10,
+              height: 10,
+              backgroundColor: color,
+            }}
+          ></div>
+        ))}
+      </div>,
+      { width: 100, height: 100, fonts: [] }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })

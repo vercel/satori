@@ -173,6 +173,7 @@ export default async function compute(
       {
         flex: Yoga.DISPLAY_FLEX,
         block: Yoga.DISPLAY_FLEX,
+        contents: Yoga.DISPLAY_CONTENTS,
         none: Yoga.DISPLAY_NONE,
         '-webkit-box': Yoga.DISPLAY_FLEX,
       },
@@ -345,12 +346,25 @@ export default async function compute(
   node.setPadding(Yoga.EDGE_LEFT, style.paddingLeft || 0)
   node.setPadding(Yoga.EDGE_RIGHT, style.paddingRight || 0)
 
+  node.setBoxSizing(
+    v(
+      style.boxSizing,
+      {
+        'border-box': Yoga.BOX_SIZING_BORDER_BOX,
+        'content-box': Yoga.BOX_SIZING_CONTENT_BOX,
+      },
+      Yoga.BOX_SIZING_BORDER_BOX,
+      'boxSizing'
+    )
+  )
+
   node.setPositionType(
     v(
       style.position,
       {
         absolute: Yoga.POSITION_TYPE_ABSOLUTE,
         relative: Yoga.POSITION_TYPE_RELATIVE,
+        static: Yoga.POSITION_TYPE_STATIC,
       },
       Yoga.POSITION_TYPE_RELATIVE,
       'position'
