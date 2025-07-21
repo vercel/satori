@@ -2,11 +2,10 @@ import type { ReactNode } from 'react'
 import type { TwConfig } from 'twrnc'
 import type { SatoriNode } from './layout.js'
 
-import Yoga from 'yoga-layout'
 import layout from './layout.js'
 import FontLoader, { FontOptions } from './font.js'
 import svg from './builder/svg.js'
-import { segment } from './utils.js'
+import { getYoga, segment, TYoga } from './utils.js'
 import { detectLanguageCode, LangCode, Locale } from './language.js'
 import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
@@ -45,6 +44,7 @@ export default async function satori(
   element: ReactNode,
   options: SatoriOptions
 ): Promise<string> {
+  const Yoga = await getYoga()
   if (!Yoga || !Yoga.Node) {
     throw new Error(
       'Satori is not initialized: expect `yoga` to be loaded, got ' + Yoga
@@ -62,7 +62,7 @@ export default async function satori(
   const definedWidth = 'width' in options ? options.width : undefined
   const definedHeight = 'height' in options ? options.height : undefined
 
-  const root = getRootNode(options.pointScaleFactor)
+  const root = getRootNode(Yoga, options.pointScaleFactor)
   if (definedWidth) root.setWidth(definedWidth)
   if (definedHeight) root.setHeight(definedHeight)
   root.setFlexDirection(Yoga.FLEX_DIRECTION_ROW)
@@ -192,7 +192,10 @@ export default async function satori(
   return svg({ width: computedWidth, height: computedHeight, content })
 }
 
-function getRootNode(pointScaleFactor?: SatoriOptions['pointScaleFactor']) {
+function getRootNode(
+  Yoga: TYoga,
+  pointScaleFactor?: SatoriOptions['pointScaleFactor']
+) {
   if (!pointScaleFactor) {
     return Yoga.Node.create()
   } else {

@@ -3,7 +3,6 @@
  * supported inline node is text. All other nodes are using block layout.
  */
 import type { LayoutContext } from '../layout.js'
-import Yoga, { type Node as YogaNode } from 'yoga-layout'
 import {
   v,
   segment,
@@ -12,6 +11,9 @@ import {
   isUndefined,
   isString,
   lengthToNumber,
+  getYoga,
+  TYoga,
+  YogaNode,
 } from '../utils.js'
 import buildText, { container } from '../builder/text.js'
 import { buildDropShadow } from '../builder/shadow.js'
@@ -31,6 +33,8 @@ export default async function* buildTextNodes(
   content: string,
   context: LayoutContext
 ): AsyncGenerator<{ word: string; locale?: Locale }[], string, [any, any]> {
+  const Yoga = await getYoga()
+
   const {
     parentStyle,
     inheritedStyle,
@@ -68,7 +72,7 @@ export default async function* buildTextNodes(
     blockEllipsis,
   } = preprocess(content, parentStyle, locale)
 
-  const textContainer = createTextContainerNode(textAlign)
+  const textContainer = createTextContainerNode(Yoga, textAlign)
   parent.insertChild(textContainer, parent.getChildCount())
 
   if (isUndefined(flexShrink)) {
@@ -807,7 +811,7 @@ export default async function* buildTextNodes(
   return result
 }
 
-function createTextContainerNode(textAlign: string): YogaNode {
+function createTextContainerNode(Yoga: TYoga, textAlign: string): YogaNode {
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
   textContainer.setAlignItems(Yoga.ALIGN_BASELINE)

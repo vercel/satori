@@ -1,7 +1,19 @@
 import type { ReactNode, ReactElement } from 'react'
+import LineBreaker from 'linebreak'
+import { loadYoga, type Yoga } from 'yoga-layout/load'
+import { type Node } from 'yoga-layout'
 
 import CssDimension from './vendor/parse-css-dimension/index.js'
-import LineBreaker from 'linebreak'
+
+let loadingYoga:
+  | ReturnType<typeof import('yoga-layout/load')['loadYoga']>
+  | undefined
+
+export function getYoga() {
+  return loadingYoga || (loadingYoga = loadYoga())
+}
+
+export { Yoga as TYoga, Node as YogaNode }
 
 export function isReactElement(node: ReactNode): node is ReactElement {
   const type = typeof node
@@ -279,7 +291,66 @@ export function isNumber(x: unknown): x is number {
 }
 
 export function isUndefined(x: unknown): x is undefined {
-  return toString(x) === '[object Undefined]'
+  return typeof x === 'undefined'
+}
+
+export function asPointPercentageLength(
+  x: string | number,
+  propertyName?: string
+): number | `${number}%` | undefined {
+  if (typeof x === 'number') {
+    return x
+  }
+  if (x.endsWith('%')) {
+    const percentageValue = parseFloat(x.slice(0, -1))
+    if (isNaN(percentageValue)) {
+      console.warn(
+        `Invalid value "${x}"${
+          typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
+        }. Expected a percentage value (e.g., "50%").`
+      )
+      return undefined
+    }
+    return `${percentageValue}%`
+  }
+
+  console.warn(
+    `Invalid value "${x}"${
+      typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
+    }. Expected a number or a percentage value (e.g., "50%").`
+  )
+  return undefined
+}
+
+export function asPointAutoPercentageLength(
+  x: string | number,
+  propertyName?: string
+): number | 'auto' | `${number}%` | undefined {
+  if (typeof x === 'number') {
+    return x
+  }
+  if (x === 'auto') {
+    return 'auto'
+  }
+  if (x.endsWith('%')) {
+    const percentageValue = parseFloat(x.slice(0, -1))
+    if (isNaN(percentageValue)) {
+      console.warn(
+        `Invalid value "${x}"${
+          typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
+        }. Expected a percentage value (e.g., "50%").`
+      )
+      return undefined
+    }
+    return `${percentageValue}%`
+  }
+
+  console.warn(
+    `Invalid value "${x}"${
+      typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
+    }. Expected a number, "auto", or a percentage value (e.g., "50%").`
+  )
+  return undefined
 }
 
 export function splitByBreakOpportunities(

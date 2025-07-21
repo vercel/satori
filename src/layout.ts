@@ -3,13 +3,14 @@
  */
 
 import type { ReactNode } from 'react'
-import Yoga, { type Node as YogaNode } from 'yoga-layout'
 import {
   isReactElement,
   isClass,
   buildXMLString,
   normalizeChildren,
   hasDangerouslySetInnerHTMLProp,
+  getYoga,
+  YogaNode,
 } from './utils.js'
 import { SVGNodeToImage } from './handler/preprocess.js'
 import computeStyle from './handler/compute.js'
@@ -55,6 +56,7 @@ export default async function* layout(
   string,
   [number, number]
 > {
+  const Yoga = await getYoga()
   const {
     id,
     inheritedStyle,
