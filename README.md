@@ -389,29 +389,9 @@ await satori(
 )
 ```
 
-### Runtime and WASM
+### Runtime Support
 
 Satori can be used in browser, Node.js (>= 16), and Web Workers.
-
-By default, Satori depends on asm.js for the browser runtime, and native module in Node.js. However, you can optionally load WASM instead by importing `satori/wasm` and provide the initialized WASM module instance of Yoga to Satori:
-
-```js
-import satori, { init } from 'satori/wasm'
-import initYoga from 'yoga-wasm-web'
-
-const yoga = initYoga(await fetch('/yoga.wasm').then(res => res.arrayBuffer()))
-init(yoga)
-
-await satori(...)
-```
-
-When running in the browser or in the Node.js environment, WASM files need to be hosted and fetched before initializing. asm.js can be bundled together with the lib. In this case WASM should be faster.
-
-When running on the Node.js server, native modules should be faster. However there are Node.js environments where native modules are not supported (e.g. StackBlitz's WebContainers), or other JS runtimes that support WASM (e.g. Vercel's Edge Runtime, Cloudflare Workers, or Deno).
-
-Additionally, there are other difference between asm.js, native and WASM, such as security and compatibility.
-
-Overall there are many trade-offs between each choice, and it's better to pick the one that works the best for your use case.
 
 ### Font Embedding
 

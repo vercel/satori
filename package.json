@@ -27,23 +27,21 @@
     "./wasm": {
       "import": {
         "types": "./dist/index.d.ts",
-        "default": "./dist/index.wasm.js"
+        "default": "./dist/index.js"
       },
       "require": {
         "types": "./dist/index.d.cts",
-        "default": "./dist/index.wasm.cjs"
+        "default": "./dist/index.cjs"
       }
     }
   },
   "scripts": {
     "prepare": "husky install",
-    "dev": "concurrently \"pnpm dev:default\" \"pnpm dev:wasm\"",
+    "dev": "pnpm run dev:default",
     "dev:default": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
-    "dev:wasm": "WASM=1 NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
     "dev:playground": "turbo dev --filter=satori-playground...",
-    "build": "NODE_ENV=production pnpm run build:default && pnpm run build:wasm",
+    "build": "NODE_ENV=production pnpm run build:default",
     "build:default": "tsup",
-    "build:wasm": "WASM=1 tsup",
     "test": "NODE_ENV=test vitest run",
     "test:ui": "NODE_ENV=test vitest --ui --coverage.enabled",
     "test-type": "tsc -p tsconfig.json --noEmit && tsc -p playground/tsconfig.json --noEmit",
