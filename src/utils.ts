@@ -5,12 +5,10 @@ import { type Node } from 'yoga-layout'
 
 import CssDimension from './vendor/parse-css-dimension/index.js'
 
-let loadingYoga:
-  | ReturnType<typeof import('yoga-layout/load')['loadYoga']>
-  | undefined
-
+// Always preload Yoga.
+const loadingYoga = loadYoga()
 export function getYoga() {
-  return loadingYoga || (loadingYoga = loadYoga())
+  return loadingYoga
 }
 
 export { Yoga as TYoga, Node as YogaNode }
