@@ -59,6 +59,13 @@ function handleSpecialCase(
   value: string | number,
   currentColor: string
 ) {
+  if (name === 'zIndex') {
+    console.warn(
+      '`z-index` is currently not supported.'
+    )
+    return { [name]: value }
+  }
+
   if (name === 'lineHeight') {
     return { lineHeight: purify(name, value) }
   }
