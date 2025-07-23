@@ -61,7 +61,7 @@ function handleSpecialCase(
 ) {
   if (name === 'zIndex') {
     console.warn(
-      'z-index is not supported in SVG. Elements are painted in the order they appear in the document.'
+      '`z-index` is currently not supported.'
     )
     return { [name]: value }
   }
