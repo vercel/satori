@@ -2,6 +2,7 @@ import {
   parseRadialGradient,
   RadialResult,
   RadialPropertyValue,
+  ColorStop,
 } from 'css-gradient-parser'
 import { buildXMLString, lengthToNumber } from '../../utils.js'
 import { normalizeStops } from './utils.js'
@@ -31,6 +32,7 @@ export function buildRadialGradient(
     stops: colorStops,
     position,
     size,
+    repeating,
   } = parseRadialGradient(image)
   const [xDelta, yDelta] = dimensions
 
@@ -48,11 +50,26 @@ export function buildRadialGradient(
   cx = pos.x
   cy = pos.y
 
-  const stops = normalizeStops(width, colorStops, inheritableStyle, false, from)
+  const stops = normalizeStops(
+    width,
+    colorStops,
+    inheritableStyle,
+    repeating,
+    from
+  )
 
   const gradientId = `satori_radial_${id}`
   const patternId = `satori_pattern_${id}`
   const maskId = `satori_mask_${id}`
+
+  const props = calcRadialGradientProps(
+    shape as Shape,
+    inheritableStyle.fontSize as number,
+    colorStops,
+    [xDelta, yDelta],
+    inheritableStyle,
+    repeating
+  )
 
   // https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/radial-gradient()#values
   const spread = calcRadius(
@@ -79,6 +96,7 @@ export function buildRadialGradient(
       'radialGradient',
       {
         id: gradientId,
+        ...props,
       },
       stops
         .map((stop) =>
@@ -196,6 +214,46 @@ function calcPos(
 }
 
 type Shape = 'circle' | 'ellipse'
+
+function calcRadialGradientProps(
+  shape: Shape,
+  baseFontSize: number,
+  colorStops: ColorStop[],
+  [xDelta, yDelta]: [number, number],
+  inheritableStyle: Record<string, string | number>,
+  repeating: boolean
+) {
+  if (!repeating) {
+    return {
+      spreadMethod: 'pad',
+    }
+  }
+  if (shape === 'circle') {
+    const last = colorStops[colorStops.length - 1]
+    return {
+      spreadMethod: 'repeat',
+      cx: '50%',
+      cy: '50%',
+      r:
+        last.offset.unit === '%'
+          ? `${Number(last.offset.value) * Math.min(yDelta / xDelta, 1)}%`
+          : Number(
+              lengthToNumber(
+                `${last[0].value.value}${last[0].value.unit}`,
+                baseFontSize,
+                xDelta,
+                inheritableStyle,
+                true
+              )
+            ),
+    }
+  }
+
+  return {
+    spreadMethod: 'pad',
+  }
+}
+
 function calcRadius(
   shape: Shape,
   endingShape: RadialResult['size'],

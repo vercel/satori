@@ -102,7 +102,10 @@ export default async function backgroundImage(
     )
   }
 
-  if (image.startsWith('radial-gradient(')) {
+  if (
+    image.startsWith('radial-gradient(') ||
+    image.startsWith('repeating-radial-gradient(')
+  ) {
     return buildRadialGradient(
       { id, width, height, repeatX, repeatY },
       image,
