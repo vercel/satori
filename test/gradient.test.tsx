@@ -172,6 +172,26 @@ describe('Gradient', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
+    it('should make sense if x of y is zero', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            backgroundColor: 'white',
+            backgroundImage: 'radial-gradient(circle at 0px 0%, blue, red)',
+            backgroundSize: '100px 100px',
+            height: '100%',
+            width: '100%',
+          }}
+        ></div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
     it('should support radial-gradient with unspecified <ending-shape>', async () => {
       const svg = await satori(
         <div
