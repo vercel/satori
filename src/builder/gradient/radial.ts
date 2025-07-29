@@ -153,7 +153,7 @@ function calcRadialGradient(
         xDelta,
         style,
         true
-      ) || xDelta / 2
+      ) ?? xDelta / 2
   }
 
   if (cy.type === 'keyword') {
@@ -169,7 +169,7 @@ function calcRadialGradient(
         yDelta,
         style,
         true
-      ) || yDelta / 2
+      ) ?? yDelta / 2
   }
 
   return pos
