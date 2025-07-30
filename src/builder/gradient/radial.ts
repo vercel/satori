@@ -50,8 +50,15 @@ export function buildRadialGradient(
   cx = pos.x
   cy = pos.y
 
-  const stops = normalizeStops(
+  const colorStopTotalLength = calcColorStopTotalLength(
     width,
+    colorStops,
+    repeating,
+    inheritableStyle
+  )
+
+  const stops = normalizeStops(
+    colorStopTotalLength,
     colorStops,
     inheritableStyle,
     repeating,
@@ -62,15 +69,6 @@ export function buildRadialGradient(
   const patternId = `satori_pattern_${id}`
   const maskId = `satori_mask_${id}`
 
-  const props = calcRadialGradientProps(
-    shape as Shape,
-    inheritableStyle.fontSize as number,
-    colorStops,
-    [xDelta, yDelta],
-    inheritableStyle,
-    repeating
-  )
-
   // https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/radial-gradient()#values
   const spread = calcRadius(
     shape as Shape,
@@ -79,6 +77,16 @@ export function buildRadialGradient(
     { x: cx, y: cy },
     [xDelta, yDelta],
     inheritableStyle
+  )
+
+  const props = calcRadialGradientProps(
+    shape as Shape,
+    inheritableStyle.fontSize as number,
+    colorStops,
+    [xDelta, yDelta],
+    inheritableStyle,
+    repeating,
+    spread.r * 2
   )
 
   // TODO: check for repeat-x/repeat-y
@@ -148,6 +156,26 @@ interface Position {
 }
 
 type PositionKeyWord = 'center' | 'left' | 'right' | 'top' | 'bottom'
+
+function calcColorStopTotalLength(
+  width: number,
+  stops: ColorStop[],
+  repeating: boolean,
+  inheritableStyle: Record<string, string | number>
+) {
+  if (!repeating) return width
+  const lastStop = stops.at(-1)
+  if (!lastStop || !lastStop.offset || lastStop.offset.unit === '%')
+    return width
+
+  return lengthToNumber(
+    `${lastStop.offset.value}${lastStop.offset.unit}`,
+    +inheritableStyle.fontSize,
+    width,
+    inheritableStyle,
+    true
+  )
+}
 
 function calcRadialGradient(
   cx: RadialPropertyValue,
@@ -221,7 +249,8 @@ function calcRadialGradientProps(
   colorStops: ColorStop[],
   [xDelta, yDelta]: [number, number],
   inheritableStyle: Record<string, string | number>,
-  repeating: boolean
+  repeating: boolean,
+  r: number
 ) {
   if (!repeating) {
     return {
@@ -239,12 +268,12 @@ function calcRadialGradientProps(
           ? `${Number(last.offset.value) * Math.min(yDelta / xDelta, 1)}%`
           : Number(
               lengthToNumber(
-                `${last[0].value.value}${last[0].value.unit}`,
+                `${last.offset.value}${last.offset.unit}`,
                 baseFontSize,
                 xDelta,
                 inheritableStyle,
                 true
-              )
+              ) / r
             ),
     }
   }
