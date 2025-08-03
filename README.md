@@ -204,7 +204,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 <tr><td rowspan="7">Background</td></tr>
 <tr><td><code>backgroundColor</code></td><td>Supported, single value</td><td></td></tr>
-<tr><td><code>backgroundImage</code></td><td><code>linear-gradient</code>, <code>radial-gradient</code>, <code>url</code>, single value</td><td></td></tr>
+<tr><td><code>backgroundImage</code></td><td><code>linear-gradient</code>, <code>repeating-linear-gradient</code>, <code>radial-gradient</code>, <code>repeating-radial-gradient</code>, <code>url</code>, single value</td><td></td></tr>
 <tr><td><code>backgroundPosition</code></td><td>Support single value</td><td></td></tr>
 <tr><td><code>backgroundSize</code></td><td>Support two-value size i.e. <code>10px 20%</code></td><td></td></tr>
 <tr><td><code>backgroundClip</code></td><td><code>border-box</code>, <code>text</code></td><td></td></tr>
