@@ -608,23 +608,26 @@ describe('Gradient', () => {
   describe('repeating-radial-gradient', async () => {
     it('should support repeating-radial-gradient', async () => {
       const svgs = await Promise.all(
-        ['repeating-radial-gradient(circle, red, blue 20%)'].map(
-          (backgroundImage) =>
-            satori(
-              <div
-                style={{
-                  backgroundColor: 'white',
-                  backgroundImage,
-                  width: '100%',
-                  height: '100%',
-                }}
-              ></div>,
-              {
-                width: 200,
-                height: 100,
-                fonts,
-              }
-            )
+        [
+          'repeating-radial-gradient(circle, red, blue 20%)',
+          'repeating-radial-gradient(circle closest-corner at 20% 20%, blue, blue 20px, red 20px,red 30px)',
+          'repeating-radial-gradient(circle closest-corner at 10% 10%,red,black 5%,blue 5%,green 10%)',
+        ].map((backgroundImage) =>
+          satori(
+            <div
+              style={{
+                backgroundColor: 'white',
+                backgroundImage,
+                width: '100%',
+                height: '100%',
+              }}
+            ></div>,
+            {
+              width: 100,
+              height: 100,
+              fonts,
+            }
+          )
         )
       )
       svgs.forEach((svg) => {

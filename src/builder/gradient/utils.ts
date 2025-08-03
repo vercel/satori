@@ -17,6 +17,14 @@ export function normalizeStops(
   // Resolve the color stops based on the spec:
   // https://drafts.csswg.org/css-images/#color-stop-syntax
   const stops: Stop[] = []
+  const lastColorStop = colorStops.at(-1)
+  const totalPercentage =
+    lastColorStop &&
+    lastColorStop.offset &&
+    lastColorStop.offset.unit === '%' &&
+    repeating
+      ? +lastColorStop.offset.value
+      : 100
   for (const stop of colorStops) {
     const { color } = stop
     if (!stops.length) {
@@ -35,7 +43,7 @@ export function normalizeStops(
       typeof stop.offset === 'undefined'
         ? undefined
         : stop.offset.unit === '%'
-        ? +stop.offset.value / 100
+        ? +stop.offset.value / totalPercentage
         : Number(
             lengthToNumber(
               `${stop.offset.value}${stop.offset.unit}`,

@@ -76,7 +76,8 @@ export function buildRadialGradient(
     inheritableStyle.fontSize as number,
     { x: cx, y: cy },
     [xDelta, yDelta],
-    inheritableStyle
+    inheritableStyle,
+    repeating
   )
 
   const props = calcRadialGradientProps(
@@ -86,7 +87,8 @@ export function buildRadialGradient(
     [xDelta, yDelta],
     inheritableStyle,
     repeating,
-    spread.r * 2
+    spread.r * 2,
+    spread.ratio ?? 1
   )
 
   // TODO: check for repeat-x/repeat-y
@@ -250,7 +252,8 @@ function calcRadialGradientProps(
   [xDelta, yDelta]: [number, number],
   inheritableStyle: Record<string, string | number>,
   repeating: boolean,
-  r: number
+  r: number,
+  ratio: number
 ) {
   if (!repeating) {
     return {
@@ -265,7 +268,9 @@ function calcRadialGradientProps(
       cy: '50%',
       r:
         last.offset.unit === '%'
-          ? `${Number(last.offset.value) * Math.min(yDelta / xDelta, 1)}%`
+          ? `${
+              (Number(last.offset.value) * Math.min(yDelta / xDelta, 1)) / ratio
+            }%`
           : Number(
               lengthToNumber(
                 `${last.offset.value}${last.offset.unit}`,
@@ -289,7 +294,8 @@ function calcRadius(
   baseFontSize: number,
   centerAxis: { x: number; y: number },
   length: [number, number],
-  inheritableStyle: Record<string, string | number>
+  inheritableStyle: Record<string, string | number>,
+  repeating: boolean
 ) {
   const [xDelta, yDelta] = length
   const { x: cx, y: cy } = centerAxis
@@ -378,6 +384,18 @@ function calcRadius(
   }
   if (shape === 'circle') {
     spread.r = Math.sqrt(fx * fx + fy * fy)
+    spread.ratio = 1
+    if (repeating) {
+      const mfx = Math.max(Math.abs(xDelta - cx), Math.abs(cx))
+      const mfy = Math.max(Math.abs(yDelta - cy), Math.abs(cy))
+
+      const mr = Math.sqrt(mfx * mfx + mfy * mfy)
+
+      spread.ratio = mr / spread.r
+      if (spread.ratio > 1) {
+        spread.r = mr
+      }
+    }
   } else {
     // Spec: https://drafts.csswg.org/css-images/#typedef-size
     // Get the aspect ratio of the closest-side size.
