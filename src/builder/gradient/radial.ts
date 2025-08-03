@@ -87,8 +87,7 @@ export function buildRadialGradient(
     [xDelta, yDelta],
     inheritableStyle,
     repeating,
-    spread.r * 2,
-    spread.ratio ?? 1
+    spread
   )
 
   // TODO: check for repeat-x/repeat-y
@@ -252,16 +251,16 @@ function calcRadialGradientProps(
   [xDelta, yDelta]: [number, number],
   inheritableStyle: Record<string, string | number>,
   repeating: boolean,
-  r: number,
-  ratio: number
+  spread: Record<string, number>
 ) {
+  const { r, rx, ratio = 1 } = spread
   if (!repeating) {
     return {
       spreadMethod: 'pad',
     }
   }
+  const last = colorStops.at(-1)
   if (shape === 'circle') {
-    const last = colorStops[colorStops.length - 1]
     return {
       spreadMethod: 'repeat',
       cx: '50%',
@@ -278,13 +277,33 @@ function calcRadialGradientProps(
                 xDelta,
                 inheritableStyle,
                 true
-              ) / r
+              ) /
+                r /
+                2
             ),
     }
-  }
-
-  return {
-    spreadMethod: 'pad',
+  } else {
+    return {
+      spreadMethod: 'repeat',
+      cx: '50%',
+      cy: '50%',
+      r:
+        last.offset.unit === '%'
+          ? `${
+              (Number(last.offset.value) * Math.min(yDelta / xDelta, 1)) / ratio
+            }%`
+          : Number(
+              lengthToNumber(
+                `${last.offset.value}${last.offset.unit}`,
+                baseFontSize,
+                xDelta,
+                inheritableStyle,
+                true
+              ) /
+                rx /
+                2
+            ),
+    }
   }
 }
 
@@ -310,7 +329,7 @@ function calcRadius(
       )
     }
     if (shape === 'circle') {
-      return {
+      Object.assign(spread, {
         r: Number(
           lengthToNumber(
             `${endingShape[0].value.value}${endingShape[0].value.unit}`,
@@ -320,9 +339,9 @@ function calcRadius(
             true
           )
         ),
-      }
+      })
     } else {
-      return {
+      Object.assign(spread, {
         rx: Number(
           lengthToNumber(
             `${endingShape[0].value.value}${endingShape[0].value.unit}`,
@@ -341,8 +360,10 @@ function calcRadius(
             true
           )
         ),
-      }
+      })
     }
+    compareWithFarthestCorner(spread, xDelta, yDelta, cx, cy, repeating, shape)
+    return spread
   }
 
   switch (endingShape[0].value) {
@@ -366,6 +387,15 @@ function calcRadius(
         spread.rx = Math.max(Math.abs(xDelta - cx), Math.abs(cx))
         spread.ry = Math.max(Math.abs(yDelta - cy), Math.abs(cy))
       }
+      compareWithFarthestCorner(
+        spread,
+        xDelta,
+        yDelta,
+        cx,
+        cy,
+        repeating,
+        shape
+      )
       return spread
     case 'closest-side':
       if (shape === 'circle') {
@@ -379,13 +409,52 @@ function calcRadius(
         spread.rx = Math.min(Math.abs(xDelta - cx), Math.abs(cx))
         spread.ry = Math.min(Math.abs(yDelta - cy), Math.abs(cy))
       }
+      compareWithFarthestCorner(
+        spread,
+        xDelta,
+        yDelta,
+        cx,
+        cy,
+        repeating,
+        shape
+      )
 
       return spread
   }
   if (shape === 'circle') {
     spread.r = Math.sqrt(fx * fx + fy * fy)
-    spread.ratio = 1
-    if (repeating) {
+  } else {
+    Object.assign(spread, f2r(fx, fy))
+  }
+
+  compareWithFarthestCorner(spread, xDelta, yDelta, cx, cy, repeating, shape)
+
+  return spread
+}
+
+// compare with farthest-corner to make it cover the whole container
+function compareWithFarthestCorner(
+  spread: Record<string, number>,
+  xDelta: number,
+  yDelta: number,
+  cx: number,
+  cy: number,
+  repeating: boolean,
+  shape: Shape
+) {
+  if (repeating) {
+    if (shape === 'ellipse') {
+      const mfx = Math.max(Math.abs(xDelta - cx), Math.abs(cx))
+      const mfy = Math.max(Math.abs(yDelta - cy), Math.abs(cy))
+
+      const { rx: mrx, ry: mry } = f2r(mfx, mfy)
+
+      spread.ratio = Math.max(mrx / spread.rx, mry / spread.ry)
+      if (spread.ratio > 1) {
+        spread.rx *= spread.ratio
+        spread.ry *= spread.ratio
+      }
+    } else {
       const mfx = Math.max(Math.abs(xDelta - cx), Math.abs(cx))
       const mfy = Math.max(Math.abs(yDelta - cy), Math.abs(cy))
 
@@ -396,26 +465,31 @@ function calcRadius(
         spread.r = mr
       }
     }
+  }
+}
+
+function f2r(fx: number, fy: number) {
+  // Spec: https://drafts.csswg.org/css-images/#typedef-size
+  // Get the aspect ratio of the closest-side size.
+  const ratio = fy !== 0 ? fx / fy : 1
+
+  if (fx === 0) {
+    return {
+      rx: 0,
+      ry: 0,
+    }
   } else {
-    // Spec: https://drafts.csswg.org/css-images/#typedef-size
-    // Get the aspect ratio of the closest-side size.
-    const ratio = fy !== 0 ? fx / fy : 1
+    // fx^2/a^2 + fy^2/b^2 = 1
+    // fx^2/(b*ratio)^2 + fy^2/b^2 = 1
+    // (fx^2+fy^2*ratio^2) = (b*ratio)^2
+    // b = sqrt(fx^2+fy^2*ratio^2)/ratio
 
-    if (fx === 0) {
-      spread.rx = 0
-      spread.ry = 0
-    } else {
-      // fx^2/a^2 + fy^2/b^2 = 1
-      // fx^2/(b*ratio)^2 + fy^2/b^2 = 1
-      // (fx^2+fy^2*ratio^2) = (b*ratio)^2
-      // b = sqrt(fx^2+fy^2*ratio^2)/ratio
-
-      spread.ry = Math.sqrt(fx * fx + fy * fy * ratio * ratio) / ratio
-      spread.rx = spread.ry * ratio
+    const ry = Math.sqrt(fx * fx + fy * fy * ratio * ratio) / ratio
+    return {
+      ry,
+      rx: ry * ratio,
     }
   }
-
-  return spread
 }
 
 function isSizeAllLength(v: RadialPropertyValue[]): v is Array<{
