@@ -255,50 +255,25 @@ function calcRadialGradientProps(
     }
   }
   const last = colorStops.at(-1)
-  if (shape === 'circle') {
-    return {
-      spreadMethod: 'repeat',
-      cx: '50%',
-      cy: '50%',
-      r:
-        last.offset.unit === '%'
-          ? `${
-              (Number(last.offset.value) * Math.min(yDelta / xDelta, 1)) / ratio
-            }%`
-          : Number(
-              lengthToNumber(
-                `${last.offset.value}${last.offset.unit}`,
-                baseFontSize,
-                xDelta,
-                inheritableStyle,
-                true
-              ) /
-                r /
-                2
-            ),
-    }
-  } else {
-    return {
-      spreadMethod: 'repeat',
-      cx: '50%',
-      cy: '50%',
-      r:
-        last.offset.unit === '%'
-          ? `${
-              (Number(last.offset.value) * Math.min(yDelta / xDelta, 1)) / ratio
-            }%`
-          : Number(
-              lengthToNumber(
-                `${last.offset.value}${last.offset.unit}`,
-                baseFontSize,
-                xDelta,
-                inheritableStyle,
-                true
-              ) /
-                rx /
-                2
-            ),
-    }
+  const radius = shape === 'circle' ? r * 2 : rx * 2
+  return {
+    spreadMethod: 'repeat',
+    cx: '50%',
+    cy: '50%',
+    r:
+      last.offset.unit === '%'
+        ? `${
+            (Number(last.offset.value) * Math.min(yDelta / xDelta, 1)) / ratio
+          }%`
+        : Number(
+            lengthToNumber(
+              `${last.offset.value}${last.offset.unit}`,
+              baseFontSize,
+              xDelta,
+              inheritableStyle,
+              true
+            ) / radius
+          ),
   }
 }
 
