@@ -151,11 +151,6 @@ export function buildRadialGradient(
   return result
 }
 
-interface Position {
-  type: 'keyword' | 'length'
-  value: string
-}
-
 type PositionKeyWord = 'center' | 'left' | 'right' | 'top' | 'bottom'
 
 function calcColorStopTotalLength(
