@@ -332,7 +332,7 @@ function calcRadius(
         ),
       })
     }
-    compareWithFarthestCorner(spread, xDelta, yDelta, cx, cy, repeating, shape)
+    patchSpread(spread, xDelta, yDelta, cx, cy, repeating, shape)
     return spread
   }
 
@@ -357,15 +357,7 @@ function calcRadius(
         spread.rx = Math.max(Math.abs(xDelta - cx), Math.abs(cx))
         spread.ry = Math.max(Math.abs(yDelta - cy), Math.abs(cy))
       }
-      compareWithFarthestCorner(
-        spread,
-        xDelta,
-        yDelta,
-        cx,
-        cy,
-        repeating,
-        shape
-      )
+      patchSpread(spread, xDelta, yDelta, cx, cy, repeating, shape)
       return spread
     case 'closest-side':
       if (shape === 'circle') {
@@ -379,15 +371,7 @@ function calcRadius(
         spread.rx = Math.min(Math.abs(xDelta - cx), Math.abs(cx))
         spread.ry = Math.min(Math.abs(yDelta - cy), Math.abs(cy))
       }
-      compareWithFarthestCorner(
-        spread,
-        xDelta,
-        yDelta,
-        cx,
-        cy,
-        repeating,
-        shape
-      )
+      patchSpread(spread, xDelta, yDelta, cx, cy, repeating, shape)
 
       return spread
   }
@@ -397,13 +381,13 @@ function calcRadius(
     Object.assign(spread, f2r(fx, fy))
   }
 
-  compareWithFarthestCorner(spread, xDelta, yDelta, cx, cy, repeating, shape)
+  patchSpread(spread, xDelta, yDelta, cx, cy, repeating, shape)
 
   return spread
 }
 
 // compare with farthest-corner to make it cover the whole container
-function compareWithFarthestCorner(
+function patchSpread(
   spread: Record<string, number>,
   xDelta: number,
   yDelta: number,
