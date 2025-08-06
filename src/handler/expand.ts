@@ -60,9 +60,7 @@ function handleSpecialCase(
   currentColor: string
 ) {
   if (name === 'zIndex') {
-    console.warn(
-      '`z-index` is currently not supported.'
-    )
+    console.warn('`z-index` is currently not supported.')
     return { [name]: value }
   }
 
@@ -172,7 +170,7 @@ function handleSpecialCase(
   if (name === 'background') {
     value = value.toString().trim()
     if (
-      /^(linear-gradient|radial-gradient|url|repeating-linear-gradient)\(/.test(
+      /^(linear-gradient|radial-gradient|url|repeating-linear-gradient|repeating-radial-gradient)\(/.test(
         value
       )
     ) {
