@@ -18,6 +18,10 @@
     "dist/**",
     "yoga.wasm"
   ],
+  "imports": {
+    "#satori/jsx/jsx-runtime": "./src/jsx/jsx-runtime.ts",
+    "#satori/jsx/jsx-dev-runtime": "./src/jsx/jsx-runtime.ts"
+  },
   "exports": {
     "./package.json": "./package.json",
     "./yoga.wasm": "./yoga.wasm",
