@@ -74,7 +74,6 @@ export function jsx(
   props: unknown,
   key: string | null = null
 ): JSXNode {
-  if (typeof type === 'function') return type(props)
   return { type, props, key }
 }
 
