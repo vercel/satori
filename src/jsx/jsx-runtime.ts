@@ -64,6 +64,6 @@ export function jsx(
 
 export const jsxs = jsx
 export const jsxDEV = jsx
-export function Fragment(props: { children?: JSXNode }) {
-  return props.children
-}
+
+// HACK: Symbol used internally by React.
+export const Fragment = Symbol.for('react.fragment')
