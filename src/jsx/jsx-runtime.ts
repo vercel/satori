@@ -20,6 +20,17 @@ export interface JSXElement<
   key: string | null
 }
 
+// Adapted from React v19.1 `AwaitedReactNode`.
+type AwaitedJSXNode =
+  | JSXElement
+  | string
+  | number
+  | bigint
+  | Iterable<JSXNode>
+  | boolean
+  | null
+  | undefined
+
 // Adapted from React v19.1 `ReactNode`.
 export type JSXNode =
   | JSXElement
@@ -30,12 +41,13 @@ export type JSXNode =
   | boolean
   | null
   | undefined
+  | Promise<AwaitedJSXNode>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Props = Record<string, any>
 
 // Adapted from React v19.1 `React.FC`.
-export type FC<P = {}> = (props: P) => JSXNode
+export type FC<P = {}> = (props: P) => JSXNode | Promise<JSXNode>
 
 export namespace JSX {
   /**
