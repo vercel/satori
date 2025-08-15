@@ -49,15 +49,6 @@ export function jsx(
   return { type, props, key }
 }
 
-export function createElement(
-  type: string | FC,
-  props: Record<string, any> = {},
-  ...children: JSXNode[]
-): JSXNode {
-  props.children = children
-  return jsx(type, props)
-}
-
 export const jsxs = jsx
 export const jsxDEV = jsx
 export function Fragment(props: { children?: JSXNode }) {
