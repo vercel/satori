@@ -41,12 +41,25 @@ export namespace JSX {
   }
 }
 
+function fixKey(k: string | number | bigint | undefined | null) {
+  if (k === undefined) return null
+  else if (k === null) return null
+  else return String(k)
+}
+
 export function jsx(
   type: string | FC<any>,
-  props: unknown,
-  key: string | null = null
-): JSXNode {
-  return { type, props, key }
+  props: Record<string, unknown>,
+  key?: string | number | bigint | undefined | null
+): JSXElement {
+  if (!('key' in props)) {
+    key = fixKey(key)
+    return { type, props, key }
+  } else {
+    const { key: propsKey, ...restProps } = props
+    key = fixKey(key ?? (propsKey as null))
+    return { type, props: restProps, key }
+  }
 }
 
 export const jsxs = jsx
