@@ -63,11 +63,11 @@ export namespace JSX {
   export type Element = JSXElement<any, any>
 
   export interface ElementAttributesProperty {
-    props: Props
+    props: {}
   }
 
   export interface ElementChildrenAttribute {
-    children: JSXNode
+    children: {}
   }
 
   // TODO: define IntrinsicElements supported by Satori.
