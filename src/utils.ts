@@ -5,10 +5,13 @@ import { type Node } from 'yoga-layout'
 
 import CssDimension from './vendor/parse-css-dimension/index.js'
 
-// Always preload Yoga.
-const loadingYoga = loadYoga()
-export function getYoga() {
-  return loadingYoga
+// Allow passing a custom loader such as from yoga-wasm-web.
+let yogaPromise: Promise<Yoga>
+export function getYoga(yogaLoader: () => Promise<Yoga> = loadYoga) {
+  if (!yogaPromise) {
+    yogaPromise = yogaLoader()
+  }
+  return yogaPromise
 }
 
 export { Yoga as TYoga, Node as YogaNode }
