@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-empty-interface */
 /**
  * @file
  * Minimal JSX runtime for Satori.
@@ -43,9 +45,6 @@ export type JSXNode =
   | undefined
   | Promise<AwaitedJSXNode>
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Props = Record<string, any>
-
 // Adapted from React v19.1 `React.FC`.
 export type FC<P = {}> = (props: P) => JSXNode | Promise<JSXNode>
 
@@ -56,10 +55,8 @@ export namespace JSX {
    */
   export type ElementClass = never
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export type ElementType = string | FC<any>
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export type Element = JSXElement<any, any>
 
   export interface ElementAttributesProperty {
@@ -71,7 +68,6 @@ export namespace JSX {
   }
 
   // TODO: define IntrinsicElements supported by Satori.
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
   export interface IntrinsicElements extends globalThis.JSX.IntrinsicElements {}
 
   export interface IntrinsicAttributes {
@@ -81,7 +77,6 @@ export namespace JSX {
 }
 
 export function jsx(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type: string | FC<any>,
   props: unknown,
   key: string | null = null
@@ -91,7 +86,7 @@ export function jsx(
 
 export function createElement(
   type: string | FC,
-  props: Props = {},
+  props: Record<string, any> = {},
   ...children: JSXNode[]
 ): JSXNode {
   props.children = children
