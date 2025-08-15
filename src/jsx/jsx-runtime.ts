@@ -11,42 +11,7 @@
  * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/index.d.ts React typings `@types/react`}
  * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/jsx-runtime.d.ts React typings for `jsx-runtime`}
  */
-
-// Adapted from React v19.1 `ReactElement`.
-export interface JSXElement<
-  P = unknown,
-  T extends string | FC<P> = string | FC<P>
-> {
-  type: T
-  props: P
-  key: string | null
-}
-
-// Adapted from React v19.1 `AwaitedReactNode`.
-type AwaitedJSXNode =
-  | JSXElement
-  | string
-  | number
-  | bigint
-  | Iterable<JSXNode>
-  | boolean
-  | null
-  | undefined
-
-// Adapted from React v19.1 `ReactNode`.
-export type JSXNode =
-  | JSXElement
-  | string
-  | number
-  | bigint
-  | Iterable<JSXNode>
-  | boolean
-  | null
-  | undefined
-  | Promise<AwaitedJSXNode>
-
-// Adapted from React v19.1 `React.FC`.
-export type FC<P = {}> = (props: P) => JSXNode | Promise<JSXNode>
+import type { JSXNode, JSXElement, FC } from './types.ts'
 
 export namespace JSX {
   /**
