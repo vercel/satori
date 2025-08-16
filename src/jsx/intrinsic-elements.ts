@@ -10,6 +10,7 @@
  *
  * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/index.d.ts React typings `@types/react`}
  */
+import type { JSXNode } from './types.js'
 
 /**
  * Subset of CSS properties that Satori supports.
@@ -28,7 +29,9 @@ interface SVGProps<T> extends SVGAttributes<T> {}
 interface SVGLineElementAttributes<T> extends SVGProps<T> {}
 interface SVGTextElementAttributes<T> extends SVGProps<T> {}
 
-interface DOMAttributes<T> {}
+interface DOMAttributes<T> {
+  children?: JSXNode | undefined
+}
 
 type AriaRole =
   | 'alert'
