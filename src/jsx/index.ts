@@ -2,6 +2,7 @@ import { jsx } from './jsx-runtime.ts'
 import type { JSXNode, JSXElement, FC } from './types.ts'
 
 export type * from './types.ts'
+export { Fragment, type JSX } from './jsx-runtime.ts'
 
 /**
  * Create a `ReactElement`-like object.
