@@ -41,10 +41,8 @@ export namespace JSX {
   }
 }
 
-function fixKey(k: string | number | bigint | undefined | null) {
-  if (k === undefined) return null
-  else if (k === null) return null
-  else return String(k)
+function fixKey(k: unknown): string | null {
+  return (k ?? null) === null ? null : String(k)
 }
 
 export function jsx(
@@ -57,7 +55,7 @@ export function jsx(
     return { type, props, key }
   } else {
     const { key: propsKey, ...restProps } = props
-    key = fixKey(key ?? (propsKey as null))
+    key = fixKey(key !== undefined ? key : propsKey)
     return { type, props: restProps, key }
   }
 }
