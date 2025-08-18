@@ -430,14 +430,23 @@ export function getHighlightedOptions(
     if (originalContent.startsWith('[e]', i)) {
       if (stack.length) {
         const value = stack.shift()
-        result.push({
-          start: value.start,
-          end: visible,
-          options: value.options,
-        })
+        // Clamp end to visible - 1 (last real char), so EOF doesn’t throw
+        const end = Math.max(visible - 1, value.start)
+        if (visible > 0 && end >= value.start) {
+          result.push({ start: value.start, end, options: value.options })
+        }
       }
       i += 3
       continue
+    }
+
+    // Close any unclosed ranges at EOF
+    while (stack.length) {
+      const value = stack.shift()
+      const end = Math.max(visible - 1, value.start)
+      if (visible > 0 && end >= value.start) {
+        result.push({ start: value.start, end, options: value.options })
+      }
     }
 
     // -----------  normal character  --------------------------------------
@@ -469,7 +478,13 @@ export function buildHighlightMap(
   }
 
   // binary-search “character → word” (O(log n))
+  // Note: `end` indexes are inclusive; clamp to last valid character.
   const charToWord = (ch: number): number => {
+    const totalLen = prefix[words.length] ?? 0
+    if (totalLen === 0) return 0
+    if (ch < 0) ch = 0
+    if (ch >= totalLen) ch = totalLen - 1
+
     let lo = 0,
       hi = words.length - 1
     while (lo <= hi) {
@@ -478,7 +493,8 @@ export function buildHighlightMap(
       else if (ch >= prefix[mid + 1]) lo = mid + 1
       else return mid
     }
-    throw new RangeError(`Character index ${ch} is outside the text`)
+    // Fallback (shouldn’t happen due to clamping)
+    return Math.max(0, Math.min(words.length - 1, lo))
   }
 
   /* ---------- 2 . iterate ranges, later ones overwrite ---------- */
