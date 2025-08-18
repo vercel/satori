@@ -298,7 +298,7 @@ export function splitByBreakOpportunities(
 
   const contentWithoutStartEnd = content
     .replace(/\[s(?:\]|\s*:\s*\{.*?\}\s*\])/g, '')
-    .replace(/\[e(?:\]|\s*:\e*\{.*?\}\e*\])/g, '')
+    .replace(/\[e(?:\]|\s*:\s*\{.*?\}\s*\])/g, '')
 
   const breaker = new LineBreaker(contentWithoutStartEnd)
   let last = 0
@@ -436,17 +436,17 @@ export function getHighlightedOptions(
           result.push({ start: value.start, end, options: value.options })
         }
       }
+      // Close any unclosed ranges at EOF
+      while (stack.length) {
+        const value = stack.shift()
+        const end = Math.max(visible - 1, value.start)
+        if (visible > 0 && end >= value.start) {
+          result.push({ start: value.start, end, options: value.options })
+        }
+      }
+
       i += 3
       continue
-    }
-
-    // Close any unclosed ranges at EOF
-    while (stack.length) {
-      const value = stack.shift()
-      const end = Math.max(visible - 1, value.start)
-      if (visible > 0 && end >= value.start) {
-        result.push({ start: value.start, end, options: value.options })
-      }
     }
 
     // -----------  normal character  --------------------------------------
