@@ -62,7 +62,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vercel/satori.git"
+    "url": "git+https://github.com/edenstrom/satori.git"
   },
   "keywords": [
     "HTML",
@@ -73,9 +73,9 @@
   ],
   "author": "Shu Ding <g@shud.in>",
   "bugs": {
-    "url": "https://github.com/vercel/satori/issues"
+    "url": "https://github.com/vercel/edenstrom/issues"
   },
-  "homepage": "https://github.com/vercel/satori#readme",
+  "homepage": "https://github.com/vercel/edenstrom#readme",
   "devDependencies": {
     "@resvg/resvg-js": "^2.1.0",
     "@types/node": "^16",
