@@ -234,13 +234,13 @@ export default async function rect(
           break
       }
     } else if (parts.length === 2) {
-      const [x, y] = parts
-      if (x === 'left') xAlign = 'Min'
-      else if (x === 'right') xAlign = 'Max'
-      else if (x === 'center') xAlign = 'Mid'
-      if (y === 'top') yAlign = 'Min'
-      else if (y === 'bottom') yAlign = 'Max'
-      else if (y === 'center') yAlign = 'Mid'
+      for (const part of parts) {
+        if (part === 'left') xAlign = 'Min'
+        else if (part === 'right') xAlign = 'Max'
+        else if (part === 'center') xAlign = 'Mid'
+        else if (part === 'top') yAlign = 'Min'
+        else if (part === 'bottom') yAlign = 'Max'
+      }
     }
     const alignment = `x${xAlign}Y${yAlign}`
     const preserveAspectRatio =
