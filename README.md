@@ -229,6 +229,12 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 </tr>
 
 <tr>
+<td colspan="2"><code>objectPosition</code></td>
+<td>Support keywords: <code>top</code>, <code>bottom</code>, <code>left</code>, <code>right</code>, <code>center</code>, and combinations like <code>top left</code>. Defaults to <code>center</code>.</td>
+<td></td>
+</tr>
+
+<tr>
 <td colspan="2"><code>opacity</code></td>
 <td>Supported</td>
 <td></td>
