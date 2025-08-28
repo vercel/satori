@@ -1,14 +1,13 @@
-/**
- * This configuration ensures that the prebuilt Yoga (asm.js) is not included in
- * the WASM bundle.
- */
-
 import { defineConfig } from 'tsup'
 import { join } from 'path'
 import { replace } from 'esbuild-plugin-replace'
 
+const isStandaloneBuild = !!process.env.SATORI_STANDALONE
+
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: {
+    [isStandaloneBuild ? 'standalone' : 'index']: 'src/index.ts',
+  },
   splitting: false,
   sourcemap: true,
   target: 'node16',
@@ -17,11 +16,16 @@ export default defineConfig({
   },
   minify: process.env.NODE_ENV !== 'development',
   format: ['esm', 'cjs'],
-  noExternal: ['twrnc', 'emoji-regex-xs'],
+  noExternal: ['twrnc', 'emoji-regex-xs', 'yoga-layout'],
   esbuildOptions(options) {
     options.tsconfig = 'tsconfig.json'
     options.legalComments = 'external'
   },
+  env: isStandaloneBuild
+    ? {
+        SATORI_STANDALONE: '1',
+      }
+    : {},
   esbuildPlugins: [
     {
       name: 'optimize tailwind',

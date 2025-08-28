@@ -1,17 +1,7 @@
 import type { ReactNode, ReactElement } from 'react'
 import LineBreaker from 'linebreak'
-import { loadYoga, type Yoga } from 'yoga-layout/load'
-import { type Node } from 'yoga-layout'
 
 import CssDimension from './vendor/parse-css-dimension/index.js'
-
-// Always preload Yoga.
-const loadingYoga = loadYoga()
-export function getYoga() {
-  return loadingYoga
-}
-
-export { Yoga as TYoga, Node as YogaNode }
 
 export function isReactElement(node: ReactNode): node is ReactElement {
   const type = typeof node

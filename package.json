@@ -16,7 +16,7 @@
   "license": "MPL-2.0",
   "files": [
     "dist/**",
-    "wasm.js"
+    "yoga.wasm"
   ],
   "exports": {
     "./package.json": "./package.json",
@@ -24,24 +24,26 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./wasm": {
+    "./standalone": {
       "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
+        "types": "./dist/standalone.d.ts",
+        "default": "./dist/standalone.js"
       },
       "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
+        "types": "./dist/standalone.d.cts",
+        "default": "./dist/standalone.cjs"
       }
     }
   },
   "scripts": {
-    "prepare": "husky install",
+    "prepare": "husky install && pnpm run vendor",
     "dev": "pnpm run dev:default",
     "dev:default": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
     "dev:playground": "turbo dev --filter=satori-playground...",
-    "build": "NODE_ENV=production pnpm run build:default",
-    "build:default": "tsup",
+    "vendor": "cp node_modules/yoga-layout/dist/binaries/yoga.wasm .",
+    "build": "pnpm run build:default && pnpm run build:standalone",
+    "build:default": "NODE_ENV=production tsup",
+    "build:standalone": "NODE_ENV=production SATORI_STANDALONE=1 tsup",
     "test": "NODE_ENV=test vitest run",
     "test:ui": "NODE_ENV=test vitest --ui --coverage.enabled",
     "test-type": "tsc -p tsconfig.json --noEmit && tsc -p playground/tsconfig.json --noEmit",
@@ -115,5 +117,10 @@
   "packageManager": "pnpm@8.7.0",
   "engines": {
     "node": ">=16"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "yoga-layout@3.2.1": "patches/yoga-layout@3.2.1.patch"
+    }
   }
 }
