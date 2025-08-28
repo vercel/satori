@@ -402,7 +402,29 @@ await satori(
 
 ### Runtime Support
 
-Satori can be used in browser, Node.js (>= 16), and Web Workers.
+Satori can be directly used in browser, Node.js (>= 16), and Web Workers. It bundles its underlying WASM dependencies as base64-encoded strings and loads them at runtime.
+
+If there is a limitation on dynamically loading WASM (e.g. Cloudflare Workers), you can use the Standalone Build which is mentioned below.
+
+#### Standalone Build of Satori
+
+Satori's standalone build doesn't include Yoga's WASM binary by default, and you need to load it manually before using Satori.
+
+First, you need to download the `yoga.wasm` binary from (Satori build)[https://unpkg.com/satori/] and provide it yourself. Let's use `fetch` to load it directly from the CDN as an example:
+
+```jsx
+import satori, { init } from 'satori/standalone'
+
+const res = await fetch('https://unpkg.com/satori/yoga.wasm')
+const yogaWasm = await res.arrayBuffer()
+
+await init(yogaWasm)
+
+// Now you can use satori as usual
+const svg = await satori(...)
+```
+
+Of course, you can also load the `yoga.wasm` file from your local disk via `fs.readFile` in Node.js or other methods.
 
 ### Font Embedding
 

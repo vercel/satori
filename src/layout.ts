@@ -9,9 +9,8 @@ import {
   buildXMLString,
   normalizeChildren,
   hasDangerouslySetInnerHTMLProp,
-  getYoga,
-  YogaNode,
 } from './utils.js'
+import { getYoga, YogaNode } from './yoga.js'
 import { SVGNodeToImage } from './handler/preprocess.js'
 import computeStyle from './handler/compute.js'
 import FontLoader from './font.js'

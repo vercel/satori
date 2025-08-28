@@ -5,11 +5,12 @@ import type { SatoriNode } from './layout.js'
 import layout from './layout.js'
 import FontLoader, { FontOptions } from './font.js'
 import svg from './builder/svg.js'
-import { getYoga, segment, TYoga } from './utils.js'
+import { getYoga, TYoga } from './yoga.js'
 import { detectLanguageCode, LangCode, Locale } from './language.js'
 import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
 import { cache, inflightRequests } from './handler/image.js'
+import { segment } from './utils.js'
 
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()

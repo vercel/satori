@@ -11,10 +11,8 @@ import {
   isUndefined,
   isString,
   lengthToNumber,
-  getYoga,
-  TYoga,
-  YogaNode,
 } from '../utils.js'
+import { getYoga, TYoga, YogaNode } from '../yoga.js'
 import buildText, { container } from '../builder/text.js'
 import { buildDropShadow } from '../builder/shadow.js'
 import buildDecoration from '../builder/text-decoration.js'

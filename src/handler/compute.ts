@@ -10,12 +10,11 @@ import expand, { SerializedStyle } from './expand.js'
 import {
   asPointAutoPercentageLength,
   asPointPercentageLength,
-  getYoga,
   lengthToNumber,
   parseViewBox,
   v,
-  YogaNode,
 } from '../utils.js'
+import { getYoga, YogaNode } from '../yoga.js'
 import { resolveImageData } from './image.js'
 
 type SatoriElement = keyof typeof presets

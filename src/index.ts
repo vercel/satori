@@ -7,3 +7,4 @@ export type { Locale } from './language.js'
 
 export * from './satori.js'
 export { default } from './satori.js'
+export { init } from './yoga.js'
