@@ -203,11 +203,51 @@ export default async function rect(
       ((style.borderBottomWidth as number) || 0) +
       ((style.paddingBottom as number) || 0)
 
+    let xAlign = 'Mid'
+    let yAlign = 'Mid'
+    const position = (style.objectPosition || 'center')
+      .toString()
+      .trim()
+      .toLowerCase()
+    const parts = position.split(/\s+/)
+    if (parts.length === 1) {
+      switch (parts[0]) {
+        case 'left':
+          xAlign = 'Min'
+          yAlign = 'Mid'
+          break
+        case 'right':
+          xAlign = 'Max'
+          yAlign = 'Mid'
+          break
+        case 'top':
+          xAlign = 'Mid'
+          yAlign = 'Min'
+          break
+        case 'bottom':
+          xAlign = 'Mid'
+          yAlign = 'Max'
+          break
+        case 'center':
+          xAlign = 'Mid'
+          yAlign = 'Mid'
+          break
+      }
+    } else if (parts.length === 2) {
+      for (const part of parts) {
+        if (part === 'left') xAlign = 'Min'
+        else if (part === 'right') xAlign = 'Max'
+        else if (part === 'center') xAlign = 'Mid'
+        else if (part === 'top') yAlign = 'Min'
+        else if (part === 'bottom') yAlign = 'Max'
+      }
+    }
+    const alignment = `x${xAlign}Y${yAlign}`
     const preserveAspectRatio =
       style.objectFit === 'contain'
-        ? 'xMidYMid'
+        ? alignment
         : style.objectFit === 'cover'
-        ? 'xMidYMid slice'
+        ? `${alignment} slice`
         : 'none'
 
     if (style.transform) {
