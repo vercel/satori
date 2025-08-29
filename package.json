@@ -52,7 +52,8 @@
     "lint:fix": "pnpm lint --fix",
     "prettier-check": "prettier --check .",
     "prettier-fix": "prettier --write --list-different . --cache",
-    "ci-check": "concurrently \"pnpm prettier-check\" \"pnpm test-type\" \"pnpm lint\""
+    "ci-check": "concurrently \"pnpm prettier-check\" \"pnpm test-type\" \"pnpm lint\"",
+    "benchmark": "node --experimental-strip-types test/benchmark/index.ts"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -93,8 +94,10 @@
     "husky": "8.0.3",
     "jest-image-snapshot": "^6.1.0",
     "lint-staged": "13.1.0",
+    "mitata": "^1.0.34",
     "prettier": "^2.7.1",
     "react": "^17.0.2",
+    "sharp": "^0.34.3",
     "tsup": "^7.1.0",
     "turbo": "^1.6.3",
     "twrnc": "^3.4.0",
