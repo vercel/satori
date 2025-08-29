@@ -164,21 +164,21 @@ export default class FontLoader {
           // @ts-ignore
           { lowMemory: true }
         )
-        cachedParsedFont.set(data, font)
-      }
-
-      // Modify the `charToGlyphIndex` method, so we can know which char is
-      // being mapped to which glyph.
-      const originalCharToGlyphIndex = font.charToGlyphIndex
-      font.charToGlyphIndex = (char) => {
-        const index = originalCharToGlyphIndex.call(font, char)
-        if (index === 0) {
-          // The current requested char is missing a glyph.
-          if ((font as any)._trackBrokenChars) {
-            ;(font as any)._trackBrokenChars.push(char)
+        // Modify the `charToGlyphIndex` method, so we can know which char is
+        // being mapped to which glyph.
+        const originalCharToGlyphIndex = font.charToGlyphIndex
+        font.charToGlyphIndex = (char) => {
+          const index = originalCharToGlyphIndex.call(font, char)
+          if (index === 0) {
+            // The current requested char is missing a glyph.
+            if ((font as any)._trackBrokenChars) {
+              ;(font as any)._trackBrokenChars.push(char)
+            }
           }
+          return index
         }
-        return index
+
+        cachedParsedFont.set(data, font)
       }
 
       // We use the first font as the default font fallback.
@@ -506,11 +506,53 @@ export default class FontLoader {
       if (fontSize === 0) {
         return ''
       }
-      return font
-        .getPath(content.replace(/\n/g, ''), left, top, fontSize, {
-          letterSpacing: letterSpacing / fontSize,
-        })
-        .toPathData(1)
+
+      const fullPath = new opentype.Path()
+
+      const options = {
+        letterSpacing: letterSpacing / fontSize,
+      }
+
+      const cachedPath = new WeakMap<
+        opentype.Glyph,
+        [number, number, opentype.Path]
+      >()
+
+      font.forEachGlyph(
+        content.replace(/\n/g, ''),
+        left,
+        top,
+        fontSize,
+        options,
+        function (glyph, gX, gY, gFontSize) {
+          let glyphPath: opentype.Path
+          if (!cachedPath.has(glyph)) {
+            glyphPath = glyph.getPath(gX, gY, gFontSize, options)
+            cachedPath.set(glyph, [gX, gY, glyphPath])
+          } else {
+            const [_x, _y, _glyphPath] = cachedPath.get(glyph)
+            glyphPath = new opentype.Path()
+            glyphPath.commands = _glyphPath.commands.map((command) => {
+              const movedCommand = { ...command }
+              for (let k in movedCommand) {
+                if (typeof movedCommand[k] === 'number') {
+                  if (k === 'x' || k === 'x1' || k === 'x2') {
+                    movedCommand[k] += gX - _x
+                  }
+                  if (k === 'y' || k === 'y1' || k === 'y2') {
+                    movedCommand[k] += gY - _y
+                  }
+                }
+              }
+              return movedCommand
+            })
+          }
+
+          fullPath.extend(glyphPath)
+        }
+      )
+
+      return fullPath.toPathData(1)
     } finally {
       unpatch()
     }
