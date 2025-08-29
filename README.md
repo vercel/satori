@@ -410,7 +410,7 @@ If there is a limitation on dynamically loading WASM (e.g. Cloudflare Workers), 
 
 Satori's standalone build doesn't include Yoga's WASM binary by default, and you need to load it manually before using Satori.
 
-First, you need to download the `yoga.wasm` binary from (Satori build)[https://unpkg.com/satori/] and provide it yourself. Let's use `fetch` to load it directly from the CDN as an example:
+First, you need to download the `yoga.wasm` binary from [Satori build](https://unpkg.com/satori/) and provide it yourself. Let's use `fetch` to load it directly from the CDN as an example:
 
 ```jsx
 import satori, { init } from 'satori/standalone'
