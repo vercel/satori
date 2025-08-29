@@ -87,6 +87,11 @@ function compareFont(
   return -1
 }
 
+const cachedParsedFont = new WeakMap<
+  Buffer | ArrayBuffer,
+  opentype.Font | null | undefined
+>()
+
 export default class FontLoader {
   defaultFont: opentype.Font
   fonts = new Map<string, [opentype.Font, Weight?, FontStyle?][]>()
@@ -143,17 +148,24 @@ export default class FontLoader {
         )
       }
       const _lang = lang ?? SUFFIX_WHEN_LANG_NOT_SET
-      const font = opentype.parse(
-        // Buffer to ArrayBuffer.
-        'buffer' in data
-          ? data.buffer.slice(
-              data.byteOffset,
-              data.byteOffset + data.byteLength
-            )
-          : data,
-        // @ts-ignore
-        { lowMemory: true }
-      )
+      let font
+
+      if (cachedParsedFont.has(data)) {
+        font = cachedParsedFont.get(data)
+      } else {
+        font = opentype.parse(
+          // Buffer to ArrayBuffer.
+          'buffer' in data
+            ? data.buffer.slice(
+                data.byteOffset,
+                data.byteOffset + data.byteLength
+              )
+            : data,
+          // @ts-ignore
+          { lowMemory: true }
+        )
+        cachedParsedFont.set(data, font)
+      }
 
       // Modify the `charToGlyphIndex` method, so we can know which char is
       // being mapped to which glyph.
