@@ -1,6 +1,6 @@
 diff --git a/dist/binaries/yoga-wasm-esm.js b/dist/binaries/yoga-wasm-esm.js
 new file mode 100644
-index 0000000000000000000000000000000000000000..ff4a571f5507c9be7ee1257222b6788b7ad3973a
+index 0000000000000000000000000000000000000000..f3bc3ec2cf0d70b514ab4f9a03bd3641eddf4225
 --- /dev/null
 +++ b/dist/binaries/yoga-wasm-esm.js
 @@ -0,0 +1,67 @@
@@ -62,7 +62,7 @@ index 0000000000000000000000000000000000000000..ff4a571f5507c9be7ee1257222b6788b
 +argPackAdvance:0,fromWireType:function(){},toWireType:function(){}})},s:function(a,b,c,d,e){a=Bb[a];b=M(b);c=Ab(c);var f=[];E[d>>2]=Ea(f);return a(b,c,f,e)},t:function(a,b,c,d){a=Bb[a];b=M(b);c=Ab(c);a(b,c,null,d)},g:qb,m:function(a,b){var c=Db(a,b),d=c[0];b=d.name+"_$"+c.slice(1).map(function(g){return g.name}).join("_")+"$";var e=Eb[b];if(void 0!==e)return e;var f=Array(a-1);e=Cb((g,k,m,l)=>{for(var n=0,p=0;p<a-1;++p)f[p]=c[p+1].readValueFromPointer(l+n),n+=c[p+1].argPackAdvance;g=g[k].apply(g,
 +f);for(p=0;p<a-1;++p)c[p+1].ma&&c[p+1].ma(f[p]);if(!d.va)return d.toWireType(m,g)});return Eb[b]=e},D:function(a){4<a&&(J[a].ga+=1)},r:function(a){var b=M(a);Wa(b);qb(a)},c:function(){x("")},x:function(a,b,c){A.copyWithin(a,b,b+c)},w:function(a){var b=A.length;a>>>=0;if(2147483648<a)return!1;for(var c=1;4>=c;c*=2){var d=b*(1+.2/c);d=Math.min(d,a+100663296);var e=Math;d=Math.max(a,d);e=e.min.call(e,2147483648,d+(65536-d%65536)%65536);a:{try{fa.grow(e-ia.byteLength+65535>>>16);na();var f=1;break a}catch(g){}f=
 +void 0}if(f)return!0}return!1},z:function(){return 52},u:function(){return 70},y:function(a,b,c,d){for(var e=0,f=0;f<c;f++){var g=E[b>>2],k=E[b+4>>2];b+=8;for(var m=0;m<k;m++){var l=A[g+m],n=Fb[a];0===l||10===l?((1===a?ea:v)(z(n,0)),n.length=0):n.push(l)}e+=k}E[d>>2]=e;return 0}};
-+(function(){function a(e){h.asm=e.exports;fa=h.asm.E;na();oa=h.asm.J;qa.unshift(h.asm.F);F--;h.monitorRunDependencies&&h.monitorRunDependencies(F);0==F&&(null!==ta&&(clearInterval(ta),ta=null),G&&(e=G,G=null,e()))}function b(e){a(e.instance)}function c(e){return ya().then(function(f){return WebAssembly.instantiate(f,d)}).then(function(f){return f}).then(e,function(f){v("failed to asynchronously prepare wasm: "+f);x(f)})}var d={a:Jb};F++;h.monitorRunDependencies&&h.monitorRunDependencies(F);if(h.instantiateWasm)try{return h.instantiateWasm(d,
++(function(){function a(e){h.asm=e.exports;fa=h.asm.E;na();oa=h.asm.J;qa.unshift(h.asm.F);F--;h.monitorRunDependencies&&h.monitorRunDependencies(F);0==F&&(null!==ta&&(clearInterval(ta),ta=null),G&&(e=G,G=null,e()))}function b(e){a(e.instance)}function c(e){return ya().then(function(f){return f instanceof WebAssembly.Instance ? f : WebAssembly.instantiate(f,d)}).then(function(f){return f}).then(e,function(f){v("failed to asynchronously prepare wasm: "+f);x(f)})}var d={a:Jb};F++;h.monitorRunDependencies&&h.monitorRunDependencies(F);if(h.instantiateWasm)try{return h.instantiateWasm(d,
 +a)}catch(e){v("Module.instantiateWasm callback failed with error: "+e),ca(e)}(function(){return w||"function"!=typeof WebAssembly.instantiateStreaming||ua(H)||"function"!=typeof fetch?c(b):fetch(H,{credentials:"same-origin"}).then(function(e){return WebAssembly.instantiateStreaming(e,d).then(b,function(f){v("wasm streaming compile failed: "+f);v("falling back to ArrayBuffer instantiation");return c(b)})})})().catch(ca);return{}})();
 +h.___wasm_call_ctors=function(){return(h.___wasm_call_ctors=h.asm.F).apply(null,arguments)};var Ka=h.___getTypeName=function(){return(Ka=h.___getTypeName=h.asm.G).apply(null,arguments)};h.__embind_initialize_bindings=function(){return(h.__embind_initialize_bindings=h.asm.H).apply(null,arguments)};var Ib=h._malloc=function(){return(Ib=h._malloc=h.asm.I).apply(null,arguments)},S=h._free=function(){return(S=h._free=h.asm.K).apply(null,arguments)};
 +h.dynCall_jiji=function(){return(h.dynCall_jiji=h.asm.L).apply(null,arguments)};var Kb;G=function Lb(){Kb||Mb();Kb||(G=Lb)};
@@ -73,7 +73,7 @@ index 0000000000000000000000000000000000000000..ff4a571f5507c9be7ee1257222b6788b
 +}
 diff --git a/dist/binaries/yoga.wasm b/dist/binaries/yoga.wasm
 new file mode 100644
-index 0000000000000000000000000000000000000000..785e89f902a4b5d49ce613e54e94ac1ac2bc7890
+index 0000000000000000000000000000000000000000..17bd09c0095754d41f152d06ee514f6328088ee2
 --- /dev/null
 +++ b/dist/binaries/yoga.wasm
 @@ -0,0 +1,259 @@
