@@ -20,6 +20,14 @@ export function isClass(f: Function) {
   return /^class\s/.test(f.toString())
 }
 
+export function isForwardRefComponent(type: any) {
+  return type && type.$$typeof === Symbol.for('react.forward_ref')
+}
+
+export function isReactComponent(type: any) {
+  return typeof type === 'function' || isForwardRefComponent(type)
+}
+
 export function hasDangerouslySetInnerHTMLProp(props: any) {
   return 'dangerouslySetInnerHTML' in props
 }
