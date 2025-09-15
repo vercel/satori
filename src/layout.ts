@@ -115,7 +115,10 @@ export default async function* layout(
   }
 
   // Process as element.
-  const { type, props } = element
+  const { type: $type, props } = element
+  // type must be a string here.
+  const type = $type as string
+
   if (props && hasDangerouslySetInnerHTMLProp(props)) {
     throw new Error(
       'dangerouslySetInnerHTML property is not supported. See documentation for more information https://github.com/vercel/satori#jsx.'
