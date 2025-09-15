@@ -14,6 +14,8 @@ const list = new Set([
   'textShadowOffset',
   'textShadowColor',
   'textShadowRadius',
+  'WebkitTextStrokeWidth',
+  'WebkitTextStrokeColor',
   'textDecorationLine',
   'textDecorationStyle',
   'textDecorationColor',

@@ -120,6 +120,35 @@ describe('Gradient', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support other degree unit', async () => {
+      const svgs = await Promise.all(
+        [
+          'linear-gradient(0.5turn, red, blue)',
+          `linear-gradient(${Math.PI}rad, red, blue)`,
+          `linear-gradient(200grad, red, blue)`,
+        ].map((background) =>
+          satori(
+            <div
+              style={{
+                background,
+                height: '100%',
+                width: '100%',
+              }}
+            ></div>,
+            {
+              width: 100,
+              height: 100,
+              fonts,
+            }
+          )
+        )
+      )
+
+      for (const svg of svgs) {
+        expect(toImage(svg, 100)).toMatchImageSnapshot()
+      }
+    })
   })
 
   describe('radial-gradient', () => {
@@ -129,6 +158,26 @@ describe('Gradient', () => {
           style={{
             backgroundColor: 'white',
             backgroundImage: 'radial-gradient(circle at 25px 25px, blue, red)',
+            backgroundSize: '100px 100px',
+            height: '100%',
+            width: '100%',
+          }}
+        ></div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should make sense if x of y is zero', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            backgroundColor: 'white',
+            backgroundImage: 'radial-gradient(circle at 0px 0%, blue, red)',
             backgroundSize: '100px 100px',
             height: '100%',
             width: '100%',
@@ -425,5 +474,168 @@ describe('Gradient', () => {
       }
     )
     expect(toImage(svg, 300)).toMatchImageSnapshot()
+  })
+
+  describe('repeating-linear-gradient', async () => {
+    it('should support repeating-linear-gradient', async () => {
+      const svgs = await Promise.all(
+        [
+          'repeating-linear-gradient(to right, red, blue 50%)',
+          'repeating-linear-gradient(to right top, red, blue 30%)',
+        ].map((backgroundImage) =>
+          satori(
+            <div
+              style={{
+                backgroundColor: 'white',
+                backgroundImage,
+                width: '100%',
+                height: '100%',
+              }}
+            ></div>,
+            {
+              width: 100,
+              height: 100,
+              fonts,
+            }
+          )
+        )
+      )
+      svgs.forEach((svg) => {
+        expect(toImage(svg, 100)).toMatchImageSnapshot()
+      })
+    })
+
+    it('should support degree', async () => {
+      const svgs = await Promise.all(
+        [
+          'repeating-linear-gradient(30deg, red, blue 50%)',
+          'repeating-linear-gradient(150deg, red, blue 30%)',
+          'repeating-linear-gradient(-15deg, red, blue 30%)',
+          'repeating-linear-gradient(210deg, red, blue 30%)',
+        ].map((backgroundImage) =>
+          satori(
+            <div
+              style={{
+                backgroundColor: 'white',
+                backgroundImage,
+                width: '100%',
+                height: '100%',
+              }}
+            ></div>,
+            {
+              width: 200,
+              height: 100,
+              fonts,
+            }
+          )
+        )
+      )
+
+      svgs.forEach((svg) => {
+        expect(toImage(svg, 100)).toMatchImageSnapshot()
+      })
+    })
+
+    it('should support background-size and background-repeat', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            backgroundColor: 'white',
+            backgroundImage: 'repeating-linear-gradient(30deg, red, blue 30%)',
+            backgroundSize: '50px 25px',
+            height: '100%',
+            width: '100%',
+          }}
+        ></div>,
+        {
+          width: 200,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support multiple repeating-linear-gradient', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            backgroundColor: 'white',
+            backgroundImage:
+              'repeating-linear-gradient(rgba(77, 159, 12, .1), #4d9f0c 40px), repeating-linear-gradient(0.25turn, rgba(63, 135, 166, .3), #3f87a6 20px)',
+            height: '100%',
+            width: '100%',
+          }}
+        ></div>,
+        {
+          width: 200,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should compute correct cycle', async () => {
+      const svgs = await Promise.all(
+        [
+          `repeating-linear-gradient(45deg, #606dbc, #606dbc 5px, #465298 5px, #465298 10px)`,
+          `repeating-linear-gradient(45deg, #606dbc, #606dbc 5px, #465298 5px, #465298 10%)`,
+        ].map((backgroundImage) =>
+          satori(
+            <div
+              style={{
+                backgroundColor: 'white',
+                backgroundImage,
+                width: '100px',
+                height: '100px',
+              }}
+            ></div>,
+            {
+              width: 100,
+              height: 100,
+              fonts,
+            }
+          )
+        )
+      )
+      svgs.forEach((svg) => {
+        expect(toImage(svg, 100)).toMatchImageSnapshot()
+      })
+    })
+  })
+
+  describe('repeating-radial-gradient', async () => {
+    it('should support repeating-radial-gradient', async () => {
+      const svgs = await Promise.all(
+        [
+          'repeating-radial-gradient(circle, red, blue 20%)',
+          'repeating-radial-gradient(circle 5px at 20% 20%, blue, blue 10px, red 10px,red 20px)',
+          'repeating-radial-gradient(circle closest-corner at 10% 10%,red,black 5%,blue 5%,green 10%)',
+          'repeating-radial-gradient(ellipse 10% 10% at 10% 10%, #e66465, #9198e5 10%)',
+          'repeating-radial-gradient(ellipse closest-corner at 10% 10%, #e66465, #9198e5 10%)',
+          'repeating-radial-gradient(ellipse 20% 10% at 20% 20%, blue, blue 10px, red 10px,red 20px)',
+        ].map((backgroundImage) =>
+          satori(
+            <div
+              style={{
+                backgroundColor: 'white',
+                backgroundImage,
+                width: '100%',
+                height: '100%',
+              }}
+            ></div>,
+            {
+              width: 100,
+              height: 100,
+              fonts,
+            }
+          )
+        )
+      )
+      svgs.forEach((svg) => {
+        expect(toImage(svg, 100)).toMatchImageSnapshot()
+      })
+    })
   })
 })

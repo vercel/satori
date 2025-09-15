@@ -2,15 +2,15 @@ import type { ReactNode } from 'react'
 import type { TwConfig } from 'twrnc'
 import type { SatoriNode } from './layout.js'
 
-import getYoga, { init } from './yoga/index.js'
 import layout from './layout.js'
 import FontLoader, { FontOptions } from './font.js'
 import svg from './builder/svg.js'
-import { segment } from './utils.js'
+import { getYoga, TYoga } from './yoga.js'
 import { detectLanguageCode, LangCode, Locale } from './language.js'
 import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
-import { cache } from './handler/image.js'
+import { cache, inflightRequests } from './handler/image.js'
+import { segment } from './utils.js'
 
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
@@ -37,10 +37,9 @@ export type SatoriOptions = (
   ) => Promise<string | Array<FontOptions>>
   tailwindConfig?: TwConfig
   onNodeDetected?: (node: SatoriNode) => void
+  pointScaleFactor?: number
 }
 export type { SatoriNode }
-
-export { init }
 
 export default async function satori(
   element: ReactNode,
@@ -64,7 +63,7 @@ export default async function satori(
   const definedWidth = 'width' in options ? options.width : undefined
   const definedHeight = 'height' in options ? options.height : undefined
 
-  const root = Yoga.Node.create()
+  const root = getRootNode(Yoga, options.pointScaleFactor)
   if (definedWidth) root.setWidth(definedWidth)
   if (definedHeight) root.setHeight(definedHeight)
   root.setFlexDirection(Yoga.FLEX_DIRECTION_ROW)
@@ -90,6 +89,7 @@ export default async function satori(
   const processedWordsMissingFonts = new Set()
 
   cache.clear()
+  inflightRequests.clear()
   await preProcessNode(element)
 
   const handler = layout(element, {
@@ -100,7 +100,7 @@ export default async function satori(
       fontWeight: 'normal',
       fontFamily: 'serif',
       fontStyle: 'normal',
-      lineHeight: 1.2,
+      lineHeight: 'normal',
       color: 'black',
       opacity: 1,
       whiteSpace: 'normal',
@@ -191,6 +191,19 @@ export default async function satori(
   root.freeRecursive()
 
   return svg({ width: computedWidth, height: computedHeight, content })
+}
+
+function getRootNode(
+  Yoga: TYoga,
+  pointScaleFactor?: SatoriOptions['pointScaleFactor']
+) {
+  if (!pointScaleFactor) {
+    return Yoga.Node.create()
+  } else {
+    const config = Yoga.Config.create()
+    config.setPointScaleFactor(pointScaleFactor)
+    return Yoga.Node.createWithConfig(config)
+  }
 }
 
 function convertToLanguageCodes(

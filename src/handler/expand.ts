@@ -59,6 +59,11 @@ function handleSpecialCase(
   value: string | number,
   currentColor: string
 ) {
+  if (name === 'zIndex') {
+    console.warn('`z-index` is currently not supported.')
+    return { [name]: value }
+  }
+
   if (name === 'lineHeight') {
     return { lineHeight: purify(name, value) }
   }
@@ -164,7 +169,11 @@ function handleSpecialCase(
 
   if (name === 'background') {
     value = value.toString().trim()
-    if (/^(linear-gradient|radial-gradient|url)\(/.test(value)) {
+    if (
+      /^(linear-gradient|radial-gradient|url|repeating-linear-gradient|repeating-radial-gradient)\(/.test(
+        value
+      )
+    ) {
       return getStylesForProperty('backgroundImage', value, true)
     }
     return getStylesForProperty('background', value, true)
@@ -189,6 +198,19 @@ function handleSpecialCase(
     }
 
     return result
+  }
+
+  if (name === 'WebkitTextStroke') {
+    value = value.toString().trim()
+    const values = value.split(' ')
+    if (values.length !== 2) {
+      throw new Error('Invalid `WebkitTextStroke` value.')
+    }
+
+    return {
+      WebkitTextStrokeWidth: purify(name, values[0]),
+      WebkitTextStrokeColor: purify(name, values[1]),
+    }
   }
 
   return
@@ -233,7 +255,7 @@ type MainStyle = {
   whiteSpace: string
   wordBreak: string
   textAlign: string
-  lineHeight: number
+  lineHeight: number | string
   letterSpacing: number
 
   fontFamily: string | string[]
@@ -263,6 +285,8 @@ type MainStyle = {
   }[]
   textShadowColor: string[]
   textShadowRadius: number[]
+  WebkitTextStrokeWidth: number
+  WebkitTextStrokeColor: string
 }
 
 type OtherStyle = Exclude<Record<PropertyKey, string | number>, keyof MainStyle>
@@ -352,7 +376,7 @@ export default function expand(
 
     // Line height needs to be relative.
     if (prop === 'lineHeight') {
-      if (typeof value === 'string') {
+      if (typeof value === 'string' && value !== 'normal') {
         value = serializedStyle[prop] =
           lengthToNumber(
             value,

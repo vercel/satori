@@ -3,8 +3,6 @@
  * supported inline node is text. All other nodes are using block layout.
  */
 import type { LayoutContext } from '../layout.js'
-import type { Yoga } from 'yoga-wasm-web'
-import getYoga from '../yoga/index.js'
 import {
   v,
   segment,
@@ -14,6 +12,7 @@ import {
   isString,
   lengthToNumber,
 } from '../utils.js'
+import { getYoga, TYoga, YogaNode } from '../yoga.js'
 import buildText, { container } from '../builder/text.js'
 import { buildDropShadow } from '../builder/shadow.js'
 import buildDecoration from '../builder/text-decoration.js'
@@ -219,12 +218,10 @@ export default async function* buildTextNodes(
         currentLineHeight = engine.height(word)
       }
 
-      const allowedToPutAtBeginning = ',.!?:-@)>]}%#'.indexOf(word[0]) < 0
-      const allowedToJustify = !currentWidth
+      const allowedToJustify = textAlign === 'justify'
 
       const willWrap =
         i &&
-        allowedToPutAtBeginning &&
         // When determining whether a line break is necessary, the width of the
         // trailing spaces is not included in the calculation, as the end boundary
         // can be closely adjacent to the last non-space character.
@@ -273,8 +270,8 @@ export default async function* buildTextNodes(
         lines++
         height += currentLineHeight
         currentWidth = w
-        currentLineHeight = w ? engine.height(word) : 0
-        currentBaselineOffset = w ? engine.baseline(word) : 0
+        currentLineHeight = w ? Math.round(engine.height(word)) : 0
+        currentBaselineOffset = w ? Math.round(engine.baseline(word)) : 0
         lineSegmentNumber.push(1)
         lineIndex = -1
 
@@ -287,11 +284,11 @@ export default async function* buildTextNodes(
       } else {
         // It fits into the current line.
         currentWidth += w
-        const glyphHeight = engine.height(word)
+        const glyphHeight = Math.round(engine.height(word))
         if (glyphHeight > currentLineHeight) {
           // Use the baseline of the highest segment as the baseline of the line.
           currentLineHeight = glyphHeight
-          currentBaselineOffset = engine.baseline(word)
+          currentBaselineOffset = Math.round(engine.baseline(word))
         }
         if (allowedToJustify) {
           lineSegmentNumber[lineSegmentNumber.length - 1]++
@@ -389,6 +386,39 @@ export default async function* buildTextNodes(
       measuredTextSize = { width: _width, height }
       return { width: _width, height }
     }
+
+    // When doing `text-wrap: pretty`, we try to avoid ending a paragraph with a single word
+    // by reshaping all lines in a way that achieves more balanced line lengths
+    // This "pretty" line breaking algorithm tries to achieve optimal line breaks
+    // that avoid orphans (single words at the end of a paragraph) and create
+    // visually pleasing line lengths.
+    if (textWrap === 'pretty') {
+      // Check if the last line has a single word or is very short
+      // (typically less than 1/3 of the container width)
+      const lastLineWidth = lineWidths[lineWidths.length - 1]
+      const isLastLineShort = lastLineWidth < width / 3
+
+      if (isLastLineShort) {
+        // Reflow the paragraph with slightly adjusted line breaks
+        // to avoid orphans and create more even line lengths
+        // This is a simplified approach - a real implementation would use a
+        // more sophisticated algorithm to find optimal line breaks
+
+        // We'll just reflow once with slightly reduced width to force
+        // redistribution of words. This is much simplified from the actual
+        // paragraph-level line breaking algorithm which would compute scores
+        // for different line break combinations.
+        const adjustedWidth = width * 0.9
+        const result = flow(adjustedWidth)
+
+        // Use the result if it reduces orphans without adding too many lines
+        if (result.height <= height * 1.3) {
+          measuredTextSize = { width, height: result.height }
+          return { width, height: result.height }
+        }
+      }
+    }
+
     const _width = Math.ceil(width)
     measuredTextSize = { width: _width, height }
     // This may be a temporary fix, I didn't dig deep into yoga.
@@ -506,6 +536,8 @@ export default async function* buildTextNodes(
           extendedWidth = true
         }
       }
+
+      leftOffset = Math.round(leftOffset)
     }
 
     const baselineOfLine = baselines[line]
@@ -681,6 +713,7 @@ export default async function* buildTextNodes(
             width: deco[3],
             ascender: deco[2],
             clipPathId,
+            matrix,
           },
           parentStyle
         )
@@ -724,16 +757,29 @@ export default async function* buildTextNodes(
   if (mergedPath) {
     const p =
       parentStyle.color !== 'transparent' && opacity !== 0
-        ? buildXMLString('path', {
+        ? `<g ${overflowMaskId ? `mask="url(#${overflowMaskId})"` : ''} ${
+            clipPathId ? `clip-path="url(#${clipPathId})"` : ''
+          }>` +
+          buildXMLString('path', {
             fill: parentStyle.color,
             d: mergedPath,
             transform: matrix ? matrix : undefined,
             opacity: opacity !== 1 ? opacity : undefined,
-            'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-            mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
-
             style: cssFilter ? `filter:${cssFilter}` : undefined,
-          })
+            'stroke-width': inheritedStyle.WebkitTextStrokeWidth
+              ? `${inheritedStyle.WebkitTextStrokeWidth}px`
+              : undefined,
+            stroke: inheritedStyle.WebkitTextStrokeWidth
+              ? inheritedStyle.WebkitTextStrokeColor
+              : undefined,
+            'stroke-linejoin': inheritedStyle.WebkitTextStrokeWidth
+              ? 'round'
+              : undefined,
+            'paint-order': inheritedStyle.WebkitTextStrokeWidth
+              ? 'stroke'
+              : undefined,
+          }) +
+          '</g>'
         : ''
 
     if (_inheritedBackgroundClipTextPath) {
@@ -763,10 +809,7 @@ export default async function* buildTextNodes(
   return result
 }
 
-function createTextContainerNode(
-  Yoga: Yoga,
-  textAlign: string
-): ReturnType<Yoga['Node']['create']> {
+function createTextContainerNode(Yoga: TYoga, textAlign: string): YogaNode {
   // Create a container node for this text fragment.
   const textContainer = Yoga.Node.create()
   textContainer.setAlignItems(Yoga.ALIGN_BASELINE)

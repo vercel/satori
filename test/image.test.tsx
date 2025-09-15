@@ -367,6 +367,31 @@ describe('Image', () => {
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it('should have a separate border radius clip path when transform is used', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          overflow: 'hidden',
+        }}
+      >
+        <img
+          width='100%'
+          height='100%'
+          src='https://via.placeholder.com/150'
+          style={{
+            transform: 'rotate(45deg) translate(30px, 15px)',
+            borderRadius: '20px',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
   it('should support transparent image with background', async () => {
     const svg = await satori(
       <div
@@ -636,6 +661,218 @@ describe('background-image: url()', () => {
       { width: 100, height: 100, fonts }
     )
 
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should handle charset=utf-8 with comma in data', async () => {
+    const svg = await satori(
+      <img
+        src={`data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 100 100"><polygon fill="#ffffff" points="50,0 100,85 0,85" /></svg>`}
+      />,
+      { width: 100, height: 100, fonts }
+    )
+
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should handle charset=utf-8 with in base64', async () => {
+    const svg = await satori(
+      <img
+        src={`data:image/svg+xml;charset=utf-8;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMTUiIGZpbGw9IiNlZTc2MjEiLz48L3N2Zz4=`}
+      />,
+      { width: 100, height: 100, fonts }
+    )
+
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+})
+
+describe('objectFit and objectPosition', () => {
+  it('should default to center center with cover', async () => {
+    const svg = await satori(
+      <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+        <img
+          src={PNG_SAMPLE}
+          style={{
+            width: 100,
+            height: 100,
+            objectFit: 'cover',
+            backgroundColor: 'green',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should position to top with cover', async () => {
+    const svg = await satori(
+      <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+        <img
+          src={PNG_SAMPLE}
+          style={{
+            width: 100,
+            height: 100,
+            objectFit: 'cover',
+            objectPosition: 'top',
+            backgroundColor: 'green',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should position to bottom with cover', async () => {
+    const svg = await satori(
+      <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+        <img
+          src={PNG_SAMPLE}
+          style={{
+            width: 100,
+            height: 100,
+            objectFit: 'cover',
+            objectPosition: 'bottom',
+            backgroundColor: 'green',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should position to left with cover', async () => {
+    const svg = await satori(
+      <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+        <img
+          src={PNG_SAMPLE}
+          style={{
+            width: 100,
+            height: 100,
+            objectFit: 'cover',
+            objectPosition: 'left',
+            backgroundColor: 'green',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should position to right with cover', async () => {
+    const svg = await satori(
+      <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+        <img
+          src={PNG_SAMPLE}
+          style={{
+            width: 100,
+            height: 100,
+            objectFit: 'cover',
+            objectPosition: 'right',
+            backgroundColor: 'green',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should position to top left with cover', async () => {
+    const svg = await satori(
+      <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+        <img
+          src={PNG_SAMPLE}
+          style={{
+            width: 100,
+            height: 100,
+            objectFit: 'cover',
+            objectPosition: 'top left',
+            backgroundColor: 'green',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should position to bottom right with cover', async () => {
+    const svg = await satori(
+      <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+        <img
+          src={PNG_SAMPLE}
+          style={{
+            width: 100,
+            height: 100,
+            objectFit: 'cover',
+            objectPosition: 'bottom right',
+            backgroundColor: 'green',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should default to center center with contain', async () => {
+    const svg = await satori(
+      <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+        <img
+          src={PNG_SAMPLE}
+          style={{
+            width: 100,
+            height: 100,
+            objectFit: 'contain',
+            backgroundColor: 'green',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should position to top with contain', async () => {
+    const svg = await satori(
+      <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+        <img
+          src={PNG_SAMPLE}
+          style={{
+            width: 100,
+            height: 100,
+            objectFit: 'contain',
+            objectPosition: 'top',
+            backgroundColor: 'green',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should position to bottom left with contain', async () => {
+    const svg = await satori(
+      <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+        <img
+          src={PNG_SAMPLE}
+          style={{
+            width: 100,
+            height: 100,
+            objectFit: 'contain',
+            objectPosition: 'bottom left',
+            backgroundColor: 'green',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 })

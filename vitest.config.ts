@@ -7,12 +7,4 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
     },
   },
-  resolve: {
-    alias: [
-      {
-        find: '@yoga',
-        replacement: path.resolve(__dirname, 'src', 'yoga', 'yoga-prebuilt.ts'),
-      },
-    ],
-  },
 })

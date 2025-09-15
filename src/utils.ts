@@ -1,7 +1,7 @@
 import type { ReactNode, ReactElement } from 'react'
+import LineBreaker from 'linebreak'
 
 import CssDimension from './vendor/parse-css-dimension/index.js'
-import LineBreaker from 'linebreak'
 
 export function isReactElement(node: ReactNode): node is ReactElement {
   const type = typeof node
@@ -102,14 +102,7 @@ export function lengthToNumber(
           return parsed.value
       }
     } else if (parsed.type === 'angle') {
-      switch (parsed.unit) {
-        case 'deg':
-          return parsed.value
-        case 'rad':
-          return (parsed.value * 180) / Math.PI
-        default:
-          return parsed.value
-      }
+      return calcDegree(length)
     } else if (parsed.type === 'percentage') {
       if (percentage) {
         return (parsed.value / 100) * baseLength
@@ -117,6 +110,21 @@ export function lengthToNumber(
     }
   } catch {
     // Not a length unit, silently ignore.
+  }
+}
+
+export function calcDegree(deg: string) {
+  const parsed = new CssDimension(deg)
+
+  switch (parsed.unit) {
+    case 'deg':
+      return parsed.value
+    case 'rad':
+      return (parsed.value * 180) / Math.PI
+    case 'turn':
+      return parsed.value * 360
+    case 'grad':
+      return 0.9 * parsed.value
   }
 }
 
@@ -279,7 +287,66 @@ export function isNumber(x: unknown): x is number {
 }
 
 export function isUndefined(x: unknown): x is undefined {
-  return toString(x) === '[object Undefined]'
+  return typeof x === 'undefined'
+}
+
+export function asPointPercentageLength(
+  x: string | number,
+  propertyName?: string
+): number | `${number}%` | undefined {
+  if (typeof x === 'number') {
+    return x
+  }
+  if (x.endsWith('%')) {
+    const percentageValue = parseFloat(x.slice(0, -1))
+    if (isNaN(percentageValue)) {
+      console.warn(
+        `Invalid value "${x}"${
+          typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
+        }. Expected a percentage value (e.g., "50%").`
+      )
+      return undefined
+    }
+    return `${percentageValue}%`
+  }
+
+  console.warn(
+    `Invalid value "${x}"${
+      typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
+    }. Expected a number or a percentage value (e.g., "50%").`
+  )
+  return undefined
+}
+
+export function asPointAutoPercentageLength(
+  x: string | number,
+  propertyName?: string
+): number | 'auto' | `${number}%` | undefined {
+  if (typeof x === 'number') {
+    return x
+  }
+  if (x === 'auto') {
+    return 'auto'
+  }
+  if (x.endsWith('%')) {
+    const percentageValue = parseFloat(x.slice(0, -1))
+    if (isNaN(percentageValue)) {
+      console.warn(
+        `Invalid value "${x}"${
+          typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
+        }. Expected a percentage value (e.g., "50%").`
+      )
+      return undefined
+    }
+    return `${percentageValue}%`
+  }
+
+  console.warn(
+    `Invalid value "${x}"${
+      typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
+    }. Expected a number, "auto", or a percentage value (e.g., "50%").`
+  )
+  return undefined
 }
 
 export function splitByBreakOpportunities(

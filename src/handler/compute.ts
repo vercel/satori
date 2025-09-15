@@ -4,13 +4,17 @@
  * also returns the inherited style for children of the element.
  */
 
-import type { Node as YogaNode } from 'yoga-wasm-web'
-
-import getYoga from '../yoga/index.js'
 import presets from './presets.js'
 import inheritable from './inheritable.js'
 import expand, { SerializedStyle } from './expand.js'
-import { lengthToNumber, parseViewBox, v } from '../utils.js'
+import {
+  asPointAutoPercentageLength,
+  asPointPercentageLength,
+  lengthToNumber,
+  parseViewBox,
+  v,
+} from '../utils.js'
+import { getYoga, YogaNode } from '../yoga.js'
 import { resolveImageData } from './image.js'
 
 type SatoriElement = keyof typeof presets
@@ -168,6 +172,7 @@ export default async function compute(
       {
         flex: Yoga.DISPLAY_FLEX,
         block: Yoga.DISPLAY_FLEX,
+        contents: Yoga.DISPLAY_CONTENTS,
         none: Yoga.DISPLAY_NONE,
         '-webkit-box': Yoga.DISPLAY_FLEX,
       },
@@ -281,7 +286,7 @@ export default async function compute(
   // @TODO: node.setFlex
 
   if (typeof style.flexBasis !== 'undefined') {
-    node.setFlexBasis(style.flexBasis)
+    node.setFlexBasis(asPointAutoPercentageLength(style.flexBasis, 'flexBasis'))
   }
   node.setFlexGrow(typeof style.flexGrow === 'undefined' ? 0 : style.flexGrow)
   node.setFlexShrink(
@@ -289,16 +294,16 @@ export default async function compute(
   )
 
   if (typeof style.maxHeight !== 'undefined') {
-    node.setMaxHeight(style.maxHeight)
+    node.setMaxHeight(asPointPercentageLength(style.maxHeight, 'maxHeight'))
   }
   if (typeof style.maxWidth !== 'undefined') {
-    node.setMaxWidth(style.maxWidth)
+    node.setMaxWidth(asPointPercentageLength(style.maxWidth, 'maxWidth'))
   }
   if (typeof style.minHeight !== 'undefined') {
-    node.setMinHeight(style.minHeight)
+    node.setMinHeight(asPointPercentageLength(style.minHeight, 'minHeight'))
   }
   if (typeof style.minWidth !== 'undefined') {
-    node.setMinWidth(style.minWidth)
+    node.setMinWidth(asPointPercentageLength(style.minWidth, 'minWidth'))
   }
 
   node.setOverflow(
@@ -313,10 +318,22 @@ export default async function compute(
     )
   )
 
-  node.setMargin(Yoga.EDGE_TOP, style.marginTop || 0)
-  node.setMargin(Yoga.EDGE_BOTTOM, style.marginBottom || 0)
-  node.setMargin(Yoga.EDGE_LEFT, style.marginLeft || 0)
-  node.setMargin(Yoga.EDGE_RIGHT, style.marginRight || 0)
+  node.setMargin(
+    Yoga.EDGE_TOP,
+    asPointAutoPercentageLength(style.marginTop || 0)
+  )
+  node.setMargin(
+    Yoga.EDGE_BOTTOM,
+    asPointAutoPercentageLength(style.marginBottom || 0)
+  )
+  node.setMargin(
+    Yoga.EDGE_LEFT,
+    asPointAutoPercentageLength(style.marginLeft || 0)
+  )
+  node.setMargin(
+    Yoga.EDGE_RIGHT,
+    asPointAutoPercentageLength(style.marginRight || 0)
+  )
 
   node.setBorder(Yoga.EDGE_TOP, style.borderTopWidth || 0)
   node.setBorder(Yoga.EDGE_BOTTOM, style.borderBottomWidth || 0)
@@ -328,12 +345,25 @@ export default async function compute(
   node.setPadding(Yoga.EDGE_LEFT, style.paddingLeft || 0)
   node.setPadding(Yoga.EDGE_RIGHT, style.paddingRight || 0)
 
+  node.setBoxSizing(
+    v(
+      style.boxSizing,
+      {
+        'border-box': Yoga.BOX_SIZING_BORDER_BOX,
+        'content-box': Yoga.BOX_SIZING_CONTENT_BOX,
+      },
+      Yoga.BOX_SIZING_BORDER_BOX,
+      'boxSizing'
+    )
+  )
+
   node.setPositionType(
     v(
       style.position,
       {
         absolute: Yoga.POSITION_TYPE_ABSOLUTE,
         relative: Yoga.POSITION_TYPE_RELATIVE,
+        static: Yoga.POSITION_TYPE_STATIC,
       },
       Yoga.POSITION_TYPE_RELATIVE,
       'position'
@@ -341,25 +371,34 @@ export default async function compute(
   )
 
   if (typeof style.top !== 'undefined') {
-    node.setPosition(Yoga.EDGE_TOP, style.top)
+    node.setPosition(Yoga.EDGE_TOP, asPointPercentageLength(style.top, 'top'))
   }
   if (typeof style.bottom !== 'undefined') {
-    node.setPosition(Yoga.EDGE_BOTTOM, style.bottom)
+    node.setPosition(
+      Yoga.EDGE_BOTTOM,
+      asPointPercentageLength(style.bottom, 'bottom')
+    )
   }
   if (typeof style.left !== 'undefined') {
-    node.setPosition(Yoga.EDGE_LEFT, style.left)
+    node.setPosition(
+      Yoga.EDGE_LEFT,
+      asPointPercentageLength(style.left, 'left')
+    )
   }
   if (typeof style.right !== 'undefined') {
-    node.setPosition(Yoga.EDGE_RIGHT, style.right)
+    node.setPosition(
+      Yoga.EDGE_RIGHT,
+      asPointPercentageLength(style.right, 'right')
+    )
   }
 
   if (typeof style.height !== 'undefined') {
-    node.setHeight(style.height)
+    node.setHeight(asPointAutoPercentageLength(style.height, 'height'))
   } else {
     node.setHeightAuto()
   }
   if (typeof style.width !== 'undefined') {
-    node.setWidth(style.width)
+    node.setWidth(asPointAutoPercentageLength(style.width, 'width'))
   } else {
     node.setWidthAuto()
   }
