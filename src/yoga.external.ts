@@ -9,8 +9,10 @@ const loadYoga = loadYogaUntyped as (options: {
 }) => Promise<Yoga>
 
 let resolveYoga: (yoga: Yoga) => void
-const yogaPromise: Promise<Yoga> = new Promise((resolve) => {
+let rejectYoga: (error: unknown) => void
+const yogaPromise: Promise<Yoga> = new Promise((resolve, reject) => {
   resolveYoga = resolve
+  rejectYoga = reject
 })
 
 export type InitInput =
@@ -32,7 +34,7 @@ async function loadWasm(
     (typeof Request === 'function' && source instanceof Request) ||
     (typeof URL === 'function' && source instanceof URL)
   ) {
-    source = fetch(source)
+    source = await fetch(source)
   }
 
   if (typeof Response === 'function' && source instanceof Response) {
@@ -69,13 +71,17 @@ async function loadWasm(
 export function init(input: InitInput) {
   loadYoga({
     instantiateWasm(imports, successCallback) {
-      loadWasm(input, imports).then(({ instance }) => {
-        successCallback(instance)
-      })
+      loadWasm(input, imports)
+        .then(({ instance }) => {
+          successCallback(instance)
+        })
+        .catch(rejectYoga)
 
       return {}
     },
-  }).then(resolveYoga)
+  })
+    .then(resolveYoga)
+    .catch(rejectYoga)
 }
 
 export function getYoga() {
