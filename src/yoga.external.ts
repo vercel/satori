@@ -48,7 +48,6 @@ async function loadWasm(
             e
           )
         }
-        throw e
       }
     }
 
