@@ -36,11 +36,10 @@
     }
   },
   "scripts": {
-    "prepare": "husky install && pnpm run vendor",
+    "prepare": "husky install",
     "dev": "pnpm run dev:default",
     "dev:default": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
     "dev:playground": "turbo dev --filter=satori-playground...",
-    "vendor": "cp node_modules/yoga-layout/dist/binaries/yoga.wasm .",
     "build": "pnpm run build:default && pnpm run build:standalone",
     "build:default": "NODE_ENV=production tsup",
     "build:standalone": "NODE_ENV=production SATORI_STANDALONE=1 tsup",
