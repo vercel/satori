@@ -19,6 +19,7 @@ const list = new Set([
   'textDecorationLine',
   'textDecorationStyle',
   'textDecorationColor',
+  'textDecorationSkipInk',
   'whiteSpace',
   'transform',
   'wordBreak',

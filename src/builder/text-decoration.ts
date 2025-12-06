@@ -1,4 +1,60 @@
 import { buildXMLString } from '../utils.js'
+import type { GlyphBox } from '../font.js'
+
+function buildSkipInkSegments(
+  start: number,
+  end: number,
+  glyphBoxes: GlyphBox[],
+  y: number,
+  strokeWidth: number,
+  baseline: number
+) {
+  const halfStroke = strokeWidth / 2
+  const bleed = Math.max(halfStroke, strokeWidth * 0.75)
+  const skipRanges: [number, number][] = []
+
+  for (const box of glyphBoxes) {
+    // Only skip glyphs that actually cross the underline position and extend below the baseline.
+    if (box.y2 < baseline + halfStroke || box.y1 > y + halfStroke) continue
+
+    const from = Math.max(start, box.x1 - bleed)
+    const to = Math.min(end, box.x2 + bleed)
+
+    if (from >= to) continue
+    if (skipRanges.length === 0) {
+      skipRanges.push([from, to])
+      continue
+    }
+
+    const last = skipRanges[skipRanges.length - 1]
+    if (from <= last[1]) {
+      last[1] = Math.max(last[1], to)
+    } else {
+      skipRanges.push([from, to])
+    }
+  }
+
+  if (!skipRanges.length) {
+    return [[start, end]] as [number, number][]
+  }
+
+  const segments: [number, number][] = []
+  let cursor = start
+
+  for (const [from, to] of skipRanges) {
+    if (from > cursor) {
+      segments.push([cursor, from])
+    }
+    cursor = Math.max(cursor, to)
+    if (cursor >= end) break
+  }
+
+  if (cursor < end) {
+    segments.push([cursor, end])
+  }
+
+  return segments
+}
 
 export default function buildDecoration(
   {
@@ -8,6 +64,7 @@ export default function buildDecoration(
     ascender,
     clipPathId,
     matrix,
+    glyphBoxes,
   }: {
     width: number
     left: number
@@ -15,6 +72,7 @@ export default function buildDecoration(
     ascender: number
     clipPathId?: string
     matrix?: string
+    glyphBoxes?: GlyphBox[]
   },
   style: Record<string, any>
 ) {
@@ -22,6 +80,7 @@ export default function buildDecoration(
     textDecorationColor,
     textDecorationStyle,
     textDecorationLine,
+    textDecorationSkipInk,
     fontSize,
     color,
   } = style
@@ -45,14 +104,47 @@ export default function buildDecoration(
       ? `0 ${height * 2}`
       : undefined
 
+  const applySkipInk =
+    textDecorationLine === 'underline' &&
+    (textDecorationSkipInk || 'auto') !== 'none' &&
+    glyphBoxes?.length
+
+  const baseline = top + ascender
+
+  const segments = applySkipInk
+    ? buildSkipInkSegments(left, left + width, glyphBoxes, y, height, baseline)
+    : ([[left, left + width]] as [number, number][])
+
   // https://www.w3.org/TR/css-backgrounds-3/#valdef-line-style-double
   const extraLine =
     textDecorationStyle === 'double'
-      ? buildXMLString('line', {
-          x1: left,
-          y1: y + height + 1,
-          x2: left + width,
-          y2: y + height + 1,
+      ? segments
+          .map(([x1, x2]) =>
+            buildXMLString('line', {
+              x1,
+              y1: y + height + 1,
+              x2,
+              y2: y + height + 1,
+              stroke: textDecorationColor || color,
+              'stroke-width': height,
+              'stroke-dasharray': dasharray,
+              'stroke-linecap':
+                textDecorationStyle === 'dotted' ? 'round' : 'square',
+              transform: matrix,
+            })
+          )
+          .join('')
+      : ''
+
+  return (
+    (clipPathId ? `<g clip-path="url(#${clipPathId})">` : '') +
+    segments
+      .map(([x1, x2]) =>
+        buildXMLString('line', {
+          x1,
+          y1: y,
+          x2,
+          y2: y,
           stroke: textDecorationColor || color,
           'stroke-width': height,
           'stroke-dasharray': dasharray,
@@ -60,21 +152,8 @@ export default function buildDecoration(
             textDecorationStyle === 'dotted' ? 'round' : 'square',
           transform: matrix,
         })
-      : ''
-
-  return (
-    (clipPathId ? `<g clip-path="url(#${clipPathId})">` : '') +
-    buildXMLString('line', {
-      x1: left,
-      y1: y,
-      x2: left + width,
-      y2: y,
-      stroke: textDecorationColor || color,
-      'stroke-width': height,
-      'stroke-dasharray': dasharray,
-      'stroke-linecap': textDecorationStyle === 'dotted' ? 'round' : 'square',
-      transform: matrix,
-    }) +
+      )
+      .join('') +
     extraLine +
     (clipPathId ? '</g>' : '')
   )

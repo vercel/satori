@@ -228,4 +228,53 @@ describe('Text Decoration', () => {
     )
     expect(toImage(svg, 200)).toMatchImageSnapshot()
   })
+
+  it('Should skip ink by default when `text-decoration-line: underline`', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 40,
+          color: '#000',
+          textDecorationLine: 'underline',
+        }}
+      >
+        abgpq
+      </div>,
+      { width: 260, height: 120, fonts }
+    )
+
+    const underlineSegments = (svg.match(/<line /g) || []).length
+    expect(underlineSegments).toBeGreaterThan(1)
+  })
+
+  it('Should render continuous line when `text-decoration-skip-ink: none`', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 40,
+          color: '#000',
+          textDecorationLine: 'underline',
+          textDecorationSkipInk: 'none',
+        }}
+      >
+        abgpq
+      </div>,
+      { width: 260, height: 120, fonts }
+    )
+
+    const underlineSegments = (svg.match(/<line /g) || []).length
+    expect(underlineSegments).toBe(1)
+  })
 })

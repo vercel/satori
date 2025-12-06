@@ -18,6 +18,13 @@ export interface FontOptions {
   lang?: string
 }
 
+export type GlyphBox = {
+  x1: number
+  x2: number
+  y1: number
+  y2: number
+}
+
 export type FontEngine = {
   has: (s: string) => boolean
   baseline: (s?: string, resolvedFont?: any) => number
@@ -37,7 +44,7 @@ export type FontEngine = {
       left: number
       letterSpacing: number
     }
-  ) => string
+  ) => { path: string; boxes: GlyphBox[] }
 }
 
 function compareFont(
@@ -498,16 +505,17 @@ export default class FontLoader {
       left: number
       letterSpacing: number
     }
-  ) {
+  ): { path: string; boxes: GlyphBox[] } {
     const font = resolveFont(content)
     const unpatch = this.patchFontFallbackResolver(font, resolveFont)
 
     try {
       if (fontSize === 0) {
-        return ''
+        return { path: '', boxes: [] }
       }
 
       const fullPath = new opentype.Path()
+      const boxes: GlyphBox[] = []
 
       const options = {
         letterSpacing: letterSpacing / fontSize,
@@ -517,6 +525,31 @@ export default class FontLoader {
         opentype.Glyph,
         [number, number, opentype.Path]
       >()
+
+      const computeBoundingBox = (commands: opentype.Path['commands']) => {
+        const xs: number[] = []
+        const ys: number[] = []
+
+        for (const cmd of commands) {
+          if ('x' in cmd && typeof cmd.x === 'number') xs.push(cmd.x)
+          if ('y' in cmd && typeof cmd.y === 'number') ys.push(cmd.y)
+          if ('x1' in cmd && typeof cmd.x1 === 'number') xs.push(cmd.x1)
+          if ('y1' in cmd && typeof cmd.y1 === 'number') ys.push(cmd.y1)
+          if ('x2' in cmd && typeof cmd.x2 === 'number') xs.push(cmd.x2)
+          if ('y2' in cmd && typeof cmd.y2 === 'number') ys.push(cmd.y2)
+        }
+
+        if (!xs.length || !ys.length) {
+          return null
+        }
+
+        return {
+          x1: Math.min(...xs),
+          x2: Math.max(...xs),
+          y1: Math.min(...ys),
+          y2: Math.max(...ys),
+        }
+      }
 
       font.forEachGlyph(
         content.replace(/\n/g, ''),
@@ -548,11 +581,19 @@ export default class FontLoader {
             })
           }
 
+          const bbox = computeBoundingBox(glyphPath.commands)
+          if (bbox) {
+            boxes.push(bbox)
+          }
+
           fullPath.extend(glyphPath)
         }
       )
 
-      return fullPath.toPathData(1)
+      return {
+        path: fullPath.toPathData(1),
+        boxes,
+      }
     } finally {
       unpatch()
     }
