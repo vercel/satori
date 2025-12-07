@@ -109,18 +109,7 @@ export default function buildDecoration(
     (textDecorationSkipInk || 'auto') !== 'none' &&
     glyphBoxes?.length
 
-  const debugSkipInk =
-    typeof process !== 'undefined' &&
-    process.env.NODE_ENV !== 'test' &&
-    process.env.SATORI_DEBUG_SKIP_INK === '1'
-
   const baseline = top + ascender
-  const detectionBand = debugSkipInk
-    ? {
-        top: y - height,
-        bottom: y + height * 4,
-      }
-    : null
 
   const segments = applySkipInk
     ? buildSkipInkSegments(left, left + width, glyphBoxes, y, height, baseline)
@@ -149,36 +138,6 @@ export default function buildDecoration(
 
   return (
     (clipPathId ? `<g clip-path="url(#${clipPathId})">` : '') +
-    (detectionBand
-      ? buildXMLString('rect', {
-          x: left,
-          y: detectionBand.top,
-          width,
-          height: detectionBand.bottom - detectionBand.top,
-          fill: 'rgba(0,128,255,0.12)',
-          stroke: '#0080ff',
-          'stroke-width': height * 0.3,
-          'vector-effect': 'non-scaling-stroke',
-          transform: matrix,
-        })
-      : '') +
-    (debugSkipInk && glyphBoxes?.length
-      ? glyphBoxes
-          .map((box) =>
-            buildXMLString('rect', {
-              x: box.x1,
-              y: box.y1,
-              width: box.x2 - box.x1,
-              height: box.y2 - box.y1,
-              fill: 'rgba(255,0,0,0.12)',
-              stroke: '#ff0000',
-              'stroke-width': height * 0.4,
-              'vector-effect': 'non-scaling-stroke',
-              transform: matrix,
-            })
-          )
-          .join('')
-      : '') +
     segments
       .map(([x1, x2]) =>
         buildXMLString('line', {
