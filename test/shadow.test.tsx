@@ -232,5 +232,24 @@ describe('Shadow', () => {
 
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support text shadows with transparent text color', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            background: 'white',
+            width: 100,
+            height: 100,
+            fontSize: 40,
+            color: 'transparent',
+            textShadow: 'red 0px 0px 5px',
+          }}
+        >
+          Hello
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 })

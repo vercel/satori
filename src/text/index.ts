@@ -480,7 +480,8 @@ export default async function* buildTextNodes(
         shadowColor: textShadowColor,
         shadowOffset: textShadowOffset,
         shadowRadius: textShadowRadius,
-      }
+      },
+      parentStyle.color === 'transparent'
     )
 
     filter = buildXMLString('defs', {}, filter)
@@ -756,12 +757,15 @@ export default async function* buildTextNodes(
   // Embed the font as path.
   if (mergedPath) {
     const p =
-      parentStyle.color !== 'transparent' && opacity !== 0
+      (parentStyle.color !== 'transparent' || filter) && opacity !== 0
         ? `<g ${overflowMaskId ? `mask="url(#${overflowMaskId})"` : ''} ${
             clipPathId ? `clip-path="url(#${clipPathId})"` : ''
           }>` +
           buildXMLString('path', {
-            fill: parentStyle.color,
+            fill:
+              filter && parentStyle.color === 'transparent'
+                ? 'black'
+                : parentStyle.color,
             d: mergedPath,
             transform: matrix ? matrix : undefined,
             opacity: opacity !== 1 ? opacity : undefined,
