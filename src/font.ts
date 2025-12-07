@@ -27,7 +27,6 @@ export type GlyphBox = {
 type SkipInkBand = {
   underlineY: number
   strokeWidth: number
-  baseline: number
 }
 
 export type FontEngine = {
@@ -55,30 +54,26 @@ export type FontEngine = {
 
 type BandPoint = [number, number]
 
-const bandSamplingSteps = {
-  L: 8,
-  Q: 12,
-  C: 16,
-  Z: 8,
-} as const
-
 type LineSegment = {
   from: BandPoint
   to: BandPoint
-}
-
-function sampleBezierPoints(points: BandPoint[], steps: number): BandPoint[] {
-  const sampled: BandPoint[] = []
-  for (let i = 0; i <= steps; i++) {
-    sampled.push(evaluateBezier(points, i / steps))
-  }
-  return sampled
 }
 
 function flattenPath(commands: opentype.Path['commands']): LineSegment[] {
   const segments: LineSegment[] = []
   let start: BandPoint = [0, 0]
   let current: BandPoint = [0, 0]
+
+  const addCurve = (points: BandPoint[], steps: number) => {
+    let prev = points[0]
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps
+      const next = evaluateBezier(points, t)
+      segments.push({ from: prev, to: next })
+      prev = next
+    }
+    current = points[points.length - 1]
+  }
 
   for (const cmd of commands) {
     if (cmd.type === 'M') {
@@ -94,26 +89,15 @@ function flattenPath(commands: opentype.Path['commands']): LineSegment[] {
     }
 
     if (cmd.type === 'Q') {
-      const points = sampleBezierPoints(
-        [current, [cmd.x1, cmd.y1], [cmd.x, cmd.y]],
-        bandSamplingSteps.Q
-      )
-      for (let i = 1; i < points.length; i++) {
-        segments.push({ from: points[i - 1], to: points[i] })
-      }
-      current = points[points.length - 1]
+      addCurve([current, [cmd.x1, cmd.y1], [cmd.x, cmd.y]], 12)
       continue
     }
 
     if (cmd.type === 'C') {
-      const points = sampleBezierPoints(
+      addCurve(
         [current, [cmd.x1, cmd.y1], [cmd.x2, cmd.y2], [cmd.x, cmd.y]],
-        bandSamplingSteps.C
+        16
       )
-      for (let i = 1; i < points.length; i++) {
-        segments.push({ from: points[i - 1], to: points[i] })
-      }
-      current = points[points.length - 1]
       continue
     }
 
@@ -172,7 +156,6 @@ function computeBandBox(
       const [x2, y2] = seg.to
 
       if (y1 === y2) continue
-
       const yMin = Math.min(y1, y2)
       const yMax = Math.max(y1, y2)
       if (y < yMin || y >= yMax) continue
@@ -185,15 +168,9 @@ function computeBandBox(
     if (!intersections.length) continue
     intersections.sort((a, b) => a - b)
 
-    const rowRanges: [number, number][] = []
     for (let j = 0; j < intersections.length - 1; j += 2) {
       const from = Math.min(intersections[j], intersections[j + 1])
       const to = Math.max(intersections[j], intersections[j + 1])
-      rowRanges.push([from, to])
-    }
-
-    rowRanges.sort((a, b) => a[0] - b[0])
-    for (const [from, to] of rowRanges) {
       const start = Math.floor(from)
       const end = Math.ceil(to)
       for (let col = start; col < end; col++) {

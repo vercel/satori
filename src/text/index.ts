@@ -567,7 +567,6 @@ export default async function* buildTextNodes(
       return {
         underlineY: baseline + baselineOfWord * 0.1,
         strokeWidth: Math.max(1, fontSize * 0.1),
-        baseline,
       }
     }
 
