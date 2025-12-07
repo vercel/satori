@@ -244,13 +244,12 @@ describe('Text Decoration', () => {
           textDecorationLine: 'underline',
         }}
       >
-        abgpq
+        abgpqapa
       </div>,
       { width: 260, height: 120, fonts }
     )
 
-    const underlineSegments = (svg.match(/<line /g) || []).length
-    expect(underlineSegments).toBeGreaterThan(1)
+    expect(toImage(svg, 260)).toMatchImageSnapshot()
   })
 
   it('Should render continuous line when `text-decoration-skip-ink: none`', async () => {
@@ -269,12 +268,34 @@ describe('Text Decoration', () => {
           textDecorationSkipInk: 'none',
         }}
       >
-        abgpq
+        abgpqapa
       </div>,
       { width: 260, height: 120, fonts }
     )
 
-    const underlineSegments = (svg.match(/<line /g) || []).length
-    expect(underlineSegments).toBe(1)
+    expect(toImage(svg, 260)).toMatchImageSnapshot()
+  })
+
+  it('Should skip ink correctly with complex descenders', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 40,
+          color: '#000',
+          textDecorationLine: 'underline',
+        }}
+      >
+        agayaqapajaya;a,a|a
+      </div>,
+      { width: 360, height: 160, fonts }
+    )
+
+    expect(toImage(svg, 360)).toMatchImageSnapshot()
   })
 })

@@ -24,6 +24,11 @@ export type GlyphBox = {
   y1: number
   y2: number
 }
+type SkipInkBand = {
+  underlineY: number
+  strokeWidth: number
+  baseline: number
+}
 
 export type FontEngine = {
   has: (s: string) => boolean
@@ -43,8 +48,221 @@ export type FontEngine = {
       top: number
       left: number
       letterSpacing: number
-    }
+    },
+    band?: SkipInkBand
   ) => { path: string; boxes: GlyphBox[] }
+}
+
+type BandPoint = [number, number]
+
+const bandSamplingSteps = {
+  L: 8,
+  Q: 12,
+  C: 16,
+  Z: 8,
+} as const
+
+type LineSegment = {
+  from: BandPoint
+  to: BandPoint
+}
+
+function sampleBezierPoints(points: BandPoint[], steps: number): BandPoint[] {
+  const sampled: BandPoint[] = []
+  for (let i = 0; i <= steps; i++) {
+    sampled.push(evaluateBezier(points, i / steps))
+  }
+  return sampled
+}
+
+function flattenPath(commands: opentype.Path['commands']): LineSegment[] {
+  const segments: LineSegment[] = []
+  let start: BandPoint = [0, 0]
+  let current: BandPoint = [0, 0]
+
+  for (const cmd of commands) {
+    if (cmd.type === 'M') {
+      start = current = [cmd.x, cmd.y]
+      continue
+    }
+
+    if (cmd.type === 'L') {
+      const next: BandPoint = [cmd.x, cmd.y]
+      segments.push({ from: current, to: next })
+      current = next
+      continue
+    }
+
+    if (cmd.type === 'Q') {
+      const points = sampleBezierPoints(
+        [current, [cmd.x1, cmd.y1], [cmd.x, cmd.y]],
+        bandSamplingSteps.Q
+      )
+      for (let i = 1; i < points.length; i++) {
+        segments.push({ from: points[i - 1], to: points[i] })
+      }
+      current = points[points.length - 1]
+      continue
+    }
+
+    if (cmd.type === 'C') {
+      const points = sampleBezierPoints(
+        [current, [cmd.x1, cmd.y1], [cmd.x2, cmd.y2], [cmd.x, cmd.y]],
+        bandSamplingSteps.C
+      )
+      for (let i = 1; i < points.length; i++) {
+        segments.push({ from: points[i - 1], to: points[i] })
+      }
+      current = points[points.length - 1]
+      continue
+    }
+
+    if (cmd.type === 'Z') {
+      segments.push({ from: current, to: start })
+      current = start
+    }
+  }
+
+  return segments
+}
+
+function evaluateBezier(points: BandPoint[], t: number): BandPoint {
+  let working = points
+
+  while (working.length > 1) {
+    const next: BandPoint[] = []
+    for (let i = 0; i < working.length - 1; i++) {
+      next.push([
+        working[i][0] + (working[i + 1][0] - working[i][0]) * t,
+        working[i][1] + (working[i + 1][1] - working[i][1]) * t,
+      ])
+    }
+    working = next
+  }
+
+  return working[0]
+}
+
+function computeBandBox(
+  commands: opentype.Path['commands'],
+  band?: SkipInkBand
+): GlyphBox[] {
+  if (!band) return []
+
+  const strokeWidth = band.strokeWidth
+  const bandMin = band.underlineY - strokeWidth * 0.25
+  const bandMax = band.underlineY + strokeWidth * 2.5
+
+  const segments = flattenPath(commands)
+  if (!segments.length) return []
+
+  const bandHeight = bandMax - bandMin
+  const ySamples = Math.max(12, Math.ceil(bandHeight / 0.25))
+  const yStep = bandHeight / ySamples
+  const yStart = bandMin + yStep / 2
+
+  const columnHits = new Set<number>()
+
+  for (let i = 0; i < ySamples; i++) {
+    const y = yStart + yStep * i
+    const intersections: number[] = []
+
+    for (const seg of segments) {
+      const [x1, y1] = seg.from
+      const [x2, y2] = seg.to
+
+      if (y1 === y2) continue
+
+      const yMin = Math.min(y1, y2)
+      const yMax = Math.max(y1, y2)
+      if (y < yMin || y >= yMax) continue
+
+      const t = (y - y1) / (y2 - y1)
+      const x = x1 + (x2 - x1) * t
+      intersections.push(x)
+    }
+
+    if (!intersections.length) continue
+    intersections.sort((a, b) => a - b)
+
+    const rowRanges: [number, number][] = []
+    for (let j = 0; j < intersections.length - 1; j += 2) {
+      const from = Math.min(intersections[j], intersections[j + 1])
+      const to = Math.max(intersections[j], intersections[j + 1])
+      rowRanges.push([from, to])
+    }
+
+    rowRanges.sort((a, b) => a[0] - b[0])
+    for (const [from, to] of rowRanges) {
+      const start = Math.floor(from)
+      const end = Math.ceil(to)
+      for (let col = start; col < end; col++) {
+        columnHits.add(col)
+      }
+    }
+  }
+
+  if (!columnHits.size) return []
+
+  const columns = Array.from(columnHits.values()).sort((a, b) => a - b)
+  const inkRanges: [number, number][] = []
+
+  let rangeStart = columns[0]
+  let prev = columns[0]
+  for (let i = 1; i < columns.length; i++) {
+    const col = columns[i]
+    if (col > prev + 1) {
+      inkRanges.push([rangeStart, prev + 1])
+      rangeStart = col
+    }
+    prev = col
+  }
+  inkRanges.push([rangeStart, prev + 1])
+
+  const boxes: GlyphBox[] = []
+  const bleed = strokeWidth * 0.6
+  const minX = inkRanges[0][0]
+  const maxX = inkRanges[inkRanges.length - 1][1]
+
+  for (const [x1, x2] of inkRanges) {
+    const left = Math.min(x1, minX) - bleed
+    const right = Math.max(x2, maxX) + bleed
+    boxes.push({
+      x1: left,
+      x2: right,
+      y1: bandMin,
+      y2: bandMax,
+    })
+  }
+
+  return boxes
+}
+
+function computeBoundingBox(
+  commands: opentype.Path['commands']
+): GlyphBox | null {
+  const xs: number[] = []
+  const ys: number[] = []
+
+  for (const cmd of commands) {
+    if ('x' in cmd && typeof cmd.x === 'number') xs.push(cmd.x)
+    if ('y' in cmd && typeof cmd.y === 'number') ys.push(cmd.y)
+    if ('x1' in cmd && typeof cmd.x1 === 'number') xs.push(cmd.x1)
+    if ('y1' in cmd && typeof cmd.y1 === 'number') ys.push(cmd.y1)
+    if ('x2' in cmd && typeof cmd.x2 === 'number') xs.push(cmd.x2)
+    if ('y2' in cmd && typeof cmd.y2 === 'number') ys.push(cmd.y2)
+  }
+
+  if (!xs.length || !ys.length) {
+    return null
+  }
+
+  return {
+    x1: Math.min(...xs),
+    x2: Math.max(...xs),
+    y1: Math.min(...ys),
+    y2: Math.max(...ys),
+  }
 }
 
 function compareFont(
@@ -402,9 +620,10 @@ export default class FontLoader {
           top: number
           left: number
           letterSpacing: number
-        }
+        },
+        band?: SkipInkBand
       ) => {
-        return this.getSVG(resolveFont, s, style)
+        return this.getSVG(resolveFont, s, style, band)
       },
     }
 
@@ -504,7 +723,8 @@ export default class FontLoader {
       top: number
       left: number
       letterSpacing: number
-    }
+    },
+    band?: SkipInkBand
   ): { path: string; boxes: GlyphBox[] } {
     const font = resolveFont(content)
     const unpatch = this.patchFontFallbackResolver(font, resolveFont)
@@ -525,31 +745,6 @@ export default class FontLoader {
         opentype.Glyph,
         [number, number, opentype.Path]
       >()
-
-      const computeBoundingBox = (commands: opentype.Path['commands']) => {
-        const xs: number[] = []
-        const ys: number[] = []
-
-        for (const cmd of commands) {
-          if ('x' in cmd && typeof cmd.x === 'number') xs.push(cmd.x)
-          if ('y' in cmd && typeof cmd.y === 'number') ys.push(cmd.y)
-          if ('x1' in cmd && typeof cmd.x1 === 'number') xs.push(cmd.x1)
-          if ('y1' in cmd && typeof cmd.y1 === 'number') ys.push(cmd.y1)
-          if ('x2' in cmd && typeof cmd.x2 === 'number') xs.push(cmd.x2)
-          if ('y2' in cmd && typeof cmd.y2 === 'number') ys.push(cmd.y2)
-        }
-
-        if (!xs.length || !ys.length) {
-          return null
-        }
-
-        return {
-          x1: Math.min(...xs),
-          x2: Math.max(...xs),
-          y1: Math.min(...ys),
-          y2: Math.max(...ys),
-        }
-      }
 
       font.forEachGlyph(
         content.replace(/\n/g, ''),
@@ -581,9 +776,9 @@ export default class FontLoader {
             })
           }
 
-          const bbox = computeBoundingBox(glyphPath.commands)
-          if (bbox) {
-            boxes.push(bbox)
+          const bandBoxes = band ? computeBandBox(glyphPath.commands, band) : []
+          if (bandBoxes.length) {
+            boxes.push(...bandBoxes)
           }
 
           fullPath.extend(glyphPath)

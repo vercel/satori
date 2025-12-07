@@ -556,6 +556,21 @@ export default async function* buildTextNodes(
     const heightOfWord = engine.height(text)
     const baselineDelta = baselineOfLine - baselineOfWord
 
+    const buildUnderlineBand = (offset: number) => {
+      if (
+        !shouldCollectDecorationBoxes ||
+        parentStyle.textDecorationLine !== 'underline'
+      ) {
+        return undefined
+      }
+      const baseline = top + offset + baselineDelta + baselineOfWord
+      return {
+        underlineY: baseline + baselineOfWord * 0.1,
+        strokeWidth: Math.max(1, fontSize * 0.1),
+        baseline,
+      }
+    }
+
     if (!decorationLines[line]) {
       decorationLines[line] = {
         left: leftOffset,
@@ -679,13 +694,19 @@ export default async function* buildTextNodes(
         wordBuffer === null ? leftOffset : bufferedOffset
       const finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
 
-      const svg = engine.getSVG(finalizedSegment.replace(/(\t)+/g, ''), {
-        fontSize,
-        left: left + finalizedLeftOffset,
-        // Since we need to pass the baseline position, add the ascender to the top.
-        top: top + topOffset + baselineOfWord + baselineDelta,
-        letterSpacing,
-      })
+      const band = buildUnderlineBand(topOffset)
+
+      const svg = engine.getSVG(
+        finalizedSegment.replace(/(\t)+/g, ''),
+        {
+          fontSize,
+          left: left + finalizedLeftOffset,
+          // Since we need to pass the baseline position, add the ascender to the top.
+          top: top + topOffset + baselineOfWord + baselineDelta,
+          letterSpacing,
+        },
+        band
+      )
 
       path = svg.path
 
@@ -730,12 +751,18 @@ export default async function* buildTextNodes(
       topOffset += baselineOfWord + baselineDelta
 
       if (shouldCollectDecorationBoxes && !image) {
-        const svg = engine.getSVG(text.replace(/(\t)+/g, ''), {
-          fontSize,
-          left: left + leftOffset,
-          top: top + topOffset,
-          letterSpacing,
-        })
+        const band = buildUnderlineBand(topOffset)
+
+        const svg = engine.getSVG(
+          text.replace(/(\t)+/g, ''),
+          {
+            fontSize,
+            left: left + leftOffset,
+            top: top + topOffset,
+            letterSpacing,
+          },
+          band
+        )
 
         if (svg.boxes && svg.boxes.length) {
           ;(decorationGlyphs[line] || (decorationGlyphs[line] = [])).push(
