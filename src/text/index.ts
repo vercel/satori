@@ -63,6 +63,7 @@ export default async function* buildTextNodes(
     tabSize = 8,
     letterSpacing,
     _inheritedBackgroundClipTextPath,
+    _inheritedBackgroundClipTextHasBackground,
     flexShrink,
   } = parentStyle
 
@@ -489,7 +490,10 @@ export default async function* buildTextNodes(
         shadowRadius: textShadowRadius,
       },
       isFullyTransparent(parentStyle.color) ||
-        !!_inheritedBackgroundClipTextPath
+        !!(
+          _inheritedBackgroundClipTextPath &&
+          _inheritedBackgroundClipTextHasBackground
+        )
     )
 
     filter = buildXMLString('defs', {}, filter)
@@ -773,8 +777,12 @@ export default async function* buildTextNodes(
             fill:
               filter &&
               (isFullyTransparent(parentStyle.color) ||
-                _inheritedBackgroundClipTextPath)
+                (_inheritedBackgroundClipTextPath &&
+                  _inheritedBackgroundClipTextHasBackground))
                 ? 'black'
+                : _inheritedBackgroundClipTextPath &&
+                  _inheritedBackgroundClipTextHasBackground
+                ? 'transparent'
                 : parentStyle.color,
             d: mergedPath,
             transform: matrix ? matrix : undefined,

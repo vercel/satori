@@ -271,5 +271,25 @@ describe('Shadow', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support text shadows with backgroundClip and no background', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: 100,
+            height: 100,
+            fontSize: 40,
+            backgroundClip: 'text',
+            color: 'white',
+            textShadow:
+              '0px 0px 3px #9400d3,0px 0px 4px #9400d3,0px 0px 5px #9400d3,0px 0px 5px #9400d3,0px 0px 5px #9400d3,0px 0px 5px #9400d3,0px 0px 5px #9400d3,0px 0px 5px #9400d3,0px 0px 5px #9400d3,0px 0px 5px #9400d3',
+          }}
+        >
+          Hello
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 })

@@ -173,6 +173,11 @@ export default async function* layout(
     const mutateRefValue = { value: '' } as any
     newInheritableStyle._inheritedBackgroundClipTextPath = mutateRefValue
     computedStyle._inheritedBackgroundClipTextPath = mutateRefValue
+
+    if (computedStyle.backgroundImage) {
+      newInheritableStyle._inheritedBackgroundClipTextHasBackground = 'true'
+      computedStyle._inheritedBackgroundClipTextHasBackground = 'true'
+    }
   }
 
   // 2. Do layout recursively for its children.
