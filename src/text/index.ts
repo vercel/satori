@@ -34,6 +34,14 @@ function isFullyTransparent(color: string): boolean {
   return parsed ? parsed.alpha === 0 : false
 }
 
+function isOpaqueWhite(color: string): boolean {
+  if (!color) return false
+  const parsed = cssColorParse(color)
+  if (!parsed) return false
+  const [r, g, b, a] = parsed.values
+  return r === 255 && g === 255 && b === 255 && (a === undefined || a === 1)
+}
+
 export default async function* buildTextNodes(
   content: string,
   context: LayoutContext
@@ -490,10 +498,8 @@ export default async function* buildTextNodes(
         shadowRadius: textShadowRadius,
       },
       isFullyTransparent(parentStyle.color) ||
-        !!(
-          _inheritedBackgroundClipTextPath &&
-          _inheritedBackgroundClipTextHasBackground
-        )
+        (_inheritedBackgroundClipTextHasBackground &&
+          isOpaqueWhite(parentStyle.color))
     )
 
     filter = buildXMLString('defs', {}, filter)
@@ -777,12 +783,9 @@ export default async function* buildTextNodes(
             fill:
               filter &&
               (isFullyTransparent(parentStyle.color) ||
-                (_inheritedBackgroundClipTextPath &&
-                  _inheritedBackgroundClipTextHasBackground))
+                (_inheritedBackgroundClipTextHasBackground &&
+                  isOpaqueWhite(parentStyle.color)))
                 ? 'black'
-                : _inheritedBackgroundClipTextPath &&
-                  _inheritedBackgroundClipTextHasBackground
-                ? 'transparent'
                 : parentStyle.color,
             d: mergedPath,
             transform: matrix ? matrix : undefined,
