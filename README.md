@@ -480,7 +480,7 @@ You can use the [Vercel OG Image Playground](https://og-playground.vercel.app/) 
 
 ## Author
 
-- Shu Ding ([@shuding_](https://twitter.com/shuding_))
+- Shu Ding ([@shuding](https://twitter.com/shuding))
 
 ---
 
