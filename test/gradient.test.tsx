@@ -638,4 +638,22 @@ describe('Gradient', () => {
       })
     })
   })
+
+  it('should support gradient with color background', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          background: 'linear-gradient(90deg, #fff 0%, #50ff5050 50%), #fff',
+        }}
+      ></div>,
+      {
+        width: 300,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })
