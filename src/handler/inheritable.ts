@@ -35,6 +35,7 @@ const list = new Set([
   '_inheritedClipPathId',
   '_inheritedMaskId',
   '_inheritedBackgroundClipTextPath',
+  '_inheritedBackgroundClipTextHasBackground',
 ])
 
 export default function inheritable(style: SerializedStyle): SerializedStyle {

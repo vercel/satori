@@ -20,11 +20,26 @@ import { Locale } from '../language.js'
 import { HorizontalEllipsis, Space, Tab } from './characters.js'
 import { genMeasurer } from './measurer.js'
 import { preprocess } from './processor.js'
+import cssColorParse from 'parse-css-color'
 
 const skippedWordWhenFindingMissingFont = new Set([Tab])
 
 function shouldSkipWhenFindingMissingFont(word: string): boolean {
   return skippedWordWhenFindingMissingFont.has(word)
+}
+
+function isFullyTransparent(color: string): boolean {
+  if (color === 'transparent') return true
+  const parsed = cssColorParse(color)
+  return parsed ? parsed.alpha === 0 : false
+}
+
+function isOpaqueWhite(color: string): boolean {
+  if (!color) return false
+  const parsed = cssColorParse(color)
+  if (!parsed) return false
+  const [r, g, b, a] = parsed.values
+  return r === 255 && g === 255 && b === 255 && (a === undefined || a === 1)
 }
 
 export default async function* buildTextNodes(
@@ -56,6 +71,7 @@ export default async function* buildTextNodes(
     tabSize = 8,
     letterSpacing,
     _inheritedBackgroundClipTextPath,
+    _inheritedBackgroundClipTextHasBackground,
     flexShrink,
   } = parentStyle
 
@@ -480,7 +496,10 @@ export default async function* buildTextNodes(
         shadowColor: textShadowColor,
         shadowOffset: textShadowOffset,
         shadowRadius: textShadowRadius,
-      }
+      },
+      isFullyTransparent(parentStyle.color) ||
+        (_inheritedBackgroundClipTextHasBackground &&
+          isOpaqueWhite(parentStyle.color))
     )
 
     filter = buildXMLString('defs', {}, filter)
@@ -756,12 +775,18 @@ export default async function* buildTextNodes(
   // Embed the font as path.
   if (mergedPath) {
     const p =
-      parentStyle.color !== 'transparent' && opacity !== 0
+      (!isFullyTransparent(parentStyle.color) || filter) && opacity !== 0
         ? `<g ${overflowMaskId ? `mask="url(#${overflowMaskId})"` : ''} ${
             clipPathId ? `clip-path="url(#${clipPathId})"` : ''
           }>` +
           buildXMLString('path', {
-            fill: parentStyle.color,
+            fill:
+              filter &&
+              (isFullyTransparent(parentStyle.color) ||
+                (_inheritedBackgroundClipTextHasBackground &&
+                  isOpaqueWhite(parentStyle.color)))
+                ? 'black'
+                : parentStyle.color,
             d: mergedPath,
             transform: matrix ? matrix : undefined,
             opacity: opacity !== 1 ? opacity : undefined,
