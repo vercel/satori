@@ -15,4 +15,4 @@ playground/public/yoga.wasm
 playground/tsconfig.tsbuildinfo
 
 # Vendor files
-yoga.wasm
+# yoga.wasm
