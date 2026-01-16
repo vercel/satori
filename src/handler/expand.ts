@@ -213,6 +213,15 @@ function handleSpecialCase(
     }
   }
 
+  if (name === 'textDecorationSkipInk') {
+    const normalized = value.toString().trim().toLowerCase()
+    if (!['auto', 'none', 'all'].includes(normalized)) {
+      throw new Error('Invalid `textDecorationSkipInk` value.')
+    }
+
+    return { textDecorationSkipInk: normalized }
+  }
+
   return
 }
 
@@ -287,6 +296,7 @@ type MainStyle = {
   textShadowRadius: number[]
   WebkitTextStrokeWidth: number
   WebkitTextStrokeColor: string
+  textDecorationSkipInk: 'auto' | 'none' | 'all'
 }
 
 type OtherStyle = Exclude<Record<PropertyKey, string | number>, keyof MainStyle>
