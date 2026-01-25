@@ -340,6 +340,12 @@ export default async function* buildTextNodes(
           if (isImage(_text)) {
             _width = fontSize
             _isImage = true
+          } else if (!embedFont && _text.length > 1) {
+            // When embedFont is false, use measureText for multi-character strings
+            // to ensure consistency with how currentWidth is accumulated (sum of
+            // grapheme widths). measureGrapheme uses getAdvanceWidth which includes
+            // kerning, causing position mismatches between consecutive <text> elements.
+            _width = measureText(_text)
           } else {
             _width = measureGrapheme(_text)
           }
@@ -567,7 +573,12 @@ export default async function* buildTextNodes(
         }
       }
 
-      leftOffset = Math.round(leftOffset)
+      // Only round for embedded fonts (paths benefit from pixel alignment).
+      // For non-embedded fonts (<text> elements), keep fractional positions
+      // to maintain consistent spacing between consecutive elements.
+      if (embedFont) {
+        leftOffset = Math.round(leftOffset)
+      }
     }
 
     const baselineOfLine = baselines[line]
