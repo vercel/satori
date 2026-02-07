@@ -157,10 +157,12 @@ export async function preProcessNode(node: ReactNode) {
     } else if (typeof _node === 'object') {
       if (_node.type === 'image') {
         const imageSrc = _node.props.href || _node.props.xlinkHref
-        if (set.has(imageSrc)) {
-          // do nothing
-        } else {
-          set.add(imageSrc)
+        if (imageSrc) {
+          if (set.has(imageSrc)) {
+            // do nothing
+          } else {
+            set.add(imageSrc)
+          }
         }
       } else if (_node.type === 'img') {
         if (set.has(_node.props.src)) {
