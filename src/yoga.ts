@@ -2,7 +2,7 @@ import { type Yoga } from 'yoga-layout/load'
 import { type Node } from 'yoga-layout'
 import { type InitInput } from './yoga.external.js'
 
-export { Yoga as TYoga, Node as YogaNode }
+export { Yoga as TYoga, Node as YogaNode, type InitInput }
 
 export function init(input: InitInput) {
   if (process.env.SATORI_STANDALONE === '1') {
