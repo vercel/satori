@@ -4,6 +4,7 @@ import { buildXMLString } from '../utils.js'
 import { resolveImageData } from '../handler/image.js'
 import { buildLinearGradient } from './gradient/linear.js'
 import { buildRadialGradient } from './gradient/radial.js'
+import cssColorParse from 'parse-css-color'
 
 interface Background {
   attachment?: string
@@ -155,6 +156,36 @@ export default async function backgroundImage(
           height: resolvedHeight,
           preserveAspectRatio: 'none',
           href: src,
+        })
+      ),
+    ]
+  }
+
+  if (cssColorParse(image)) {
+    const colorObj = cssColorParse(image)
+    const [r, g, b, a] = colorObj.values
+    const alpha = a !== undefined ? a : 1
+    const color = `rgba(${r},${g},${b},${alpha})`
+
+    return [
+      `satori_bi${id}`,
+      buildXMLString(
+        'pattern',
+        {
+          id: `satori_bi${id}`,
+          patternContentUnits: 'userSpaceOnUse',
+          patternUnits: 'userSpaceOnUse',
+          x: left,
+          y: top,
+          width: width,
+          height: height,
+        },
+        buildXMLString('rect', {
+          x: 0,
+          y: 0,
+          width: width,
+          height: height,
+          fill: color,
         })
       ),
     ]

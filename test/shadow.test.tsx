@@ -232,5 +232,64 @@ describe('Shadow', () => {
 
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support text shadows with transparent text color', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            background: 'white',
+            width: 100,
+            height: 100,
+            fontSize: 40,
+            color: 'transparent',
+            textShadow: 'red 0px 0px 5px',
+          }}
+        >
+          Hello
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support text shadows with backgroundClip text', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: 100,
+            height: 100,
+            fontSize: 40,
+            background: 'linear-gradient(90deg, #ff00bc, #6400ff)',
+            backgroundClip: 'text',
+            color: '#ffffffff',
+            textShadow: '0px 0px 5px #000',
+          }}
+        >
+          Hello
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support text shadows with backgroundClip and no background', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: 100,
+            height: 100,
+            fontSize: 40,
+            backgroundClip: 'text',
+            color: 'white',
+            textShadow:
+              '0px 0px 3px #9400d3,0px 0px 4px #9400d3,0px 0px 5px #9400d3,0px 0px 5px #9400d3,0px 0px 5px #9400d3,0px 0px 5px #9400d3,0px 0px 5px #9400d3,0px 0px 5px #9400d3,0px 0px 5px #9400d3,0px 0px 5px #9400d3',
+          }}
+        >
+          Hello
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 })

@@ -16,15 +16,31 @@ import { getYoga, TYoga, YogaNode } from '../yoga.js'
 import buildText, { container } from '../builder/text.js'
 import { buildDropShadow } from '../builder/shadow.js'
 import buildDecoration from '../builder/text-decoration.js'
+import type { GlyphBox } from '../font.js'
 import { Locale } from '../language.js'
 import { HorizontalEllipsis, Space, Tab } from './characters.js'
 import { genMeasurer } from './measurer.js'
 import { preprocess } from './processor.js'
+import cssColorParse from 'parse-css-color'
 
 const skippedWordWhenFindingMissingFont = new Set([Tab])
 
 function shouldSkipWhenFindingMissingFont(word: string): boolean {
   return skippedWordWhenFindingMissingFont.has(word)
+}
+
+function isFullyTransparent(color: string): boolean {
+  if (color === 'transparent') return true
+  const parsed = cssColorParse(color)
+  return parsed ? parsed.alpha === 0 : false
+}
+
+function isOpaqueWhite(color: string): boolean {
+  if (!color) return false
+  const parsed = cssColorParse(color)
+  if (!parsed) return false
+  const [r, g, b, a] = parsed.values
+  return r === 255 && g === 255 && b === 255 && (a === undefined || a === 1)
 }
 
 export default async function* buildTextNodes(
@@ -56,6 +72,7 @@ export default async function* buildTextNodes(
     tabSize = 8,
     letterSpacing,
     _inheritedBackgroundClipTextPath,
+    _inheritedBackgroundClipTextHasBackground,
     flexShrink,
   } = parentStyle
 
@@ -480,7 +497,10 @@ export default async function* buildTextNodes(
         shadowColor: textShadowColor,
         shadowOffset: textShadowOffset,
         shadowRadius: textShadowRadius,
-      }
+      },
+      isFullyTransparent(parentStyle.color) ||
+        (_inheritedBackgroundClipTextHasBackground &&
+          isOpaqueWhite(parentStyle.color))
     )
 
     filter = buildXMLString('defs', {}, filter)
@@ -490,7 +510,14 @@ export default async function* buildTextNodes(
   let mergedPath = ''
   let extra = ''
   let skippedLine = -1
-  let decorationLines: Record<number, null | number[]> = {}
+  type DecorationLine = {
+    left: number
+    top: number
+    ascender: number
+    width: number
+  }
+  let decorationLines: Record<number, DecorationLine | null> = {}
+  let decorationGlyphs: Record<number, GlyphBox[]> = {}
   let wordBuffer: string | null = null
   let bufferedOffset = 0
 
@@ -511,6 +538,9 @@ export default async function* buildTextNodes(
     let leftOffset = layout.x
     const width = layout.width
     const line = layout.line
+    const shouldCollectDecorationBoxes =
+      parentStyle.textDecorationLine === 'underline' &&
+      (parentStyle.textDecorationSkipInk || 'auto') !== 'none'
 
     if (line === skippedLine) {
       continue
@@ -545,13 +575,27 @@ export default async function* buildTextNodes(
     const heightOfWord = engine.height(text)
     const baselineDelta = baselineOfLine - baselineOfWord
 
+    const buildUnderlineBand = (offset: number) => {
+      if (
+        !shouldCollectDecorationBoxes ||
+        parentStyle.textDecorationLine !== 'underline'
+      ) {
+        return undefined
+      }
+      const baseline = top + offset + baselineDelta + baselineOfWord
+      return {
+        underlineY: baseline + baselineOfWord * 0.1,
+        strokeWidth: Math.max(1, fontSize * 0.1),
+      }
+    }
+
     if (!decorationLines[line]) {
-      decorationLines[line] = [
-        leftOffset,
-        top + topOffset + baselineDelta,
-        baselineOfWord,
-        extendedWidth ? containerWidth : lineWidths[line],
-      ]
+      decorationLines[line] = {
+        left: leftOffset,
+        top: top + topOffset + baselineDelta,
+        ascender: baselineOfWord,
+        width: extendedWidth ? containerWidth : lineWidths[line],
+      }
     }
 
     if (lineLimit !== Infinity) {
@@ -605,7 +649,10 @@ export default async function* buildTextNodes(
 
           text = subset + _blockEllipsis
           skippedLine = line
-          decorationLines[line][2] = resolvedWidth
+          decorationLines[line].width = Math.max(
+            0,
+            resolvedWidth - decorationLines[line].left
+          )
           isLastDisplayedBeforeEllipsis = true
         } else if (nextLayout && nextLayout.line !== line) {
           if (textAlign === 'center') {
@@ -613,7 +660,10 @@ export default async function* buildTextNodes(
 
             text = subset + _blockEllipsis
             skippedLine = line
-            decorationLines[line][2] = resolvedWidth
+            decorationLines[line].width = Math.max(
+              0,
+              resolvedWidth - decorationLines[line].left
+            )
             isLastDisplayedBeforeEllipsis = true
           } else {
             const nextLineText = texts[i + 1]
@@ -625,7 +675,10 @@ export default async function* buildTextNodes(
 
             text = text + subset + _blockEllipsis
             skippedLine = line
-            decorationLines[line][2] = resolvedWidth
+            decorationLines[line].width = Math.max(
+              0,
+              resolvedWidth - decorationLines[line].left
+            )
             isLastDisplayedBeforeEllipsis = true
           }
         }
@@ -659,13 +712,27 @@ export default async function* buildTextNodes(
         wordBuffer === null ? leftOffset : bufferedOffset
       const finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
 
-      path = engine.getSVG(finalizedSegment.replace(/(\t)+/g, ''), {
-        fontSize,
-        left: left + finalizedLeftOffset,
-        // Since we need to pass the baseline position, add the ascender to the top.
-        top: top + topOffset + baselineOfWord + baselineDelta,
-        letterSpacing,
-      })
+      const band = buildUnderlineBand(topOffset)
+
+      const svg = engine.getSVG(
+        finalizedSegment.replace(/(\t)+/g, ''),
+        {
+          fontSize,
+          left: left + finalizedLeftOffset,
+          // Since we need to pass the baseline position, add the ascender to the top.
+          top: top + topOffset + baselineOfWord + baselineDelta,
+          letterSpacing,
+        },
+        band
+      )
+
+      path = svg.path
+
+      if (shouldCollectDecorationBoxes && svg.boxes && svg.boxes.length) {
+        ;(decorationGlyphs[line] || (decorationGlyphs[line] = [])).push(
+          ...svg.boxes
+        )
+      }
 
       wordBuffer = null
 
@@ -700,24 +767,26 @@ export default async function* buildTextNodes(
       // at the baseline because <text>'s alignment baseline is set to `hanging`
       // by default and supported to change in SVG 1.1.
       topOffset += baselineOfWord + baselineDelta
-    }
 
-    // Get the decoration shape.
-    if (parentStyle.textDecorationLine) {
-      const deco = decorationLines[line]
-      if (deco && !deco[4]) {
-        decorationShape += buildDecoration(
+      if (shouldCollectDecorationBoxes && !image) {
+        const band = buildUnderlineBand(topOffset)
+
+        const svg = engine.getSVG(
+          text.replace(/(\t)+/g, ''),
           {
-            left: left + deco[0],
-            top: deco[1],
-            width: deco[3],
-            ascender: deco[2],
-            clipPathId,
-            matrix,
+            fontSize,
+            left: left + leftOffset,
+            top: top + topOffset,
+            letterSpacing,
           },
-          parentStyle
+          band
         )
-        deco[4] = 1
+
+        if (svg.boxes && svg.boxes.length) {
+          ;(decorationGlyphs[line] || (decorationGlyphs[line] = [])).push(
+            ...svg.boxes
+          )
+        }
       }
     }
 
@@ -739,13 +808,11 @@ export default async function* buildTextNodes(
           clipPathId,
           debug,
           shape: !!_inheritedBackgroundClipTextPath,
-          decorationShape,
         },
         parentStyle
       )
       result += t
       backgroundClipDef += shape
-      decorationShape = ''
     }
 
     if (isLastDisplayedBeforeEllipsis) {
@@ -753,15 +820,43 @@ export default async function* buildTextNodes(
     }
   }
 
+  if (parentStyle.textDecorationLine) {
+    decorationShape = Object.entries(decorationLines)
+      .map(([lineIndex, deco]) => {
+        if (!deco) return ''
+        const glyphBoxes = decorationGlyphs[lineIndex] || []
+
+        return buildDecoration(
+          {
+            left: left + deco.left,
+            top: deco.top,
+            width: deco.width,
+            ascender: deco.ascender,
+            clipPathId,
+            matrix,
+            glyphBoxes,
+          },
+          parentStyle
+        )
+      })
+      .join('')
+  }
+
   // Embed the font as path.
   if (mergedPath) {
     const p =
-      parentStyle.color !== 'transparent' && opacity !== 0
+      (!isFullyTransparent(parentStyle.color) || filter) && opacity !== 0
         ? `<g ${overflowMaskId ? `mask="url(#${overflowMaskId})"` : ''} ${
             clipPathId ? `clip-path="url(#${clipPathId})"` : ''
           }>` +
           buildXMLString('path', {
-            fill: parentStyle.color,
+            fill:
+              filter &&
+              (isFullyTransparent(parentStyle.color) ||
+                (_inheritedBackgroundClipTextHasBackground &&
+                  isOpaqueWhite(parentStyle.color)))
+                ? 'black'
+                : parentStyle.color,
             d: mergedPath,
             transform: matrix ? matrix : undefined,
             opacity: opacity !== 1 ? opacity : undefined,
@@ -798,6 +893,10 @@ export default async function* buildTextNodes(
             p + decorationShape
           )
         : p + decorationShape) + extra
+  } else if (decorationShape) {
+    result += filter
+      ? buildXMLString('g', { filter: `url(#satori_s-${id})` }, decorationShape)
+      : decorationShape
   }
 
   // Attach information to the parent node.

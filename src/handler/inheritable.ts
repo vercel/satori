@@ -19,6 +19,7 @@ const list = new Set([
   'textDecorationLine',
   'textDecorationStyle',
   'textDecorationColor',
+  'textDecorationSkipInk',
   'whiteSpace',
   'transform',
   'wordBreak',
@@ -35,6 +36,7 @@ const list = new Set([
   '_inheritedClipPathId',
   '_inheritedMaskId',
   '_inheritedBackgroundClipTextPath',
+  '_inheritedBackgroundClipTextHasBackground',
 ])
 
 export default function inheritable(style: SerializedStyle): SerializedStyle {

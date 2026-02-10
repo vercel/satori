@@ -228,4 +228,74 @@ describe('Text Decoration', () => {
     )
     expect(toImage(svg, 200)).toMatchImageSnapshot()
   })
+
+  it('Should skip ink by default when `text-decoration-line: underline`', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 40,
+          color: '#000',
+          textDecorationLine: 'underline',
+        }}
+      >
+        abgpqapa
+      </div>,
+      { width: 260, height: 120, fonts }
+    )
+
+    expect(toImage(svg, 260)).toMatchImageSnapshot()
+  })
+
+  it('Should render continuous line when `text-decoration-skip-ink: none`', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 40,
+          color: '#000',
+          textDecorationLine: 'underline',
+          textDecorationSkipInk: 'none',
+        }}
+      >
+        abgpqapa
+      </div>,
+      { width: 260, height: 120, fonts }
+    )
+
+    expect(toImage(svg, 260)).toMatchImageSnapshot()
+  })
+
+  it('Should skip ink correctly with complex descenders', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 40,
+          color: '#000',
+          textDecorationLine: 'underline',
+        }}
+      >
+        agayaqapajaya;a,a|a
+      </div>,
+      { width: 360, height: 160, fonts }
+    )
+
+    expect(toImage(svg, 360)).toMatchImageSnapshot()
+  })
 })
