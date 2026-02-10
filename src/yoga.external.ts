@@ -58,7 +58,7 @@ async function loadWasm(
   const instantiated = (await WebAssembly.instantiate(
     'buffer' in source
       ? source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength)
-      : source
+      : source,
     imports
   )) as WebAssembly.Instance | WebAssembly.WebAssemblyInstantiatedSource
 
