@@ -20,6 +20,7 @@
   ],
   "exports": {
     "./package.json": "./package.json",
+    "./yoga.wasm": "./yoga.wasm",
     ".": {
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
