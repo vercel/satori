@@ -139,14 +139,27 @@ export default async function backgroundImage(
       size === 'auto' ||
       size.includes('auto'))
 
-  const dimensions = isKeywordSize
-    ? [0, 0] // Will be calculated later when we have image dimensions
-    : parseLengthPairs(size, {
-        x: width,
-        y: height,
-        defaultX: width,
-        defaultY: height,
-      })
+  // For gradients, keyword sizes (cover, contain, auto) resolve to the
+  // container dimensions since gradients have no intrinsic size.
+  // For url() images, keyword sizes are calculated later using the image's
+  // intrinsic dimensions.
+  const isGradient =
+    image.startsWith('linear-gradient(') ||
+    image.startsWith('repeating-linear-gradient(') ||
+    image.startsWith('radial-gradient(') ||
+    image.startsWith('repeating-radial-gradient(')
+
+  const dimensions =
+    isKeywordSize && isGradient
+      ? [width, height] // Gradients have no intrinsic size; keyword sizes resolve to container
+      : isKeywordSize
+      ? [0, 0] // Will be calculated later when we have image dimensions
+      : parseLengthPairs(size, {
+          x: width,
+          y: height,
+          defaultX: width,
+          defaultY: height,
+        })
   const offsets = parseLengthPairs(position, {
     x: width,
     y: height,
