@@ -122,7 +122,7 @@ function translateSVGNodeToSVGString(
         _v = currentColor
       }
 
-      if (k === 'href' && type === 'image') {
+      if ((k === 'href' || k === 'xlinkHref') && type === 'image') {
         return ` ${ATTRIBUTE_MAPPING[k] || k}="${cache.get(_v as string)[0]}"`
       }
       return ` ${ATTRIBUTE_MAPPING[k] || k}="${_v}"`
@@ -156,10 +156,13 @@ export async function preProcessNode(node: ReactNode) {
       return
     } else if (typeof _node === 'object') {
       if (_node.type === 'image') {
-        if (set.has(_node.props.href)) {
-          // do nothing
-        } else {
-          set.add(_node.props.href)
+        const imageSrc = _node.props.href || _node.props.xlinkHref
+        if (imageSrc) {
+          if (set.has(imageSrc)) {
+            // do nothing
+          } else {
+            set.add(imageSrc)
+          }
         }
       } else if (_node.type === 'img') {
         if (set.has(_node.props.src)) {
