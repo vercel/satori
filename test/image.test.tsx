@@ -664,6 +664,74 @@ describe('background-image: url()', () => {
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it('should support background-size: cover', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          backgroundImage: `url(${PNG_SAMPLE})`,
+          backgroundSize: 'cover',
+        }}
+      ></div>,
+      { width: 100, height: 100, fonts }
+    )
+
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should support background-size: contain', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          backgroundImage: `url(${PNG_SAMPLE})`,
+          backgroundSize: 'contain',
+        }}
+      ></div>,
+      { width: 100, height: 100, fonts }
+    )
+
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should support background-size: auto', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          backgroundImage: `url(${PNG_SAMPLE})`,
+          backgroundSize: 'auto',
+        }}
+      ></div>,
+      { width: 100, height: 100, fonts }
+    )
+
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should support background-size: cover with non-square container', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          backgroundImage: `url(${PNG_SAMPLE})`,
+          backgroundSize: 'cover',
+        }}
+      ></div>,
+      { width: 200, height: 100, fonts }
+    )
+
+    expect(toImage(svg, 200)).toMatchImageSnapshot()
+  })
+
   it('should correctly position the background pattern', async () => {
     const svg = await satori(
       <div
