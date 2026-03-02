@@ -172,11 +172,19 @@ export const wordSeparators = [
   0x0020, 0x00a0, 0x1361, 0x10100, 0x10101, 0x1039, 0x1091, 0xa,
 ].map((point) => String.fromCodePoint(point))
 
+const segmentCache = new Map<string, string[]>()
+const MAX_SEGMENT_CACHE_SIZE = 500
+
 export function segment(
   content: string,
   granularity: 'word' | 'grapheme',
   locale?: string
 ): string[] {
+  const cacheKey = `${granularity}:${locale || ''}:${content}`
+
+  if (segmentCache.has(cacheKey)) {
+    return segmentCache.get(cacheKey)!
+  }
   if (!wordSegmenter || !graphemeSegmenter) {
     if (!(typeof Intl !== 'undefined' && 'Segmenter' in Intl)) {
       // https://caniuse.com/mdn-javascript_builtins_intl_segments
@@ -191,8 +199,10 @@ export function segment(
     })
   }
 
+  let result: string[]
+
   if (granularity === 'grapheme') {
-    return [...graphemeSegmenter.segment(content)].map((seg) => seg.segment)
+    result = [...graphemeSegmenter.segment(content)].map((seg) => seg.segment)
   } else {
     const segmented = [...wordSegmenter.segment(content)].map(
       (seg) => seg.segment
@@ -218,8 +228,16 @@ export function segment(
       }
     }
 
-    return output
+    result = output
   }
+
+  if (segmentCache.size >= MAX_SEGMENT_CACHE_SIZE) {
+    const firstKey = segmentCache.keys().next().value
+    segmentCache.delete(firstKey)
+  }
+
+  segmentCache.set(cacheKey, result)
+  return result
 }
 
 export function buildXMLString(
@@ -243,21 +261,24 @@ export function buildXMLString(
 
 export function createLRU<T>(max = 20) {
   const store: Map<string, T> = new Map()
-  function set(key: string, value: T) {
-    if (store.size >= max) {
-      const keyToDelete = store.keys().next().value
-      store.delete(keyToDelete)
-    }
-    store.set(key, value)
-  }
   function get(key: string): T | undefined {
-    const hasKey = store.has(key)
-    if (!hasKey) return undefined
+    const value = store.get(key)
+    if (value === undefined) return undefined
 
-    const entry = store.get(key)!
+    // Move to end (most recently used)
     store.delete(key)
-    store.set(key, entry)
-    return entry
+    store.set(key, value)
+    return value
+  }
+  function set(key: string, value: T) {
+    if (store.has(key)) {
+      store.delete(key)
+    } else if (store.size >= max) {
+      const firstKey = store.keys().next().value
+      store.delete(firstKey)
+    }
+
+    store.set(key, value)
   }
   function clear() {
     store.clear()

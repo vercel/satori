@@ -61,17 +61,27 @@ function parsePNG(buf: ArrayBuffer) {
 import { createLRU, parseViewBox } from '../utils.js'
 
 type ResolvedImageData = [string, number?, number?] | readonly []
-export const cache = createLRU<ResolvedImageData>(100)
+export const cache = createLRU<ResolvedImageData>(500)
 export const inflightRequests = new Map<string, Promise<ResolvedImageData>>()
 
 const ALLOWED_IMAGE_TYPES = [PNG, APNG, JPEG, GIF, SVG]
 
+// Pre-compiled regex patterns for SVG parsing
+const SVG_ATTRS_REGEX = /<svg[^>]*>/i
+const VIEWBOX_REGEX = /viewBox=['"]([^'"]+)['"]/
+const WIDTH_REGEX = /width=['"](\d*\.?\d+)['"]/
+const HEIGHT_REGEX = /height=['"](\d*\.?\d+)['"]/
+
 function arrayBufferToBase64(buffer) {
-  let binary = ''
   const bytes = new Uint8Array(buffer)
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i])
+  const CHUNK_SIZE = 0x8000 // 32KB chunks
+  let binary = ''
+
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    const chunk = bytes.subarray(i, Math.min(i + CHUNK_SIZE, bytes.length))
+    binary += String.fromCharCode(...chunk)
   }
+
   return btoa(binary)
 }
 
@@ -87,28 +97,32 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
 
 function parseSvgImageSize(src: string, data: string) {
   // Parse the SVG image size
-  const svgTag = data.match(/<svg[^>]*>/)[0]
+  const svgMatch = data.match(SVG_ATTRS_REGEX)
+  if (!svgMatch) throw new Error(`Failed to parse SVG from ${src}`)
 
-  const viewBoxStr = svgTag.match(/viewBox=['"](.+)['"]/)
-  let viewBox = viewBoxStr ? parseViewBox(viewBoxStr[1]) : null
+  const svgTag = svgMatch[0]
+  const viewBoxMatch = VIEWBOX_REGEX.exec(svgTag)
+  const widthMatch = WIDTH_REGEX.exec(svgTag)
+  const heightMatch = HEIGHT_REGEX.exec(svgTag)
 
-  const width = svgTag.match(/width=['"](\d*\.\d+|\d+)['"]/)
-  const height = svgTag.match(/height=['"](\d*\.\d+|\d+)['"]/)
+  let viewBox = viewBoxMatch ? parseViewBox(viewBoxMatch[1]) : null
 
-  if (!viewBox && (!width || !height)) {
+  if (!viewBox && (!widthMatch || !heightMatch)) {
     throw new Error(`Failed to parse SVG from ${src}: missing "viewBox"`)
   }
 
-  const size = viewBox ? [viewBox[2], viewBox[3]] : [+width[1], +height[1]]
+  const size = viewBox
+    ? [viewBox[2], viewBox[3]]
+    : [+widthMatch[1], +heightMatch[1]]
 
   const ratio = size[0] / size[1]
   const imageSize: [number, number] =
-    width && height
-      ? [+width[1], +height[1]]
-      : width
-      ? [+width[1], +width[1] / ratio]
-      : height
-      ? [+height[1] * ratio, +height[1]]
+    widthMatch && heightMatch
+      ? [+widthMatch[1], +heightMatch[1]]
+      : widthMatch
+      ? [+widthMatch[1], +widthMatch[1] / ratio]
+      : heightMatch
+      ? [+heightMatch[1] * ratio, +heightMatch[1]]
       : [size[0], size[1]]
 
   return imageSize

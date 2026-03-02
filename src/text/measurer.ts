@@ -18,12 +18,12 @@ export function genMeasurer(
   const cache = new Map<string, number>()
 
   function measureGrapheme(grapheme: string): number {
-    if (cache.has(grapheme)) {
-      return cache.get(grapheme)
-    }
+    let width = cache.get(grapheme)
 
-    const width = engine.measure(grapheme, { fontSize, letterSpacing })
-    cache.set(grapheme, width)
+    if (width === undefined) {
+      width = engine.measure(grapheme, { fontSize, letterSpacing })
+      cache.set(grapheme, width)
+    }
 
     return width
   }

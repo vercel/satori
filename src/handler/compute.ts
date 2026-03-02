@@ -29,11 +29,12 @@ export default async function compute(
   const Yoga = await getYoga()
 
   // Extend the default style with defined and inherited styles.
-  const style: SerializedStyle = {
-    ...inheritedStyle,
-    ...expand(presets[type], inheritedStyle),
-    ...expand(definedStyle, inheritedStyle),
-  }
+  const style: SerializedStyle = Object.assign(
+    {},
+    inheritedStyle,
+    expand(presets[type], inheritedStyle),
+    expand(definedStyle, inheritedStyle)
+  )
 
   if (type === 'img') {
     let [resolvedSrc, imageWidth, imageHeight] = await resolveImageData(
