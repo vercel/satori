@@ -257,13 +257,18 @@ function generatePNGWithResvg(svg: string) {
       mode: 'width',
       value: 1200,
     },
+    font: {
+      loadSystemFonts: false,
+      fontFiles: [],
+      fontDirs: [],
+    },
   })
   const pngData = resvg.render()
   return pngData.asPng()
 }
 
 async function generatePNGWithSharp(svg: string) {
-  await Sharp(Buffer.from(svg)).png().toBuffer()
+  await Sharp(Buffer.from(svg)).png({ compressionLevel: 2 }).toBuffer()
 }
 
 summary(() => {
