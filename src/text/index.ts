@@ -73,6 +73,7 @@ export default async function* buildTextNodes(
     tabSize = 8,
     letterSpacing,
     fontFeatureSettings,
+    direction,
     _inheritedBackgroundClipTextPath,
     _inheritedBackgroundClipTextHasBackground,
     flexShrink,
@@ -134,6 +135,7 @@ export default async function* buildTextNodes(
       fontSize,
       letterSpacing,
       fontFeatureSettings,
+      direction,
     }
   )
 
@@ -762,6 +764,7 @@ export default async function* buildTextNodes(
           top: top + topOffset + baselineOfWord + baselineDelta,
           letterSpacing,
           fontFeatureSettings,
+          direction,
         },
         band
       )
@@ -819,6 +822,7 @@ export default async function* buildTextNodes(
             top: top + topOffset,
             letterSpacing,
             fontFeatureSettings,
+            direction,
           },
           band
         )
