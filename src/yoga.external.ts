@@ -16,25 +16,29 @@ const yogaPromise: Promise<Yoga> = new Promise((resolve, reject) => {
 })
 
 export type InitInput =
-  | RequestInfo
+  | string
+  | Request
   | URL
   | Response
   | BufferSource
   | Buffer
   | WebAssembly.Module
+  | Promise<Response | BufferSource | Buffer | WebAssembly.Module>
 
 async function loadWasm(
   input: InitInput,
   imports: WebAssembly.Imports
 ): Promise<WebAssembly.WebAssemblyInstantiatedSource> {
-  let source: Response | BufferSource | Buffer | WebAssembly.Module = input
+  let source: Response | BufferSource | Buffer | WebAssembly.Module
 
   if (
-    typeof source === 'string' ||
-    (typeof Request === 'function' && source instanceof Request) ||
-    (typeof URL === 'function' && source instanceof URL)
+    typeof input === 'string' ||
+    (typeof Request === 'function' && input instanceof Request) ||
+    (typeof URL === 'function' && input instanceof URL)
   ) {
-    source = await fetch(source)
+    source = await fetch(input)
+  } else {
+    source = await input
   }
 
   if (typeof Response === 'function' && source instanceof Response) {
