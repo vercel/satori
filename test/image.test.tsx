@@ -979,4 +979,122 @@ describe('objectFit and objectPosition', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  describe('objectFit: fill', () => {
+    it('should stretch image to fill container (aspect ratio not preserved)', async () => {
+      const svg = await satori(
+        <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+          <img
+            src={PNG_SAMPLE}
+            style={{
+              width: 100,
+              height: 100,
+              objectFit: 'fill',
+              backgroundColor: 'green',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should stretch with fill on non-square container', async () => {
+      const svg = await satori(
+        <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+          <img
+            src={PNG_SAMPLE}
+            style={{
+              width: 150,
+              height: 100,
+              objectFit: 'fill',
+              backgroundColor: 'green',
+            }}
+          />
+        </div>,
+        { width: 150, height: 100, fonts }
+      )
+      expect(toImage(svg, 150)).toMatchImageSnapshot()
+    })
+  })
+
+  describe('objectFit: scale-down', () => {
+    it('should not scale up when image is smaller than container', async () => {
+      // PNG_SAMPLE is 20x15, container is 100x100
+      // Should show image at 20x15, centered
+      const svg = await satori(
+        <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+          <img
+            src={PNG_SAMPLE}
+            style={{
+              width: 100,
+              height: 100,
+              objectFit: 'scale-down',
+              backgroundColor: 'green',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should scale down when image is larger than container', async () => {
+      // PNG_SAMPLE is 20x15, container is 10x10
+      // Should scale down like 'contain'
+      const svg = await satori(
+        <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+          <img
+            src={PNG_SAMPLE}
+            style={{
+              width: 10,
+              height: 10,
+              objectFit: 'scale-down',
+              backgroundColor: 'green',
+            }}
+          />
+        </div>,
+        { width: 10, height: 10, fonts }
+      )
+      expect(toImage(svg, 10)).toMatchImageSnapshot()
+    })
+
+    it('should respect objectPosition with scale-down', async () => {
+      const svg = await satori(
+        <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+          <img
+            src={PNG_SAMPLE}
+            style={{
+              width: 100,
+              height: 100,
+              objectFit: 'scale-down',
+              objectPosition: 'top left',
+              backgroundColor: 'green',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should respect objectPosition bottom right with scale-down', async () => {
+      const svg = await satori(
+        <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+          <img
+            src={PNG_SAMPLE}
+            style={{
+              width: 100,
+              height: 100,
+              objectFit: 'scale-down',
+              objectPosition: 'bottom right',
+              backgroundColor: 'green',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+  })
 })
