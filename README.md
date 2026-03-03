@@ -231,8 +231,8 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 <tr>
 <td colspan="2"><code>objectPosition</code></td>
-<td>Support keywords: <code>top</code>, <code>bottom</code>, <code>left</code>, <code>right</code>, <code>center</code>, and combinations like <code>top left</code>. Defaults to <code>center</code>.</td>
-<td></td>
+<td>Supports keywords (<code>top</code>, <code>bottom</code>, <code>left</code>, <code>right</code>, <code>center</code>), percentages (e.g., <code>25% 75%</code>), lengths (e.g., <code>10px 20px</code>), and mixed values (e.g., <code>left 20%</code>). Defaults to <code>center</code> (<code>50% 50%</code>).</td>
+<td><a href="https://og-playground.vercel.app/?share=7VTBitswEP2VQaUkgbTOQilFxHsotOceevTFlsa2torGyHKTYPzvHSV24rS7Xfayp_XFzHsj6b0nMb1QpFFIsVxBeg995gDKzqlgyMFXOix7ULWx2qODYXXmATyGzjvYavMb2nC0mPYjA7A3OtQS7jab9QTVaKo63GLatI3NjxIWpcXD4oIXufpVeeqcZupdWZYzirxGz_Bdc4CWrNEsRC_O9DDcT339pHg4I9uEdZ5YBuJvlL8caWanpX-beVrnxeinmakbqxM4jDIu-rac66Xg0uyqa8UavEozUYfQtDJJ-HCFNVn9UVHyebM58HlJ46pMzNectKQ98-NhczVpz2tu8H9tzgwtWPv7udG5r0dJKh5Qhe8m8opcyI17vOUHtSa-rNiHLqAfL-82qPgl17SSeVxv2XFfQSHQ7lWz4-j-k9wTwb1Wbq3KLX7QtH8-ukAN-LjtC9O7zpBV5gaAzIm1oCbu2grZi5MPIb_wMBBn3ULGySA0Fl0lZJnbFtcCd_Rgfh6bOHHD_lTxPiXf-7ddgVrI4Dsc1iLkBXfUaC3tyVsthj8">Example</a></td>
 </tr>
 
 <tr>
