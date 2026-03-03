@@ -190,8 +190,9 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>fontStyle</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontFeatureSettings</code></td><td>Supported via HarfBuzz text shaping. Enables OpenType features like ligatures, small caps, stylistic sets, etc.</td><td></td></tr>
 
-<tr><td rowspan="13">Text</td></tr>
+<tr><td rowspan="14">Text</td></tr>
 <tr><td><code>tabSize</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>direction</code></td><td><code>ltr</code>, <code>rtl</code>, defaults to <code>ltr</code>. Used for RTL languages like Arabic and Hebrew.</td><td></td></tr>
 <tr><td><code>textAlign</code></td><td><code>start</code>, <code>end</code>, <code>left</code>, <code>right</code>, <code>center</code>, <code>justify</code>, default to <code>start</code></td><td></td></tr>
 <tr><td><code>textIndent</code></td><td>Supported, including negative values (hanging indent)</td><td></td></tr>
 <tr><td><code>textTransform</code></td><td><code>none</code>, <code>lowercase</code>, <code>uppercase</code>, <code>capitalize</code>, defaults to <code>none</code></td><td></td></tr>
@@ -323,7 +324,19 @@ Example:
 </div>
 ```
 
-**Note**: RTL (right-to-left) languages are not yet fully supported.
+**RTL (Right-to-Left) Languages**: Satori now supports RTL languages like Arabic and Hebrew! Use the `direction` CSS property to enable RTL text rendering:
+
+```jsx
+<div style={{ direction: 'rtl' }}>
+  مرحبا بالعالم
+</div>
+
+<div style={{ direction: 'rtl' }}>
+  שלום עולם
+</div>
+```
+
+HarfBuzz automatically handles bidirectional text (BiDi) when mixing LTR and RTL content.
 
 #### Fonts
 

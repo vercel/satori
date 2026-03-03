@@ -6,10 +6,11 @@
 
 import type opentype from '@shuding/opentype.js'
 import type { FontWeight, FontStyle } from './font.js'
+import harfbuzzjsPromise from 'harfbuzzjs'
 
 // HarfBuzz types (will be populated when module loads)
 let hb: any = null
-let harfbuzzPromise: Promise<any> | null = null
+let initPromise: Promise<void> | null = null
 
 /**
  * Shape result from HarfBuzz containing glyph IDs and positions
@@ -42,15 +43,27 @@ const hbFontCache = new WeakMap<opentype.Font, any>()
  * Must be called before using any shaping functions
  */
 export async function initHarfBuzz(): Promise<void> {
-  if (hb) return // Already initialized
+  // If already initialized, return immediately
+  if (hb) return
 
-  // Use dynamic import to avoid vitest module proxy issues
-  if (!harfbuzzPromise) {
-    harfbuzzPromise = import('harfbuzzjs').then((m) => m.default)
+  // If initialization is in progress, wait for it
+  if (initPromise) {
+    await initPromise
+    return
   }
 
-  // The default export from harfbuzzjs is a Promise that resolves to HarfBuzz instance
-  hb = await harfbuzzPromise
+  // Start initialization
+  initPromise = (async () => {
+    // harfbuzzjsPromise is statically imported at the top
+    // It's a Promise that resolves to the HarfBuzz instance
+    hb = await harfbuzzjsPromise
+
+    if (!hb || typeof hb.createBlob !== 'function') {
+      throw new Error('HarfBuzz module loaded but API is not available')
+    }
+  })()
+
+  await initPromise
 }
 
 /**

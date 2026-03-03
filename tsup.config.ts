@@ -16,7 +16,7 @@ export default defineConfig({
   },
   minify: process.env.NODE_ENV !== 'development',
   format: ['esm', 'cjs'],
-  noExternal: ['twrnc', 'emoji-regex-xs', 'yoga-layout'],
+  noExternal: ['twrnc', 'emoji-regex-xs', 'yoga-layout', 'harfbuzzjs'],
   esbuildOptions(options) {
     options.tsconfig = 'tsconfig.json'
     options.legalComments = 'external'

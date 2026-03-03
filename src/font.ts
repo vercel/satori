@@ -46,6 +46,7 @@ export type FontEngine = {
       fontSize: number
       letterSpacing: number
       fontFeatureSettings?: string
+      direction?: string
     }
   ) => number
   getSVG: (
@@ -56,6 +57,7 @@ export type FontEngine = {
       left: number
       letterSpacing: number
       fontFeatureSettings?: string
+      direction?: string
     },
     band?: SkipInkBand
   ) => { path: string; boxes: GlyphBox[] }
@@ -687,10 +689,12 @@ export default class FontLoader {
       fontSize,
       letterSpacing = 0,
       fontFeatureSettings,
+      direction,
     }: {
       fontSize: number
       letterSpacing: number
       fontFeatureSettings?: string
+      direction?: string
     }
   ) {
     const font = resolveFont(content)
@@ -701,7 +705,12 @@ export default class FontLoader {
         ? parseFontFeatureSettings(fontFeatureSettings)
         : {}
 
-      const shaped = shapeText(font, content, { features })
+      const hbDirection = direction === 'rtl' ? 'rtl' : 'ltr'
+
+      const shaped = shapeText(font, content, {
+        features,
+        direction: hbDirection,
+      })
 
       // Sum up advance widths from shaped glyphs
       let width = 0
@@ -737,12 +746,14 @@ export default class FontLoader {
       left,
       letterSpacing = 0,
       fontFeatureSettings,
+      direction,
     }: {
       fontSize: number
       top: number
       left: number
       letterSpacing: number
       fontFeatureSettings?: string
+      direction?: string
     },
     band?: SkipInkBand
   ): { path: string; boxes: GlyphBox[] } {
@@ -758,7 +769,12 @@ export default class FontLoader {
         ? parseFontFeatureSettings(fontFeatureSettings)
         : {}
 
-      const shaped = shapeText(font, content.replace(/\n/g, ''), { features })
+      const hbDirection = direction === 'rtl' ? 'rtl' : 'ltr'
+
+      const shaped = shapeText(font, content.replace(/\n/g, ''), {
+        features,
+        direction: hbDirection,
+      })
 
       const fullPath = new opentype.Path()
       const boxes: GlyphBox[] = []

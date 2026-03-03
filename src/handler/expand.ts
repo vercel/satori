@@ -267,6 +267,7 @@ type MainStyle = {
   textIndent: number | string
   lineHeight: number | string
   letterSpacing: number
+  direction: string
 
   fontFamily: string | string[]
   fontWeight: FontWeight
