@@ -189,9 +189,10 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>fontWeight</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontStyle</code></td><td>Supported</td><td></td></tr>
 
-<tr><td rowspan="12">Text</td></tr>
+<tr><td rowspan="13">Text</td></tr>
 <tr><td><code>tabSize</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>textAlign</code></td><td><code>start</code>, <code>end</code>, <code>left</code>, <code>right</code>, <code>center</code>, <code>justify</code>, default to <code>start</code></td><td></td></tr>
+<tr><td><code>textIndent</code></td><td>Supported, including negative values (hanging indent)</td><td></td></tr>
 <tr><td><code>textTransform</code></td><td><code>none</code>, <code>lowercase</code>, <code>uppercase</code>, <code>capitalize</code>, defaults to <code>none</code></td><td></td></tr>
 <tr><td><code>textOverflow</code></td><td><code>clip</code>, <code>ellipsis</code>, defaults to <code>clip</code></td><td></td></tr>
 <tr><td><code>textDecoration</code></td><td>Support line types <code>underline</code> and <code>line-through</code>, and styles <code>dotted</code>, <code>dashed</code>, <code>double</code>, <code>solid</code></td><td><a href="https://og-playground.vercel.app/?share=pVPLTsMwEPwVaytUkAKkPCRklV4oXwDHXhx7YxtcO3Ic2hLl37GTtEKIQynywTvjndGstG6BO4FAYS70x8oSUoedwce2TTUhCrVUgZLpLM_PptlAbrQI6gcndF0ZtotsaXC7Z1O91B550M7GN-5Ms7b714oJoa2kZJaPTMH4u_SuseLJGeejYlKW5cHN2fCiP5GS25uRkqxK8gS6bmUXqUiTHMYgAbdhidx5NmawzuI0di9SMb-OzceoYiT0Ro_SAzpan5ovg4qzSdVbfCf-noIIFwIK4lH0bgM8KQ0RrFbRqjDNMNyAT8rUFAbJhHP-_1CDl5cFO8-z_lzdX_ySb39DBq5KTjXQFvoVBfqQ5xkMOwz0LgGBRSOBlszUmAGu3Zt-3VXpA4RNj6JP2rPndYECaPANdhkEVsQOhca4jfNGQPcF">Example</a></td></tr>

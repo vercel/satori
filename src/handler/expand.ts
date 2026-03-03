@@ -264,6 +264,7 @@ type MainStyle = {
   whiteSpace: string
   wordBreak: string
   textAlign: string
+  textIndent: number | string
   lineHeight: number | string
   letterSpacing: number
 
