@@ -224,8 +224,8 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 <tr>
 <td colspan="2"><code>objectFit</code></td>
-<td><code>contain</code>, <code>cover</code>, <code>none</code>, default to <code>none</code></td>
-<td></td>
+<td>Supported</td>
+<td><a href="https://og-playground.vercel.app/?share=7VVNj5swEP0ro6mqJFJaslJVVVbYQ6X2F_TIBewBvHVsZMwmEeK_75BAAvsl7WUPq-WC5j0P896zNLQonSIUuFxBfAttYgHyxsqgnYXf7rBsQZbaKE8WutWZB_AUGm9hq_Q91OFoKG4HBmCvVSgF3Gw26xEqSRdlmGNK15VJjwIWuaHD4oJnqfxfeNdYxdSXPM8nlPOKPMM31QFqZ7RiIWpxprvudjzXjoq7M7KNWOeJZaB_DfKXA83s2PrYzMs6L0Z_TEzNrI5gN8i46NtyrpeCS70rrhVr8DJOsAyhqkUU8XBJpTPqu3TRz83mwPOiyhYJTntOWuKW-WHYVE3ccs8Mf2pzYmjB2r9OjU59PUu67I5k-Kt7PtfGDFcyt98_0TWDaBrCh05Eunvyn5HMI7Eh1fZdQ-FMXonkhUTeK5Bapoa-Kbd_aybX3bZKbAeQWFyjq_r1XaNo8aQOxS9eUnhWg6LfWKgoawoUeWpqWiPt3J3-d6z6P0HYnyr-Ts7X9GeXkUIRfEPdGkOa8YmSjHF7543C7gE">Example</a></td>
 </tr>
 
 <tr>

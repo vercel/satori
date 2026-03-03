@@ -243,12 +243,64 @@ export default async function rect(
       }
     }
     const alignment = `x${xAlign}Y${yAlign}`
-    const preserveAspectRatio =
-      style.objectFit === 'contain'
-        ? alignment
-        : style.objectFit === 'cover'
-        ? `${alignment} slice`
-        : 'none'
+
+    // Calculate objectFit behavior
+    let preserveAspectRatio: string
+    let imageWidth = width - offsetLeft - offsetRight
+    let imageHeight = height - offsetTop - offsetBottom
+    let imageX = left + offsetLeft
+    let imageY = top + offsetTop
+
+    if (style.objectFit === 'contain') {
+      preserveAspectRatio = alignment
+    } else if (style.objectFit === 'cover') {
+      preserveAspectRatio = `${alignment} slice`
+    } else if (style.objectFit === 'fill') {
+      preserveAspectRatio = 'none'
+    } else if (style.objectFit === 'scale-down') {
+      // Get natural dimensions
+      const naturalWidth = style.__naturalWidth as number
+      const naturalHeight = style.__naturalHeight as number
+
+      if (naturalWidth && naturalHeight) {
+        // Calculate if we need to scale down
+        const containerWidth = width - offsetLeft - offsetRight
+        const containerHeight = height - offsetTop - offsetBottom
+        const scaleX = containerWidth / naturalWidth
+        const scaleY = containerHeight / naturalHeight
+        const minScale = Math.min(scaleX, scaleY)
+
+        if (minScale >= 1) {
+          // Image is smaller than or equal to container
+          // Use natural size (don't scale up)
+          imageWidth = naturalWidth
+          imageHeight = naturalHeight
+          preserveAspectRatio = 'none'
+
+          // Center according to objectPosition
+          const extraWidth = containerWidth - naturalWidth
+          const extraHeight = containerHeight - naturalHeight
+
+          // Apply objectPosition alignment
+          if (xAlign === 'Min') imageX += 0
+          else if (xAlign === 'Max') imageX += extraWidth
+          else imageX += extraWidth / 2 // Mid
+
+          if (yAlign === 'Min') imageY += 0
+          else if (yAlign === 'Max') imageY += extraHeight
+          else imageY += extraHeight / 2 // Mid
+        } else {
+          // Image is larger than container, scale down like 'contain'
+          preserveAspectRatio = alignment
+        }
+      } else {
+        // Fall back to 'contain' behavior if natural dimensions are unavailable
+        preserveAspectRatio = alignment
+      }
+    } else {
+      // Default/none: fill (stretch)
+      preserveAspectRatio = 'none'
+    }
 
     if (style.transform) {
       imageBorderRadius = getBorderRadiusClipPath(
@@ -266,10 +318,10 @@ export default async function rect(
     }
 
     shape += buildXMLString('image', {
-      x: left + offsetLeft,
-      y: top + offsetTop,
-      width: width - offsetLeft - offsetRight,
-      height: height - offsetTop - offsetBottom,
+      x: imageX,
+      y: imageY,
+      width: imageWidth,
+      height: imageHeight,
       href: src,
       preserveAspectRatio,
       transform: matrix ? matrix : undefined,
