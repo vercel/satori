@@ -9,6 +9,95 @@ import { buildXMLString } from '../utils.js'
 import border, { getBorderClipPath } from './border.js'
 import { genClipPath } from './clip-path.js'
 import buildMaskImage from './mask-image.js'
+import CssDimension from '../vendor/parse-css-dimension/index.js'
+
+/**
+ * Parse object-position value into [xOffset, yOffset] in pixels.
+ * Supports keywords (left, center, right, top, bottom), percentages, and lengths.
+ * Similar to background-position parsing.
+ */
+function parseObjectPosition(
+  position: string,
+  containerWidth: number,
+  containerHeight: number
+): [number, number] {
+  const parts = position.toLowerCase().trim().split(/\s+/)
+
+  // Convert keyword to percentage
+  const keywordToPercent = (keyword: string, axis: 'x' | 'y'): string => {
+    const map = {
+      left: '0%',
+      center: '50%',
+      right: '100%',
+      top: '0%',
+      bottom: '100%',
+    }
+    return map[keyword] || keyword
+  }
+
+  let xValue: string
+  let yValue: string
+
+  if (parts.length === 1) {
+    const part = parts[0]
+    // Single value
+    if (part === 'left' || part === 'center' || part === 'right') {
+      xValue = keywordToPercent(part, 'x')
+      yValue = '50%' // center
+    } else if (part === 'top' || part === 'bottom') {
+      xValue = '50%' // center
+      yValue = keywordToPercent(part, 'y')
+    } else {
+      // Assume it's x value, y defaults to center
+      xValue = part
+      yValue = '50%'
+    }
+  } else {
+    // Two or more values
+    const first = parts[0]
+    const second = parts[1]
+
+    // Check if first is a y-axis keyword (top/bottom)
+    if (first === 'top' || first === 'bottom') {
+      yValue = keywordToPercent(first, 'y')
+      if (second === 'left' || second === 'right' || second === 'center') {
+        xValue = keywordToPercent(second, 'x')
+      } else {
+        // Second is a length/percentage, default x to center
+        xValue = '50%'
+        yValue =
+          first === 'top' || first === 'bottom'
+            ? keywordToPercent(first, 'y')
+            : second
+      }
+    } else {
+      // Normal order: x then y
+      xValue = keywordToPercent(first, 'x')
+      yValue = keywordToPercent(second, 'y')
+    }
+  }
+
+  // Convert to absolute pixels
+  const parseValue = (value: string, containerSize: number): number => {
+    try {
+      if (value.endsWith('%')) {
+        return (containerSize * parseFloat(value)) / 100
+      }
+      const parsed = new CssDimension(value)
+      if (parsed.type === 'length' || parsed.type === 'number') {
+        return parsed.value
+      }
+      return 0
+    } catch (e) {
+      return 0
+    }
+  }
+
+  return [
+    parseValue(xValue, containerWidth),
+    parseValue(yValue, containerHeight),
+  ]
+}
 
 export default async function rect(
   {
@@ -203,71 +292,81 @@ export default async function rect(
       ((style.borderBottomWidth as number) || 0) +
       ((style.paddingBottom as number) || 0)
 
-    let xAlign = 'Mid'
-    let yAlign = 'Mid'
-    const position = (style.objectPosition || 'center')
-      .toString()
-      .trim()
-      .toLowerCase()
-    const parts = position.split(/\s+/)
-    if (parts.length === 1) {
-      switch (parts[0]) {
-        case 'left':
-          xAlign = 'Min'
-          yAlign = 'Mid'
-          break
-        case 'right':
-          xAlign = 'Max'
-          yAlign = 'Mid'
-          break
-        case 'top':
-          xAlign = 'Mid'
-          yAlign = 'Min'
-          break
-        case 'bottom':
-          xAlign = 'Mid'
-          yAlign = 'Max'
-          break
-        case 'center':
-          xAlign = 'Mid'
-          yAlign = 'Mid'
-          break
-      }
-    } else if (parts.length === 2) {
-      for (const part of parts) {
-        if (part === 'left') xAlign = 'Min'
-        else if (part === 'right') xAlign = 'Max'
-        else if (part === 'center') xAlign = 'Mid'
-        else if (part === 'top') yAlign = 'Min'
-        else if (part === 'bottom') yAlign = 'Max'
-      }
-    }
-    const alignment = `x${xAlign}Y${yAlign}`
+    const containerInnerWidth = width - offsetLeft - offsetRight
+    const containerInnerHeight = height - offsetTop - offsetBottom
+
+    // Parse object-position
+    const position = (style.objectPosition || 'center').toString()
+    const [objPosX, objPosY] = parseObjectPosition(
+      position,
+      containerInnerWidth,
+      containerInnerHeight
+    )
+
+    // Get natural image dimensions if available
+    const naturalWidth = (style.__naturalWidth as number) || containerInnerWidth
+    const naturalHeight =
+      (style.__naturalHeight as number) || containerInnerHeight
 
     // Calculate objectFit behavior
     let preserveAspectRatio: string
-    let imageWidth = width - offsetLeft - offsetRight
-    let imageHeight = height - offsetTop - offsetBottom
+    let imageWidth = containerInnerWidth
+    let imageHeight = containerInnerHeight
     let imageX = left + offsetLeft
     let imageY = top + offsetTop
 
     if (style.objectFit === 'contain') {
-      preserveAspectRatio = alignment
+      // Scale to fit within container while preserving aspect ratio
+      const scaleX = containerInnerWidth / naturalWidth
+      const scaleY = containerInnerHeight / naturalHeight
+      const scale = Math.min(scaleX, scaleY)
+
+      imageWidth = naturalWidth * scale
+      imageHeight = naturalHeight * scale
+
+      // Apply object-position to center the image within the container
+      imageX =
+        left +
+        offsetLeft +
+        objPosX -
+        (imageWidth * objPosX) / containerInnerWidth
+      imageY =
+        top +
+        offsetTop +
+        objPosY -
+        (imageHeight * objPosY) / containerInnerHeight
+
+      preserveAspectRatio = 'none'
     } else if (style.objectFit === 'cover') {
-      preserveAspectRatio = `${alignment} slice`
+      // Scale to cover the container while preserving aspect ratio
+      const scaleX = containerInnerWidth / naturalWidth
+      const scaleY = containerInnerHeight / naturalHeight
+      const scale = Math.max(scaleX, scaleY)
+
+      imageWidth = naturalWidth * scale
+      imageHeight = naturalHeight * scale
+
+      // Apply object-position
+      imageX =
+        left +
+        offsetLeft +
+        objPosX -
+        (imageWidth * objPosX) / containerInnerWidth
+      imageY =
+        top +
+        offsetTop +
+        objPosY -
+        (imageHeight * objPosY) / containerInnerHeight
+
+      preserveAspectRatio = 'none'
     } else if (style.objectFit === 'fill') {
+      // Stretch to fill (ignore aspect ratio)
       preserveAspectRatio = 'none'
     } else if (style.objectFit === 'scale-down') {
-      // Get natural dimensions
-      const naturalWidth = style.__naturalWidth as number
-      const naturalHeight = style.__naturalHeight as number
-
       if (naturalWidth && naturalHeight) {
         // Calculate if we need to scale down
-        const containerWidth = width - offsetLeft - offsetRight
-        const containerHeight = height - offsetTop - offsetBottom
-        const scaleX = containerWidth / naturalWidth
-        const scaleY = containerHeight / naturalHeight
+        const scaleX = containerInnerWidth / naturalWidth
+        const scaleY = containerInnerHeight / naturalHeight
         const minScale = Math.min(scaleX, scaleY)
 
         if (minScale >= 1) {
@@ -277,25 +376,58 @@ export default async function rect(
           imageHeight = naturalHeight
           preserveAspectRatio = 'none'
 
-          // Center according to objectPosition
-          const extraWidth = containerWidth - naturalWidth
-          const extraHeight = containerHeight - naturalHeight
-
-          // Apply objectPosition alignment
-          if (xAlign === 'Min') imageX += 0
-          else if (xAlign === 'Max') imageX += extraWidth
-          else imageX += extraWidth / 2 // Mid
-
-          if (yAlign === 'Min') imageY += 0
-          else if (yAlign === 'Max') imageY += extraHeight
-          else imageY += extraHeight / 2 // Mid
+          // Apply object-position to position the un-scaled image
+          imageX =
+            left +
+            offsetLeft +
+            objPosX -
+            (imageWidth * objPosX) / containerInnerWidth
+          imageY =
+            top +
+            offsetTop +
+            objPosY -
+            (imageHeight * objPosY) / containerInnerHeight
         } else {
           // Image is larger than container, scale down like 'contain'
-          preserveAspectRatio = alignment
+          const scale = minScale
+          imageWidth = naturalWidth * scale
+          imageHeight = naturalHeight * scale
+
+          // Apply object-position
+          imageX =
+            left +
+            offsetLeft +
+            objPosX -
+            (imageWidth * objPosX) / containerInnerWidth
+          imageY =
+            top +
+            offsetTop +
+            objPosY -
+            (imageHeight * objPosY) / containerInnerHeight
+
+          preserveAspectRatio = 'none'
         }
       } else {
         // Fall back to 'contain' behavior if natural dimensions are unavailable
-        preserveAspectRatio = alignment
+        const scaleX = containerInnerWidth / naturalWidth
+        const scaleY = containerInnerHeight / naturalHeight
+        const scale = Math.min(scaleX, scaleY)
+
+        imageWidth = naturalWidth * scale
+        imageHeight = naturalHeight * scale
+
+        imageX =
+          left +
+          offsetLeft +
+          objPosX -
+          (imageWidth * objPosX) / containerInnerWidth
+        imageY =
+          top +
+          offsetTop +
+          objPosY -
+          (imageHeight * objPosY) / containerInnerHeight
+
+        preserveAspectRatio = 'none'
       }
     } else {
       // Default/none: fill (stretch)

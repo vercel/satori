@@ -1096,5 +1096,138 @@ describe('objectFit and objectPosition', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should support percentage values for objectPosition', async () => {
+      const svg = await satori(
+        <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+          <img
+            src={PNG_SAMPLE}
+            style={{
+              width: 100,
+              height: 100,
+              objectFit: 'cover',
+              objectPosition: '25% 75%',
+              backgroundColor: 'green',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support pixel values for objectPosition', async () => {
+      const svg = await satori(
+        <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+          <img
+            src={PNG_SAMPLE}
+            style={{
+              width: 100,
+              height: 100,
+              objectFit: 'contain',
+              objectPosition: '10px 20px',
+              backgroundColor: 'green',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support mixed keyword and percentage for objectPosition', async () => {
+      const svg = await satori(
+        <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+          <img
+            src={PNG_SAMPLE}
+            style={{
+              width: 100,
+              height: 100,
+              objectFit: 'cover',
+              objectPosition: 'left 25%',
+              backgroundColor: 'green',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support 100% 100% for objectPosition (bottom right)', async () => {
+      const svg = await satori(
+        <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+          <img
+            src={PNG_SAMPLE}
+            style={{
+              width: 100,
+              height: 100,
+              objectFit: 'cover',
+              objectPosition: '100% 100%',
+              backgroundColor: 'green',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support 0% 0% for objectPosition (top left)', async () => {
+      const svg = await satori(
+        <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+          <img
+            src={PNG_SAMPLE}
+            style={{
+              width: 100,
+              height: 100,
+              objectFit: 'cover',
+              objectPosition: '0% 0%',
+              backgroundColor: 'green',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support objectPosition with contain and percentages', async () => {
+      const svg = await satori(
+        <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+          <img
+            src={PNG_SAMPLE}
+            style={{
+              width: 100,
+              height: 100,
+              objectFit: 'contain',
+              objectPosition: '75% 25%',
+              backgroundColor: 'green',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should support objectPosition with scale-down and percentages', async () => {
+      const svg = await satori(
+        <div style={{ width: '100%', height: '100%', display: 'flex' }}>
+          <img
+            src={PNG_SAMPLE}
+            style={{
+              width: 100,
+              height: 100,
+              objectFit: 'scale-down',
+              objectPosition: '80% 20%',
+              backgroundColor: 'green',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 })
