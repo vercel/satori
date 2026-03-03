@@ -72,6 +72,7 @@ export default async function* buildTextNodes(
     filter: cssFilter,
     tabSize = 8,
     letterSpacing,
+    fontFeatureSettings,
     _inheritedBackgroundClipTextPath,
     _inheritedBackgroundClipTextHasBackground,
     flexShrink,
@@ -128,6 +129,7 @@ export default async function* buildTextNodes(
     {
       fontSize,
       letterSpacing,
+      fontFeatureSettings,
     }
   )
 
@@ -751,6 +753,7 @@ export default async function* buildTextNodes(
           // Since we need to pass the baseline position, add the ascender to the top.
           top: top + topOffset + baselineOfWord + baselineDelta,
           letterSpacing,
+          fontFeatureSettings,
         },
         band
       )
@@ -807,6 +810,7 @@ export default async function* buildTextNodes(
             left: left + leftOffset,
             top: top + topOffset,
             letterSpacing,
+            fontFeatureSettings,
           },
           band
         )

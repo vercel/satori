@@ -271,6 +271,7 @@ type MainStyle = {
   fontFamily: string | string[]
   fontWeight: FontWeight
   fontStyle: FontStyle
+  fontFeatureSettings: string
 
   borderTopWidth: number
   borderLeftWidth: number

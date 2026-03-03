@@ -183,11 +183,12 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>justifyContent</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>gap</code></td><td>Supported</td><td></td></tr>
 
-<tr><td rowspan="5">Font</td></tr>
+<tr><td rowspan="6">Font</td></tr>
 <tr><td><code>fontFamily</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontSize</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontWeight</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontStyle</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>fontFeatureSettings</code></td><td>Supported via HarfBuzz text shaping. Enables OpenType features like ligatures, small caps, stylistic sets, etc.</td><td></td></tr>
 
 <tr><td rowspan="13">Text</td></tr>
 <tr><td><code>tabSize</code></td><td>Supported</td><td></td></tr>
@@ -307,9 +308,22 @@ Note:
 
 ### Language and Typography
 
-Advanced typography features such as kerning, ligatures and other OpenType features are not currently supported.
+**OpenType Features**: Satori now supports advanced typography features via HarfBuzz text shaping! Use the `font-feature-settings` CSS property to enable OpenType features such as:
+- Ligatures (`liga`, `dlig`, `hlig`)
+- Small caps (`smcp`, `c2sc`)
+- Stylistic sets (`ss01`-`ss20`)
+- Contextual alternates (`calt`)
+- Swashes (`swsh`, `cswh`)
+- And many more OpenType features
 
-RTL languages are not supported either.
+Example:
+```jsx
+<div style={{ fontFeatureSettings: '"smcp" 1, "liga" 0' }}>
+  This Text Uses Small Caps
+</div>
+```
+
+**Note**: RTL (right-to-left) languages are not yet fully supported.
 
 #### Fonts
 
