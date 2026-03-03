@@ -10,6 +10,7 @@ const list = new Set([
   'letterSpacing',
   'lineHeight',
   'textAlign',
+  'textIndent',
   'textTransform',
   'textShadowOffset',
   'textShadowColor',

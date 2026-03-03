@@ -65,6 +65,7 @@ export default async function* buildTextNodes(
 
   const {
     textAlign,
+    textIndent = 0,
     lineHeight,
     textWrap,
     fontSize,
@@ -461,6 +462,18 @@ export default async function* buildTextNodes(
     height: containerHeight,
   } = textContainer.getComputedLayout()
 
+  // Convert textIndent to number if it's a string (e.g., percentage)
+  const textIndentNumber =
+    typeof textIndent === 'string'
+      ? lengthToNumber(
+          textIndent,
+          fontSize,
+          containerWidth,
+          parentStyle,
+          true
+        ) || 0
+      : textIndent
+
   const parentContainerInnerWidth =
     parent.getComputedWidth() -
     parent.getComputedPadding(Yoga.EDGE_LEFT) -
@@ -548,6 +561,11 @@ export default async function* buildTextNodes(
 
     // When `text-align` is `justify`, the width of the line will be adjusted.
     let extendedWidth = false
+
+    // Apply text-indent to the first line (for both single and multi-line text)
+    if (line === 0 && textIndentNumber !== 0) {
+      leftOffset += textIndentNumber
+    }
 
     if (lineWidths.length > 1) {
       // Calculate alignment. Note that for Flexbox, there is only text
