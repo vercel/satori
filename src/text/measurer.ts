@@ -7,13 +7,15 @@ export function genMeasurer(
   style: {
     fontSize: number
     letterSpacing: number
+    fontFeatureSettings?: string
+    direction?: string
   }
 ): {
   measureGrapheme: (grapheme: string) => number
   measureGraphemeArray: (graphemes: string[]) => number
   measureText: (text: string) => number
 } {
-  const { fontSize, letterSpacing } = style
+  const { fontSize, letterSpacing, fontFeatureSettings, direction } = style
 
   const cache = new Map<string, number>()
 
@@ -21,7 +23,12 @@ export function genMeasurer(
     let width = cache.get(grapheme)
 
     if (width === undefined) {
-      width = engine.measure(grapheme, { fontSize, letterSpacing })
+      width = engine.measure(grapheme, {
+        fontSize,
+        letterSpacing,
+        fontFeatureSettings,
+        direction,
+      })
       cache.set(grapheme, width)
     }
 

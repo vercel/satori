@@ -3,6 +3,13 @@
  */
 import opentype from '@shuding/opentype.js'
 import { Locale, locales, isValidLocale } from './language.js'
+import {
+  isHarfBuzzInitialized,
+  shapeText,
+  parseFontFeatureSettings,
+  type FontFeatures,
+  type ShapedGlyph,
+} from './harfbuzz.js'
 
 export type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
 export type WeightName = 'normal' | 'bold'
@@ -38,6 +45,8 @@ export type FontEngine = {
     style: {
       fontSize: number
       letterSpacing: number
+      fontFeatureSettings?: string
+      direction?: string
     }
   ) => number
   getSVG: (
@@ -47,6 +56,8 @@ export type FontEngine = {
       top: number
       left: number
       letterSpacing: number
+      fontFeatureSettings?: string
+      direction?: string
     },
     band?: SkipInkBand
   ) => { path: string; boxes: GlyphBox[] }
@@ -355,17 +366,24 @@ export default class FontLoader {
       if (cachedParsedFont.has(data)) {
         font = cachedParsedFont.get(data)
       } else {
-        font = opentype.parse(
-          // Buffer to ArrayBuffer.
+        // Convert Buffer to ArrayBuffer if needed
+        const arrayBuffer =
           'buffer' in data
             ? data.buffer.slice(
                 data.byteOffset,
                 data.byteOffset + data.byteLength
               )
-            : data,
+            : data
+
+        font = opentype.parse(
+          arrayBuffer,
           // @ts-ignore
           { lowMemory: true }
         )
+
+        // Store the raw font data for HarfBuzz
+        ;(font as any)._rawFontData = arrayBuffer
+
         // Modify the `charToGlyphIndex` method, so we can know which char is
         // being mapped to which glyph.
         const originalCharToGlyphIndex = font.charToGlyphIndex
@@ -670,12 +688,44 @@ export default class FontLoader {
     {
       fontSize,
       letterSpacing = 0,
+      fontFeatureSettings,
+      direction,
     }: {
       fontSize: number
       letterSpacing: number
+      fontFeatureSettings?: string
+      direction?: string
     }
   ) {
     const font = resolveFont(content)
+
+    // Use HarfBuzz for all text shaping if initialized
+    if (isHarfBuzzInitialized()) {
+      const features = fontFeatureSettings
+        ? parseFontFeatureSettings(fontFeatureSettings)
+        : {}
+
+      const hbDirection = direction === 'rtl' ? 'rtl' : 'ltr'
+
+      const shaped = shapeText(font, content, {
+        features,
+        direction: hbDirection,
+      })
+
+      // Sum up advance widths from shaped glyphs
+      let width = 0
+      for (const glyph of shaped) {
+        width += glyph.ax
+      }
+
+      // Convert from font units to pixels and add letter spacing
+      const pixelWidth = (width / font.unitsPerEm) * fontSize
+      const spacingWidth = letterSpacing * (content.length - 1)
+
+      return pixelWidth + spacingWidth
+    }
+
+    // Use opentype.js only if HarfBuzz not available
     const unpatch = this.patchFontFallbackResolver(font, resolveFont)
 
     try {
@@ -695,22 +745,80 @@ export default class FontLoader {
       top,
       left,
       letterSpacing = 0,
+      fontFeatureSettings,
+      direction,
     }: {
       fontSize: number
       top: number
       left: number
       letterSpacing: number
+      fontFeatureSettings?: string
+      direction?: string
     },
     band?: SkipInkBand
   ): { path: string; boxes: GlyphBox[] } {
     const font = resolveFont(content)
+
+    if (fontSize === 0) {
+      return { path: '', boxes: [] }
+    }
+
+    // Use HarfBuzz for all text shaping if initialized
+    if (isHarfBuzzInitialized()) {
+      const features = fontFeatureSettings
+        ? parseFontFeatureSettings(fontFeatureSettings)
+        : {}
+
+      const hbDirection = direction === 'rtl' ? 'rtl' : 'ltr'
+
+      const shaped = shapeText(font, content.replace(/\n/g, ''), {
+        features,
+        direction: hbDirection,
+      })
+
+      const fullPath = new opentype.Path()
+      const boxes: GlyphBox[] = []
+      const scale = fontSize / font.unitsPerEm
+
+      let cursorX = left
+      let cursorY = top
+
+      // Process shaped glyphs
+      for (const shapedGlyph of shaped) {
+        // Get the glyph from opentype.js by ID
+        const glyph = font.glyphs.get(shapedGlyph.g)
+
+        if (glyph && glyph.path) {
+          // Calculate glyph position
+          const gX = cursorX + shapedGlyph.dx * scale
+          const gY = cursorY + shapedGlyph.dy * scale
+
+          // Get the glyph path and transform it
+          const glyphPath = glyph.getPath(gX, gY, fontSize, {})
+
+          // Compute band boxes for text decoration skip-ink
+          const bandBoxes = band ? computeBandBox(glyphPath.commands, band) : []
+          if (bandBoxes.length) {
+            boxes.push(...bandBoxes)
+          }
+
+          fullPath.extend(glyphPath)
+        }
+
+        // Advance cursor by the shaped advance + letter spacing
+        cursorX += shapedGlyph.ax * scale + letterSpacing
+      }
+
+      return {
+        path: fullPath.toPathData(1),
+        boxes,
+      }
+    }
+
+    // Use opentype.js only if HarfBuzz not available
     const unpatch = this.patchFontFallbackResolver(font, resolveFont)
 
     try {
-      if (fontSize === 0) {
-        return { path: '', boxes: [] }
-      }
-
       const fullPath = new opentype.Path()
       const boxes: GlyphBox[] = []
 

@@ -189,14 +189,16 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>justifyContent</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>gap</code></td><td>Supported</td><td></td></tr>
 
-<tr><td rowspan="5">Font</td></tr>
+<tr><td rowspan="6">Font</td></tr>
 <tr><td><code>fontFamily</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontSize</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontWeight</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontStyle</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>fontFeatureSettings</code></td><td>Supported via HarfBuzz text shaping. Enables OpenType features like ligatures, small caps, stylistic sets, etc.</td><td></td></tr>
 
-<tr><td rowspan="13">Text</td></tr>
+<tr><td rowspan="14">Text</td></tr>
 <tr><td><code>tabSize</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>direction</code></td><td><code>ltr</code>, <code>rtl</code>, defaults to <code>ltr</code>. Used for RTL languages like Arabic and Hebrew.</td><td></td></tr>
 <tr><td><code>textAlign</code></td><td><code>start</code>, <code>end</code>, <code>left</code>, <code>right</code>, <code>center</code>, <code>justify</code>, default to <code>start</code></td><td></td></tr>
 <tr><td><code>textIndent</code></td><td>Supported, including negative values (hanging indent)</td><td></td></tr>
 <tr><td><code>textTransform</code></td><td><code>none</code>, <code>lowercase</code>, <code>uppercase</code>, <code>capitalize</code>, defaults to <code>none</code></td><td></td></tr>
@@ -314,9 +316,34 @@ Note:
 
 ### Language and Typography
 
-Advanced typography features such as kerning, ligatures and other OpenType features are not currently supported.
+**OpenType Features**: Satori now supports advanced typography features via HarfBuzz text shaping! Use the `font-feature-settings` CSS property to enable OpenType features such as:
+- Ligatures (`liga`, `dlig`, `hlig`)
+- Small caps (`smcp`, `c2sc`)
+- Stylistic sets (`ss01`-`ss20`)
+- Contextual alternates (`calt`)
+- Swashes (`swsh`, `cswh`)
+- And many more OpenType features
 
-RTL languages are not supported either.
+Example:
+```jsx
+<div style={{ fontFeatureSettings: '"smcp" 1, "liga" 0' }}>
+  This Text Uses Small Caps
+</div>
+```
+
+**RTL (Right-to-Left) Languages**: Satori now supports RTL languages like Arabic and Hebrew! Use the `direction` CSS property to enable RTL text rendering:
+
+```jsx
+<div style={{ direction: 'rtl' }}>
+  مرحبا بالعالم
+</div>
+
+<div style={{ direction: 'rtl' }}>
+  שלום עולם
+</div>
+```
+
+HarfBuzz automatically handles bidirectional text (BiDi) when mixing LTR and RTL content.
 
 #### Fonts
 

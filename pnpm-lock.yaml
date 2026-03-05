@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
+  harfbuzzjs@0.10.0:
+    hash: vc5brwjb3gvt6xc3hwrignpz4a
+    path: patches/harfbuzzjs@0.10.0.patch
   yoga-layout@3.2.1:
     hash: fcspke77bs3aszvcx6say6fj7q
     path: patches/yoga-layout@3.2.1.patch
@@ -34,6 +37,9 @@ importers:
       escape-html:
         specifier: ^1.0.3
         version: 1.0.3
+      harfbuzzjs:
+        specifier: ^0.10.0
+        version: 0.10.0(patch_hash=vc5brwjb3gvt6xc3hwrignpz4a)
       linebreak:
         specifier: ^1.1.0
         version: 1.1.0
@@ -53,9 +59,6 @@ importers:
       '@types/node':
         specifier: ^16
         version: 16.11.59
-      '@types/opentype.js':
-        specifier: ^1.3.3
-        version: 1.3.4
       '@types/react':
         specifier: ^17.0.38
         version: 17.0.50
@@ -3232,10 +3235,6 @@ packages:
     resolution: {integrity: sha512-6u+36Dj3aDzhfBVUf/mfmc92OEdzQ2kx2jcXGdigfl70E/neV21ZHE6UCz4MDzTRcVqGAM27fk+DLXvyDsn3Jw==}
     dev: true
 
-  /@types/opentype.js@1.3.4:
-    resolution: {integrity: sha512-6fbXi67I07ugNM+FExwJnfuui2hD7hraD6nqjr3UnqsbBpxSkrtmO6tBubPdNAjqRT9TVkquVkNS9IkgTtq6/w==}
-    dev: true
-
   /@types/pdfkit@0.12.9:
     resolution: {integrity: sha512-z0y4rQky+nvno3nzyNUeZbrx2YvwP0GEfnpk8o3zG7jL4FYCZk9Vn11DzM+HC4RPzaJDOg9kiLzl3lng4FDcLA==}
     dependencies:
@@ -5425,6 +5424,11 @@ packages:
   /grapheme-splitter@1.0.4:
     resolution: {integrity: sha512-bzh50DW9kTPM00T8y4o8vQg89Di9oLJVLW/KaOGIXJWP/iqCN6WKYkbNOF04vFLJhwcpYUh9ydh/+5vpOqV4YQ==}
     dev: true
+
+  /harfbuzzjs@0.10.0(patch_hash=vc5brwjb3gvt6xc3hwrignpz4a):
+    resolution: {integrity: sha512-SN8LVwCOzvTq3OPNd0+EAghgXugItz56wst567D1vs7LnnKGWprhi3EG58aVOBwhN8HEbQxL4I9NDWkcXUutRw==}
+    dev: false
+    patched: true
 
   /has-bigints@1.0.2:
     resolution: {integrity: sha512-tSvCKtBr9lkF0Ex0aQiP9N+OpV4zi2r/Nee5VkRDbaqv35RLYMzbwQfFSZZH0kR+Rd6302UJZ2p/bJCEoR3VoQ==}
