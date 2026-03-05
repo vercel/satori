@@ -15,6 +15,12 @@ import parseTransformOrigin, {
 import { isString, lengthToNumber, v, splitEffects } from '../utils.js'
 import { MaskProperty, parseMask } from '../parser/mask.js'
 import { FontWeight, FontStyle } from '../font.js'
+import {
+  extractCustomProperties,
+  mergeVariables,
+  resolveVariables,
+  CSSVariables,
+} from './variables.js'
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
@@ -310,18 +316,49 @@ export default function expand(
 ): SerializedStyle {
   const serializedStyle: SerializedStyle = {}
 
+  // Extract inherited CSS variables
+  const inheritedVariables: CSSVariables = {}
+  for (const prop in inheritedStyle) {
+    if (prop.startsWith('--')) {
+      inheritedVariables[prop] = String(inheritedStyle[prop])
+    }
+  }
+
+  // Extract and resolve CSS variables from current style
+  let currentVariables: CSSVariables = {}
+  let processableStyle = style
+
   if (style) {
+    const { variables, remainingStyle } = extractCustomProperties(style)
+    currentVariables = variables
+    processableStyle = remainingStyle
+  }
+
+  // Merge variables (current overrides inherited)
+  const mergedVariables = mergeVariables(inheritedVariables, currentVariables)
+
+  // Store merged variables in the serialized style for inheritance
+  for (const varName in mergedVariables) {
+    serializedStyle[varName] = mergedVariables[varName]
+  }
+
+  if (processableStyle) {
+    // Resolve CSS variables in color property before processing
+    const resolvedColor = processableStyle.color
+      ? resolveVariables(processableStyle.color, mergedVariables)
+      : undefined
+
     const currentColor = getCurrentColor(
-      style.color as string,
+      resolvedColor as string,
       inheritedStyle.color
     )
 
     serializedStyle.color = currentColor
 
-    for (const prop in style) {
+    for (const prop in processableStyle) {
       // Internal properties.
       if (prop.startsWith('_')) {
-        serializedStyle[prop] = style[prop]
+        serializedStyle[prop] = processableStyle[prop]
         continue
       }
 
@@ -330,7 +367,12 @@ export default function expand(
       }
 
       const name = getPropertyName(prop)
-      const value = preprocess(style[prop], currentColor)
+      // Resolve CSS variables before preprocessing
+      const resolvedValue = resolveVariables(
+        processableStyle[prop],
+        mergedVariables
+      )
+      const value = preprocess(resolvedValue, currentColor)
 
       try {
         const resolvedStyle =

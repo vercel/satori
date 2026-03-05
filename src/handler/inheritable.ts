@@ -43,7 +43,8 @@ const list = new Set([
 export default function inheritable(style: SerializedStyle): SerializedStyle {
   const inheritedStyle: SerializedStyle = {}
   for (const prop in style) {
-    if (list.has(prop)) {
+    // CSS custom properties (--*) always inherit
+    if (list.has(prop) || prop.startsWith('--')) {
       inheritedStyle[prop] = style[prop]
     }
   }

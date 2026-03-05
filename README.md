@@ -117,6 +117,12 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tbody>
 
 <tr>
+<td colspan="2"><b>CSS Variables</b></td>
+<td>Supported, including <code>--var-name</code> declaration and <code>var(--var-name)</code> usage with fallback values</td>
+<td><a href="https://og-playground.vercel.app/?share=rVLRTsIwFP2V5hIzTbY4wBjTIC9oos-a8MJLt95tha4lXQfOZf9uOxwRlTeeentO7zntuW0h1RyBwoyL3UoRUtlG4mPb-pqQIIpsgSVGqZbaBJQEnJlNImsMwsOJAkVeWEeM4_hqAPeC2-IXxkW1laxxaCbxY0B9_SQMplZo5TjnU5dqYJkUuXq1WFaeQmXRDNS6rqzImoV2oPL-p3TC0k1udK34wt_c8aMsy46urutNfCIl08kPaPn9lvs47tGuW6m5L3w4x2RIn4VT3DFzfZLPTeBa5i8opQ7JUhvJZ7eu8x-Jv7lqw1TuUr2E-lmJaBKSUTaNx_H4vNqwQgh668dSAW2hHynQBxcNHGYO9M5vOCZ1DjRjssIQsNRr8d5s_Zey-37ndHy4z2WCHKg1NXYhWJa4E4W333tz6L4A">Example</a></td>
+</tr>
+
+<tr>
 <td colspan="2"><code>display</code></td>
 <td><code>flex</code>, <code>contents</code>, <code>none</code>, default to <code>flex</code></td>
 <td></td>
@@ -304,6 +310,7 @@ Note:
 2. There is no `z-index` support in SVG. Elements that come later in the document will be painted on top.
 3. `calc` isn't supported.
 4. `currentColor` support is only available for the `color` property.
+5. CSS variables (custom properties) are supported, including inheritance, fallback values, and nested variables.
 
 ### Language and Typography
 
