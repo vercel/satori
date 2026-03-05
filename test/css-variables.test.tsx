@@ -3,6 +3,13 @@ import { it, describe, expect } from 'vitest'
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
 
+declare module 'react' {
+  interface CSSProperties {
+    // Allow any CSS variable starting with '--'
+    [key: `--${string}`]: string | number
+  }
+}
+
 describe('CSS Variables', () => {
   let fonts
   initFonts((f) => (fonts = f))
