@@ -17,15 +17,17 @@ export function createElement<P extends {}>(
   props?: P | null,
   ...children: JSXNode[]
 ): JSXElement<P> {
-  if (!props)
-    return jsx(type, children.length ? { children } : {}) as JSXElement<P>
+  if (!props) {
+    const newProps = children.length ? { children } : {}
+    return jsx(type, newProps, null) as JSXElement<P>
+  }
 
-  let maybeKey: string | number | bigint | undefined | null
-  let restProps: Record<string, unknown>
-
-    // Destructure key from props.
-  ;({ key: maybeKey = null, ...restProps } = props)
-  const key = maybeKey !== null ? String(maybeKey) : null
+  // Destructure key from props.
+  const { key, ...restProps } = props as {
+    key?: JSXKey | undefined | null
+    [x: string]: unknown
+  }
+  // Pass children as props.
   if (children.length) restProps.children = children
 
   return jsx(type, restProps, key) as JSXElement<P>
