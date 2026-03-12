@@ -42,23 +42,22 @@ export namespace JSX {
   }
 }
 
-function fixKey(k: unknown): string | null {
-  return (k ?? null) === null ? null : String(k)
-}
-
 export function jsx(
   type: string | FC<any>,
   props: Record<string, unknown>,
   key?: JSXKey | undefined | null
 ): JSXElement {
-  if (!('key' in props)) {
-    key = fixKey(key)
-    return { type, props, key }
-  } else {
-    const { key: propsKey, ...restProps } = props
-    key = fixKey(key !== undefined ? key : propsKey)
-    return { type, props: restProps, key }
+  if ('key' in props) {
+    // Destructure spread key from props.
+    const { key: keyProp, ...restProps } = props
+    // Key param takes precedence over spread key prop.
+    key = arguments.length === 3 ? key : (keyProp as JSXKey)
+    // Shallow copy of props without key.
+    props = restProps
   }
+  // Coerce key to string if not nullish.
+  key = key != null ? String(key) : null
+  return { type, props, key }
 }
 
 export const jsxs = jsx
