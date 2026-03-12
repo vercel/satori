@@ -1,5 +1,5 @@
 import { jsx } from './jsx-runtime.ts'
-import type { JSXNode, JSXElement, FC } from './types.ts'
+import type { JSXNode, JSXElement, JSXKey, FC } from './types.ts'
 
 export type * from './types.ts'
 export { Fragment, type JSX } from './jsx-runtime.ts'
@@ -14,7 +14,7 @@ export { Fragment, type JSX } from './jsx-runtime.ts'
  */
 export function createElement<P extends {}>(
   type: string | FC<P>,
-  props?: { key?: string | number | bigint | null } & Omit<P, 'children'>,
+  props?: { key?: JSXKey | undefined | null } & Omit<P, 'children'>,
   ...children: JSXNode[]
 ): JSXElement<P> {
   if (!props)

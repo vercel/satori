@@ -6,6 +6,8 @@
  */
 export type { CSSProperties } from './intrinsic-elements.ts'
 
+export type JSXKey = string | number | bigint
+
 /**
  * Represents a JSX element.
  *

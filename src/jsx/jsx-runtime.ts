@@ -11,7 +11,7 @@
  * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/index.d.ts React typings `@types/react`}
  * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/jsx-runtime.d.ts React typings for `jsx-runtime`}
  */
-import type { JSXElement, FC } from './types.ts'
+import type { JSXElement, JSXKey, FC } from './types.ts'
 import type { IntrinsicElements as DefinedIntrinsixElements } from './intrinsic-elements.ts'
 
 export namespace JSX {
@@ -38,7 +38,7 @@ export namespace JSX {
 
   export interface IntrinsicAttributes {
     /** **INFO**: Allowed as prop, but will be ignored by Satori. */
-    key?: string | number | bigint | undefined | null
+    key?: JSXKey | undefined | null
   }
 }
 
@@ -49,7 +49,7 @@ function fixKey(k: unknown): string | null {
 export function jsx(
   type: string | FC<any>,
   props: Record<string, unknown>,
-  key?: string | number | bigint | undefined | null
+  key?: JSXKey | undefined | null
 ): JSXElement {
   if (!('key' in props)) {
     key = fixKey(key)
