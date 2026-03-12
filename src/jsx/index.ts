@@ -14,7 +14,7 @@ export { Fragment, type JSX } from './jsx-runtime.ts'
  */
 export function createElement<P extends {}>(
   type: string | FC<P>,
-  props?: { key?: JSXKey | undefined | null } & Omit<P, 'children'>,
+  props?: P | null,
   ...children: JSXNode[]
 ): JSXElement<P> {
   if (!props)
