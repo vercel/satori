@@ -240,6 +240,14 @@ export function segment(
   return result
 }
 
+function encodeAttributeValue(value: string) {
+  return value
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/&/g, '&amp;')
+}
+
 export function buildXMLString(
   type: string,
   attrs: Record<string, string | number>,
@@ -249,7 +257,11 @@ export function buildXMLString(
 
   for (const [k, _v] of Object.entries(attrs)) {
     if (typeof _v !== 'undefined') {
-      attrString += ` ${k}="${_v}"`
+      if (typeof _v === 'string') {
+        attrString += ` ${k}="${encodeAttributeValue(_v)}"`
+      } else {
+        attrString += ` ${k}="${_v}"`
+      }
     }
   }
 
