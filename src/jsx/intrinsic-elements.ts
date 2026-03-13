@@ -1513,9 +1513,11 @@ interface WebViewHTMLAttributes<T> extends HTMLAttributes<T> {
 }
 
 /**
- * Subset of HTML properties that Satori supports.
+ * Subset of HTML elements that Satori supports.
+ *
+ * @todo remove unsupported elements.
  */
-export interface IntrinsicElements {
+export interface DefinedIntrinsicElements {
   // HTML
   a: DetailedHTMLProps<
     AnchorHTMLAttributes<HTMLAnchorElement>,
