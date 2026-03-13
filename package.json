@@ -38,6 +38,21 @@
         "types": "./dist/standalone.d.cts",
         "default": "./dist/standalone.cjs"
       }
+    },
+    "./jsx": {
+      "types": "./dist/jsx/index.d.ts",
+      "import": "./dist/jsx/index.js",
+      "require": "./dist/jsx/index.cjs"
+    },
+    "./jsx/jsx-runtime": {
+      "types": "./dist/jsx/jsx-runtime.d.ts",
+      "import": "./dist/jsx/jsx-runtime.js",
+      "require": "./dist/jsx/jsx-runtime.cjs"
+    },
+    "./jsx/jsx-dev-runtime": {
+      "types": "./dist/jsx/jsx-runtime.d.ts",
+      "import": "./dist/jsx/jsx-runtime.js",
+      "require": "./dist/jsx/jsx-runtime.cjs"
     }
   },
   "scripts": {
