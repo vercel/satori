@@ -1,8 +1,8 @@
-import { jsx } from './jsx-runtime.ts'
-import type { JSXNode, JSXElement, JSXKey, FC } from './types.ts'
+import { jsx } from './jsx-runtime.js'
+import type { JSXNode, JSXElement, JSXKey, FC } from './types.js'
 
-export type * from './types.ts'
-export { Fragment, type JSX } from './jsx-runtime.ts'
+export type * from './types.js'
+export { Fragment, type JSX } from './jsx-runtime.js'
 
 /**
  * Create a `ReactElement`-like object.
