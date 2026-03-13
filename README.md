@@ -51,6 +51,27 @@ Under the hood, it handles layout calculation, font, typography and more, to gen
 Satori only accepts JSX elements that are pure and stateless. You can use a subset of HTML
 elements (see section below), or custom React components, but React APIs such as `useState`, `useEffect`, `dangerouslySetInnerHTML` are not supported.
 
+#### Experimental: builtin JSX support
+
+Satori has an experimental JSX runtime that you can use without having to install React. You can enable it on a per-file basis with [`@jsxImportSource` pragmas](https://www.typescriptlang.org/tsconfig/#jsxImportSource). In the future, it will autocomplete only the subset of HTML elements and CSS properties that Satori supports for better type-safety.
+
+```jsx
+/** @jsxRuntime automatic */
+/** @jsxImportSource satori/jsx */
+
+import satori from 'satori';
+import { FC, JSXNode } from 'satori/jsx';
+
+const MyComponent: FC<{ children: JSXNode }> = ({ children }) => (
+  <div style={{ color: 'black' }}>{children}</div>,
+)
+
+const svg = await satori(
+  <MyComponent>hello, world</MyComponent>
+  options,
+)
+```
+
 #### Use without JSX
 
 If you don't have JSX transpiler enabled, you can simply pass [React-elements-like objects](https://reactjs.org/docs/introducing-jsx.html) that have `type`, `props.children` and `props.style` (and other properties too) directly:
@@ -350,8 +371,6 @@ Multiple fonts can be passed to Satori and used in `fontFamily`.
 
 > [!TIP]
 > We recommend you define global fonts instead of creating a new object and pass it to satori for better performance, if your fonts do not change. [Read it for more detail](https://github.com/vercel/satori/issues/590)
-
-
 
 #### Emojis
 
