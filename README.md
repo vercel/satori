@@ -63,11 +63,11 @@ import satori from 'satori';
 import { FC, JSXNode } from 'satori/jsx';
 
 const MyComponent: FC<{ children: JSXNode }> = ({ children }) => (
-  <div style={{ color: 'black' }}>{children}</div>,
+  <div style={{ color: 'black' }}>{children}</div>
 )
 
 const svg = await satori(
-  <MyComponent>hello, world</MyComponent>
+  <MyComponent>hello, world</MyComponent>,
   options,
 )
 ```
