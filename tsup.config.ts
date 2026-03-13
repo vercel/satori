@@ -7,6 +7,8 @@ const isStandaloneBuild = !!process.env.SATORI_STANDALONE
 export default defineConfig({
   entry: {
     [isStandaloneBuild ? 'standalone' : 'index']: 'src/index.ts',
+    'jsx/index': 'src/jsx/index.ts',
+    'jsx/jsx-runtime': 'src/jsx/jsx-runtime.ts',
   },
   splitting: false,
   sourcemap: true,
