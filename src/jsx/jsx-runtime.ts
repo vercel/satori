@@ -2,10 +2,11 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
 /**
  * @file
- * Minimal JSX runtime for Satori.
+ * Minimal JSX runtime for Satori adapted from React v19.1.
  *
  * Use the `@jsxImportSource` pragma directive in files containing JSX for Satori.
  *
+ * @see {@link https://github.com/facebook/react/blob/v19.1.0/packages/react/src/jsx/ReactJSXElement.js React JSX runtime implementation}
  * @see {@link https://www.typescriptlang.org/docs/handbook/jsx.html TypeScript: JSX reference}
  * @see {@link https://www.typescriptlang.org/tsconfig/#jsxImportSource TSConfig: using "jsxImportSource" or `@jsxImportSource` pragma directive}
  * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/index.d.ts React typings `@types/react`}
