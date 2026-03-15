@@ -3,13 +3,7 @@
  */
 import opentype from '@shuding/opentype.js'
 import { Locale, locales, isValidLocale } from './language.js'
-import {
-  isHarfBuzzInitialized,
-  shapeText,
-  parseFontFeatureSettings,
-  type FontFeatures,
-  type ShapedGlyph,
-} from './harfbuzz.js'
+import { shapeText, parseFontFeatureSettings } from './harfbuzz.js'
 
 export type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
 export type WeightName = 'normal' | 'bold'
@@ -700,41 +694,39 @@ export default class FontLoader {
     const font = resolveFont(content)
 
     // Use HarfBuzz for all text shaping if initialized
-    if (isHarfBuzzInitialized()) {
-      const features = fontFeatureSettings
-        ? parseFontFeatureSettings(fontFeatureSettings)
-        : {}
+    const features = fontFeatureSettings
+      ? parseFontFeatureSettings(fontFeatureSettings)
+      : {}
 
-      const hbDirection = direction === 'rtl' ? 'rtl' : 'ltr'
+    const hbDirection = direction === 'rtl' ? 'rtl' : 'ltr'
 
-      const shaped = shapeText(font, content, {
-        features,
-        direction: hbDirection,
-      })
+    const shaped = shapeText(font, content, {
+      features,
+      direction: hbDirection,
+    })
 
-      // Sum up advance widths from shaped glyphs
-      let width = 0
-      for (const glyph of shaped) {
-        width += glyph.ax
-      }
-
-      // Convert from font units to pixels and add letter spacing
-      const pixelWidth = (width / font.unitsPerEm) * fontSize
-      const spacingWidth = letterSpacing * (content.length - 1)
-
-      return pixelWidth + spacingWidth
+    // Sum up advance widths from shaped glyphs
+    let width = 0
+    for (const glyph of shaped) {
+      width += glyph.ax
     }
 
-    // Use opentype.js only if HarfBuzz not available
-    const unpatch = this.patchFontFallbackResolver(font, resolveFont)
+    // Convert from font units to pixels and add letter spacing
+    const pixelWidth = (width / font.unitsPerEm) * fontSize
+    const spacingWidth = letterSpacing * (content.length - 1)
 
-    try {
-      return font.getAdvanceWidth(content, fontSize, {
-        letterSpacing: letterSpacing / fontSize,
-      })
-    } finally {
-      unpatch()
-    }
+    return pixelWidth + spacingWidth
+
+    // // Use opentype.js only if HarfBuzz not available
+    // const unpatch = this.patchFontFallbackResolver(font, resolveFont)
+
+    // try {
+    //   return font.getAdvanceWidth(content, fontSize, {
+    //     letterSpacing: letterSpacing / fontSize,
+    //   })
+    // } finally {
+    //   unpatch()
+    // }
   }
 
   private getSVG(
@@ -764,119 +756,119 @@ export default class FontLoader {
     }
 
     // Use HarfBuzz for all text shaping if initialized
-    if (isHarfBuzzInitialized()) {
-      const features = fontFeatureSettings
-        ? parseFontFeatureSettings(fontFeatureSettings)
-        : {}
+    // if (isHarfBuzzInitialized()) {
+    const features = fontFeatureSettings
+      ? parseFontFeatureSettings(fontFeatureSettings)
+      : {}
 
-      const hbDirection = direction === 'rtl' ? 'rtl' : 'ltr'
+    const hbDirection = direction === 'rtl' ? 'rtl' : 'ltr'
 
-      const shaped = shapeText(font, content.replace(/\n/g, ''), {
-        features,
-        direction: hbDirection,
-      })
+    const shaped = shapeText(font, content.replace(/\n/g, ''), {
+      features,
+      direction: hbDirection,
+    })
 
-      const fullPath = new opentype.Path()
-      const boxes: GlyphBox[] = []
-      const scale = fontSize / font.unitsPerEm
+    const fullPath = new opentype.Path()
+    const boxes: GlyphBox[] = []
+    const scale = fontSize / font.unitsPerEm
 
-      let cursorX = left
-      let cursorY = top
+    let cursorX = left
+    let cursorY = top
 
-      // Process shaped glyphs
-      for (const shapedGlyph of shaped) {
-        // Get the glyph from opentype.js by ID
-        const glyph = font.glyphs.get(shapedGlyph.g)
+    // Process shaped glyphs
+    for (const shapedGlyph of shaped) {
+      // Get the glyph from opentype.js by ID
+      const glyph = font.glyphs.get(shapedGlyph.g)
 
-        if (glyph && glyph.path) {
-          // Calculate glyph position
-          const gX = cursorX + shapedGlyph.dx * scale
-          const gY = cursorY + shapedGlyph.dy * scale
+      if (glyph && glyph.path) {
+        // Calculate glyph position
+        const gX = cursorX + shapedGlyph.dx * scale
+        const gY = cursorY + shapedGlyph.dy * scale
 
-          // Get the glyph path and transform it
-          const glyphPath = glyph.getPath(gX, gY, fontSize, {})
+        // Get the glyph path and transform it
+        const glyphPath = glyph.getPath(gX, gY, fontSize, {})
 
-          // Compute band boxes for text decoration skip-ink
-          const bandBoxes = band ? computeBandBox(glyphPath.commands, band) : []
-          if (bandBoxes.length) {
-            boxes.push(...bandBoxes)
-          }
-
-          fullPath.extend(glyphPath)
+        // Compute band boxes for text decoration skip-ink
+        const bandBoxes = band ? computeBandBox(glyphPath.commands, band) : []
+        if (bandBoxes.length) {
+          boxes.push(...bandBoxes)
         }
 
-        // Advance cursor by the shaped advance + letter spacing
-        cursorX += shapedGlyph.ax * scale + letterSpacing
+        fullPath.extend(glyphPath)
       }
 
-      return {
-        path: fullPath.toPathData(1),
-        boxes,
-      }
+      // Advance cursor by the shaped advance + letter spacing
+      cursorX += shapedGlyph.ax * scale + letterSpacing
     }
+
+    return {
+      path: fullPath.toPathData(1),
+      boxes,
+    }
+    // }
 
     // Use opentype.js only if HarfBuzz not available
-    const unpatch = this.patchFontFallbackResolver(font, resolveFont)
+    // const unpatch = this.patchFontFallbackResolver(font, resolveFont)
 
-    try {
-      const fullPath = new opentype.Path()
-      const boxes: GlyphBox[] = []
+    // try {
+    //   const fullPath = new opentype.Path()
+    //   const boxes: GlyphBox[] = []
 
-      const options = {
-        letterSpacing: letterSpacing / fontSize,
-      }
+    //   const options = {
+    //     letterSpacing: letterSpacing / fontSize,
+    //   }
 
-      const cachedPath = new WeakMap<
-        opentype.Glyph,
-        [number, number, opentype.Path]
-      >()
+    //   const cachedPath = new WeakMap<
+    //     opentype.Glyph,
+    //     [number, number, opentype.Path]
+    //   >()
 
-      font.forEachGlyph(
-        content.replace(/\n/g, ''),
-        left,
-        top,
-        fontSize,
-        options,
-        function (glyph, gX, gY, gFontSize) {
-          let glyphPath: opentype.Path
-          if (!cachedPath.has(glyph)) {
-            glyphPath = glyph.getPath(gX, gY, gFontSize, options)
-            cachedPath.set(glyph, [gX, gY, glyphPath])
-          } else {
-            const [_x, _y, _glyphPath] = cachedPath.get(glyph)
-            glyphPath = new opentype.Path()
-            glyphPath.commands = _glyphPath.commands.map((command) => {
-              const movedCommand = { ...command }
-              for (let k in movedCommand) {
-                if (typeof movedCommand[k] === 'number') {
-                  if (k === 'x' || k === 'x1' || k === 'x2') {
-                    movedCommand[k] += gX - _x
-                  }
-                  if (k === 'y' || k === 'y1' || k === 'y2') {
-                    movedCommand[k] += gY - _y
-                  }
-                }
-              }
-              return movedCommand
-            })
-          }
+    //   font.forEachGlyph(
+    //     content.replace(/\n/g, ''),
+    //     left,
+    //     top,
+    //     fontSize,
+    //     options,
+    //     function (glyph, gX, gY, gFontSize) {
+    //       let glyphPath: opentype.Path
+    //       if (!cachedPath.has(glyph)) {
+    //         glyphPath = glyph.getPath(gX, gY, gFontSize, options)
+    //         cachedPath.set(glyph, [gX, gY, glyphPath])
+    //       } else {
+    //         const [_x, _y, _glyphPath] = cachedPath.get(glyph)
+    //         glyphPath = new opentype.Path()
+    //         glyphPath.commands = _glyphPath.commands.map((command) => {
+    //           const movedCommand = { ...command }
+    //           for (let k in movedCommand) {
+    //             if (typeof movedCommand[k] === 'number') {
+    //               if (k === 'x' || k === 'x1' || k === 'x2') {
+    //                 movedCommand[k] += gX - _x
+    //               }
+    //               if (k === 'y' || k === 'y1' || k === 'y2') {
+    //                 movedCommand[k] += gY - _y
+    //               }
+    //             }
+    //           }
+    //           return movedCommand
+    //         })
+    //       }
 
-          const bandBoxes = band ? computeBandBox(glyphPath.commands, band) : []
-          if (bandBoxes.length) {
-            boxes.push(...bandBoxes)
-          }
+    //       const bandBoxes = band ? computeBandBox(glyphPath.commands, band) : []
+    //       if (bandBoxes.length) {
+    //         boxes.push(...bandBoxes)
+    //       }
 
-          fullPath.extend(glyphPath)
-        }
-      )
+    //       fullPath.extend(glyphPath)
+    //     }
+    //   )
 
-      return {
-        path: fullPath.toPathData(1),
-        boxes,
-      }
-    } finally {
-      unpatch()
-    }
+    //   return {
+    //     path: fullPath.toPathData(1),
+    //     boxes,
+    //   }
+    // } finally {
+    //   unpatch()
+    // }
   }
 }
 

@@ -4,9 +4,64 @@
  * with the existing opentype.js-based system.
  */
 
-import type opentype from '@shuding/opentype.js'
-import type { FontWeight, FontStyle } from './font.js'
+import opentype from '@shuding/opentype.js'
+import { inflateSync } from 'fflate'
 import harfbuzzjsPromise from 'harfbuzzjs'
+
+/**
+ * Convert WOFF to raw sfnt (TrueType/OpenType) format for HarfBuzz.
+ * WOFF is a compressed wrapper; HarfBuzz needs the raw sfnt data.
+ */
+function woffToSfnt(woff: ArrayBuffer): ArrayBuffer {
+  const view = new DataView(woff)
+  const numTables = view.getUint16(12)
+  const sfntSize = view.getUint32(16)
+
+  const sfnt = new ArrayBuffer(sfntSize)
+  const out = new DataView(sfnt)
+  const outBytes = new Uint8Array(sfnt)
+
+  // Write sfnt header (flavor from WOFF becomes signature)
+  out.setUint32(0, view.getUint32(4))
+  out.setUint16(4, numTables)
+  const entrySelector = Math.floor(Math.log2(numTables))
+  const searchRange = (1 << entrySelector) * 16
+  out.setUint16(6, searchRange)
+  out.setUint16(8, entrySelector)
+  out.setUint16(10, numTables * 16 - searchRange)
+
+  let tableOffset = 12 + numTables * 16
+
+  for (let i = 0; i < numTables; i++) {
+    const entry = 44 + i * 20
+    const tag = view.getUint32(entry)
+    const offset = view.getUint32(entry + 4)
+    const compLen = view.getUint32(entry + 8)
+    const origLen = view.getUint32(entry + 12)
+    const checksum = view.getUint32(entry + 16)
+
+    // Write table record
+    const record = 12 + i * 16
+    out.setUint32(record, tag)
+    out.setUint32(record + 4, checksum)
+    out.setUint32(record + 8, tableOffset)
+    out.setUint32(record + 12, origLen)
+
+    // Decompress or copy table data
+    if (compLen < origLen) {
+      const compressed = new Uint8Array(woff, offset + 2, compLen - 2)
+      const decompressed = new Uint8Array(origLen)
+      inflateSync(compressed, decompressed)
+      outBytes.set(decompressed, tableOffset)
+    } else {
+      outBytes.set(new Uint8Array(woff, offset, origLen), tableOffset)
+    }
+
+    tableOffset += (origLen + 3) & ~3
+  }
+
+  return sfnt
+}
 
 // HarfBuzz types (will be populated when module loads)
 let hb: any = null
@@ -94,10 +149,15 @@ function getHarfBuzzFont(font: opentype.Font): any {
     throw new Error('Cannot extract font data from opentype.js font')
   }
 
-  // Create HarfBuzz font
-  // Note: We'll need to store the original ArrayBuffer in the font object
-  // during font loading for this to work
-  const arrayBuffer = (font as any)._rawFontData
+  // Store decompressed font data for HarfBuzz
+  let arrayBuffer = (font as any)._rawFontData
+
+  // Check if it's WOFF. HarfBuzz requires OpenType or TrueType font data.
+  // [119, 79, 70, 70] is the WOFF magic bytes
+  if (new Uint8Array(arrayBuffer.slice(0, 4)).join(',') === '119,79,70,70') {
+    arrayBuffer = woffToSfnt(arrayBuffer)
+    console.log('arrayBuffer byteLength:', arrayBuffer.byteLength)
+  }
 
   if (!arrayBuffer) {
     throw new Error(
@@ -114,10 +174,9 @@ function getHarfBuzzFont(font: opentype.Font): any {
   hbFont.setScale(font.unitsPerEm, font.unitsPerEm)
 
   // Cache the HarfBuzz font
-  const hbFontData = { blob, face, font: hbFont }
-  hbFontCache.set(font, hbFontData)
+  hbFontCache.set(font, hbFont)
 
-  return hbFontData
+  return hbFont
 }
 
 /**
@@ -153,7 +212,7 @@ export function shapeText(
   const { features, language, script, direction } = options
 
   // Get or create HarfBuzz font
-  const { font: hbFont } = getHarfBuzzFont(font)
+  const hbFont = getHarfBuzzFont(font)
 
   // Create buffer
   const buffer = hb.createBuffer()

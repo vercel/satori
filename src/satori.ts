@@ -46,16 +46,12 @@ export default async function satori(
   element: ReactNode,
   options: SatoriOptions
 ): Promise<string> {
-  const Yoga = await getYoga()
+  // Initialize Yoga and HarfBuzz now
+  const [Yoga] = await Promise.all([getYoga(), initHarfBuzz()])
   if (!Yoga || !Yoga.Node) {
     throw new Error(
       'Satori is not initialized: expect `yoga` to be loaded, got ' + Yoga
     )
-  }
-
-  // Initialize HarfBuzz for advanced text shaping
-  if (!isHarfBuzzInitialized()) {
-    await initHarfBuzz()
   }
 
   options.fonts = options.fonts || []
