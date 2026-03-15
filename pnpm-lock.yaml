@@ -37,6 +37,9 @@ importers:
       escape-html:
         specifier: ^1.0.3
         version: 1.0.3
+      fflate:
+        specifier: 0.7.3
+        version: 0.7.3
       harfbuzzjs:
         specifier: ^0.10.0
         version: 0.10.0(patch_hash=vc5brwjb3gvt6xc3hwrignpz4a)
