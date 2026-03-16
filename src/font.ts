@@ -2,8 +2,102 @@
  * This class handles everything related to fonts.
  */
 import opentype from '@shuding/opentype.js'
+import { inflateSync } from 'fflate'
 import { Locale, locales, isValidLocale } from './language.js'
 import { shapeText, parseFontFeatureSettings } from './harfbuzz.js'
+import { segment } from './utils.js'
+
+/**
+ * Split content into segments where each segment uses the same font.
+ * Returns array of [text, font] pairs.
+ */
+function splitByFont(
+  content: string,
+  resolveFont: (word: string) => opentype.Font
+): Array<[string, opentype.Font]> {
+  if (!content) return []
+
+  const graphemes = segment(content, 'grapheme')
+  const result: Array<[string, opentype.Font]> = []
+
+  let currentText = ''
+  let currentFont: opentype.Font | null = null
+
+  for (const grapheme of graphemes) {
+    const font = resolveFont(grapheme)
+
+    if (currentFont === null) {
+      currentFont = font
+      currentText = grapheme
+    } else if (font === currentFont) {
+      currentText += grapheme
+    } else {
+      result.push([currentText, currentFont])
+      currentText = grapheme
+      currentFont = font
+    }
+  }
+
+  if (currentText && currentFont) {
+    result.push([currentText, currentFont])
+  }
+
+  return result
+}
+
+/**
+ * Convert WOFF to raw sfnt (TrueType/OpenType) format for HarfBuzz.
+ */
+function woffToSfnt(woff: ArrayBuffer): ArrayBuffer {
+  const view = new DataView(woff)
+  const numTables = view.getUint16(12)
+  const sfntSize = view.getUint32(16)
+
+  const sfnt = new ArrayBuffer(sfntSize)
+  const out = new DataView(sfnt)
+  const outBytes = new Uint8Array(sfnt)
+
+  // Write sfnt header (flavor from WOFF becomes signature)
+  out.setUint32(0, view.getUint32(4))
+  out.setUint16(4, numTables)
+  const entrySelector = Math.floor(Math.log2(numTables))
+  const searchRange = (1 << entrySelector) * 16
+  out.setUint16(6, searchRange)
+  out.setUint16(8, entrySelector)
+  out.setUint16(10, numTables * 16 - searchRange)
+
+  let tableOffset = 12 + numTables * 16
+
+  for (let i = 0; i < numTables; i++) {
+    const entry = 44 + i * 20
+    const tag = view.getUint32(entry)
+    const offset = view.getUint32(entry + 4)
+    const compLen = view.getUint32(entry + 8)
+    const origLen = view.getUint32(entry + 12)
+    const checksum = view.getUint32(entry + 16)
+
+    // Write table record
+    const record = 12 + i * 16
+    out.setUint32(record, tag)
+    out.setUint32(record + 4, checksum)
+    out.setUint32(record + 8, tableOffset)
+    out.setUint32(record + 12, origLen)
+
+    // Decompress or copy table data
+    if (compLen < origLen) {
+      const compressed = new Uint8Array(woff, offset + 2, compLen - 2)
+      const decompressed = new Uint8Array(origLen)
+      inflateSync(compressed, decompressed)
+      outBytes.set(decompressed, tableOffset)
+    } else {
+      outBytes.set(new Uint8Array(woff, offset, origLen), tableOffset)
+    }
+
+    tableOffset += (origLen + 3) & ~3
+  }
+
+  return sfnt
+}
 
 export type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
 export type WeightName = 'normal' | 'bold'
@@ -375,8 +469,16 @@ export default class FontLoader {
           { lowMemory: true }
         )
 
-        // Store the raw font data for HarfBuzz
-        ;(font as any)._rawFontData = arrayBuffer
+        // Store the raw font data for HarfBuzz (convert WOFF to sfnt if needed)
+        const bytes = new Uint8Array(arrayBuffer)
+        const isWoff =
+          bytes[0] === 0x77 &&
+          bytes[1] === 0x4f &&
+          bytes[2] === 0x46 &&
+          bytes[3] === 0x46
+        ;(font as any)._rawFontData = isWoff
+          ? woffToSfnt(arrayBuffer)
+          : arrayBuffer
 
         // Modify the `charToGlyphIndex` method, so we can know which char is
         // being mapped to which glyph.
@@ -691,31 +793,32 @@ export default class FontLoader {
       direction?: string
     }
   ) {
-    const font = resolveFont(content)
-
-    // Use HarfBuzz for all text shaping if initialized
     const features = fontFeatureSettings
       ? parseFontFeatureSettings(fontFeatureSettings)
       : {}
-
     const hbDirection = direction === 'rtl' ? 'rtl' : 'ltr'
 
-    const shaped = shapeText(font, content, {
-      features,
-      direction: hbDirection,
-    })
+    // Split content by font for proper font fallback
+    const segments = splitByFont(content, resolveFont)
 
-    // Sum up advance widths from shaped glyphs
-    let width = 0
-    for (const glyph of shaped) {
-      width += glyph.ax
+    let totalWidth = 0
+    for (const [text, font] of segments) {
+      const shaped = shapeText(font, text, {
+        features,
+        direction: hbDirection,
+      })
+
+      let segmentWidth = 0
+      for (const glyph of shaped) {
+        segmentWidth += glyph.ax
+      }
+
+      totalWidth += (segmentWidth / font.unitsPerEm) * fontSize
     }
 
-    // Convert from font units to pixels and add letter spacing
-    const pixelWidth = (width / font.unitsPerEm) * fontSize
     const spacingWidth = letterSpacing * (content.length - 1)
 
-    return pixelWidth + spacingWidth
+    return totalWidth + spacingWidth
 
     // // Use opentype.js only if HarfBuzz not available
     // const unpatch = this.patchFontFallbackResolver(font, resolveFont)
@@ -749,56 +852,58 @@ export default class FontLoader {
     },
     band?: SkipInkBand
   ): { path: string; boxes: GlyphBox[] } {
-    const font = resolveFont(content)
-
     if (fontSize === 0) {
       return { path: '', boxes: [] }
     }
 
-    // Use HarfBuzz for all text shaping if initialized
-    // if (isHarfBuzzInitialized()) {
     const features = fontFeatureSettings
       ? parseFontFeatureSettings(fontFeatureSettings)
       : {}
-
     const hbDirection = direction === 'rtl' ? 'rtl' : 'ltr'
 
-    const shaped = shapeText(font, content.replace(/\n/g, ''), {
-      features,
-      direction: hbDirection,
-    })
+    // Split content by font for proper font fallback
+    const segments = splitByFont(content.replace(/\n/g, ''), resolveFont)
 
     const fullPath = new opentype.Path()
     const boxes: GlyphBox[] = []
-    const scale = fontSize / font.unitsPerEm
 
     let cursorX = left
-    let cursorY = top
+    const cursorY = top
 
-    // Process shaped glyphs
-    for (const shapedGlyph of shaped) {
-      // Get the glyph from opentype.js by ID
-      const glyph = font.glyphs.get(shapedGlyph.g)
+    // Process each font segment
+    for (const [text, font] of segments) {
+      const scale = fontSize / font.unitsPerEm
 
-      if (glyph && glyph.path) {
-        // Calculate glyph position
-        const gX = cursorX + shapedGlyph.dx * scale
-        const gY = cursorY + shapedGlyph.dy * scale
+      const shaped = shapeText(font, text, {
+        features,
+        direction: hbDirection,
+      })
 
-        // Get the glyph path and transform it
-        const glyphPath = glyph.getPath(gX, gY, fontSize, {})
+      // Process shaped glyphs for this segment
+      for (const shapedGlyph of shaped) {
+        // Get the glyph from opentype.js by ID
+        const glyph = font.glyphs.get(shapedGlyph.g)
 
-        // Compute band boxes for text decoration skip-ink
-        const bandBoxes = band ? computeBandBox(glyphPath.commands, band) : []
-        if (bandBoxes.length) {
-          boxes.push(...bandBoxes)
+        if (glyph && glyph.path) {
+          // Calculate glyph position
+          const gX = cursorX + shapedGlyph.dx * scale
+          const gY = cursorY + shapedGlyph.dy * scale
+
+          // Get the glyph path and transform it
+          const glyphPath = glyph.getPath(gX, gY, fontSize, {})
+
+          // Compute band boxes for text decoration skip-ink
+          const bandBoxes = band ? computeBandBox(glyphPath.commands, band) : []
+          if (bandBoxes.length) {
+            boxes.push(...bandBoxes)
+          }
+
+          fullPath.extend(glyphPath)
         }
 
-        fullPath.extend(glyphPath)
+        // Advance cursor by the shaped advance + letter spacing
+        cursorX += shapedGlyph.ax * scale + letterSpacing
       }
-
-      // Advance cursor by the shaped advance + letter spacing
-      cursorX += shapedGlyph.ax * scale + letterSpacing
     }
 
     return {
