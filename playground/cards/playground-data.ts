@@ -312,7 +312,61 @@ const playgroundTabs: Tabs = {
       </div>
     </div>
   )
-}  
+}
+`,
+  'Advanced Shaping': `// Complex text shaping examples that require HarfBuzz.
+// Without proper shaping, these scripts would render incorrectly.
+
+() => {
+  function Label({ children }) {
+    return <label style={{
+      fontSize: 14,
+      fontWeight: 600,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      margin: '20px 0 8px',
+      color: '#666',
+    }}>
+      {children}
+    </label>
+  }
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        width: '100%',
+        padding: '10px 25px',
+        fontFamily: 'Inter',
+        fontSize: 26,
+        backgroundColor: 'white',
+      }}
+    >
+      <Label>Arabic (RTL + Ligatures)</Label>
+      <div style={{ direction: 'rtl' }}>
+        السلام عليكم — لا إله إلا الله
+      </div>
+      <Label>Devanagari (Hindi conjuncts)</Label>
+      <div>
+        नमस्ते — हिन्दी — क्ष त्र ज्ञ श्री
+      </div>
+      <Label>Thai (complex clusters)</Label>
+      <div>
+        สวัสดี — ภาษาไทย — กรุงเทพฯ
+      </div>
+      <Label>Tamil</Label>
+      <div>
+        வணக்கம் — தமிழ் — ஸ்ரீ
+      </div>
+      <Label>Mixed RTL/LTR</Label>
+      <div style={{ direction: 'rtl' }}>
+        مرحبا Hello مع World السلام
+      </div>
+    </div>
+  )
+}
 `,
 }
 

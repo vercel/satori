@@ -309,7 +309,7 @@ Note:
 
 ### Language and Typography
 
-**OpenType Features**: Satori now supports advanced typography features via HarfBuzz text shaping! Use the `font-feature-settings` CSS property to enable OpenType features such as:
+**OpenType Features**: Satori supports advanced typography features via HarfBuzz text shaping. Use the `font-feature-settings` CSS property to enable OpenType features such as:
 - Ligatures (`liga`, `dlig`, `hlig`)
 - Small caps (`smcp`, `c2sc`)
 - Stylistic sets (`ss01`-`ss20`)
@@ -335,8 +335,6 @@ Example:
   שלום עולם
 </div>
 ```
-
-HarfBuzz automatically handles bidirectional text (BiDi) when mixing LTR and RTL content.
 
 #### Fonts
 

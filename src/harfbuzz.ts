@@ -82,7 +82,8 @@ function getHarfBuzzFont(font: opentype.Font): any {
 
   // Check cache first
   if (hbFontCache.has(font)) {
-    return hbFontCache.get(font)
+    const cached = hbFontCache.get(font)
+    return cached
   }
 
   // Get the raw font data (already converted from WOFF if needed in font.ts)
@@ -99,8 +100,10 @@ function getHarfBuzzFont(font: opentype.Font): any {
   const face = hb.createFace(blob, 0)
   const hbFont = hb.createFont(face)
 
-  // Set scale to match the unitsPerEm
-  hbFont.setScale(font.unitsPerEm, font.unitsPerEm)
+  // Set scale to unitsPerEm so advances are returned in font design units.
+  // The caller scales by (fontSize / unitsPerEm) to convert to pixels.
+  const upem = font.unitsPerEm
+  hbFont.setScale(upem, upem)
 
   // Cache the HarfBuzz font
   hbFontCache.set(font, hbFont)
@@ -150,11 +153,15 @@ export function shapeText(
     // Add text to buffer
     buffer.addText(text)
 
-    // Set buffer properties
+    // Always call guessSegmentProperties() first to detect script, language,
+    // and direction from the text content. This is essential for complex
+    // scripts like Arabic, Devanagari, Thai, Tamil, etc.
+    buffer.guessSegmentProperties()
+
+    // Override with explicitly provided values if any
     if (language) buffer.setLanguage(language)
     if (script) buffer.setScript(script)
     if (direction) buffer.setDirection(direction)
-    else buffer.guessSegmentProperties()
 
     // Build features string if provided
     let featuresString: string | undefined
