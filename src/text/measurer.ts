@@ -46,6 +46,13 @@ export function genMeasurer(
       }
     }
 
+    // Add letterSpacing between graphemes.
+    // Each measureGrapheme call returns glyph advances + intra-grapheme letterSpacing.
+    // We need to add inter-grapheme letterSpacing (between adjacent graphemes).
+    if (graphemes.length > 1 && letterSpacing) {
+      width += letterSpacing * (graphemes.length - 1)
+    }
+
     return width
   }
 
