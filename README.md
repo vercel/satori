@@ -55,7 +55,7 @@ elements (see section below), or custom React components, but React APIs such as
 
 Satori has an experimental JSX runtime that you can use without having to install React. You can enable it on a per-file basis with [`@jsxImportSource` pragmas](https://www.typescriptlang.org/tsconfig/#jsxImportSource). In the future, it will autocomplete only the subset of HTML elements and CSS properties that Satori supports for better type-safety.
 
-```jsx
+```tsx
 /** @jsxRuntime automatic */
 /** @jsxImportSource satori/jsx */
 
