@@ -46,6 +46,18 @@ export function buildDropShadow(
   let effects = ''
   let merge = ''
 
+  // Normalize SourceAlpha to full opacity so shadows aren't affected
+  // by the text's own alpha (CSS renders shadows at full intensity)
+  effects += buildXMLString(
+    'feComponentTransfer',
+    { in: 'SourceAlpha', result: 'satori_sa_full' },
+    buildXMLString('feFuncA', {
+      type: 'linear',
+      slope: '255',
+      intercept: '0',
+    })
+  )
+
   // There could be multiple shadows, we need to get the maximum bounding box
   // and use `feMerge` to merge them together.
   let left = 0
@@ -59,18 +71,6 @@ export function buildDropShadow(
     right = Math.max(style.shadowOffset[i].width + grow + width, right)
     top = Math.min(style.shadowOffset[i].height - grow, top)
     bottom = Math.max(style.shadowOffset[i].height + grow + height, bottom)
-
-    // Normalize SourceAlpha to full opacity so shadows aren't affected
-    // by the text's own alpha (CSS renders shadows at full intensity)
-    effects += buildXMLString(
-      'feComponentTransfer',
-      { in: 'SourceAlpha', result: 'satori_sa_full' },
-      buildXMLString('feFuncA', {
-        type: 'linear',
-        slope: '255',
-        intercept: '0',
-      })
-    )
 
     // Use primitive filters instead of feDropShadow because
     // feDropShadow automatically includes source in output and
