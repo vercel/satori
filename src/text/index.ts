@@ -74,8 +74,16 @@ export default async function* buildTextNodes(
     letterSpacing,
     _inheritedBackgroundClipTextPath,
     _inheritedBackgroundClipTextHasBackground,
+    WebkitTextFillColor,
     flexShrink,
   } = parentStyle
+
+  const textFillColor = WebkitTextFillColor as string | undefined
+  const isTransparentText = textFillColor
+    ? isFullyTransparent(textFillColor)
+    : isFullyTransparent(parentStyle.color) ||
+      (!!_inheritedBackgroundClipTextHasBackground &&
+        isOpaqueWhite(parentStyle.color))
 
   const {
     words,
@@ -517,9 +525,7 @@ export default async function* buildTextNodes(
         shadowOffset: textShadowOffset,
         shadowRadius: textShadowRadius,
       },
-      isFullyTransparent(parentStyle.color) ||
-        (_inheritedBackgroundClipTextHasBackground &&
-          isOpaqueWhite(parentStyle.color))
+      isTransparentText
     )
 
     filter = buildXMLString('defs', {}, filter)
@@ -880,12 +886,9 @@ export default async function* buildTextNodes(
           }>` +
           buildXMLString('path', {
             fill:
-              filter &&
-              (isFullyTransparent(parentStyle.color) ||
-                (_inheritedBackgroundClipTextHasBackground &&
-                  isOpaqueWhite(parentStyle.color)))
+              filter && isTransparentText
                 ? 'black'
-                : parentStyle.color,
+                : textFillColor || parentStyle.color,
             d: mergedPath,
             transform: matrix ? matrix : undefined,
             opacity: opacity !== 1 ? opacity : undefined,

@@ -219,6 +219,10 @@ function handleSpecialCase(
     }
   }
 
+  if (name === 'WebkitTextFillColor') {
+    return { WebkitTextFillColor: value.toString().trim() }
+  }
+
   if (name === 'textDecorationSkipInk') {
     const normalized = value.toString().trim().toLowerCase()
     if (!['auto', 'none', 'all'].includes(normalized)) {
@@ -303,6 +307,7 @@ type MainStyle = {
   textShadowRadius: number[]
   WebkitTextStrokeWidth: number
   WebkitTextStrokeColor: string
+  WebkitTextFillColor: string
   textDecorationSkipInk: 'auto' | 'none' | 'all'
 }
 
