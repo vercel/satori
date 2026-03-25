@@ -210,9 +210,27 @@ function resolvePosition(
     }
   }
 
+  const yKeywords = new Set(['top', 'bottom'])
+  const xKeywords = new Set(['left', 'right'])
+
+  let xVal = parts[0]
+  let yVal = parts[1]
+
+  // CSS position syntax allows keywords in either order. When a y-axis
+  // keyword (top/bottom) appears first or an x-axis keyword (left/right)
+  // appears second, swap so that xVal holds the horizontal component and
+  // yVal holds the vertical component.
+  if (
+    (yKeywords.has(parts[0]) && !yKeywords.has(parts[1])) ||
+    (xKeywords.has(parts[1]) && !xKeywords.has(parts[0]))
+  ) {
+    xVal = parts[1]
+    yVal = parts[0]
+  }
+
   return {
-    cx: resolvePositionPart(parts[0], xDelta, fontSize, style),
-    cy: resolvePositionPart(parts[1], yDelta, fontSize, style),
+    cx: resolvePositionPart(xVal, xDelta, fontSize, style),
+    cy: resolvePositionPart(yVal, yDelta, fontSize, style),
   }
 }
 
