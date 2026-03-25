@@ -161,6 +161,34 @@ describe('backgroundClip', () => {
     expect(toImage(svg, 200)).toMatchImageSnapshot()
   })
 
+  it('should not render text-shadow when text-fill-color is transparent with background-clip text', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          height: '100%',
+          fontSize: 32,
+          background: 'linear-gradient(to right, #d300ea 0%,#00f9f9 100%)',
+          backgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          color: '#000000',
+          textShadow: '0px -3px -1px #E88AFF, 1px 3px 5px #81dbff',
+        }}
+      >
+        Hello
+      </div>,
+      {
+        width: 200,
+        height: 50,
+        fonts,
+      }
+    )
+    expect(toImage(svg, 200)).toMatchImageSnapshot()
+  })
+
   it('should preserve color', async () => {
     const svg = await satori(
       <div

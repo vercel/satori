@@ -499,7 +499,10 @@ export default async function* buildTextNodes(
   )
 
   let filter = ''
-  if (parentStyle.textShadowOffset) {
+  if (
+    parentStyle.textShadowOffset &&
+    !(isTransparentText && _inheritedBackgroundClipTextPath)
+  ) {
     const { textShadowColor, textShadowOffset, textShadowRadius } = parentStyle
 
     filter = buildDropShadow(
