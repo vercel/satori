@@ -639,6 +639,172 @@ describe('Gradient', () => {
     })
   })
 
+  describe('-webkit-gradient', () => {
+    const opts = { width: 100, height: 100 }
+
+    async function render(backgroundImage: string) {
+      return satori(
+        <div style={{ backgroundImage, height: '100%', width: '100%' }}></div>,
+        { ...opts, fonts }
+      )
+    }
+
+    async function renderBg(background: string) {
+      return satori(
+        <div style={{ background, height: '100%', width: '100%' }}></div>,
+        { ...opts, fonts }
+      )
+    }
+
+    it('should support -webkit-linear-gradient with direction keyword', async () => {
+      const webkit = await render('-webkit-linear-gradient(left, red, blue)')
+      const standard = await render('linear-gradient(to right, red, blue)')
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-linear-gradient with combo direction', async () => {
+      const webkit = await render(
+        '-webkit-linear-gradient(left top, red, blue)'
+      )
+      const standard = await render(
+        'linear-gradient(to right bottom, red, blue)'
+      )
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-linear-gradient with angle', async () => {
+      const webkit = await render('-webkit-linear-gradient(0deg, red, blue)')
+      const standard = await render('linear-gradient(90deg, red, blue)')
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-linear-gradient without direction', async () => {
+      const webkit = await render('-webkit-linear-gradient(red, blue)')
+      const standard = await render('linear-gradient(red, blue)')
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-radial-gradient with shape', async () => {
+      const webkit = await render('-webkit-radial-gradient(circle, red, blue)')
+      const standard = await render('radial-gradient(circle, red, blue)')
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-radial-gradient with position and shape', async () => {
+      const webkit = await render(
+        '-webkit-radial-gradient(center, circle, red, blue)'
+      )
+      const standard = await render(
+        'radial-gradient(circle at center, red, blue)'
+      )
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-repeating-linear-gradient', async () => {
+      const webkit = await render(
+        '-webkit-repeating-linear-gradient(left, red, blue 50%)'
+      )
+      const standard = await render(
+        'repeating-linear-gradient(to right, red, blue 50%)'
+      )
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-repeating-radial-gradient', async () => {
+      const webkit = await render(
+        '-webkit-repeating-radial-gradient(circle, red, blue 20%)'
+      )
+      const standard = await render(
+        'repeating-radial-gradient(circle, red, blue 20%)'
+      )
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-radial-gradient with length size', async () => {
+      const webkit = await render(
+        '-webkit-radial-gradient(center, 50px 30px, red, blue)'
+      )
+      const standard = await render(
+        'radial-gradient(50px 30px at center, red, blue)'
+      )
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-radial-gradient with contain keyword', async () => {
+      const webkit = await render(
+        '-webkit-radial-gradient(center, circle contain, red, blue)'
+      )
+      const standard = await render(
+        'radial-gradient(circle closest-side at center, red, blue)'
+      )
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-radial-gradient with cover keyword', async () => {
+      const webkit = await render(
+        '-webkit-radial-gradient(circle cover, red, blue)'
+      )
+      const standard = await render(
+        'radial-gradient(circle farthest-corner, red, blue)'
+      )
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-linear-gradient with other angle units', async () => {
+      const webkitTurn = await render(
+        '-webkit-linear-gradient(0.25turn, red, blue)'
+      )
+      const webkitRad = await render(
+        `-webkit-linear-gradient(${Math.PI / 2}rad, red, blue)`
+      )
+      const webkitGrad = await render(
+        '-webkit-linear-gradient(100grad, red, blue)'
+      )
+      const standard = await render('linear-gradient(0deg, red, blue)')
+      expect(webkitTurn).toEqual(standard)
+      expect(webkitRad).toEqual(standard)
+      expect(webkitGrad).toEqual(standard)
+    })
+
+    it('should support -webkit-linear-gradient with 45deg angle', async () => {
+      const webkit = await render('-webkit-linear-gradient(45deg, red, blue)')
+      const standard = await render('linear-gradient(45deg, red, blue)')
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-linear-gradient with rgba color stops', async () => {
+      const webkit = await render(
+        '-webkit-linear-gradient(left, rgba(255, 0, 0, 0.5), rgba(0, 0, 255, 0.8))'
+      )
+      const standard = await render(
+        'linear-gradient(to right, rgba(255, 0, 0, 0.5), rgba(0, 0, 255, 0.8))'
+      )
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-linear-gradient with bottom direction', async () => {
+      const webkit = await render('-webkit-linear-gradient(bottom, red, blue)')
+      const standard = await render('linear-gradient(to top, red, blue)')
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-radial-gradient with px position', async () => {
+      const webkit = await render(
+        '-webkit-radial-gradient(20px 30px, circle, red, blue)'
+      )
+      const standard = await render(
+        'radial-gradient(circle at 20px 30px, red, blue)'
+      )
+      expect(webkit).toEqual(standard)
+    })
+
+    it('should support -webkit-linear-gradient via background shorthand', async () => {
+      const webkit = await renderBg('-webkit-linear-gradient(left, red, blue)')
+      const standard = await renderBg('linear-gradient(to right, red, blue)')
+      expect(webkit).toEqual(standard)
+    })
+  })
+
   it('should support gradient with color background', async () => {
     const svg = await satori(
       <div
