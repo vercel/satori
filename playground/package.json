@@ -6,6 +6,7 @@
     "dev": "next",
     "debug": "node --inspect node_modules/next/dist/bin/next",
     "build": "next build",
+    "prebuild": "pnpm --filter icu4satori build",
     "start": "next start"
   },
   "dependencies": {

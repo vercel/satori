@@ -6,6 +6,7 @@ node_modules
 .idea
 .turbo
 dist
+!packages/icu4satori/dist/
 .pnpm-debug.log
 __diff_output__
 .eslintcache
