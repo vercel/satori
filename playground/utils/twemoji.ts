@@ -47,6 +47,28 @@ export const apis = {
     'https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/' +
     code.toLowerCase() +
     '_flat.svg',
+  notoColor: (code: string) => {
+    const parts = code
+      .toLowerCase()
+      .split('-')
+      .filter((s) => s !== 'fe0f')
+    const filename = 'emoji_u' + parts.join('_') + '.svg'
+    // Country flags (regional indicator pairs) live in a separate directory
+    const isRegionalIndicator = (p: string) => {
+      const n = parseInt(p, 16)
+      return n >= 0x1f1e6 && n <= 0x1f1ff
+    }
+    if (parts.length === 2 && parts.every(isRegionalIndicator)) {
+      return (
+        'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/third_party/region-flags/waved-svg/' +
+        filename
+      )
+    }
+    return (
+      'https://raw.githubusercontent.com/googlefonts/noto-emoji/main/svg/' +
+      filename
+    )
+  },
 }
 
 const emojiCache: Record<string, Promise<any>> = {}
