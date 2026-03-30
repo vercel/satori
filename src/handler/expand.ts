@@ -269,6 +269,7 @@ type MainStyle = {
   textTransform: string
   whiteSpace: string
   wordBreak: string
+  lineBreak: string
   textAlign: string
   textIndent: number | string
   lineHeight: number | string

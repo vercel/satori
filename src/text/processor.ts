@@ -2,11 +2,13 @@ import { Locale } from '../language.js'
 import { isNumber, segment, splitByBreakOpportunities } from '../utils.js'
 import { HorizontalEllipsis, Space } from './characters.js'
 import { SerializedStyle } from '../handler/expand.js'
+import type { TextEngine } from '../satori.js'
 
 export function preprocess(
   content: string,
   style: SerializedStyle,
-  locale?: Locale
+  locale?: Locale,
+  textEngine?: TextEngine
 ): {
   words: string[]
   requiredBreaks: boolean[]
@@ -17,7 +19,7 @@ export function preprocess(
   lineLimit: number
   blockEllipsis: string
 } {
-  const { textTransform, whiteSpace, wordBreak } = style
+  const { textTransform, whiteSpace, wordBreak, lineBreak } = style
 
   content = processTextTransform(content, textTransform, locale)
 
@@ -29,7 +31,10 @@ export function preprocess(
 
   const { words, requiredBreaks, allowBreakWord } = processWordBreak(
     processedContent,
-    wordBreak
+    wordBreak,
+    lineBreak,
+    locale,
+    textEngine
   )
 
   const [lineLimit, blockEllipsis] = processTextOverflow(style, allowSoftWrap)
@@ -113,13 +118,19 @@ function processTextOverflow(
 
 function processWordBreak(
   content,
-  wordBreak: string
+  wordBreak: string,
+  lineBreak: string,
+  locale?: Locale,
+  textEngine?: TextEngine
 ): { words: string[]; requiredBreaks: boolean[]; allowBreakWord: boolean } {
   const allowBreakWord = ['break-all', 'break-word'].includes(wordBreak)
 
   const { words, requiredBreaks } = splitByBreakOpportunities(
     content,
-    wordBreak
+    wordBreak,
+    lineBreak,
+    locale,
+    textEngine
   )
 
   return { words, requiredBreaks, allowBreakWord }

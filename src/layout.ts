@@ -35,6 +35,7 @@ export interface LayoutContext {
   locale?: Locale
   getTwStyles: (tw: string, style: any) => any
   onNodeDetected?: (node: SatoriNode) => void
+  textEngine?: import('./satori.js').TextEngine
 }
 
 export interface SatoriNode {
@@ -201,6 +202,7 @@ export default async function* layout(
       locale: newLocale,
       getTwStyles,
       onNodeDetected: context.onNodeDetected,
+      textEngine: context.textEngine,
     })
     if (canLoadAdditionalAssets) {
       segmentsMissingFont.push(...(((await iter.next()).value as any) || []))

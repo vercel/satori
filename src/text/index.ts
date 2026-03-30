@@ -77,6 +77,8 @@ export default async function* buildTextNodes(
     flexShrink,
   } = parentStyle
 
+  const { textEngine } = context
+
   const {
     words,
     requiredBreaks,
@@ -86,7 +88,7 @@ export default async function* buildTextNodes(
     shouldCollapseTabsAndSpaces,
     lineLimit,
     blockEllipsis,
-  } = preprocess(content, parentStyle, locale)
+  } = preprocess(content, parentStyle, locale, textEngine)
 
   const textContainer = createTextContainerNode(Yoga, textAlign)
   parent.insertChild(textContainer, parent.getChildCount())
