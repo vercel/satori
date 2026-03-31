@@ -960,6 +960,25 @@ describe('Gradient', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
+    it('should support conic-gradient with transition hints', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            backgroundImage:
+              'conic-gradient(from 0.25turn at 50% 30%, #f69d3c, 10deg, #3f87a6, 350deg, #ebf8e1)',
+            height: '100%',
+            width: '100%',
+          }}
+        ></div>,
+        {
+          width: 200,
+          height: 200,
+          fonts,
+        }
+      )
+      expect(toImage(svg, 200)).toMatchImageSnapshot()
+    })
+
     it('should support conic-gradient on non-square element', async () => {
       const svg = await satori(
         <div

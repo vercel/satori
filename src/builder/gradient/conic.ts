@@ -127,7 +127,11 @@ function formatRGBA(c: [number, number, number, number]): string {
   return `rgba(${c[0]},${c[1]},${c[2]},${c[3]})`
 }
 
-function interpolateColor(t: number, stops: NormalizedStop[]): string {
+function interpolateColor(
+  t: number,
+  stops: NormalizedStop[],
+  hints?: (number | undefined)[]
+): string {
   if (stops.length === 0) return 'transparent'
   if (stops.length === 1) {
     const c = parseToRGBA(stops[0].color)
@@ -151,10 +155,23 @@ function interpolateColor(t: number, stops: NormalizedStop[]): string {
 
   if (s1.offset === s2.offset) return formatRGBA(c2)
 
-  const localT = Math.max(
+  let localT = Math.max(
     0,
     Math.min(1, (t - s1.offset) / (s2.offset - s1.offset))
   )
+
+  if (hints && hints[i] !== undefined) {
+    const range = s2.offset - s1.offset
+    const h = (hints[i] - s1.offset) / range
+    if (h <= 0) {
+      localT = localT > 0 ? 1 : 0
+    } else if (h >= 1) {
+      localT = localT >= 1 ? 1 : 0
+    } else {
+      const p = Math.log(0.5) / Math.log(h)
+      localT = Math.pow(localT, p)
+    }
+  }
 
   const r = Math.round(c1[0] + (c2[0] - c1[0]) * localT)
   const g = Math.round(c1[1] + (c2[1] - c1[1]) * localT)
@@ -287,6 +304,25 @@ export function buildConicGradient(
     from
   )
 
+  const hints: (number | undefined)[] = []
+  const firstHasExplicitOffset =
+    parsed.stops[0]?.offset && parsed.stops[0].offset.value !== '0'
+  const idxOff = firstHasExplicitOffset ? 1 : 0
+  for (let pi = 0; pi < parsed.stops.length; pi++) {
+    const hint = (parsed.stops[pi] as any).hint
+    if (hint) {
+      const hintDeg =
+        hint.unit === '%'
+          ? (Number(hint.value) / 100) * totalLength
+          : calcDegree(`${hint.value}${hint.unit}`) || 0
+      const ni = pi + idxOff
+      if (ni < stops.length - 1) {
+        hints[ni] = hintDeg / totalLength
+      }
+    }
+  }
+  const hasHints = hints.some((h) => h !== undefined)
+
   const radius = Math.max(
     Math.sqrt(cx * cx + cy * cy),
     Math.sqrt((xDelta - cx) ** 2 + cy ** 2),
@@ -334,7 +370,7 @@ export function buildConicGradient(
   for (let i = 0; i < SEGMENT_COUNT; i++) {
     const angleDeg = (i / SEGMENT_COUNT) * 360
     const t = cycleDeg > 0 ? (angleDeg % cycleDeg) / cycleDeg : 0
-    const color = interpolateColor(t, stops)
+    const color = interpolateColor(t, stops, hasHints ? hints : undefined)
 
     if (color !== prevColor) {
       if (prevColor !== null) {
