@@ -1,3 +1,3 @@
 declare module '@shuding/opentype.js' {
-  export = opentype
+	export = opentype;
 }

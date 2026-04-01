@@ -1,443 +1,454 @@
-import type { ReactNode, ReactElement } from 'react'
-import LineBreaker from 'linebreak'
+import type { ReactNode, ReactElement } from 'react';
+import LineBreaker from 'linebreak';
 
-import CssDimension from './vendor/parse-css-dimension/index.js'
+import CssDimension from './vendor/parse-css-dimension/index.js';
 
 export function isReactElement(node: ReactNode): node is ReactElement {
-  const type = typeof node
-  if (
-    type === 'number' ||
-    type === 'bigint' ||
-    type === 'string' ||
-    type === 'boolean'
-  ) {
-    return false
-  }
-  return true
+	const type = typeof node;
+	if (
+		type === 'number' ||
+		type === 'bigint' ||
+		type === 'string' ||
+		type === 'boolean'
+	) {
+		return false;
+	}
+	return true;
 }
 
 export function isClass(f: Function) {
-  return /^class\s/.test(f.toString())
+	return /^class\s/.test(f.toString());
 }
 
 export function isForwardRefComponent(type: any) {
-  return type && type.$$typeof === Symbol.for('react.forward_ref')
+	return type && type.$$typeof === Symbol.for('react.forward_ref');
 }
 
 export function isReactComponent(type: any) {
-  return typeof type === 'function' || isForwardRefComponent(type)
+	return typeof type === 'function' || isForwardRefComponent(type);
 }
 
 export function hasDangerouslySetInnerHTMLProp(props: any) {
-  return 'dangerouslySetInnerHTML' in props
+	return 'dangerouslySetInnerHTML' in props;
 }
 
 export function normalizeChildren(children: any) {
-  const flattend =
-    typeof children === 'undefined' ? [] : [].concat(children).flat(Infinity)
+	const flattend =
+		typeof children === 'undefined'
+			? []
+			: [].concat(children).flat(Infinity);
 
-  const res = []
-  for (let i = 0; i < flattend.length; i++) {
-    let value = flattend[i]
-    if (
-      typeof value === 'undefined' ||
-      typeof value === 'boolean' ||
-      value === null
-    ) {
-      continue
-    }
-    if (typeof value === 'number') {
-      value = String(value)
-    }
-    if (
-      typeof value === 'string' &&
-      res.length &&
-      typeof res[res.length - 1] === 'string'
-    ) {
-      res[res.length - 1] += value
-    } else {
-      res.push(value)
-    }
-  }
-  return res
+	const res = [];
+	for (let i = 0; i < flattend.length; i++) {
+		let value = flattend[i];
+		if (
+			typeof value === 'undefined' ||
+			typeof value === 'boolean' ||
+			value === null
+		) {
+			continue;
+		}
+		if (typeof value === 'number') {
+			value = String(value);
+		}
+		if (
+			typeof value === 'string' &&
+			res.length &&
+			typeof res[res.length - 1] === 'string'
+		) {
+			res[res.length - 1] += value;
+		} else {
+			res.push(value);
+		}
+	}
+	return res;
 }
 
 export function lengthToNumber(
-  length: string | number,
-  baseFontSize: number,
-  baseLength: number,
-  inheritedStyle: Record<string, string | number>,
-  percentage = false
+	length: string | number,
+	baseFontSize: number,
+	baseLength: number,
+	inheritedStyle: Record<string, string | number>,
+	percentage = false
 ): number | undefined {
-  if (typeof length === 'number') return length
+	if (typeof length === 'number') return length;
 
-  // Convert em and rem values to number (px), convert rad to deg.
-  try {
-    length = length.trim()
+	// Convert em and rem values to number (px), convert rad to deg.
+	try {
+		length = length.trim();
 
-    // Not length: `1px/2px`, `1px 2px`, `1px, 2px`, `calc(1px)`.
-    if (/[ /\(,]/.test(length)) return
+		// Not length: `1px/2px`, `1px 2px`, `1px, 2px`, `calc(1px)`.
+		if (/[ /\(,]/.test(length)) return;
 
-    // Just a number as string: '100'
-    if (length === String(+length)) return +length
+		// Just a number as string: '100'
+		if (length === String(+length)) return +length;
 
-    const parsed = new CssDimension(length)
-    if (parsed.type === 'length') {
-      switch (parsed.unit) {
-        case 'em':
-          return parsed.value * baseFontSize
-        case 'rem':
-          return parsed.value * 16
-        case 'vw':
-          return ~~(
-            (parsed.value * (inheritedStyle._viewportWidth as number)) /
-            100
-          )
-        case 'vh':
-          return ~~(
-            (parsed.value * (inheritedStyle._viewportHeight as number)) /
-            100
-          )
-        default:
-          return parsed.value
-      }
-    } else if (parsed.type === 'angle') {
-      return calcDegree(length)
-    } else if (parsed.type === 'percentage') {
-      if (percentage) {
-        return (parsed.value / 100) * baseLength
-      }
-    }
-  } catch {
-    // Not a length unit, silently ignore.
-  }
+		const parsed = new CssDimension(length);
+		if (parsed.type === 'length') {
+			switch (parsed.unit) {
+				case 'em':
+					return parsed.value * baseFontSize;
+				case 'rem':
+					return parsed.value * 16;
+				case 'vw':
+					return ~~(
+						(parsed.value *
+							(inheritedStyle._viewportWidth as number)) /
+						100
+					);
+				case 'vh':
+					return ~~(
+						(parsed.value *
+							(inheritedStyle._viewportHeight as number)) /
+						100
+					);
+				default:
+					return parsed.value;
+			}
+		} else if (parsed.type === 'angle') {
+			return calcDegree(length);
+		} else if (parsed.type === 'percentage') {
+			if (percentage) {
+				return (parsed.value / 100) * baseLength;
+			}
+		}
+	} catch {
+		// Not a length unit, silently ignore.
+	}
 }
 
 export function calcDegree(deg: string) {
-  const parsed = new CssDimension(deg)
+	const parsed = new CssDimension(deg);
 
-  switch (parsed.unit) {
-    case 'deg':
-      return parsed.value
-    case 'rad':
-      return (parsed.value * 180) / Math.PI
-    case 'turn':
-      return parsed.value * 360
-    case 'grad':
-      return 0.9 * parsed.value
-  }
+	switch (parsed.unit) {
+		case 'deg':
+			return parsed.value;
+		case 'rad':
+			return (parsed.value * 180) / Math.PI;
+		case 'turn':
+			return parsed.value * 360;
+		case 'grad':
+			return 0.9 * parsed.value;
+	}
 }
 
 // Multiplies two 2d transform matrices.
 export function multiply(m1: number[], m2: number[]) {
-  return [
-    m1[0] * m2[0] + m1[2] * m2[1],
-    m1[1] * m2[0] + m1[3] * m2[1],
-    m1[0] * m2[2] + m1[2] * m2[3],
-    m1[1] * m2[2] + m1[3] * m2[3],
-    m1[0] * m2[4] + m1[2] * m2[5] + m1[4],
-    m1[1] * m2[4] + m1[3] * m2[5] + m1[5],
-  ]
+	return [
+		m1[0] * m2[0] + m1[2] * m2[1],
+		m1[1] * m2[0] + m1[3] * m2[1],
+		m1[0] * m2[2] + m1[2] * m2[3],
+		m1[1] * m2[2] + m1[3] * m2[3],
+		m1[0] * m2[4] + m1[2] * m2[5] + m1[4],
+		m1[1] * m2[4] + m1[3] * m2[5] + m1[5]
+	];
 }
 
 export function v(
-  field: string | number | undefined,
-  map: Record<string, any>,
-  fallback: any,
-  errorIfNotAllowedForProperty?: string
+	field: string | number | undefined,
+	map: Record<string, any>,
+	fallback: any,
+	errorIfNotAllowedForProperty?: string
 ) {
-  let value = map[field]
-  if (typeof value === 'undefined') {
-    if (errorIfNotAllowedForProperty && typeof field !== 'undefined') {
-      throw new Error(
-        `Invalid value for CSS property "${errorIfNotAllowedForProperty}". Allowed values: ${Object.keys(
-          map
-        )
-          .map((_v) => `"${_v}"`)
-          .join(' | ')}. Received: "${field}".`
-      )
-    }
-    value = fallback
-  }
-  return value
+	let value = map[field];
+	if (typeof value === 'undefined') {
+		if (errorIfNotAllowedForProperty && typeof field !== 'undefined') {
+			throw new Error(
+				`Invalid value for CSS property "${errorIfNotAllowedForProperty}". Allowed values: ${Object.keys(
+					map
+				)
+					.map(_v => `"${_v}"`)
+					.join(' | ')}. Received: "${field}".`
+			);
+		}
+		value = fallback;
+	}
+	return value;
 }
 
-let wordSegmenter
-let graphemeSegmenter
+let wordSegmenter;
+let graphemeSegmenter;
 
 // Implementation modified from
 // https://github.com/niklasvh/html2canvas/blob/6521a487d78172f7179f7c973c1a3af40eb92009/src/css/layout/text.ts
 // https://drafts.csswg.org/css-text/#word-separator
 export const wordSeparators = [
-  0x0020, 0x00a0, 0x1361, 0x10100, 0x10101, 0x1039, 0x1091, 0xa,
-].map((point) => String.fromCodePoint(point))
+	0x0020, 0x00a0, 0x1361, 0x10100, 0x10101, 0x1039, 0x1091, 0xa
+].map(point => String.fromCodePoint(point));
 
-const segmentCache = new Map<string, string[]>()
-const MAX_SEGMENT_CACHE_SIZE = 500
+const segmentCache = new Map<string, string[]>();
+const MAX_SEGMENT_CACHE_SIZE = 500;
 
 export function segment(
-  content: string,
-  granularity: 'word' | 'grapheme',
-  locale?: string
+	content: string,
+	granularity: 'word' | 'grapheme',
+	locale?: string
 ): string[] {
-  const cacheKey = `${granularity}:${locale || ''}:${content}`
+	const cacheKey = `${granularity}:${locale || ''}:${content}`;
 
-  if (segmentCache.has(cacheKey)) {
-    return segmentCache.get(cacheKey)!
-  }
-  if (!wordSegmenter || !graphemeSegmenter) {
-    if (!(typeof Intl !== 'undefined' && 'Segmenter' in Intl)) {
-      // https://caniuse.com/mdn-javascript_builtins_intl_segments
-      throw new Error(
-        'Intl.Segmenter does not exist, please use import a polyfill.'
-      )
-    }
+	if (segmentCache.has(cacheKey)) {
+		return segmentCache.get(cacheKey)!;
+	}
+	if (!wordSegmenter || !graphemeSegmenter) {
+		if (!(typeof Intl !== 'undefined' && 'Segmenter' in Intl)) {
+			// https://caniuse.com/mdn-javascript_builtins_intl_segments
+			throw new Error(
+				'Intl.Segmenter does not exist, please use import a polyfill.'
+			);
+		}
 
-    wordSegmenter = new Intl.Segmenter(locale, { granularity: 'word' })
-    graphemeSegmenter = new Intl.Segmenter(locale, {
-      granularity: 'grapheme',
-    })
-  }
+		wordSegmenter = new Intl.Segmenter(locale, { granularity: 'word' });
+		graphemeSegmenter = new Intl.Segmenter(locale, {
+			granularity: 'grapheme'
+		});
+	}
 
-  let result: string[]
+	let result: string[];
 
-  if (granularity === 'grapheme') {
-    result = [...graphemeSegmenter.segment(content)].map((seg) => seg.segment)
-  } else {
-    const segmented = [...wordSegmenter.segment(content)].map(
-      (seg) => seg.segment
-    ) as string[]
+	if (granularity === 'grapheme') {
+		result = [...graphemeSegmenter.segment(content)].map(
+			seg => seg.segment
+		);
+	} else {
+		const segmented = [...wordSegmenter.segment(content)].map(
+			seg => seg.segment
+		) as string[];
 
-    const output = []
+		const output = [];
 
-    let i = 0
-    // When there is a non-breaking space, join the previous and next words together.
-    // This change causes them to be treated as a single segment.
-    while (i < segmented.length) {
-      const s = segmented[i]
+		let i = 0;
+		// When there is a non-breaking space, join the previous and next words together.
+		// This change causes them to be treated as a single segment.
+		while (i < segmented.length) {
+			const s = segmented[i];
 
-      if (s == '\u00a0') {
-        const previousWord = i === 0 ? '' : output.pop()
-        const nextWord = i === segmented.length - 1 ? '' : segmented[i + 1]
+			if (s == '\u00a0') {
+				const previousWord = i === 0 ? '' : output.pop();
+				const nextWord =
+					i === segmented.length - 1 ? '' : segmented[i + 1];
 
-        output.push(previousWord + '\u00a0' + nextWord)
-        i += 2
-      } else {
-        output.push(s)
-        i++
-      }
-    }
+				output.push(previousWord + '\u00a0' + nextWord);
+				i += 2;
+			} else {
+				output.push(s);
+				i++;
+			}
+		}
 
-    result = output
-  }
+		result = output;
+	}
 
-  if (segmentCache.size >= MAX_SEGMENT_CACHE_SIZE) {
-    const firstKey = segmentCache.keys().next().value
-    segmentCache.delete(firstKey)
-  }
+	if (segmentCache.size >= MAX_SEGMENT_CACHE_SIZE) {
+		const firstKey = segmentCache.keys().next().value;
+		segmentCache.delete(firstKey);
+	}
 
-  segmentCache.set(cacheKey, result)
-  return result
+	segmentCache.set(cacheKey, result);
+	return result;
 }
 
 export function buildXMLString(
-  type: string,
-  attrs: Record<string, string | number>,
-  children?: string
+	type: string,
+	attrs: Record<string, string | number>,
+	children?: string
 ) {
-  let attrString = ''
+	let attrString = '';
 
-  for (const [k, _v] of Object.entries(attrs)) {
-    if (typeof _v !== 'undefined') {
-      attrString += ` ${k}="${_v}"`
-    }
-  }
+	for (const [k, _v] of Object.entries(attrs)) {
+		if (typeof _v !== 'undefined') {
+			attrString += ` ${k}="${_v}"`;
+		}
+	}
 
-  if (children) {
-    return `<${type}${attrString}>${children}</${type}>`
-  }
-  return `<${type}${attrString}/>`
+	if (children) {
+		return `<${type}${attrString}>${children}</${type}>`;
+	}
+	return `<${type}${attrString}/>`;
 }
 
 export function createLRU<T>(max = 20) {
-  const store: Map<string, T> = new Map()
-  function get(key: string): T | undefined {
-    const value = store.get(key)
-    if (value === undefined) return undefined
+	const store: Map<string, T> = new Map();
+	function get(key: string): T | undefined {
+		const value = store.get(key);
+		if (value === undefined) return undefined;
 
-    // Move to end (most recently used)
-    store.delete(key)
-    store.set(key, value)
-    return value
-  }
-  function set(key: string, value: T) {
-    if (store.has(key)) {
-      store.delete(key)
-    } else if (store.size >= max) {
-      const firstKey = store.keys().next().value
-      store.delete(firstKey)
-    }
+		// Move to end (most recently used)
+		store.delete(key);
+		store.set(key, value);
+		return value;
+	}
+	function set(key: string, value: T) {
+		if (store.has(key)) {
+			store.delete(key);
+		} else if (store.size >= max) {
+			const firstKey = store.keys().next().value;
+			store.delete(firstKey);
+		}
 
-    store.set(key, value)
-  }
-  function clear() {
-    store.clear()
-  }
+		store.set(key, value);
+	}
+	function clear() {
+		store.clear();
+	}
 
-  return {
-    set,
-    get,
-    clear,
-  }
+	return {
+		set,
+		get,
+		clear
+	};
 }
 
 export function parseViewBox(viewBox?: string | null | undefined) {
-  return viewBox ? viewBox.split(/[, ]/).filter(Boolean).map(Number) : null
+	return viewBox ? viewBox.split(/[, ]/).filter(Boolean).map(Number) : null;
 }
 
 export function toString(x: unknown): string {
-  return Object.prototype.toString.call(x)
+	return Object.prototype.toString.call(x);
 }
 
 export function isString(x: unknown): x is string {
-  return typeof x === 'string'
+	return typeof x === 'string';
 }
 
 export function isNumber(x: unknown): x is number {
-  return typeof x === 'number'
+	return typeof x === 'number';
 }
 
 export function isUndefined(x: unknown): x is undefined {
-  return typeof x === 'undefined'
+	return typeof x === 'undefined';
 }
 
 export function asPointPercentageLength(
-  x: string | number,
-  propertyName?: string
+	x: string | number,
+	propertyName?: string
 ): number | `${number}%` | undefined {
-  if (typeof x === 'number') {
-    return x
-  }
-  if (x.endsWith('%')) {
-    const percentageValue = parseFloat(x.slice(0, -1))
-    if (isNaN(percentageValue)) {
-      console.warn(
-        `Invalid value "${x}"${
-          typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
-        }. Expected a percentage value (e.g., "50%").`
-      )
-      return undefined
-    }
-    return `${percentageValue}%`
-  }
+	if (typeof x === 'number') {
+		return x;
+	}
+	if (x.endsWith('%')) {
+		const percentageValue = parseFloat(x.slice(0, -1));
+		if (isNaN(percentageValue)) {
+			console.warn(
+				`Invalid value "${x}"${
+					typeof propertyName === 'string'
+						? ` for "${propertyName}"`
+						: ''
+				}. Expected a percentage value (e.g., "50%").`
+			);
+			return undefined;
+		}
+		return `${percentageValue}%`;
+	}
 
-  console.warn(
-    `Invalid value "${x}"${
-      typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
-    }. Expected a number or a percentage value (e.g., "50%").`
-  )
-  return undefined
+	console.warn(
+		`Invalid value "${x}"${
+			typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
+		}. Expected a number or a percentage value (e.g., "50%").`
+	);
+	return undefined;
 }
 
 export function asPointAutoPercentageLength(
-  x: string | number,
-  propertyName?: string
+	x: string | number,
+	propertyName?: string
 ): number | 'auto' | `${number}%` | undefined {
-  if (typeof x === 'number') {
-    return x
-  }
-  if (x === 'auto') {
-    return 'auto'
-  }
-  if (x.endsWith('%')) {
-    const percentageValue = parseFloat(x.slice(0, -1))
-    if (isNaN(percentageValue)) {
-      console.warn(
-        `Invalid value "${x}"${
-          typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
-        }. Expected a percentage value (e.g., "50%").`
-      )
-      return undefined
-    }
-    return `${percentageValue}%`
-  }
+	if (typeof x === 'number') {
+		return x;
+	}
+	if (x === 'auto') {
+		return 'auto';
+	}
+	if (x.endsWith('%')) {
+		const percentageValue = parseFloat(x.slice(0, -1));
+		if (isNaN(percentageValue)) {
+			console.warn(
+				`Invalid value "${x}"${
+					typeof propertyName === 'string'
+						? ` for "${propertyName}"`
+						: ''
+				}. Expected a percentage value (e.g., "50%").`
+			);
+			return undefined;
+		}
+		return `${percentageValue}%`;
+	}
 
-  console.warn(
-    `Invalid value "${x}"${
-      typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
-    }. Expected a number, "auto", or a percentage value (e.g., "50%").`
-  )
-  return undefined
+	console.warn(
+		`Invalid value "${x}"${
+			typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
+		}. Expected a number, "auto", or a percentage value (e.g., "50%").`
+	);
+	return undefined;
 }
 
 export function splitByBreakOpportunities(
-  content: string,
-  wordBreak: string
+	content: string,
+	wordBreak: string
 ): {
-  words: string[]
-  requiredBreaks: boolean[]
+	words: string[];
+	requiredBreaks: boolean[];
 } {
-  if (wordBreak === 'break-all') {
-    return { words: segment(content, 'grapheme'), requiredBreaks: [] }
-  }
+	if (wordBreak === 'break-all') {
+		return { words: segment(content, 'grapheme'), requiredBreaks: [] };
+	}
 
-  if (wordBreak === 'keep-all') {
-    return { words: segment(content, 'word'), requiredBreaks: [] }
-  }
+	if (wordBreak === 'keep-all') {
+		return { words: segment(content, 'word'), requiredBreaks: [] };
+	}
 
-  const breaker = new LineBreaker(content)
-  let last = 0
-  let bk = breaker.nextBreak()
-  const words = []
-  const requiredBreaks = [false]
+	const breaker = new LineBreaker(content);
+	let last = 0;
+	let bk = breaker.nextBreak();
+	const words = [];
+	const requiredBreaks = [false];
 
-  while (bk) {
-    const word = content.slice(last, bk.position)
-    words.push(word)
+	while (bk) {
+		const word = content.slice(last, bk.position);
+		words.push(word);
 
-    if (bk.required) {
-      requiredBreaks.push(true)
-    } else {
-      requiredBreaks.push(false)
-    }
+		if (bk.required) {
+			requiredBreaks.push(true);
+		} else {
+			requiredBreaks.push(false);
+		}
 
-    last = bk.position
-    bk = breaker.nextBreak()
-  }
+		last = bk.position;
+		bk = breaker.nextBreak();
+	}
 
-  return { words, requiredBreaks }
+	return { words, requiredBreaks };
 }
 
 export const midline = (s: string) => {
-  return s.replaceAll(
-    /([A-Z])/g,
-    (_, letter: string) => `-${letter.toLowerCase()}`
-  )
-}
+	return s.replaceAll(
+		/([A-Z])/g,
+		(_, letter: string) => `-${letter.toLowerCase()}`
+	);
+};
 
 export function splitEffects(
-  input: string,
-  separator: string | RegExp = ','
+	input: string,
+	separator: string | RegExp = ','
 ): string[] {
-  const result = []
-  let l = 0
-  let parenCount = 0
-  separator = new RegExp(separator)
+	const result = [];
+	let l = 0;
+	let parenCount = 0;
+	separator = new RegExp(separator);
 
-  for (let i = 0; i < input.length; i++) {
-    if (input[i] === '(') {
-      parenCount++
-    } else if (input[i] === ')') {
-      parenCount--
-    }
+	for (let i = 0; i < input.length; i++) {
+		if (input[i] === '(') {
+			parenCount++;
+		} else if (input[i] === ')') {
+			parenCount--;
+		}
 
-    if (parenCount === 0 && separator.test(input[i])) {
-      result.push(input.slice(l, i).trim())
-      l = i + 1
-    }
-  }
+		if (parenCount === 0 && separator.test(input[i])) {
+			result.push(input.slice(l, i).trim());
+			l = i + 1;
+		}
+	}
 
-  result.push(input.slice(l).trim())
+	result.push(input.slice(l).trim());
 
-  return result
+	return result;
 }

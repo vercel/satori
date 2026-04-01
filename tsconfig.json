@@ -1,13 +1,13 @@
 {
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "module": "node16",
-    "moduleResolution": "node16",
-    "esModuleInterop": true,
-    "target": "ES2021",
-    "lib": ["esnext", "dom"],
-    "baseUrl": ".",
-    "skipLibCheck": true
-  },
-  "include": ["src/*", "test/*"]
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"module": "node16",
+		"moduleResolution": "node16",
+		"esModuleInterop": true,
+		"target": "ES2021",
+		"lib": ["esnext", "dom"],
+		"baseUrl": ".",
+		"skipLibCheck": true
+	},
+	"include": ["src/*", "test/*"]
 }

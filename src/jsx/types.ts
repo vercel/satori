@@ -4,9 +4,9 @@
  *
  * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/index.d.ts `@types/react`}
  */
-export type { CSSProperties } from './intrinsic-elements.js'
+export type { CSSProperties } from './intrinsic-elements.js';
 
-export type JSXKey = string | number | bigint
+export type JSXKey = string | number | bigint;
 
 /**
  * Represents a JSX element.
@@ -24,23 +24,23 @@ export type JSXKey = string | number | bigint
  * ```
  */
 export interface JSXElement<
-  P = unknown,
-  T extends string | FC<P> = string | FC<P>
+	P = unknown,
+	T extends string | FC<P> = string | FC<P>
 > {
-  type: T
-  props: P
-  key: string | null
+	type: T;
+	props: P;
+	key: string | null;
 }
 
 type AwaitedJSXNode =
-  | JSXElement
-  | string
-  | number
-  | bigint
-  | Iterable<JSXNode>
-  | boolean
-  | null
-  | undefined
+	| JSXElement
+	| string
+	| number
+	| bigint
+	| Iterable<JSXNode>
+	| boolean
+	| null
+	| undefined;
 
 /**
  * Represents all of the things React can render.
@@ -73,15 +73,15 @@ type AwaitedJSXNode =
  * ```
  */
 export type JSXNode =
-  | JSXElement
-  | string
-  | number
-  | bigint
-  | Iterable<JSXNode>
-  | boolean
-  | null
-  | undefined
-  | Promise<AwaitedJSXNode>
+	| JSXElement
+	| string
+	| number
+	| bigint
+	| Iterable<JSXNode>
+	| boolean
+	| null
+	| undefined
+	| Promise<AwaitedJSXNode>;
 
 /**
  * Represents the type of a function component. Can optionally receive a type
@@ -110,4 +110,4 @@ export type JSXNode =
  * }
  * ```
  */
-export type FC<P = {}> = (props: P) => JSXNode | Promise<JSXNode>
+export type FC<P = {}> = (props: P) => JSXNode | Promise<JSXNode>;

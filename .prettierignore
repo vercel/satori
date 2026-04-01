@@ -1,0 +1,6 @@
+node_modules
+**/dist/**
+src/vendor/
+yarn.lock
+*.md
+coverage/
