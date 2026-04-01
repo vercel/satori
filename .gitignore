@@ -1,20 +1,6 @@
-node_modules
 .DS_Store
-.vercel
-.vscode
-.next
-.idea
-.turbo
-dist
-.pnpm-debug.log
-__diff_output__
-.eslintcache
+.npmrc
 coverage
-
-playground/public/yoga.wasm
-playground/tsconfig.tsbuildinfo
-
-test/__image_snapshots__
-
-# Vendor files
-# yoga.wasm
+dist
+node_modules
+test/__image_snapshots__*

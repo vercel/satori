@@ -1,6 +1,6 @@
 {
-	"name": "@feliperohdee/satori",
-	"description": "Enlightened library to convert HTML and CSS to SVG.",
+    "name": "@feliperohdee/satori",
+    "description": "Enlightened library to convert HTML and CSS to SVG.",
     "dependencies": {
         "@shuding/opentype.js": "1.4.0-beta.0",
         "css-background-parser": "^0.1.0",
@@ -65,7 +65,10 @@
         },
         "./yoga.wasm": "./yoga.wasm"
     },
-    "files": ["dist/**", "yoga.wasm"],
+    "files": [
+        "dist/**",
+        "yoga.wasm"
+    ],
     "main": "./dist/index.js",
     "module": "./dist/index.js",
     "repository": {
@@ -78,15 +81,18 @@
         "build:standalone": "NODE_ENV=production SATORI_STANDALONE=1 tsup",
         "dev": "NODE_ENV=development tsup src/index.ts --watch",
         "dev:test": "NODE_ENV=test vitest --update",
-        "lint": "prettier --write . && eslint . --ext .js,.jsx,.ts,.tsx --quiet --cache",
+        "lint": "prettier --write . && eslint . --ext .js,.jsx,.ts,.tsx --quiet",
+        "npm:publish": "yarn test && yarn build && yarn version --patch --no-git-tag-version && yarn publish --non-interactive",
         "test": "NODE_ENV=test vitest run"
     },
     "type": "module",
     "types": "./dist/index.d.ts",
     "typesVersions": {
         "*": {
-            "wasm": ["./dist/index.d.ts"]
+            "wasm": [
+                "./dist/index.d.ts"
+            ]
         }
     },
-    "version": "0.0.0"
+    "version": "0.0.3"
 }
