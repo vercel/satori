@@ -14,5 +14,7 @@ coverage
 playground/public/yoga.wasm
 playground/tsconfig.tsbuildinfo
 
+test/__image_snapshots__
+
 # Vendor files
 # yoga.wasm

@@ -39,7 +39,7 @@ describe('Error', () => {
 				fonts
 			}
 		);
-		expect(result).rejects.toThrowError(
+		await expect(result).rejects.toThrowError(
 			`Invalid value for CSS property "display". Allowed values: "flex" | "block" | "contents" | "none" | "-webkit-box". Received: "inline-block".`
 		);
 	});
@@ -54,7 +54,7 @@ describe('Error', () => {
 				fonts
 			}
 		);
-		expect(result).rejects.toThrowError(
+		await expect(result).rejects.toThrowError(
 			`Invalid value for CSS property "position". Allowed values: "absolute" | "relative" | "static". Received: "fixed".`
 		);
 	});
@@ -119,7 +119,7 @@ describe('Error', () => {
 			}
 		);
 
-		expect(result).rejects.toThrowError(
+		await expect(result).rejects.toThrowError(
 			'disallow setting negative values to the size of the shape. Check https://w3c.github.io/csswg-drafts/css-images/#valdef-rg-size-length-0'
 		);
 	});
