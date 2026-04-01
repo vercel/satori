@@ -33,7 +33,6 @@ export interface LayoutContext {
   graphemeImages?: Record<string, string>
   canLoadAdditionalAssets: boolean
   locale?: Locale
-  getTwStyles: (tw: string, style: any) => any
   onNodeDetected?: (node: SatoriNode) => void
 }
 
@@ -68,7 +67,6 @@ export default async function* layout(
     embedFont = true,
     graphemeImages,
     canLoadAdditionalAssets,
-    getTwStyles,
   } = context
 
   // 1. Pre-process the node.
@@ -124,14 +122,8 @@ export default async function* layout(
       'dangerouslySetInnerHTML property is not supported. See documentation for more information https://github.com/vercel/satori#jsx.'
     )
   }
-  let { style, children, tw, lang: _newLocale = locale } = props || {}
+  let { style, children, lang: _newLocale = locale } = props || {}
   const newLocale = normalizeLocale(_newLocale)
-
-  // Extend Tailwind styles.
-  if (tw) {
-    const twStyles = getTwStyles(tw, style)
-    style = Object.assign(twStyles, style)
-  }
 
   const node = Yoga.Node.create()
   parent.insertChild(node, parent.getChildCount())
@@ -199,7 +191,6 @@ export default async function* layout(
       graphemeImages,
       canLoadAdditionalAssets,
       locale: newLocale,
-      getTwStyles,
       onNodeDetected: context.onNodeDetected,
     })
     if (canLoadAdditionalAssets) {

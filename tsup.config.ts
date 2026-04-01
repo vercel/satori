@@ -1,6 +1,5 @@
 import { defineConfig } from 'tsup'
 import { join } from 'path'
-import { replace } from 'esbuild-plugin-replace'
 
 const isStandaloneBuild = !!process.env.SATORI_STANDALONE
 
@@ -14,54 +13,47 @@ export default defineConfig({
   sourcemap: true,
   target: 'node16',
   dts: process.env.NODE_ENV !== 'development' && {
-    resolve: ['twrnc', './tw-config', './types'],
+    resolve: ['./types'],
   },
   minify: process.env.NODE_ENV !== 'development',
   format: ['esm', 'cjs'],
-  noExternal: ['twrnc', 'emoji-regex-xs', 'yoga-layout'],
+  noExternal: ['emoji-regex-xs', 'yoga-layout'],
   esbuildOptions(options) {
     options.tsconfig = 'tsconfig.json'
     options.legalComments = 'external'
   },
+  // Standalone build: satori bundles everything with zero runtime deps.
+  // The consumer provides the WASM binary manually via `init(wasmBinary)`.
+  //
+  // Problem: yoga-layout ships "yoga-wasm-base64-esm.js" which embeds the
+  // entire WASM binary as a base64 string (~120KB). Even though the standalone
+  // build uses `instantiateWasm` to load WASM externally (see yoga.external.ts),
+  // esbuild still bundles the base64 file because yoga-layout's load.js
+  // imports it statically.
+  //
+  // Solution: during standalone builds, this plugin intercepts that import and
+  // swaps it with "src/vendor/yoga-wasm-esm.js" — a lightweight WASM glue
+  // loader (no embedded binary) that works with the external instantiation flow.
+  esbuildPlugins: isStandaloneBuild
+    ? [
+        {
+          name: 'swap-yoga-wasm',
+          setup(build) {
+            build.onResolve(
+              { filter: /yoga-wasm-base64-esm/ },
+              () => {
+                return {
+                  path: join(__dirname, 'src', 'vendor', 'yoga-wasm-esm.js'),
+                }
+              }
+            )
+          },
+        },
+      ]
+    : [],
   env: isStandaloneBuild
     ? {
         SATORI_STANDALONE: '1',
       }
     : {},
-  esbuildPlugins: [
-    {
-      name: 'optimize tailwind',
-      setup(build) {
-        // Get rid of chalk
-        // https://github.com/tailwindlabs/tailwindcss/blob/b8cda161dd0993083dcef1e2a03988c70be0ce93/src/util/log.js
-        build.onResolve({ filter: /\/log$/ }, (args) => {
-          if (args.importer.includes('/tailwindcss/')) {
-            return {
-              path: join(__dirname, 'src', 'vendor', 'twrnc', 'log.js'),
-            }
-          }
-        })
-
-        // Get rid of picocolors
-        // https://github.com/tailwindlabs/tailwindcss/blob/bf4494104953b13a5f326b250d7028074815e77e/src/featureFlags.js
-        build.onResolve({ filter: /^picocolors$/ }, () => {
-          return {
-            path: join(__dirname, 'src', 'vendor', 'twrnc', 'picocolors.js'),
-          }
-        })
-
-        // Get rid of util-deprecate/node.js
-        build.onResolve({ filter: /util-deprecate/ }, () => {
-          return {
-            path: join(__dirname, 'src', 'vendor', 'twrnc', 'deprecate.js'),
-          }
-        })
-      },
-    },
-    // We don't like `Function`.
-    // https://github.com/tailwindlabs/tailwindcss/blob/bf4494104953b13a5f326b250d7028074815e77e/src/util/getAllConfigs.js#L8
-    replace({
-      'preset instanceof Function': 'typeof preset === "function"',
-    }),
-  ],
 })

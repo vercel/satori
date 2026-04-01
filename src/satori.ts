@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import type { TwConfig } from 'twrnc'
 import type { SatoriNode } from './layout.js'
 
 import layout from './layout.js'
@@ -7,7 +6,6 @@ import FontLoader, { FontOptions } from './font.js'
 import svg from './builder/svg.js'
 import { getYoga, TYoga } from './yoga.js'
 import { detectLanguageCode, LangCode, Locale } from './language.js'
-import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
 import { cache, inflightRequests } from './handler/image.js'
 import { segment } from './utils.js'
@@ -35,7 +33,6 @@ export type SatoriOptions = (
     languageCode: string,
     segment: string
   ) => Promise<string | Array<FontOptions>>
-  tailwindConfig?: TwConfig
   onNodeDetected?: (node: SatoriNode) => void
   pointScaleFactor?: number
 }
@@ -116,25 +113,6 @@ export default async function satori(
     graphemeImages,
     canLoadAdditionalAssets: !!options.loadAdditionalAsset,
     onNodeDetected: options.onNodeDetected,
-    getTwStyles: (tw, style) => {
-      const twToStyles = getTw({
-        width: definedWidth,
-        height: definedHeight,
-        config: options.tailwindConfig,
-      })
-      const twStyles = { ...twToStyles([tw] as any) }
-      if (typeof twStyles.lineHeight === 'number') {
-        twStyles.lineHeight =
-          twStyles.lineHeight / (+twStyles.fontSize || style.fontSize || 16)
-      }
-      if (twStyles.shadowColor && twStyles.boxShadow) {
-        twStyles.boxShadow = (twStyles.boxShadow as string).replace(
-          /rgba?\([^)]+\)/,
-          twStyles.shadowColor as string
-        )
-      }
-      return twStyles
-    },
   })
 
   const segmentsMissingFont = (await handler.next()).value as {

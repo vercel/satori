@@ -1,9 +1,0 @@
-.github/
-node_modules
-**/.next/**
-**/_next/**
-**/dist/**
-src/vendor/
-pnpm-lock.yaml
-*.md
-coverage/
