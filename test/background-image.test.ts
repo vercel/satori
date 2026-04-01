@@ -1,6 +1,6 @@
 import { it, describe, expect } from 'vitest';
 
-import {
+import backgroundImage, {
 	computeBgPositionOffset,
 	parsePositionValues
 } from '../src/builder/background-image.js';
@@ -141,6 +141,146 @@ describe('background-image', () => {
 
 		it('should return 0 for unparseable values', () => {
 			expect(computeBgPositionOffset('invalid', 200, 150)).toEqual(0);
+		});
+	});
+
+	describe('backgroundImage', () => {
+		const defaultParams = {
+			id: 'test',
+			height: 100,
+			left: 10,
+			top: 20,
+			width: 200
+		};
+
+		const gradient = 'linear-gradient(to right, red, blue)';
+
+		it('should not produce NaN with one keyword position and non-keyword size', async () => {
+			const result = await backgroundImage(
+				defaultParams,
+				{
+					clip: 'border-box',
+					image: gradient,
+					position: 'center',
+					repeat: 'no-repeat',
+					size: '50%'
+				},
+				{}
+			);
+
+			expect(result.join('')).not.toContain('NaN');
+		});
+
+		it('should not produce NaN with two keyword position and non-keyword size', async () => {
+			const result = await backgroundImage(
+				defaultParams,
+				{
+					clip: 'border-box',
+					image: gradient,
+					position: 'left top',
+					repeat: 'no-repeat',
+					size: '100px 50px'
+				},
+				{}
+			);
+
+			expect(result.join('')).not.toContain('NaN');
+		});
+
+		it('should not produce NaN with right bottom position and non-keyword size', async () => {
+			const result = await backgroundImage(
+				defaultParams,
+				{
+					clip: 'border-box',
+					image: gradient,
+					position: 'right bottom',
+					repeat: 'no-repeat',
+					size: '50% 50%'
+				},
+				{}
+			);
+
+			expect(result.join('')).not.toContain('NaN');
+		});
+
+		it('should not produce NaN with empty position', async () => {
+			const result = await backgroundImage(
+				defaultParams,
+				{
+					clip: 'border-box',
+					image: gradient,
+					position: '',
+					repeat: 'repeat',
+					size: '50px 50px'
+				},
+				{}
+			);
+
+			expect(result.join('')).not.toContain('NaN');
+		});
+
+		it('should not produce NaN with single-value size', async () => {
+			const result = await backgroundImage(
+				defaultParams,
+				{
+					clip: 'border-box',
+					image: gradient,
+					position: 'center',
+					repeat: 'no-repeat',
+					size: '50px'
+				},
+				{}
+			);
+
+			expect(result.join('')).not.toContain('NaN');
+		});
+
+		it('should not produce NaN with percentage position and pixel size', async () => {
+			const result = await backgroundImage(
+				defaultParams,
+				{
+					clip: 'border-box',
+					image: gradient,
+					position: '50% 50%',
+					repeat: 'no-repeat',
+					size: '100px 50px'
+				},
+				{}
+			);
+
+			expect(result.join('')).not.toContain('NaN');
+		});
+
+		it('should not produce NaN with pixel position and pixel size', async () => {
+			const result = await backgroundImage(
+				defaultParams,
+				{
+					clip: 'border-box',
+					image: gradient,
+					position: '10px 20px',
+					repeat: 'no-repeat',
+					size: '100px 50px'
+				},
+				{}
+			);
+
+			expect(result.join('')).not.toContain('NaN');
+		});
+
+		it('should handle color background image', async () => {
+			const result = await backgroundImage(
+				defaultParams,
+				{
+					clip: 'border-box',
+					image: 'red',
+					position: 'center',
+					repeat: 'repeat',
+					size: ''
+				},
+				{}
+			);
+
+			expect(result.join('')).not.toContain('NaN');
 		});
 	});
 });

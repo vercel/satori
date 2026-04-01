@@ -6,6 +6,7 @@ This fork extends the [original Satori](https://github.com/vercel/satori) with t
 
 - **`background-position` with keyword sizes** — correct positioning when combined with `background-size: cover`, `contain`, or `auto`
 - **`mix-blend-mode`** — full support
+- **`backdrop-filter`** — simulated via SVG filter primitives (`blur`, `saturate`, `brightness`, `contrast`, `grayscale`). Uses `<use>` to reference background content with `feGaussianBlur` and `feOffset` edge-extension for consistent blur without transparent edges. Supports `mask-image` for blurred fades and `border-radius` on the clip path
 
 ## Overview
 
@@ -288,6 +289,12 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr>
 <td colspan="2"><code>filter</code></td>
 <td>Supported</td>
+<td></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>backdropFilter</code></td>
+<td>Supported (<code>blur</code>, <code>saturate</code>, <code>brightness</code>, <code>contrast</code>, <code>grayscale</code>). Works with <code>maskImage</code> for faded blur effects</td>
 <td></td>
 </tr>
 

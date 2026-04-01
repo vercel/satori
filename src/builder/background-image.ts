@@ -150,24 +150,31 @@ function parseLengthPairs(
 		defaultY: number | string;
 	}
 ) {
-	return (
-		str
-			? str
-					.split(' ')
-					.map(value => {
-						try {
-							const parsed = new CssDimension(value);
-							return parsed.type === 'length' ||
-								parsed.type === 'number'
-								? parsed.value
-								: parsed.value + parsed.unit;
-						} catch (e) {
-							return null;
-						}
-					})
-					.filter(v => v !== null)
-			: [defaultX, defaultY]
-	).map((v, index) => toAbsoluteValue(v, [x, y][index]));
+	const parsed = str
+		? str
+				.split(' ')
+				.map(value => {
+					try {
+						const dim = new CssDimension(value);
+						return dim.type === 'length' || dim.type === 'number'
+							? dim.value
+							: dim.value + dim.unit;
+					} catch (e) {
+						return null;
+					}
+				})
+				.filter(v => v !== null)
+		: [defaultX, defaultY];
+
+	if (parsed.length === 0) {
+		return [toAbsoluteValue(defaultX, x), toAbsoluteValue(defaultY, y)];
+	}
+
+	if (parsed.length === 1) {
+		parsed.push(defaultY);
+	}
+
+	return parsed.map((v, index) => toAbsoluteValue(v, [x, y][index]));
 }
 
 export default async function backgroundImage(
@@ -218,7 +225,8 @@ export default async function backgroundImage(
 					defaultX: width,
 					defaultY: height
 			  });
-	const offsets = parseLengthPairs(position, {
+	const normalizedPos = parsePositionValues(position);
+	const offsets = parseLengthPairs(`${normalizedPos.x} ${normalizedPos.y}`, {
 		x: width,
 		y: height,
 		defaultX: 0,

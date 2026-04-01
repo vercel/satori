@@ -223,6 +223,10 @@ function handleSpecialCase(
 		};
 	}
 
+	if (name === 'backdropFilter' || name === 'WebkitBackdropFilter') {
+		return { backdropFilter: value };
+	}
+
 	if (name === 'textDecorationSkipInk') {
 		const normalized = value.toString().trim().toLowerCase();
 		if (!['auto', 'none', 'all'].includes(normalized)) {
