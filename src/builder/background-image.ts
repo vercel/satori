@@ -21,7 +21,7 @@ function toAbsoluteValue(v: string | number, base: number) {
 	if (typeof v === 'string' && v.endsWith('%')) {
 		return (base * parseFloat(v)) / 100;
 	}
-	return +v;
+	return typeof v === 'string' ? parseFloat(v) || 0 : +v;
 }
 
 function calculateKeywordSize(
@@ -193,6 +193,19 @@ export default async function backgroundImage(
 	repeat = repeat || 'repeat';
 	from = from || 'background';
 
+	// CSS spec: default background-size is 'auto' (use intrinsic dimensions).
+	size = size || 'auto';
+
+	// CSS spec: single-value size means "<value> auto" (maintain aspect ratio).
+	if (
+		size !== 'cover' &&
+		size !== 'contain' &&
+		size !== 'auto' &&
+		!size.includes(' ')
+	) {
+		size = `${size} auto`;
+	}
+
 	const repeatX = repeat === 'repeat-x' || repeat === 'repeat';
 	const repeatY = repeat === 'repeat-y' || repeat === 'repeat';
 
@@ -226,17 +239,15 @@ export default async function backgroundImage(
 					defaultY: height
 			  });
 	const normalizedPos = parsePositionValues(position);
-	const offsets = parseLengthPairs(`${normalizedPos.x} ${normalizedPos.y}`, {
-		x: width,
-		y: height,
-		defaultX: 0,
-		defaultY: 0
-	});
 
 	if (
 		image.startsWith('linear-gradient(') ||
 		image.startsWith('repeating-linear-gradient(')
 	) {
+		const offsets = [
+			computeBgPositionOffset(normalizedPos.x, width, dimensions[0]),
+			computeBgPositionOffset(normalizedPos.y, height, dimensions[1])
+		];
 		return buildLinearGradient(
 			{ id, width, height, repeatX, repeatY },
 			image,
@@ -251,6 +262,10 @@ export default async function backgroundImage(
 		image.startsWith('radial-gradient(') ||
 		image.startsWith('repeating-radial-gradient(')
 	) {
+		const offsets = [
+			computeBgPositionOffset(normalizedPos.x, width, dimensions[0]),
+			computeBgPositionOffset(normalizedPos.y, height, dimensions[1])
+		];
 		return buildRadialGradient(
 			{ id, width, height, repeatX, repeatY },
 			image,
@@ -338,6 +353,18 @@ export default async function backgroundImage(
 			];
 		}
 
+		const rawPos = parsePositionValues(position);
+		const imageOffsetX = computeBgPositionOffset(
+			rawPos.x,
+			width,
+			resolvedWidth
+		);
+		const imageOffsetY = computeBgPositionOffset(
+			rawPos.y,
+			height,
+			resolvedHeight
+		);
+
 		return [
 			`satori_bi${id}`,
 			buildXMLString(
@@ -346,14 +373,14 @@ export default async function backgroundImage(
 					id: `satori_bi${id}`,
 					patternContentUnits: 'userSpaceOnUse',
 					patternUnits: 'userSpaceOnUse',
-					x: offsets[0] + left,
-					y: offsets[1] + top,
+					x: (repeatX ? imageOffsetX : 0) + left,
+					y: (repeatY ? imageOffsetY : 0) + top,
 					width: repeatX ? resolvedWidth : '100%',
 					height: repeatY ? resolvedHeight : '100%'
 				},
 				buildXMLString('image', {
-					x: 0,
-					y: 0,
+					x: repeatX ? 0 : imageOffsetX,
+					y: repeatY ? 0 : imageOffsetY,
 					width: resolvedWidth,
 					height: resolvedHeight,
 					preserveAspectRatio: 'none',
