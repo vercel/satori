@@ -25,19 +25,22 @@ export default defineConfig({
 	// Standalone build: satori bundles everything with zero runtime deps.
 	// The consumer provides the WASM binary manually via `init(wasmBinary)`.
 	//
-	// Problem: yoga-layout ships "yoga-wasm-base64-esm.js" which embeds the
-	// entire WASM binary as a base64 string (~120KB). Even though the standalone
-	// build uses `instantiateWasm` to load WASM externally (see yoga.external.ts),
-	// esbuild still bundles the base64 file because yoga-layout's load.js
-	// imports it statically.
+	// Two problems with yoga-layout's original files:
 	//
-	// Solution: during standalone builds, this plugin intercepts that import and
-	// swaps it with "src/vendor/yoga-wasm-esm.js" — a lightweight WASM glue
-	// loader (no embedded binary) that works with the external instantiation flow.
+	// 1. "yoga-wasm-base64-esm.js" embeds the entire WASM binary as base64
+	//    (~120KB). The standalone build doesn't need it since the consumer
+	//    provides the WASM via `init()`.
+	//
+	// 2. "load.js" ignores the `wasmOptions` argument — it calls
+	//    `loadYogaImpl()` without passing options through. This breaks the
+	//    standalone build's `instantiateWasm` callback (see yoga.external.ts).
+	//
+	// Solution: at build time, swap the base64 WASM loader with a lightweight
+	// one, and patch load.js to pass wasmOptions through to the loader.
 	esbuildPlugins: isStandaloneBuild
 		? [
 				{
-					name: 'swap-yoga-wasm',
+					name: 'swap-yoga-standalone',
 					setup(build) {
 						build.onResolve(
 							{ filter: /yoga-wasm-base64-esm/ },
@@ -49,6 +52,26 @@ export default defineConfig({
 										'vendor',
 										'yoga-wasm-esm.js'
 									)
+								};
+							}
+						);
+						build.onLoad(
+							{ filter: /yoga-layout\/dist\/src\/load\.js$/ },
+							async args => {
+								const { readFile } = await import('fs/promises');
+								const contents = await readFile(
+									args.path,
+									'utf8'
+								);
+								return {
+									contents: contents.replace(
+										'loadYogaImpl()',
+										'loadYogaImpl(wasmOptions)'
+									).replace(
+										'async function loadYoga()',
+										'async function loadYoga(wasmOptions)'
+									),
+									loader: 'js'
 								};
 							}
 						);
