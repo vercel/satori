@@ -58,19 +58,23 @@ export default defineConfig({
 						build.onLoad(
 							{ filter: /yoga-layout\/dist\/src\/load\.js$/ },
 							async args => {
-								const { readFile } = await import('fs/promises');
+								const { readFile } = await import(
+									'fs/promises'
+								);
 								const contents = await readFile(
 									args.path,
 									'utf8'
 								);
 								return {
-									contents: contents.replace(
-										'loadYogaImpl()',
-										'loadYogaImpl(wasmOptions)'
-									).replace(
-										'async function loadYoga()',
-										'async function loadYoga(wasmOptions)'
-									),
+									contents: contents
+										.replace(
+											'loadYogaImpl()',
+											'loadYogaImpl(wasmOptions)'
+										)
+										.replace(
+											'async function loadYoga()',
+											'async function loadYoga(wasmOptions)'
+										),
 									loader: 'js'
 								};
 							}

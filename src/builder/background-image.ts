@@ -79,6 +79,63 @@ function calculateKeywordSize(
 	return [containerWidth, containerHeight];
 }
 
+const positionKeywordMap: Record<string, string> = {
+	bottom: '100%',
+	center: '50%',
+	left: '0%',
+	right: '100%',
+	top: '0%'
+};
+
+export function parsePositionValues(str: string): { x: string; y: string } {
+	if (!str) {
+		return { x: '0%', y: '0%' };
+	}
+
+	const parts = str.split(' ').filter(Boolean);
+
+	if (parts.length === 1) {
+		const part = parts[0];
+
+		if (part in positionKeywordMap) {
+			if (part === 'top' || part === 'bottom') {
+				return { x: '50%', y: positionKeywordMap[part] };
+			}
+
+			return { x: positionKeywordMap[part], y: '50%' };
+		}
+
+		return { x: part, y: '50%' };
+	}
+
+	return {
+		x: positionKeywordMap[parts[0]] || parts[0],
+		y: positionKeywordMap[parts[1]] || parts[1]
+	};
+}
+
+export function computeBgPositionOffset(
+	rawValue: string,
+	containerSize: number,
+	imageSize: number
+): number {
+	if (rawValue.endsWith('%')) {
+		const percentage = parseFloat(rawValue) / 100;
+		// CSS spec: offset = (containerSize - imageSize) * percentage
+		return (containerSize - imageSize) * percentage;
+	}
+
+	try {
+		const parsed = new CssDimension(rawValue);
+
+		return parsed.type === 'length' || parsed.type === 'number'
+			? parsed.value
+			: toAbsoluteValue(parsed.value + parsed.unit, containerSize);
+	} catch {
+		return 0;
+	}
+}
+
 function parseLengthPairs(
 	str: string,
 	{
@@ -231,6 +288,46 @@ export default async function backgroundImage(
 				from === 'mask'
 					? imageHeight || dimensionsWithoutFallback[1]
 					: dimensionsWithoutFallback[1] || imageHeight;
+		}
+
+		if (isKeywordSize) {
+			// For keyword sizes (cover, contain, auto), apply CSS background-position
+			// formula: offset = (containerSize - imageSize) * percentage
+			const rawPos = parsePositionValues(position);
+			const imageOffsetX = computeBgPositionOffset(
+				rawPos.x,
+				width,
+				resolvedWidth
+			);
+			const imageOffsetY = computeBgPositionOffset(
+				rawPos.y,
+				height,
+				resolvedHeight
+			);
+
+			return [
+				`satori_bi${id}`,
+				buildXMLString(
+					'pattern',
+					{
+						id: `satori_bi${id}`,
+						patternContentUnits: 'userSpaceOnUse',
+						patternUnits: 'userSpaceOnUse',
+						x: (repeatX ? imageOffsetX : 0) + left,
+						y: (repeatY ? imageOffsetY : 0) + top,
+						width: repeatX ? resolvedWidth : '100%',
+						height: repeatY ? resolvedHeight : '100%'
+					},
+					buildXMLString('image', {
+						x: repeatX ? 0 : imageOffsetX,
+						y: repeatY ? 0 : imageOffsetY,
+						width: resolvedWidth,
+						height: resolvedHeight,
+						preserveAspectRatio: 'none',
+						href: src
+					})
+				)
+			];
 		}
 
 		return [

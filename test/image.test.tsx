@@ -766,6 +766,120 @@ describe('background-image: url()', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
+	it('should support background-position: center with background-size: cover', async () => {
+		const svg = await satori(
+			<div
+				style={{
+					backgroundImage: `url(${PNG_SAMPLE})`,
+					backgroundPosition: 'center',
+					backgroundRepeat: 'no-repeat',
+					backgroundSize: 'cover',
+					display: 'flex',
+					height: '100%',
+					width: '100%'
+				}}
+			></div>,
+			{ width: 200, height: 100, fonts }
+		);
+
+		expect(toImage(svg, 200)).toMatchImageSnapshot();
+	});
+
+	it('should support background-position: center with background-size: contain', async () => {
+		const svg = await satori(
+			<div
+				style={{
+					backgroundImage: `url(${PNG_SAMPLE})`,
+					backgroundPosition: 'center',
+					backgroundRepeat: 'no-repeat',
+					backgroundSize: 'contain',
+					display: 'flex',
+					height: '100%',
+					width: '100%'
+				}}
+			></div>,
+			{ width: 200, height: 100, fonts }
+		);
+
+		expect(toImage(svg, 200)).toMatchImageSnapshot();
+	});
+
+	it('should support background-position: 0% 0% with background-size: cover', async () => {
+		const svg = await satori(
+			<div
+				style={{
+					backgroundImage: `url(${PNG_SAMPLE})`,
+					backgroundPosition: '0% 0%',
+					backgroundRepeat: 'no-repeat',
+					backgroundSize: 'cover',
+					display: 'flex',
+					height: '100%',
+					width: '100%'
+				}}
+			></div>,
+			{ width: 200, height: 100, fonts }
+		);
+
+		expect(toImage(svg, 200)).toMatchImageSnapshot();
+	});
+
+	it('should support background-position: 100% 100% with background-size: cover', async () => {
+		const svg = await satori(
+			<div
+				style={{
+					backgroundImage: `url(${PNG_SAMPLE})`,
+					backgroundPosition: '100% 100%',
+					backgroundRepeat: 'no-repeat',
+					backgroundSize: 'cover',
+					display: 'flex',
+					height: '100%',
+					width: '100%'
+				}}
+			></div>,
+			{ width: 200, height: 100, fonts }
+		);
+
+		expect(toImage(svg, 200)).toMatchImageSnapshot();
+	});
+
+	it('should support background-position: 10px 20px with background-size: contain', async () => {
+		const svg = await satori(
+			<div
+				style={{
+					backgroundImage: `url(${PNG_SAMPLE})`,
+					backgroundPosition: '10px 20px',
+					backgroundRepeat: 'no-repeat',
+					backgroundSize: 'contain',
+					display: 'flex',
+					height: '100%',
+					width: '100%'
+				}}
+			></div>,
+			{ width: 200, height: 100, fonts }
+		);
+
+		expect(toImage(svg, 200)).toMatchImageSnapshot();
+	});
+
+	it('should support background-position: center with background-size: auto', async () => {
+		const svg = await satori(
+			<div
+				style={{
+					backgroundImage: `url(${PNG_SAMPLE})`,
+					backgroundPosition: 'center',
+					backgroundRepeat: 'no-repeat',
+					backgroundSize: 'auto',
+					display: 'flex',
+					height: '100%',
+					width: '100%'
+				}}
+			></div>,
+			{ width: 100, height: 100, fonts }
+		);
+
+		expect(toImage(svg, 100)).toMatchImageSnapshot();
+	});
+
 	it('should correctly position the background pattern', async () => {
 		const svg = await satori(
 			<div

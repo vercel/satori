@@ -103,8 +103,18 @@ describe('Basic', () => {
 			>
 				<div>1</div>
 				{[
-					<div key='a' style={{ display: 'flex' }}>2{[<div key='c'>3</div>]}</div>,
-					<div key='b' style={{ display: 'flex' }}>{[4]}</div>
+					<div
+						key='a'
+						style={{ display: 'flex' }}
+					>
+						2{[<div key='c'>3</div>]}
+					</div>,
+					<div
+						key='b'
+						style={{ display: 'flex' }}
+					>
+						{[4]}
+					</div>
 				]}
 			</div>,
 			{
