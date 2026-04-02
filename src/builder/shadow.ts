@@ -23,7 +23,12 @@ function shiftPath(path: string, dx: number, dy: number) {
 const SCALE = 1.1;
 
 export function buildDropShadow(
-	{ id, width, height }: { id: string; width: number; height: number },
+	{
+		id,
+		width,
+		height,
+		padding = 0
+	}: { id: string; width: number; height: number; padding?: number },
 	style: {
 		shadowColor: string[];
 		shadowOffset: {
@@ -48,10 +53,10 @@ export function buildDropShadow(
 
 	// There could be multiple shadows, we need to get the maximum bounding box
 	// and use `feMerge` to merge them together.
-	let left = 0;
-	let right = width;
-	let top = 0;
-	let bottom = height;
+	let left = -padding;
+	let right = width + padding;
+	let top = -padding;
+	let bottom = height + padding;
 	for (let i = 0; i < shadowCount; i++) {
 		// Expand the area for the filter to prevent it from cutting off.
 		const grow = (style.shadowRadius[i] * style.shadowRadius[i]) / 4;

@@ -122,8 +122,9 @@ export default function buildText(
 
 	// Do not embed the font, use <text> with the raw content instead.
 	const hasWebkitStroke = !!style.WebkitTextStrokeWidth;
-	const hasFauxBold = !hasWebkitStroke && fauxBoldStrokeWidth !== undefined;
-	const shapeProps = {
+	const needsFauxBold = fauxBoldStrokeWidth !== undefined;
+	const bothActive = hasWebkitStroke && needsFauxBold;
+	const textProps = {
 		x: left,
 		y: top,
 		width,
@@ -134,23 +135,61 @@ export default function buildText(
 		'font-family': style.fontFamily,
 		'letter-spacing': style.letterSpacing || undefined,
 		transform: matrix || undefined,
-		'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+		'clip-path': clipPathId ? `url(#${clipPathId})` : undefined
+	};
+
+	// When both faux bold and webkit-text-stroke apply, render a background
+	// <text> with a wider webkit stroke that wraps around the faux bold body.
+	// Uses miter join (not round) to preserve sharp glyph corners matching
+	// the faux bold foreground text — round is only used for webkit-text-stroke
+	// alone, where visible stroke corners benefit from rounding.
+	const fauxBoldBgText = bothActive
+		? buildXMLString(
+				'text',
+				{
+					...textProps,
+					fill: style.color,
+					opacity: opacity !== 1 ? opacity : undefined,
+					'paint-order': 'stroke',
+					stroke: style.WebkitTextStrokeColor,
+					'stroke-linejoin': 'miter',
+					'stroke-width': `${
+						Number(style.WebkitTextStrokeWidth) +
+						fauxBoldStrokeWidth
+					}px`
+				},
+				escapeHTML(content)
+		  )
+		: '';
+
+	const shapeProps = {
+		...textProps,
 		style: style.filter ? `filter:${style.filter}` : undefined,
-		'stroke-width': hasWebkitStroke
+		'stroke-width': bothActive
+			? `${fauxBoldStrokeWidth}`
+			: hasWebkitStroke
 			? `${style.WebkitTextStrokeWidth}px`
-			: hasFauxBold
+			: needsFauxBold
 			? `${fauxBoldStrokeWidth}`
 			: undefined,
-		stroke: hasWebkitStroke
+		stroke: bothActive
+			? style.color
+			: hasWebkitStroke
 			? style.WebkitTextStrokeColor
-			: hasFauxBold
+			: needsFauxBold
 			? style.color
 			: undefined,
-		'stroke-linejoin': hasWebkitStroke || hasFauxBold ? 'round' : undefined,
-		'paint-order': hasWebkitStroke || hasFauxBold ? 'stroke' : undefined
+		'stroke-linejoin':
+			hasWebkitStroke && !bothActive
+				? 'round'
+				: needsFauxBold
+				? 'miter'
+				: undefined,
+		'paint-order': hasWebkitStroke || needsFauxBold ? 'stroke' : undefined
 	};
 	return [
 		(filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
+			fauxBoldBgText +
 			buildXMLString(
 				'text',
 				{

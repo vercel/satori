@@ -605,7 +605,7 @@ export default class FontLoader {
 			(!primaryMatchedWeight || primaryMatchedWeight < 600)
 		) {
 			const weightDiff = normalizedWeight - (primaryMatchedWeight || 400);
-			fauxBoldStrokeWidth = fontSize * 0.02 * (weightDiff / 300);
+			fauxBoldStrokeWidth = fontSize * 0.05 * (weightDiff / 300);
 		}
 
 		const engine = {

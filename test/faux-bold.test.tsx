@@ -66,7 +66,7 @@ describe('faux-bold', () => {
 
 			expect(svg).toContain('stroke-width');
 			expect(svg).toContain('paint-order="stroke"');
-			expect(svg).toContain('stroke-linejoin="round"');
+			expect(svg).toContain('stroke-linejoin="miter"');
 		});
 
 		it('should not apply faux bold when matching bold font is loaded', async () => {
@@ -255,7 +255,7 @@ describe('faux-bold', () => {
 			const svg = await satori(
 				<div
 					style={{
-						color: '#ff0000',
+						color: '#fff000',
 						display: 'flex',
 						fontSize: 24,
 						fontWeight: 700
@@ -267,12 +267,12 @@ describe('faux-bold', () => {
 			);
 
 			expect(svg).toContain('stroke-width');
-			expect(svg).toContain('stroke="#ff0000"');
+			expect(svg).toContain('stroke="#fff000"');
 		});
 	});
 
-	describe('webkit-text-stroke priority', () => {
-		it('should use webkit-text-stroke and suppress faux bold when both apply', async () => {
+	describe('webkit-text-stroke + faux bold coexistence', () => {
+		it('should render faux bold body with webkit stroke outline', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -287,12 +287,37 @@ describe('faux-bold', () => {
 				{ width: 200, height: 50, fonts: fontsRegularOnly }
 			);
 
+			// Background path: wider webkit stroke wrapping the faux bold body
+			expect(svg).toContain('stroke="red"');
+
+			// Foreground path: faux bold body with fill-colored stroke
+			expect(svg).toContain('stroke-linejoin="miter"');
+
+			// Should have two path elements (bg webkit + fg faux bold)
+			const pathCount = (svg.match(/<path /g) || []).length;
+			expect(pathCount).toEqual(2);
+		});
+
+		it('should not apply faux bold bg path when no faux bold needed', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						display: 'flex',
+						fontSize: 24,
+						fontWeight: 400,
+						WebkitTextStroke: '2px red'
+					}}
+				>
+					Normal stroked
+				</div>,
+				{ width: 200, height: 50, fonts: fontsRegularOnly }
+			);
+
 			expect(svg).toContain('stroke="red"');
 			expect(svg).toContain('stroke-width="2px"');
 
-			// Faux bold stroke width would be a decimal (e.g. 0.48), not "2px"
-			const strokeWidth = getStrokeWidth(svg);
-			expect(strokeWidth).toEqual(2);
+			const pathCount = (svg.match(/<path /g) || []).length;
+			expect(pathCount).toEqual(1);
 		});
 	});
 

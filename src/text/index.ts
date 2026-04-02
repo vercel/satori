@@ -517,11 +517,18 @@ export default async function* buildTextNodes(
 		const { textShadowColor, textShadowOffset, textShadowRadius } =
 			parentStyle;
 
+		// Expand filter region to account for stroke extending beyond text bounds.
+		const webkitStrokeW = Number(inheritedStyle.WebkitTextStrokeWidth) || 0;
+		const fauxBoldW = engine.fauxBoldStrokeWidth || 0;
+		const strokePadding =
+			Math.max(webkitStrokeW + fauxBoldW, webkitStrokeW, fauxBoldW) / 2;
+
 		filter = buildDropShadow(
 			{
 				width: measuredTextSize.width,
 				height: measuredTextSize.height,
-				id
+				id,
+				padding: strokePadding
 			},
 			{
 				shadowColor: textShadowColor,
@@ -899,8 +906,8 @@ export default async function* buildTextNodes(
 	// Embed the font as path.
 	if (mergedPath) {
 		const hasWebkitStroke = !!inheritedStyle.WebkitTextStrokeWidth;
-		const hasFauxBold =
-			!hasWebkitStroke && engine.fauxBoldStrokeWidth !== undefined;
+		const needsFauxBold = engine.fauxBoldStrokeWidth !== undefined;
+		const bothActive = hasWebkitStroke && needsFauxBold;
 		const fillColor =
 			filter &&
 			(isFullyTransparent(parentStyle.color) ||
@@ -909,31 +916,62 @@ export default async function* buildTextNodes(
 				? 'black'
 				: parentStyle.color;
 
+		// When both faux bold and webkit-text-stroke apply, render a background
+		// path with a wider webkit stroke that wraps around the faux bold body.
+		// Uses miter join (not round) to preserve sharp glyph corners matching
+		// the faux bold foreground path — round is only used for webkit-text-stroke
+		// alone, where visible stroke corners benefit from rounding.
+		const fauxBoldBgPath = bothActive
+			? buildXMLString('path', {
+					d: mergedPath,
+					fill: fillColor,
+					opacity: opacity !== 1 ? opacity : undefined,
+					'paint-order': 'stroke',
+					stroke: inheritedStyle.WebkitTextStrokeColor,
+					'stroke-linejoin': 'miter',
+					'stroke-width': `${
+						Number(inheritedStyle.WebkitTextStrokeWidth) +
+						engine.fauxBoldStrokeWidth
+					}px`,
+					transform: matrix ? matrix : undefined
+			  })
+			: '';
+
 		const p =
-			(!isFullyTransparent(parentStyle.color) || filter) && opacity !== 0
+			(!isFullyTransparent(parentStyle.color) ||
+				filter ||
+				hasWebkitStroke) &&
+			opacity !== 0
 				? `<g ${
 						overflowMaskId ? `mask="url(#${overflowMaskId})"` : ''
 				  } ${clipPathId ? `clip-path="url(#${clipPathId})"` : ''}>` +
+				  fauxBoldBgPath +
 				  buildXMLString('path', {
 						d: mergedPath,
 						fill: fillColor,
 						opacity: opacity !== 1 ? opacity : undefined,
 						'paint-order':
-							hasWebkitStroke || hasFauxBold
+							hasWebkitStroke || needsFauxBold
 								? 'stroke'
 								: undefined,
-						stroke: hasWebkitStroke
+						stroke: bothActive
+							? fillColor
+							: hasWebkitStroke
 							? inheritedStyle.WebkitTextStrokeColor
-							: hasFauxBold
+							: needsFauxBold
 							? fillColor
 							: undefined,
 						'stroke-linejoin':
-							hasWebkitStroke || hasFauxBold
+							hasWebkitStroke && !bothActive
 								? 'round'
+								: needsFauxBold
+								? 'miter'
 								: undefined,
-						'stroke-width': hasWebkitStroke
+						'stroke-width': bothActive
+							? `${engine.fauxBoldStrokeWidth}`
+							: hasWebkitStroke
 							? `${inheritedStyle.WebkitTextStrokeWidth}px`
-							: hasFauxBold
+							: needsFauxBold
 							? `${engine.fauxBoldStrokeWidth}`
 							: undefined,
 						style: cssFilter ? `filter:${cssFilter}` : undefined,
