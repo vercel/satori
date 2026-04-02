@@ -50,6 +50,7 @@ export type FontEngine = {
 		},
 		band?: SkipInkBand
 	) => { path: string; boxes: GlyphBox[] };
+	fauxBoldStrokeWidth?: number;
 };
 
 type BandPoint = [number, number];
@@ -341,7 +342,7 @@ export default class FontLoader {
 			}
 		}
 
-		return matchedFont[0];
+		return { font: matchedFont[0], weight: matchedFont[1] };
 	}
 
 	public addFonts(fontOptions: FontOptions[]) {
@@ -425,7 +426,9 @@ export default class FontLoader {
 		fontFamily = (
 			Array.isArray(fontFamily) ? fontFamily : [fontFamily]
 		).map(name => name.toLowerCase());
-		const fonts = [];
+		let fonts = [];
+		let primaryMatchedWeight: Weight | undefined;
+
 		fontFamily.forEach(face => {
 			const getNormal = this.get({
 				name: face,
@@ -433,7 +436,10 @@ export default class FontLoader {
 				style: fontStyle
 			});
 			if (getNormal) {
-				fonts.push(getNormal);
+				fonts.push(getNormal.font);
+				if (fonts.length === 1) {
+					primaryMatchedWeight = getNormal.weight;
+				}
 				return;
 			}
 
@@ -444,7 +450,10 @@ export default class FontLoader {
 			});
 
 			if (getUnknown) {
-				fonts.push(getUnknown);
+				fonts.push(getUnknown.font);
+				if (fonts.length === 1) {
+					primaryMatchedWeight = getUnknown.weight;
+				}
 				return;
 			}
 		});
@@ -454,13 +463,26 @@ export default class FontLoader {
 		const specifiedLangFonts = [];
 		const nonSpecifiedLangFonts = [];
 		const additionalFonts = [];
+		const pushFallback = (
+			arr: opentype.Font[],
+			result: { font: opentype.Font; weight: Weight | undefined } | null
+		) => {
+			if (!result) {
+				return;
+			}
+			arr.push(result.font);
+			if (primaryMatchedWeight === undefined) {
+				primaryMatchedWeight = result.weight;
+			}
+		};
 		for (const name of keys) {
 			if (fontFamily.includes(name)) continue;
 			if (locale) {
 				const lang = getLangFromFontName(name);
 				if (lang) {
 					if (lang === locale) {
-						specifiedLangFonts.push(
+						pushFallback(
+							specifiedLangFonts,
 							this.get({
 								name,
 								weight: fontWeight,
@@ -468,7 +490,8 @@ export default class FontLoader {
 							})
 						);
 					} else {
-						nonSpecifiedLangFonts.push(
+						pushFallback(
+							nonSpecifiedLangFonts,
 							this.get({
 								name,
 								weight: fontWeight,
@@ -477,7 +500,8 @@ export default class FontLoader {
 						);
 					}
 				} else {
-					additionalFonts.push(
+					pushFallback(
+						additionalFonts,
 						this.get({
 							name,
 							weight: fontWeight,
@@ -486,7 +510,8 @@ export default class FontLoader {
 					);
 				}
 			} else {
-				additionalFonts.push(
+				pushFallback(
+					additionalFonts,
 					this.get({
 						name,
 						weight: fontWeight,
@@ -567,7 +592,24 @@ export default class FontLoader {
 			return resolveFont(s, false);
 		};
 
+		// Compute faux bold stroke width when requested weight exceeds available weight.
+		let fauxBoldStrokeWidth: number | undefined;
+		const normalizedWeight =
+			fontWeight === 'bold'
+				? 700
+				: fontWeight === 'normal'
+				? 400
+				: Number(fontWeight);
+		if (
+			normalizedWeight >= 600 &&
+			(!primaryMatchedWeight || primaryMatchedWeight < 600)
+		) {
+			const weightDiff = normalizedWeight - (primaryMatchedWeight || 400);
+			fauxBoldStrokeWidth = fontSize * 0.02 * (weightDiff / 300);
+		}
+
 		const engine = {
+			fauxBoldStrokeWidth,
 			has: (s: string) => {
 				if (s === '\n') return true;
 				const font = resolve(s);

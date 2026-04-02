@@ -57,6 +57,7 @@ export default function buildText(
 		image,
 		clipPathId,
 		debug,
+		fauxBoldStrokeWidth,
 		shape,
 		decorationShape
 	}: {
@@ -72,6 +73,7 @@ export default function buildText(
 		image: string | null;
 		clipPathId?: string;
 		debug?: boolean;
+		fauxBoldStrokeWidth?: number;
 		shape?: boolean;
 		decorationShape?: string;
 	},
@@ -119,6 +121,8 @@ export default function buildText(
 	}
 
 	// Do not embed the font, use <text> with the raw content instead.
+	const hasWebkitStroke = !!style.WebkitTextStrokeWidth;
+	const hasFauxBold = !hasWebkitStroke && fauxBoldStrokeWidth !== undefined;
 	const shapeProps = {
 		x: left,
 		y: top,
@@ -132,14 +136,18 @@ export default function buildText(
 		transform: matrix || undefined,
 		'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
 		style: style.filter ? `filter:${style.filter}` : undefined,
-		'stroke-width': style.WebkitTextStrokeWidth
+		'stroke-width': hasWebkitStroke
 			? `${style.WebkitTextStrokeWidth}px`
+			: hasFauxBold
+			? `${fauxBoldStrokeWidth}`
 			: undefined,
-		stroke: style.WebkitTextStrokeWidth
+		stroke: hasWebkitStroke
 			? style.WebkitTextStrokeColor
+			: hasFauxBold
+			? style.color
 			: undefined,
-		'stroke-linejoin': style.WebkitTextStrokeWidth ? 'round' : undefined,
-		'paint-order': style.WebkitTextStrokeWidth ? 'stroke' : undefined
+		'stroke-linejoin': hasWebkitStroke || hasFauxBold ? 'round' : undefined,
+		'paint-order': hasWebkitStroke || hasFauxBold ? 'stroke' : undefined
 	};
 	return [
 		(filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +

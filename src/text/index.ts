@@ -860,6 +860,7 @@ export default async function* buildTextNodes(
 					image,
 					clipPathId,
 					debug,
+					fauxBoldStrokeWidth: engine.fauxBoldStrokeWidth,
 					shape: !!_inheritedBackgroundClipTextPath
 				},
 				parentStyle
@@ -897,35 +898,46 @@ export default async function* buildTextNodes(
 
 	// Embed the font as path.
 	if (mergedPath) {
+		const hasWebkitStroke = !!inheritedStyle.WebkitTextStrokeWidth;
+		const hasFauxBold =
+			!hasWebkitStroke && engine.fauxBoldStrokeWidth !== undefined;
+		const fillColor =
+			filter &&
+			(isFullyTransparent(parentStyle.color) ||
+				(_inheritedBackgroundClipTextHasBackground &&
+					isOpaqueWhite(parentStyle.color)))
+				? 'black'
+				: parentStyle.color;
+
 		const p =
 			(!isFullyTransparent(parentStyle.color) || filter) && opacity !== 0
 				? `<g ${
 						overflowMaskId ? `mask="url(#${overflowMaskId})"` : ''
 				  } ${clipPathId ? `clip-path="url(#${clipPathId})"` : ''}>` +
 				  buildXMLString('path', {
-						fill:
-							filter &&
-							(isFullyTransparent(parentStyle.color) ||
-								(_inheritedBackgroundClipTextHasBackground &&
-									isOpaqueWhite(parentStyle.color)))
-								? 'black'
-								: parentStyle.color,
 						d: mergedPath,
-						transform: matrix ? matrix : undefined,
+						fill: fillColor,
 						opacity: opacity !== 1 ? opacity : undefined,
-						style: cssFilter ? `filter:${cssFilter}` : undefined,
-						'stroke-width': inheritedStyle.WebkitTextStrokeWidth
-							? `${inheritedStyle.WebkitTextStrokeWidth}px`
-							: undefined,
-						stroke: inheritedStyle.WebkitTextStrokeWidth
+						'paint-order':
+							hasWebkitStroke || hasFauxBold
+								? 'stroke'
+								: undefined,
+						stroke: hasWebkitStroke
 							? inheritedStyle.WebkitTextStrokeColor
+							: hasFauxBold
+							? fillColor
 							: undefined,
-						'stroke-linejoin': inheritedStyle.WebkitTextStrokeWidth
-							? 'round'
+						'stroke-linejoin':
+							hasWebkitStroke || hasFauxBold
+								? 'round'
+								: undefined,
+						'stroke-width': hasWebkitStroke
+							? `${inheritedStyle.WebkitTextStrokeWidth}px`
+							: hasFauxBold
+							? `${engine.fauxBoldStrokeWidth}`
 							: undefined,
-						'paint-order': inheritedStyle.WebkitTextStrokeWidth
-							? 'stroke'
-							: undefined
+						style: cssFilter ? `filter:${cssFilter}` : undefined,
+						transform: matrix ? matrix : undefined
 				  }) +
 				  '</g>'
 				: '';
