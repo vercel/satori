@@ -260,6 +260,34 @@ describe('backdrop-filter', () => {
 			expect(svg).toContain('feComponentTransfer');
 			expect(svg).toContain('slope="1.5"');
 		});
+
+		it('should support brightness with percentage format', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'brightness(200%)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			expect(svg).toContain('feComponentTransfer');
+			expect(svg).toContain('slope="2"');
+		});
 	});
 
 	describe('contrast', () => {
@@ -290,6 +318,36 @@ describe('backdrop-filter', () => {
 			expect(svg).toContain('feComponentTransfer');
 			expect(svg).toContain('slope="2"');
 			expect(svg).toContain('intercept="-0.5"');
+		});
+
+		it('should support contrast with percentage format', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'contrast(150%)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			expect(svg).toContain('feComponentTransfer');
+			expect(svg).toContain('slope="1.5"');
+			// intercept = -(0.5 * 1.5) + 0.5 = -0.25
+			expect(svg).toContain('intercept="-0.25"');
 		});
 	});
 
@@ -383,6 +441,419 @@ describe('backdrop-filter', () => {
 		});
 	});
 
+	describe('sepia', () => {
+		it('should support sepia filter', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'sepia(1)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			expect(svg).toContain('feColorMatrix');
+			expect(svg).toContain('type="matrix"');
+			// Full sepia coefficients for amount=1.
+			expect(svg).toContain('0.393');
+			expect(svg).toContain('0.769');
+			expect(svg).toContain('0.189');
+		});
+
+		it('should support sepia with percentage format', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'sepia(100%)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			expect(svg).toContain('feColorMatrix');
+			expect(svg).toContain('type="matrix"');
+			expect(svg).toContain('0.393');
+		});
+
+		it('should support partial sepia', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'sepia(0.5)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			expect(svg).toContain('feColorMatrix');
+			expect(svg).toContain('type="matrix"');
+			// At 50%: first coefficient = 0.393 + 0.607 * 0.5 = 0.6965
+			expect(svg).toContain('0.6965');
+		});
+
+		it('should clamp sepia values above 1.0', async () => {
+			const svgClamped = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'sepia(2)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			const svgFull = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'sepia(1)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			// sepia(2) should clamp to sepia(1) — same matrix values.
+			expect(svgClamped).toContain('0.393');
+			expect(svgFull).toContain('0.393');
+		});
+	});
+
+	describe('hue-rotate', () => {
+		it('should support hue-rotate filter', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'hue-rotate(90deg)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			expect(svg).toContain('feColorMatrix');
+			expect(svg).toContain('type="hueRotate"');
+			expect(svg).toContain('values="90"');
+		});
+
+		it('should support hue-rotate with decimal degrees', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'hue-rotate(45.5deg)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			expect(svg).toContain('feColorMatrix');
+			expect(svg).toContain('type="hueRotate"');
+			expect(svg).toContain('values="45.5"');
+		});
+	});
+
+	describe('invert', () => {
+		it('should support invert filter', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'invert(1)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			expect(svg).toContain('feComponentTransfer');
+			expect(svg).toContain('type="table"');
+			expect(svg).toContain('tableValues="1 0"');
+		});
+
+		it('should support invert with percentage format', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'invert(100%)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			expect(svg).toContain('feComponentTransfer');
+			expect(svg).toContain('type="table"');
+			expect(svg).toContain('tableValues="1 0"');
+		});
+
+		it('should support partial invert', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'invert(0.5)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			expect(svg).toContain('feComponentTransfer');
+			expect(svg).toContain('type="table"');
+			expect(svg).toContain('tableValues="0.5 0.5"');
+		});
+
+		it('should clamp invert values above 1.0', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'invert(2)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			// Math.min(2, 1) = 1, so tableValues = "1 0"
+			expect(svg).toContain('feComponentTransfer');
+			expect(svg).toContain('type="table"');
+			expect(svg).toContain('tableValues="1 0"');
+		});
+	});
+
+	describe('opacity', () => {
+		it('should support opacity filter', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'opacity(0.5)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			expect(svg).toContain('feComponentTransfer');
+			expect(svg).toContain('feFuncA');
+			expect(svg).toContain('tableValues="0 0.5"');
+		});
+
+		it('should support opacity with percentage format', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'opacity(50%)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			expect(svg).toContain('feComponentTransfer');
+			expect(svg).toContain('feFuncA');
+			expect(svg).toContain('tableValues="0 0.5"');
+		});
+
+		it('should support full opacity', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'opacity(1)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			expect(svg).toContain('feComponentTransfer');
+			expect(svg).toContain('feFuncA');
+			expect(svg).toContain('tableValues="0 1"');
+		});
+	});
+
 	describe('multi-filter chaining', () => {
 		it('should chain blur and saturate filters via pipeline', async () => {
 			const svg = await satori(
@@ -417,6 +888,76 @@ describe('backdrop-filter', () => {
 			// feComposite should be present because blur is in the chain.
 			expect(svg).toContain('feComposite');
 			expect(svg).toContain('operator="atop"');
+		});
+
+		it('should chain blur and sepia filters via pipeline', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'blur(5px) sepia(0.8)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			// Both filter primitives should be present.
+			expect(svg).toContain('feGaussianBlur');
+			expect(svg).toContain('feColorMatrix');
+			expect(svg).toContain('type="matrix"');
+			// Sepia should read from blur's output (pipeline chaining).
+			expect(svg).toContain('in="satori_bfblur"');
+			// feComposite should be present because blur is in the chain.
+			expect(svg).toContain('feComposite');
+			expect(svg).toContain('operator="atop"');
+		});
+
+		it('should chain invert and hue-rotate without feComposite', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						background: 'blue',
+						display: 'flex',
+						height: 100,
+						position: 'relative',
+						width: 100
+					}}
+				>
+					<div
+						style={{
+							backdropFilter: 'invert(1) hue-rotate(180deg)',
+							height: 50,
+							position: 'absolute',
+							top: 0,
+							width: 100
+						}}
+					/>
+				</div>,
+				{ fonts, height: 100, width: 100 }
+			);
+
+			// Both primitives should be present.
+			expect(svg).toContain('feComponentTransfer');
+			expect(svg).toContain('tableValues="1 0"');
+			expect(svg).toContain('type="hueRotate"');
+			expect(svg).toContain('values="180"');
+			// Invert should read from hue-rotate's output (pipeline chaining).
+			expect(svg).toContain('in="satori_bfhue"');
+			// feComposite should NOT be present (no blur in the chain).
+			expect(svg).not.toContain('feComposite');
 		});
 
 		it('should chain brightness and contrast without feComposite', async () => {
@@ -494,7 +1035,7 @@ describe('backdrop-filter', () => {
 				>
 					<div
 						style={{
-							backdropFilter: 'sepia(1)',
+							backdropFilter: 'drop-shadow(2px 2px 4px black)',
 							height: 50,
 							position: 'absolute',
 							top: 0,

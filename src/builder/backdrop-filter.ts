@@ -91,10 +91,13 @@ const parseFilterValue = (value: string): string => {
 		lastResult = result;
 	}
 
-	// brightness(N)
-	const brightnessMatch = value.match(/brightness\(([\d.]+)\)/);
+	// brightness(N) or brightness(N%)
+	const brightnessMatch = value.match(/brightness\(([\d.]+)(%?)\)/);
 	if (brightnessMatch) {
-		const val = parseFloat(brightnessMatch[1]);
+		const val =
+			brightnessMatch[2] === '%'
+				? parseFloat(brightnessMatch[1]) / 100
+				: parseFloat(brightnessMatch[1]);
 		const result = 'satori_bfbri';
 		primitives += buildXMLString(
 			'feComponentTransfer',
@@ -106,10 +109,13 @@ const parseFilterValue = (value: string): string => {
 		lastResult = result;
 	}
 
-	// contrast(N)
-	const contrastMatch = value.match(/contrast\(([\d.]+)\)/);
+	// contrast(N) or contrast(N%)
+	const contrastMatch = value.match(/contrast\(([\d.]+)(%?)\)/);
 	if (contrastMatch) {
-		const val = parseFloat(contrastMatch[1]);
+		const val =
+			contrastMatch[2] === '%'
+				? parseFloat(contrastMatch[1]) / 100
+				: parseFloat(contrastMatch[1]);
 		const intercept = -(0.5 * val) + 0.5;
 		const result = 'satori_bfcon';
 		primitives += buildXMLString(
@@ -148,6 +154,101 @@ const parseFilterValue = (value: string): string => {
 			type: 'saturate',
 			values: 1 - Math.min(val, 1)
 		});
+		lastResult = result;
+	}
+
+	// sepia(N) or sepia(N%)
+	const sepiaMatch = value.match(/sepia\(([\d.]+)(%?)\)/);
+	if (sepiaMatch) {
+		const raw =
+			sepiaMatch[2] === '%'
+				? parseFloat(sepiaMatch[1]) / 100
+				: parseFloat(sepiaMatch[1]);
+		const s = Math.min(raw, 1);
+		const result = 'satori_bfsep';
+		// W3C sepia matrix interpolated with identity by (1 - amount).
+		const m = [
+			0.393 + 0.607 * (1 - s),
+			0.769 - 0.769 * (1 - s),
+			0.189 - 0.189 * (1 - s),
+			0,
+			0,
+			0.349 - 0.349 * (1 - s),
+			0.686 + 0.314 * (1 - s),
+			0.168 - 0.168 * (1 - s),
+			0,
+			0,
+			0.272 - 0.272 * (1 - s),
+			0.534 - 0.534 * (1 - s),
+			0.131 + 0.869 * (1 - s),
+			0,
+			0,
+			0,
+			0,
+			0,
+			1,
+			0
+		];
+		primitives += buildXMLString('feColorMatrix', {
+			in: lastResult,
+			result,
+			type: 'matrix',
+			values: m.join(' ')
+		});
+		lastResult = result;
+	}
+
+	// hue-rotate(Ndeg)
+	const hueRotateMatch = value.match(/hue-rotate\(([\d.]+)deg\)/);
+	if (hueRotateMatch) {
+		const degrees = parseFloat(hueRotateMatch[1]);
+		const result = 'satori_bfhue';
+		primitives += buildXMLString('feColorMatrix', {
+			in: lastResult,
+			result,
+			type: 'hueRotate',
+			values: degrees
+		});
+		lastResult = result;
+	}
+
+	// invert(N) or invert(N%)
+	const invertMatch = value.match(/invert\(([\d.]+)(%?)\)/);
+	if (invertMatch) {
+		const raw =
+			invertMatch[2] === '%'
+				? parseFloat(invertMatch[1]) / 100
+				: parseFloat(invertMatch[1]);
+		const val = Math.min(raw, 1);
+		const result = 'satori_bfinv';
+		const tableValues = `${val} ${1 - val}`;
+		primitives += buildXMLString(
+			'feComponentTransfer',
+			{ in: lastResult, result },
+			buildXMLString('feFuncR', { tableValues, type: 'table' }) +
+				buildXMLString('feFuncG', { tableValues, type: 'table' }) +
+				buildXMLString('feFuncB', { tableValues, type: 'table' })
+		);
+		lastResult = result;
+	}
+
+	// opacity(N) or opacity(N%)
+	const opacityMatch = value.match(/opacity\(([\d.]+)(%?)\)/);
+	if (opacityMatch) {
+		const raw =
+			opacityMatch[2] === '%'
+				? parseFloat(opacityMatch[1]) / 100
+				: parseFloat(opacityMatch[1]);
+		const val = Math.min(raw, 1);
+		const result = 'satori_bfopa';
+		primitives += buildXMLString(
+			'feComponentTransfer',
+			{ in: lastResult, result },
+			buildXMLString('feFuncA', {
+				tableValues: `0 ${val}`,
+				type: 'table'
+			})
+		);
 		lastResult = result;
 	}
 
@@ -190,9 +291,12 @@ export const buildBackdropFilter = (
 	const clipId = `satori_bfc-${id}`;
 
 	// Filter definition with generous region for blur overflow.
+	// CSS filters operate in sRGB; SVG defaults to linearRGB which distorts
+	// brightness, contrast, and blur blending.
 	const filterDef = buildXMLString(
 		'filter',
 		{
+			'color-interpolation-filters': 'sRGB',
 			height: '200%',
 			id: filterId,
 			width: '200%',
