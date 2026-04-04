@@ -277,9 +277,11 @@ export default async function backgroundImage(
 	}
 
 	if (image.startsWith('url(')) {
-		const [src, imageWidth, imageHeight] = await resolveImageData(
-			image.slice(4, -1)
-		);
+		const imageSrc = image.slice(4, -1);
+		if (!imageSrc) {
+			return [];
+		}
+		const [src, imageWidth, imageHeight] = await resolveImageData(imageSrc);
 
 		let resolvedWidth: number;
 		let resolvedHeight: number;
