@@ -102,7 +102,11 @@ const parseFilterValue = (value: string): string => {
 		const result = 'satori_bfbri';
 		primitives += buildXMLString(
 			'feComponentTransfer',
-			{ 'color-interpolation-filters': 'sRGB', in: lastResult, result },
+			{
+				'color-interpolation-filters': 'sRGB',
+				in: lastResult,
+				result
+			},
 			buildXMLString('feFuncR', { slope: val, type: 'linear' }) +
 				buildXMLString('feFuncG', { slope: val, type: 'linear' }) +
 				buildXMLString('feFuncB', { slope: val, type: 'linear' })
@@ -121,7 +125,11 @@ const parseFilterValue = (value: string): string => {
 		const result = 'satori_bfcon';
 		primitives += buildXMLString(
 			'feComponentTransfer',
-			{ 'color-interpolation-filters': 'sRGB', in: lastResult, result },
+			{
+				'color-interpolation-filters': 'sRGB',
+				in: lastResult,
+				result
+			},
 			buildXMLString('feFuncR', {
 				intercept,
 				slope: val,
@@ -228,7 +236,11 @@ const parseFilterValue = (value: string): string => {
 		const tableValues = `${val} ${1 - val}`;
 		primitives += buildXMLString(
 			'feComponentTransfer',
-			{ 'color-interpolation-filters': 'sRGB', in: lastResult, result },
+			{
+				'color-interpolation-filters': 'sRGB',
+				in: lastResult,
+				result
+			},
 			buildXMLString('feFuncR', { tableValues, type: 'table' }) +
 				buildXMLString('feFuncG', { tableValues, type: 'table' }) +
 				buildXMLString('feFuncB', { tableValues, type: 'table' })

@@ -6,7 +6,7 @@ This fork extends the [original Satori](https://github.com/vercel/satori) with t
 
 - **`background-position` with keyword sizes** — correct positioning when combined with `background-size: cover`, `contain`, or `auto`
 - **`mix-blend-mode`** — full support
-- **`backdrop-filter`** — simulated via SVG filter primitives (`blur`, `saturate`, `brightness`, `contrast`, `grayscale`). Uses `<use>` to reference background content with `feGaussianBlur` and `feOffset` edge-extension for consistent blur without transparent edges. Supports `mask-image` for blurred fades and `border-radius` on the clip path
+- **`backdrop-filter`** — simulated via SVG filter primitives (`blur`, `brightness`, `contrast`, `grayscale`, `hue-rotate`, `invert`, `opacity`, `saturate`, `sepia`). Uses `<use>` to reference background content with `feGaussianBlur` and `feOffset` edge-extension for consistent blur without transparent edges. Color-sensitive filters use `color-interpolation-filters="sRGB"` to match browser rendering. Supports `mask-image` for blurred fades and `border-radius` on the clip path
 - **Faux bold (synthetic bold)** — when only a regular weight font (e.g., 400) is loaded and bold text is requested (e.g., `fontWeight: 700`), glyphs are automatically thickened using an SVG stroke matching the fill color, replicating browser font synthesis. Stroke width scales with the weight difference. Explicit `-webkit-text-stroke` takes precedence
 
 ## Overview
