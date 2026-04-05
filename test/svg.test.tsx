@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('SVG', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('svg', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	it('should render svg nodes', async () => {
 		const svg = await satori(
@@ -94,7 +96,7 @@ describe('SVG', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should parse viewBox correctly', async () => {
+	it('should parse viewbox correctly', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -156,7 +158,7 @@ describe('SVG', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support currentColor for svg fill', async () => {
+	it('should support currentcolor for svg fill', async () => {
 		const svg = await satori(
 			<svg
 				width='40'
@@ -178,7 +180,7 @@ describe('SVG', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support currentColor for svg stroke', async () => {
+	it('should support currentcolor for svg stroke', async () => {
 		const svg = await satori(
 			<svg
 				viewBox='0 0 20 10'
@@ -198,7 +200,7 @@ describe('SVG', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support currentColor when color is set on parent element', async () => {
+	it('should support currentcolor when color is set on parent element', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -228,7 +230,7 @@ describe('SVG', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should render svg prefer size props rather than viewBox', async () => {
+	it('should render svg prefer size props rather than viewbox', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -256,7 +258,7 @@ describe('SVG', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support currentColor when used on svg nodes', async () => {
+	it('should support currentcolor when used on svg nodes', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -287,7 +289,7 @@ describe('SVG', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should render svg without viewBox', async () => {
+	it('should render svg without viewbox', async () => {
 		const svg = await satori(
 			<div
 				style={{

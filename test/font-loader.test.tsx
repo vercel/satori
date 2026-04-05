@@ -7,7 +7,7 @@ import { toImage } from './utils.js';
 
 let fontData: Buffer;
 
-describe('fontLoader', () => {
+describe('fonts config', () => {
 	beforeAll(async () => {
 		const fontPath = join(
 			process.cwd(),
@@ -19,7 +19,7 @@ describe('fontLoader', () => {
 		fontData = await readFile(fontPath);
 	});
 
-	it('should detect and load fonts via fontLoader', async () => {
+	it('should detect and load fonts via fonts.load', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -34,43 +34,8 @@ describe('fontLoader', () => {
 			{
 				width: 200,
 				height: 100,
-				fonts: [],
-				fontLoader: {
-					load: async font => {
-						if (font.key === 'roboto') {
-							return {
-								data: fontData,
-								name: font.family,
-								style: 'normal',
-								weight: font.weight
-							};
-						}
-
-						return null;
-					}
-				}
-			}
-		);
-		expect(toImage(svg, 200)).toMatchImageSnapshot();
-	});
-
-	it('should use fallbackFont when no fontFamily in element', async () => {
-		const svg = await satori(
-			<div
-				style={{
-					display: 'flex',
-					height: '100%',
-					width: '100%'
-				}}
-			>
-				Fallback font
-			</div>,
-			{
-				width: 200,
-				height: 100,
-				fonts: [],
-				fontLoader: {
-					fallbackFont: {
+				fonts: {
+					defaultFont: {
 						family: 'Roboto',
 						key: 'roboto',
 						weight: 400
@@ -93,7 +58,45 @@ describe('fontLoader', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('should resolve aliases via fontLoader config', async () => {
+	it('should use defaultfont when no fontfamily in element', async () => {
+		const svg = await satori(
+			<div
+				style={{
+					display: 'flex',
+					height: '100%',
+					width: '100%'
+				}}
+			>
+				Fallback font
+			</div>,
+			{
+				width: 200,
+				height: 100,
+				fonts: {
+					defaultFont: {
+						family: 'Roboto',
+						key: 'roboto',
+						weight: 400
+					},
+					load: async font => {
+						if (font.key === 'roboto') {
+							return {
+								data: fontData,
+								name: font.family,
+								style: 'normal',
+								weight: font.weight
+							};
+						}
+
+						return null;
+					}
+				}
+			}
+		);
+		expect(toImage(svg, 200)).toMatchImageSnapshot();
+	});
+
+	it('should resolve aliases', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -108,9 +111,13 @@ describe('fontLoader', () => {
 			{
 				width: 200,
 				height: 100,
-				fonts: [],
-				fontLoader: {
+				fonts: {
 					aliases: { 'ui-sans-serif': 'roboto' },
+					defaultFont: {
+						family: 'Roboto',
+						key: 'roboto',
+						weight: 400
+					},
 					load: async font => {
 						if (font.key === 'roboto') {
 							return {
@@ -129,7 +136,7 @@ describe('fontLoader', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('should merge fontLoader detected fonts with explicit fonts', async () => {
+	it('should load multiple fonts from element tree', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -140,32 +147,25 @@ describe('fontLoader', () => {
 					width: '100%'
 				}}
 			>
-				<span>Explicit font</span>
-				<span style={{ fontFamily: 'CustomFont' }}>Detected font</span>
+				<span>First font</span>
+				<span style={{ fontFamily: 'CustomFont' }}>Second font</span>
 			</div>,
 			{
 				width: 200,
 				height: 100,
-				fonts: [
-					{
-						data: fontData,
-						name: 'CustomFont',
-						style: 'normal',
+				fonts: {
+					defaultFont: {
+						family: 'Roboto',
+						key: 'roboto',
 						weight: 400
-					}
-				],
-				fontLoader: {
+					},
 					load: async font => {
-						if (font.key === 'roboto') {
-							return {
-								data: fontData,
-								name: font.family,
-								style: 'normal',
-								weight: font.weight
-							};
-						}
-
-						return null;
+						return {
+							data: fontData,
+							name: font.family,
+							style: 'normal',
+							weight: font.weight
+						};
 					}
 				}
 			}
@@ -173,7 +173,7 @@ describe('fontLoader', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('should work with tailwind and fontLoader together', async () => {
+	it('should work with tailwind and fonts together', async () => {
 		const svg = await satori(
 			<div className='flex w-full h-full bg-blue-500 font-sans'>
 				Tailwind + fontLoader
@@ -181,9 +181,8 @@ describe('fontLoader', () => {
 			{
 				width: 200,
 				height: 100,
-				fonts: [],
-				fontLoader: {
-					fallbackFont: {
+				fonts: {
+					defaultFont: {
 						family: 'Roboto',
 						key: 'roboto',
 						weight: 400

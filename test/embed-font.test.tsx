@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('embedFont: false', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('embedfont: false', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	it('should have consistent x positions for multi-line text', async () => {
 		// This test verifies that when embedFont is false, consecutive text elements

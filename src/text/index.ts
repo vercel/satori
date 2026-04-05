@@ -114,7 +114,7 @@ const buildTextNodes = async function* (
 		embedFont,
 		graphemeImages,
 		locale,
-		canLoadAdditionalAssets
+		canLoadMissingFonts
 	} = context;
 
 	const {
@@ -153,7 +153,7 @@ const buildTextNodes = async function* (
 	let engine = font.getEngine(fontSize, lineHeight, parentStyle, locale);
 
 	// Yield segments that are missing a font.
-	const wordsMissingFont = canLoadAdditionalAssets
+	const wordsMissingFont = canLoadMissingFonts
 		? segment(processedContent, 'grapheme').filter(word => {
 				return (
 					!shouldSkipWhenFindingMissingFont(word) && !engine.has(word)

@@ -1,4 +1,4 @@
-export type { DetectedFont, FontLoaderConfig } from './fonts/index.js';
+export type { DetectedFont, FontsConfig } from './fonts/index.js';
 export type { Locale } from './language.js';
 export type {
 	FontOptions as Font,

@@ -1,13 +1,15 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Text Indent', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('text indent', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
-	it('Should work correctly with positive pixel indent', async () => {
+	it('should work correctly with positive pixel indent', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -40,7 +42,7 @@ describe('Text Indent', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly with negative indent (hanging indent)', async () => {
+	it('should work correctly with negative indent (hanging indent)', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -74,7 +76,7 @@ describe('Text Indent', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly with percentage value', async () => {
+	it('should work correctly with percentage value', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -107,7 +109,7 @@ describe('Text Indent', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly with em units', async () => {
+	it('should work correctly with em units', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -140,7 +142,7 @@ describe('Text Indent', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly with text-align: center', async () => {
+	it('should work correctly with text-align: center', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -173,7 +175,7 @@ describe('Text Indent', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly with text-align: right', async () => {
+	it('should work correctly with text-align: right', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -207,7 +209,7 @@ describe('Text Indent', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly with text-align: justify', async () => {
+	it('should work correctly with text-align: justify', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -241,7 +243,7 @@ describe('Text Indent', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly with single line text', async () => {
+	it('should work correctly with single line text', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -273,7 +275,7 @@ describe('Text Indent', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should inherit from parent', async () => {
+	it('should inherit from parent', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -305,7 +307,7 @@ describe('Text Indent', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should override inherited value', async () => {
+	it('should override inherited value', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -339,7 +341,7 @@ describe('Text Indent', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly with zero indent', async () => {
+	it('should work correctly with zero indent', async () => {
 		const svg = await satori(
 			<div
 				style={{

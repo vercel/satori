@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
 describe('white-space', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	describe('normal', () => {
 		it('should not render extra spaces with `white-space: normal`', async () => {
@@ -69,7 +71,7 @@ describe('white-space', () => {
 			expect(toImage(svg, 20)).toMatchImageSnapshot();
 		});
 
-		it('Should have line break before fast.!!!!!!!!!!!!!!!!!', async () => {
+		it('should have line break before fast.!!!!!!!!!!!!!!!!!', async () => {
 			const svg = await satori(
 				<div
 					style={{

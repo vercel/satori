@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { buildCss, initCompiler } from '../../src/tw/compiler.js';
 
 describe('tw/compiler', () => {
-	describe('buildCss before init', () => {
+	describe('buildcss before init', () => {
 		it('should throw when compiler not initialized', () => {
 			try {
 				buildCss(['flex']);
@@ -30,14 +30,14 @@ describe('tw/compiler', () => {
 			expect(true).toEqual(true);
 		});
 
-		it('should return CSS containing @layer utilities for valid classes', () => {
+		it('should return css containing @layer utilities for valid classes', () => {
 			const css = buildCss(['flex']);
 			expect(css).toContain('@layer utilities');
 			expect(css).toContain('display');
 			expect(css).toContain('flex');
 		});
 
-		it('should build CSS for multiple utility classes', () => {
+		it('should build css for multiple utility classes', () => {
 			const css = buildCss(['flex', 'p-4', 'text-red-500']);
 			expect(css).toContain('@layer utilities');
 			expect(css).toContain('display');

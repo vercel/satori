@@ -19,7 +19,7 @@ const extractAttr = (xml: string, tag: string, attr: string): string | null => {
 };
 
 describe('src/builder/background-image', () => {
-	describe('parsePositionValues', () => {
+	describe('parsepositionvalues', () => {
 		it('should default to 0% 0% for empty string', () => {
 			expect(parsePositionValues('')).toEqual({ x: '0%', y: '0%' });
 		});
@@ -114,7 +114,7 @@ describe('src/builder/background-image', () => {
 		});
 	});
 
-	describe('computeBgPositionOffset', () => {
+	describe('computebgpositionoffset', () => {
 		it('should compute offset for 50% (center) with cover', () => {
 			// Container: 200x100, Image scaled: 200x150 (cover)
 			// Y: (100 - 150) * 0.5 = -25
@@ -162,7 +162,7 @@ describe('src/builder/background-image', () => {
 		});
 	});
 
-	describe('backgroundImage', () => {
+	describe('backgroundimage', () => {
 		const defaultParams = {
 			height: 100,
 			id: 'test',
@@ -884,7 +884,7 @@ describe('src/builder/background-image', () => {
 				});
 			});
 
-			it('should return correct pattern ID', async () => {
+			it('should return correct pattern id', async () => {
 				vi.mocked(resolveImageData).mockResolvedValue([
 					mockSrc,
 					100,
@@ -993,7 +993,7 @@ describe('src/builder/background-image', () => {
 				expect(extractAttr(result[1], 'rect', 'width')).toEqual('200');
 			});
 
-			it('should return correct pattern ID for color', async () => {
+			it('should return correct pattern id for color', async () => {
 				const result = await backgroundImage(
 					defaultParams,
 					{
@@ -1013,7 +1013,7 @@ describe('src/builder/background-image', () => {
 		describe('linear gradients', () => {
 			const gradient = 'linear-gradient(to right, red, blue)';
 
-			it('should return gradient pattern ID and contain gradient elements', async () => {
+			it('should return gradient pattern id and contain gradient elements', async () => {
 				const result = await backgroundImage(
 					defaultParams,
 					{

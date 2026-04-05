@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { detectFonts } from '../../src/fonts/detection.js';
 
 describe('fonts/detection', () => {
-	describe('detectFonts', () => {
+	describe('detectfonts', () => {
 		it('should return detected font with specified family and weight', () => {
 			const element = createElement('div', {
 				style: { fontFamily: 'Roboto', fontWeight: 700 }
@@ -15,7 +15,7 @@ describe('fonts/detection', () => {
 			]);
 		});
 
-		it('should default weight to 400 when fontWeight not specified', () => {
+		it('should default weight to 400 when fontweight not specified', () => {
 			const element = createElement('div', {
 				style: { fontFamily: 'Roboto' }
 			});
@@ -25,23 +25,23 @@ describe('fonts/detection', () => {
 			]);
 		});
 
-		it('should return fallbackFont when no fonts detected', () => {
+		it('should return defaultfont when no fonts detected', () => {
 			const element = createElement('div', {});
 
 			expect(
 				detectFonts(element, {
-					fallbackFont: { family: 'Inter', key: 'inter', weight: 400 }
+					defaultFont: { family: 'Inter', key: 'inter', weight: 400 }
 				})
 			).toEqual([{ family: 'Inter', key: 'inter', weight: 400 }]);
 		});
 
-		it('should return empty array when no fonts detected and no fallbackFont', () => {
+		it('should return empty array when no fonts detected and no defaultfont', () => {
 			const element = createElement('div', {});
 
 			expect(detectFonts(element)).toEqual([]);
 		});
 
-		it('should inherit fontFamily from parent to child', () => {
+		it('should inherit fontfamily from parent to child', () => {
 			const child = createElement('span', {
 				style: { fontWeight: 600 }
 			});
@@ -73,7 +73,7 @@ describe('fonts/detection', () => {
 			]);
 		});
 
-		it('should take first font from comma-separated fontFamily', () => {
+		it('should take first font from comma-separated fontfamily', () => {
 			const element = createElement('div', {
 				style: { fontFamily: 'Roboto, Arial, sans-serif' }
 			});
@@ -203,7 +203,7 @@ describe('fonts/detection', () => {
 				]);
 			});
 
-			it('should resolve aliased font with specified fontWeight', () => {
+			it('should resolve aliased font with specified fontweight', () => {
 				const element = createElement('div', {
 					style: {
 						fontFamily: 'ui-sans-serif, sans-serif',
@@ -229,8 +229,8 @@ describe('fonts/detection', () => {
 			});
 		});
 
-		describe('resolveFontWeight: false', () => {
-			it('should ignore fontWeight and return weight 400', () => {
+		describe('resolvefontweight: false', () => {
+			it('should ignore fontweight and return weight 400', () => {
 				const element = createElement('div', {
 					style: { fontFamily: 'Roboto', fontWeight: 700 }
 				});
@@ -240,7 +240,7 @@ describe('fonts/detection', () => {
 				).toEqual([{ family: 'Roboto', key: 'roboto', weight: 400 }]);
 			});
 
-			it('should deduplicate children with different fontWeights to single weight 400', () => {
+			it('should deduplicate children with different fontweights to single weight 400', () => {
 				const child1 = createElement('span', {
 					key: '1',
 					style: { fontWeight: 700 }
@@ -260,7 +260,7 @@ describe('fonts/detection', () => {
 				).toEqual([{ family: 'Roboto', key: 'roboto', weight: 400 }]);
 			});
 
-			it('should resolve aliased font to weight 400 regardless of fontWeight', () => {
+			it('should resolve aliased font to weight 400 regardless of fontweight', () => {
 				const element = createElement('div', {
 					style: {
 						fontFamily: 'ui-sans-serif, sans-serif',

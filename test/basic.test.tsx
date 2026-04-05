@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Basic', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('basic', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	it('should render empty div', async () => {
 		const svg = await satori(<div></div>, {
@@ -91,7 +93,7 @@ describe('Basic', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support array in JSX children', async () => {
+	it('should support array in jsx children', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -177,7 +179,7 @@ describe('Basic', () => {
 		expect(toImage(svg2, 100)).toMatchImageSnapshot();
 	});
 
-	it('should combine textNodes correctly', async () => {
+	it('should combine textnodes correctly', async () => {
 		const svg = await satori(
 			<div
 				style={{

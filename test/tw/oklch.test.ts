@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { convertOklch, oklchToHex } from '../../src/tw/oklch.js';
 
 describe('tw/oklch', () => {
-	describe('convertOklch', () => {
-		it('should convert oklch(L C H) to hex', () => {
+	describe('convertoklch', () => {
+		it('should convert oklch(l c h) to hex', () => {
 			const result = convertOklch('oklch(0.5 0.1 180)');
 			expect(result).toMatch(/^#[0-9a-f]{6}$/);
 		});
@@ -14,7 +14,7 @@ describe('tw/oklch', () => {
 			expect(result).toMatch(/^#[0-9a-f]{8}$/);
 		});
 
-		it('should convert percentage L value', () => {
+		it('should convert percentage l value', () => {
 			const result = convertOklch('oklch(50% 0.1 180)');
 			expect(result).toMatch(/^#[0-9a-f]{6}$/);
 		});
@@ -41,24 +41,24 @@ describe('tw/oklch', () => {
 			expect(result).toEqual('oklch(0.5 0.1)');
 		});
 
-		it('should skip oklch with NaN values', () => {
+		it('should skip oklch with nan values', () => {
 			const result = convertOklch('oklch(abc def ghi)');
 			expect(result).toEqual('oklch(abc def ghi)');
 		});
 
-		it('should produce same result as direct oklchToHex call', () => {
+		it('should produce same result as direct oklchtohex call', () => {
 			const direct = oklchToHex(0.5, 0.1, 180);
 			const converted = convertOklch('oklch(0.5 0.1 180)');
 			expect(converted).toEqual(direct);
 		});
 	});
 
-	describe('oklchToHex', () => {
-		it('should convert black (L=0) to #000000', () => {
+	describe('oklchtohex', () => {
+		it('should convert black (l=0) to #000000', () => {
 			expect(oklchToHex(0, 0, 0)).toEqual('#000000');
 		});
 
-		it('should convert white (L=1, C=0) to #ffffff', () => {
+		it('should convert white (l=1, c=0) to #ffffff', () => {
 			expect(oklchToHex(1, 0, 0)).toEqual('#ffffff');
 		});
 
@@ -77,7 +77,7 @@ describe('tw/oklch', () => {
 			expect(result).toMatch(/^#[0-9a-f]{6}$/);
 		});
 
-		it('should clamp out-of-range RGB values', () => {
+		it('should clamp out-of-range rgb values', () => {
 			const result = oklchToHex(0.9, 0.5, 30);
 			expect(result).toMatch(/^#[0-9a-f]{6}$/);
 		});

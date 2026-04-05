@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Border', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('border', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	describe('border', () => {
 		it('should support the shorthand', async () => {
@@ -53,7 +55,7 @@ describe('Border', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should support specifying `borderColor`', async () => {
+		it('should support specifying `bordercolor`', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -68,7 +70,7 @@ describe('Border', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should support overriding borderColor', async () => {
+		it('should support overriding bordercolor', async () => {
 			const svg = await satori(
 				<div
 					style={{

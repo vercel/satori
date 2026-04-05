@@ -40,7 +40,7 @@ type LayoutContext = {
 	embedFont: boolean;
 	debug?: boolean;
 	graphemeImages?: Record<string, string>;
-	canLoadAdditionalAssets: boolean;
+	canLoadMissingFonts: boolean;
 	locale?: Locale;
 	onBackdropFilterDetected?: (info: BackdropFilterInfo) => void;
 	onNodeDetected?: (node: SatoriNode) => void;
@@ -76,7 +76,7 @@ const layout = async function* (
 		locale,
 		embedFont = true,
 		graphemeImages,
-		canLoadAdditionalAssets
+		canLoadMissingFonts
 	} = context;
 
 	// 1. Pre-process the node.
@@ -218,14 +218,14 @@ const layout = async function* (
 			embedFont,
 			debug,
 			graphemeImages,
-			canLoadAdditionalAssets,
+			canLoadMissingFonts,
 			locale: newLocale,
 			onNodeDetected: context.onNodeDetected,
 			onBackdropFilterDetected: (info: BackdropFilterInfo) => {
 				backdropInfoByIndex[currentIndex] = info;
 			}
 		});
-		if (canLoadAdditionalAssets) {
+		if (canLoadMissingFonts) {
 			segmentsMissingFont.push(
 				...(((await iter.next()).value as any) || [])
 			);

@@ -52,8 +52,8 @@ const createElement = (
 };
 
 describe('tw/transform', () => {
-	describe('transformTwElement', () => {
-		it('should transform className to style', async () => {
+	describe('transformtwelement', () => {
+		it('should transform classname to style', async () => {
 			const element = createElement('div', { className: 'flex' });
 			const result = await transformTwElement(element);
 			expect(result.props.style).toEqual({ display: 'flex' });
@@ -105,7 +105,7 @@ describe('tw/transform', () => {
 			expect(resultChild.props.style).toEqual({ padding: '1rem' });
 		});
 
-		it('should return element unchanged when no className and no children changes', async () => {
+		it('should return element unchanged when no classname and no children changes', async () => {
 			const element = createElement('div', { id: 'test' });
 			const result = await transformTwElement(element);
 			expect(result).toBe(element);
@@ -132,6 +132,39 @@ describe('tw/transform', () => {
 			expect(result.props.style).toEqual({ padding: '1rem' });
 		});
 
+		it('should call ontailwind with classname and computed style', async () => {
+			const onTailwind = vi.fn();
+			const element = createElement('div', { className: 'flex' });
+			await transformTwElement(element, onTailwind);
+
+			expect(onTailwind).toHaveBeenCalledOnce();
+			expect(onTailwind).toHaveBeenCalledWith('flex', {
+				display: 'flex'
+			});
+		});
+
+		it('should call ontailwind for each element with a classname', async () => {
+			const onTailwind = vi.fn();
+			const child = createElement('span', { className: 'p-4' });
+			const parent = createElement('div', { className: 'flex' }, child);
+
+			await transformTwElement(parent, onTailwind);
+
+			expect(onTailwind).toHaveBeenCalledTimes(2);
+			expect(onTailwind).toHaveBeenCalledWith('flex', {
+				display: 'flex'
+			});
+			expect(onTailwind).toHaveBeenCalledWith('p-4', { padding: '1rem' });
+		});
+
+		it('should not call ontailwind when element has no classname', async () => {
+			const onTailwind = vi.fn();
+			const element = createElement('div', { id: 'test' });
+			await transformTwElement(element, onTailwind);
+
+			expect(onTailwind).not.toHaveBeenCalled();
+		});
+
 		it('should throw on invalid element from function component', async () => {
 			const BadComponent = () => {
 				return 42;
@@ -149,7 +182,7 @@ describe('tw/transform', () => {
 		});
 	});
 
-	describe('transformTwNode', () => {
+	describe('transformtwnode', () => {
 		it('should return non-element values unchanged', async () => {
 			expect(await transformTwNode('hello')).toEqual('hello');
 			expect(await transformTwNode(42)).toEqual(42);

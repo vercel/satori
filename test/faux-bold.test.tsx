@@ -107,7 +107,7 @@ describe('faux-bold', () => {
 	});
 
 	describe('weight threshold', () => {
-		it('should apply faux bold for fontWeight 600 (boundary)', async () => {
+		it('should apply faux bold for fontweight 600 (boundary)', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -125,7 +125,7 @@ describe('faux-bold', () => {
 			expect(svg).toContain('paint-order="stroke"');
 		});
 
-		it('should not apply faux bold for fontWeight 500', async () => {
+		it('should not apply faux bold for fontweight 500', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -143,7 +143,7 @@ describe('faux-bold', () => {
 			expect(svg).not.toContain('paint-order');
 		});
 
-		it('should normalize fontWeight "bold" to 700 and apply faux bold', async () => {
+		it('should normalize fontweight "bold" to 700 and apply faux bold', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -161,7 +161,7 @@ describe('faux-bold', () => {
 			expect(svg).toContain('paint-order="stroke"');
 		});
 
-		it('should normalize fontWeight "normal" to 400 and not apply faux bold', async () => {
+		it('should normalize fontweight "normal" to 400 and not apply faux bold', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -180,7 +180,7 @@ describe('faux-bold', () => {
 		});
 	});
 
-	describe('HTML semantic tags', () => {
+	describe('html semantic tags', () => {
 		it('should apply faux bold for <strong> tag', async () => {
 			const svg = await satori(
 				<div style={{ display: 'flex', fontSize: 24 }}>
@@ -321,7 +321,7 @@ describe('faux-bold', () => {
 		});
 	});
 
-	describe('embedFont: false', () => {
+	describe('embedfont: false', () => {
 		it('should apply faux bold in non-embedded font mode', async () => {
 			const svg = await satori(
 				<div

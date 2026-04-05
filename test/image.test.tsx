@@ -1,7 +1,7 @@
 import { it, describe, expect, beforeEach, afterEach } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
 const PNG_SAMPLE =
 	'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAPCAYAAADkmO9VAAAAAXNSR0IArs4c6QAAAIRlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgEoAAMAAAABAAIAAIdpAAQAAAABAAAAWgAAAAAAAABIAAAAAQAAAEgAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAABSgAwAEAAAAAQAAAA8AAAAAVtc7bQAAAAlwSFlzAAALEwAACxMBAJqcGAAAAVlpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDYuMC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KGV7hBwAAA1FJREFUOBGNVFtME0EUnd3S3T5paamRxidoihRKRVGJkaDBRCFNiMkSP9QPiaHhgwRREwOGEUn8MfERIDEqMfxZEtEoSviQGh8Qg4YagQCipVIepdoWSh+03XFndRXkx/uxc+fOPWfO3nt3AfhtDGMTCf6VK3PFFRVTDADdGhyDEJEAAUI4z+7Mzmj1t6bwewhIIY5XPgkDICRYAMZ1Vmv0FkEsH5qcFKFd+bKRDwPUsa6uzT4BVNVZBbVJ2lMBScDPqtm65vzm54yNEXWUdyRwDomVYbL2doe8uDjYtrgYOUpRsUggEBxXK1H+lg3B8wJZU0/jHcmyuNr9w+1eCCxok8PJLYo3inWYDCLIKyWNRoZXOTNDq0pLqWyzWbQ8MoJCuSZasRQKB1sGiQMC4SxayhPLVN5t8gxkSM0MO/1OWU2ixorP096n8SUT2e2XWQh7k+rr8wNFRWc3arTKYplE5I2RbIKmpSrLd7enrdqkrdxXWJE25VJ7iFCi3nPDr/MpKXdoVu4MOV+7Ol1vg/og6bQ72aRftxdx9QMAoXVXFZJAYXqmcmfUuTRVKLIvyPI+b/X9kDbNP3o4p99fAooIMnpAv0cnl6fQYNF9/dXJ/msYa2+wJwD83RQcEBozYJtQDWnTDQpYW5aG2svD2oJw8nYDq8zNFROaFBkxMhrv9tTerj5+ugfktTkwlp8Agnty9mcU8IYfD0jgi9g+E7BE9lW1RmLRWb3ZpCRpWuy1Wucle3anqvzr67LGnj6wMUaq3DgU5wD8G2KOVTOEu81AyJeBlJSMijXJy7RCop1ou6Yaugv18aZGg+7chYxwWWYOBhuZBk7FXzIc48HYESwLwhinnSDePRsbLC3oi8/4LEvmg4Th8BFSGYvHfP39A/Hxb/dwvmd4+I8yAb9KIQ5yNUAdkBFj//smx2N2BxtGEf/o/KcXX6YTL6Pegvt1e590fB2yQeoghHGct9LWEPKHDQw/9VSuaWw6RwkWLXrNZA6d5NJRKlnGJV6VR7f6VQXSVU0RgnhF3LdLcJ173nXmYiyhPhGNBlxikdQx9/FmYyUEIeF8Jea//d7eMrXNBqQCAJMJ/r/rmqasTEAIcUCCk/rIj+OQ/7NAbg/XNEPA/QQBqVjfA25FYgAAAABJRU5ErkJggg==';
@@ -18,8 +18,10 @@ function dataUriToArrayBuffer(dataUri: string): ArrayBuffer {
 
 const PNG_SAMPLE_ARRAYBUFFER = dataUriToArrayBuffer(PNG_SAMPLE);
 
-let fonts;
-initFonts(f => (fonts = f));
+let fonts: Font[];
+initFonts(f => {
+	fonts = f;
+});
 
 let requests = [];
 
@@ -85,7 +87,7 @@ afterEach(() => {
 	delete globalThis.fetch;
 });
 
-describe('Image', () => {
+describe('image', () => {
 	it('should resolve image data', async () => {
 		const svg = await satori(
 			<div
@@ -144,7 +146,7 @@ describe('Image', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should render svg with image using xlinkHref', async () => {
+	it('should render svg with image using xlinkhref', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -365,7 +367,7 @@ describe('Image', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support SVG images and percentage with correct aspect ratio', async () => {
+	it('should support svg images and percentage with correct aspect ratio', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -481,7 +483,7 @@ describe('Image', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support ArrayBuffer as src', async () => {
+	it('should support arraybuffer as src', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -581,7 +583,7 @@ describe('background-image: url()', () => {
 		expect(requests).toEqual(['https://via.placeholder.com/302']);
 	});
 
-	it('should support SVG data uris with various quotes inside url()', async () => {
+	it('should support svg data uris with various quotes inside url()', async () => {
 		const backgroundImagesWithDoubleQuotes = [
 			`url(data:image/svg+xml,<svg width="116" height="100" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M57.5 0L115 100H0L57.5 0z" /></svg>)`,
 			`url(data:image/svg+xml;utf8,<svg width="116" height="100" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M57.5 0L115 100H0L57.5 0z" /></svg>)`,
@@ -681,7 +683,7 @@ describe('background-image: url()', () => {
 		expect(toImage(basedOnGif, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support stretched backgroundSize', async () => {
+	it('should support stretched backgroundsize', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -939,7 +941,7 @@ describe('background-image: url()', () => {
 	});
 });
 
-describe('objectFit and objectPosition', () => {
+describe('objectfit and objectposition', () => {
 	it('should default to center center with cover', async () => {
 		const svg = await satori(
 			<div style={{ width: '100%', height: '100%', display: 'flex' }}>
@@ -1128,7 +1130,7 @@ describe('objectFit and objectPosition', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	describe('objectFit: fill', () => {
+	describe('objectfit: fill', () => {
 		it('should stretch image to fill container (aspect ratio not preserved)', async () => {
 			const svg = await satori(
 				<div style={{ width: '100%', height: '100%', display: 'flex' }}>
@@ -1166,7 +1168,7 @@ describe('objectFit and objectPosition', () => {
 		});
 	});
 
-	describe('objectFit: scale-down', () => {
+	describe('objectfit: scale-down', () => {
 		it('should not scale up when image is smaller than container', async () => {
 			// PNG_SAMPLE is 20x15, container is 100x100
 			// Should show image at 20x15, centered
@@ -1207,7 +1209,7 @@ describe('objectFit and objectPosition', () => {
 			expect(toImage(svg, 10)).toMatchImageSnapshot();
 		});
 
-		it('should respect objectPosition with scale-down', async () => {
+		it('should respect objectposition with scale-down', async () => {
 			const svg = await satori(
 				<div style={{ width: '100%', height: '100%', display: 'flex' }}>
 					<img
@@ -1226,7 +1228,7 @@ describe('objectFit and objectPosition', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should respect objectPosition bottom right with scale-down', async () => {
+		it('should respect objectposition bottom right with scale-down', async () => {
 			const svg = await satori(
 				<div style={{ width: '100%', height: '100%', display: 'flex' }}>
 					<img
@@ -1245,7 +1247,7 @@ describe('objectFit and objectPosition', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should support percentage values for objectPosition', async () => {
+		it('should support percentage values for objectposition', async () => {
 			const svg = await satori(
 				<div style={{ width: '100%', height: '100%', display: 'flex' }}>
 					<img
@@ -1264,7 +1266,7 @@ describe('objectFit and objectPosition', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should support pixel values for objectPosition', async () => {
+		it('should support pixel values for objectposition', async () => {
 			const svg = await satori(
 				<div style={{ width: '100%', height: '100%', display: 'flex' }}>
 					<img
@@ -1283,7 +1285,7 @@ describe('objectFit and objectPosition', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should support mixed keyword and percentage for objectPosition', async () => {
+		it('should support mixed keyword and percentage for objectposition', async () => {
 			const svg = await satori(
 				<div style={{ width: '100%', height: '100%', display: 'flex' }}>
 					<img
@@ -1302,7 +1304,7 @@ describe('objectFit and objectPosition', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should support 100% 100% for objectPosition (bottom right)', async () => {
+		it('should support 100% 100% for objectposition (bottom right)', async () => {
 			const svg = await satori(
 				<div style={{ width: '100%', height: '100%', display: 'flex' }}>
 					<img
@@ -1321,7 +1323,7 @@ describe('objectFit and objectPosition', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should support 0% 0% for objectPosition (top left)', async () => {
+		it('should support 0% 0% for objectposition (top left)', async () => {
 			const svg = await satori(
 				<div style={{ width: '100%', height: '100%', display: 'flex' }}>
 					<img
@@ -1340,7 +1342,7 @@ describe('objectFit and objectPosition', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should support objectPosition with contain and percentages', async () => {
+		it('should support objectposition with contain and percentages', async () => {
 			const svg = await satori(
 				<div style={{ width: '100%', height: '100%', display: 'flex' }}>
 					<img
@@ -1359,7 +1361,7 @@ describe('objectFit and objectPosition', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should support objectPosition with scale-down and percentages', async () => {
+		it('should support objectposition with scale-down and percentages', async () => {
 			const svg = await satori(
 				<div style={{ width: '100%', height: '100%', display: 'flex' }}>
 					<img

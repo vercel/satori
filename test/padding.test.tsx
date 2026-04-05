@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Padding', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('padding', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	it('should render element with padding shorthand (1 value)', async () => {
 		const svg = await satori(

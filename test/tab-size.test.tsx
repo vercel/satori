@@ -1,13 +1,15 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
 describe('tab-size', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
-	it("Tab renders as space when white-space is not 'pre' or 'pre-wrap'", async () => {
+	it("tab renders as space when white-space is not 'pre' or 'pre-wrap'", async () => {
 		const tab = String.fromCodePoint(0x09);
 		const svg = await satori(
 			<div
@@ -47,7 +49,7 @@ describe('tab-size', () => {
 		expect(toImage(svg, 150)).toMatchImageSnapshot();
 	});
 
-	it("Tabs render correctly with default tab-size of 8 when white-space is 'pre'", async () => {
+	it("tabs render correctly with default tab-size of 8 when white-space is 'pre'", async () => {
 		const tab = String.fromCodePoint(0x09);
 		const svg = await satori(
 			<div
@@ -88,7 +90,7 @@ describe('tab-size', () => {
 		expect(toImage(svg, 150)).toMatchImageSnapshot();
 	});
 
-	it('Tabs render correctly when tab-size is a number', async () => {
+	it('tabs render correctly when tab-size is a number', async () => {
 		const tab = String.fromCodePoint(0x09);
 		const svg = await satori(
 			<div
@@ -130,7 +132,7 @@ describe('tab-size', () => {
 		expect(toImage(svg, 150)).toMatchImageSnapshot();
 	});
 
-	it('Tabs render correctly when tab-size is a string', async () => {
+	it('tabs render correctly when tab-size is a string', async () => {
 		const tab = String.fromCodePoint(0x09);
 		const svg = await satori(
 			<div
@@ -174,7 +176,7 @@ describe('tab-size', () => {
 		expect(toImage(svg, 150)).toMatchImageSnapshot();
 	});
 
-	it("Tabs render correctly with default tab-size of 8 when white-space is 'pre-wrap'", async () => {
+	it("tabs render correctly with default tab-size of 8 when white-space is 'pre-wrap'", async () => {
 		const tab = String.fromCodePoint(0x09);
 		const svg = await satori(
 			<div

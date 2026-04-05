@@ -446,7 +446,7 @@ class FontLoader {
 	): FontEngine {
 		if (!this.fonts.size) {
 			throw new Error(
-				'No fonts are loaded. At least one font is required to calculate the layout.'
+				'No fonts are loaded. Provide fonts via the `fonts` option — either an array of font data or a config with a `load` callback and `defaultFont`.'
 			);
 		}
 

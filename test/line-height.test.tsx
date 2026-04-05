@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
 describe('line-height', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 	it('should work correctly', async () => {
 		const svgs = await Promise.all(
 			[1, '1'].map(lineHeight =>

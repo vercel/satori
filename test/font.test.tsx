@@ -2,12 +2,14 @@ import { join } from 'node:path';
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 import { readFile } from 'node:fs/promises';
 
-describe('Font', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('font', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	it('should error when no font is specified', async () => {
 		try {
@@ -18,7 +20,7 @@ describe('Font', () => {
 			});
 		} catch (e) {
 			expect(e.message).toMatchInlineSnapshot(
-				'"No fonts are loaded. At least one font is required to calculate the layout."'
+				'"No fonts are loaded. Provide fonts via the `fonts` option — either an array of font data or a config with a `load` callback and `defaultFont`."'
 			);
 		}
 	});
@@ -41,11 +43,11 @@ describe('Font', () => {
 			`${fontName}-Regular.ttf`
 		);
 		const fontData = await readFile(fontPath);
-		const montserratFont = {
-			name: fontName,
+		const montserratFont: Font = {
 			data: fontData,
-			weight: 400,
-			style: 'normal'
+			name: fontName,
+			style: 'normal',
+			weight: 400
 		};
 		const svg = await satori(
 			<div
@@ -149,7 +151,7 @@ describe('Font', () => {
 		});
 	});
 
-	it('should handle escape html when embedFont is false', async () => {
+	it('should handle escape html when embedfont is false', async () => {
 		const svg = await satori(
 			<div
 				style={{

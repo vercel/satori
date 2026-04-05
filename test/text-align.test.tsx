@@ -1,13 +1,15 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Text Align', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('text align', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
-	it('Should work correctly when `text-align: left`', async () => {
+	it('should work correctly when `text-align: left`', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -42,7 +44,7 @@ describe('Text Align', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly when `text-align: center`', async () => {
+	it('should work correctly when `text-align: center`', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -77,7 +79,7 @@ describe('Text Align', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly when `text-align: right`', async () => {
+	it('should work correctly when `text-align: right`', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -112,7 +114,7 @@ describe('Text Align', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly when `text-align: end`', async () => {
+	it('should work correctly when `text-align: end`', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -146,7 +148,7 @@ describe('Text Align', () => {
 		);
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
-	it('Should work correctly when `text-align: justify`', async () => {
+	it('should work correctly when `text-align: justify`', async () => {
 		const svg = await satori(
 			<div
 				style={{

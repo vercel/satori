@@ -20,16 +20,16 @@ import {
 } from '../../src/tw/css-to-style.js';
 
 describe('@/libs/tw/css-to-style', () => {
-	describe('coerceUnitlessValue', () => {
-		it('should convert fontWeight numeric string to number', () => {
+	describe('coerceunitlessvalue', () => {
+		it('should convert fontweight numeric string to number', () => {
 			expect(coerceUnitlessValue('fontWeight', '700')).toEqual(700);
 		});
 
-		it('should convert flexGrow numeric string to number', () => {
+		it('should convert flexgrow numeric string to number', () => {
 			expect(coerceUnitlessValue('flexGrow', '1')).toEqual(1);
 		});
 
-		it('should convert lineHeight decimal string to number', () => {
+		it('should convert lineheight decimal string to number', () => {
 			expect(coerceUnitlessValue('lineHeight', '1.5')).toEqual(1.5);
 		});
 
@@ -42,7 +42,7 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('convertColorMix', () => {
+	describe('convertcolormix', () => {
 		it('should convert color-mix to hex with alpha', () => {
 			const result = convertColorMix(
 				'color-mix(in srgb, #ffff00 50%, transparent)'
@@ -90,7 +90,7 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('convertModernRgb', () => {
+	describe('convertmodernrgb', () => {
 		it('should convert percentage alpha to decimal', () => {
 			expect(convertModernRgb('rgb(255 0 0 / 50%)')).toEqual(
 				'rgba(255, 0, 0, 0.5)'
@@ -123,7 +123,7 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('convertOpacityPercentage', () => {
+	describe('convertopacitypercentage', () => {
 		it('should convert 50% to 0.5', () => {
 			expect(convertOpacityPercentage('50%')).toEqual('0.5');
 		});
@@ -145,7 +145,7 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('cssPropertyToCamelCase', () => {
+	describe('csspropertytocamelcase', () => {
 		it('should convert -moz- prefix', () => {
 			expect(cssPropertyToCamelCase('-moz-appearance')).toEqual(
 				'MozAppearance'
@@ -192,8 +192,8 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('cssToStyle', () => {
-		it('should return empty object for empty CSS', () => {
+	describe('csstostyle', () => {
+		it('should return empty object for empty css', () => {
 			const result = cssToStyle('', {}, []);
 			expect(result).toEqual({});
 		});
@@ -261,13 +261,13 @@ describe('@/libs/tw/css-to-style', () => {
 			expect(result).toEqual({ color: 'red' });
 		});
 
-		it('should convert simple CSS to CSSProperties', () => {
+		it('should convert simple css to cssproperties', () => {
 			const css = '@layer utilities { .flex { display: flex; } }';
 			const result = cssToStyle(css, {}, ['flex']);
 			expect(result).toEqual({ display: 'flex' });
 		});
 
-		it('should convert CSS properties to camelCase', () => {
+		it('should convert css properties to camelcase', () => {
 			const css =
 				'@layer utilities { .test { font-size: 16px; border-radius: 4px; } }';
 			const result = cssToStyle(css, {}, ['test']);
@@ -366,7 +366,7 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('expandLogicalProperties', () => {
+	describe('expandlogicalproperties', () => {
 		it('should expand inset to individual properties', () => {
 			expect(expandLogicalProperties('inset', '0px')).toEqual({
 				bottom: '0px',
@@ -402,71 +402,71 @@ describe('@/libs/tw/css-to-style', () => {
 			});
 		});
 
-		it('should expand margin-block to marginTop and marginBottom', () => {
+		it('should expand margin-block to margintop and marginbottom', () => {
 			expect(expandLogicalProperties('margin-block', '1rem')).toEqual({
 				marginBottom: '1rem',
 				marginTop: '1rem'
 			});
 		});
 
-		it('should expand margin-inline to marginLeft and marginRight', () => {
+		it('should expand margin-inline to marginleft and marginright', () => {
 			expect(expandLogicalProperties('margin-inline', '1rem')).toEqual({
 				marginLeft: '1rem',
 				marginRight: '1rem'
 			});
 		});
 
-		it('should expand margin-inline-start to marginLeft', () => {
+		it('should expand margin-inline-start to marginleft', () => {
 			expect(
 				expandLogicalProperties('margin-inline-start', '1rem')
 			).toEqual({ marginLeft: '1rem' });
 		});
 
-		it('should expand margin-inline-end to marginRight', () => {
+		it('should expand margin-inline-end to marginright', () => {
 			expect(
 				expandLogicalProperties('margin-inline-end', '1rem')
 			).toEqual({ marginRight: '1rem' });
 		});
 
-		it('should expand padding-block to paddingTop and paddingBottom', () => {
+		it('should expand padding-block to paddingtop and paddingbottom', () => {
 			expect(expandLogicalProperties('padding-block', '1rem')).toEqual({
 				paddingBottom: '1rem',
 				paddingTop: '1rem'
 			});
 		});
 
-		it('should expand padding-inline to paddingLeft and paddingRight', () => {
+		it('should expand padding-inline to paddingleft and paddingright', () => {
 			expect(expandLogicalProperties('padding-inline', '1rem')).toEqual({
 				paddingLeft: '1rem',
 				paddingRight: '1rem'
 			});
 		});
 
-		it('should expand padding-inline-start to paddingLeft', () => {
+		it('should expand padding-inline-start to paddingleft', () => {
 			expect(
 				expandLogicalProperties('padding-inline-start', '1rem')
 			).toEqual({ paddingLeft: '1rem' });
 		});
 
-		it('should expand padding-inline-end to paddingRight', () => {
+		it('should expand padding-inline-end to paddingright', () => {
 			expect(
 				expandLogicalProperties('padding-inline-end', '1rem')
 			).toEqual({ paddingRight: '1rem' });
 		});
 
-		it('should expand border-inline-style to borderLeftStyle and borderRightStyle', () => {
+		it('should expand border-inline-style to borderleftstyle and borderrightstyle', () => {
 			expect(
 				expandLogicalProperties('border-inline-style', 'solid')
 			).toEqual({ borderLeftStyle: 'solid', borderRightStyle: 'solid' });
 		});
 
-		it('should expand border-inline-width to borderLeftWidth and borderRightWidth', () => {
+		it('should expand border-inline-width to borderleftwidth and borderrightwidth', () => {
 			expect(
 				expandLogicalProperties('border-inline-width', '2px')
 			).toEqual({ borderLeftWidth: '2px', borderRightWidth: '2px' });
 		});
 
-		it('should expand border-block-style to borderTopStyle and borderBottomStyle', () => {
+		it('should expand border-block-style to bordertopstyle and borderbottomstyle', () => {
 			expect(
 				expandLogicalProperties('border-block-style', 'solid')
 			).toEqual({
@@ -475,31 +475,31 @@ describe('@/libs/tw/css-to-style', () => {
 			});
 		});
 
-		it('should expand border-inline-start-width to borderLeftWidth', () => {
+		it('should expand border-inline-start-width to borderleftwidth', () => {
 			expect(
 				expandLogicalProperties('border-inline-start-width', '2px')
 			).toEqual({ borderLeftWidth: '2px' });
 		});
 
-		it('should expand border-inline-end-width to borderRightWidth', () => {
+		it('should expand border-inline-end-width to borderrightwidth', () => {
 			expect(
 				expandLogicalProperties('border-inline-end-width', '2px')
 			).toEqual({ borderRightWidth: '2px' });
 		});
 
-		it('should expand border-start-start-radius to borderTopLeftRadius', () => {
+		it('should expand border-start-start-radius to bordertopleftradius', () => {
 			expect(
 				expandLogicalProperties('border-start-start-radius', '8px')
 			).toEqual({ borderTopLeftRadius: '8px' });
 		});
 
-		it('should expand border-end-end-radius to borderBottomRightRadius', () => {
+		it('should expand border-end-end-radius to borderbottomrightradius', () => {
 			expect(
 				expandLogicalProperties('border-end-end-radius', '8px')
 			).toEqual({ borderBottomRightRadius: '8px' });
 		});
 
-		it('should expand scroll-margin-inline to scrollMarginLeft and scrollMarginRight', () => {
+		it('should expand scroll-margin-inline to scrollmarginleft and scrollmarginright', () => {
 			expect(
 				expandLogicalProperties('scroll-margin-inline', '1rem')
 			).toEqual({
@@ -508,7 +508,7 @@ describe('@/libs/tw/css-to-style', () => {
 			});
 		});
 
-		it('should expand scroll-padding-block to scrollPaddingTop and scrollPaddingBottom', () => {
+		it('should expand scroll-padding-block to scrollpaddingtop and scrollpaddingbottom', () => {
 			expect(
 				expandLogicalProperties('scroll-padding-block', '1rem')
 			).toEqual({
@@ -572,7 +572,7 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('extractCustomProperties', () => {
+	describe('extractcustomproperties', () => {
 		it('should extract a single custom property', () => {
 			const css = '  --color-yellow: #ffff00;';
 			expect(extractCustomProperties(css)).toEqual({
@@ -593,7 +593,7 @@ describe('@/libs/tw/css-to-style', () => {
 			});
 		});
 
-		it('should handle multi-line CSS with indentation', () => {
+		it('should handle multi-line css with indentation', () => {
 			const css = `
         @theme {
           --color-primary: oklch(0.5 0.1 180);
@@ -617,7 +617,7 @@ describe('@/libs/tw/css-to-style', () => {
 			});
 		});
 
-		it('should return empty object for CSS with no custom properties', () => {
+		it('should return empty object for css with no custom properties', () => {
 			const css = 'color: red; font-size: 16px;';
 			expect(extractCustomProperties(css)).toEqual({});
 		});
@@ -630,7 +630,7 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('extractPropertyDefaults', () => {
+	describe('extractpropertydefaults', () => {
 		it('should extract initial-value from @property block', () => {
 			const css = `
         @property --tw-opacity {
@@ -680,7 +680,7 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('extractTopLevelContent', () => {
+	describe('extracttoplevelcontent', () => {
 		it('should handle deeply nested blocks', () => {
 			const body = ' color: red; { a { b { c } } } color: blue; ';
 			const result = extractTopLevelContent(body);
@@ -729,7 +729,7 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('extractUtilitiesBlock', () => {
+	describe('extractutilitiesblock', () => {
 		it('should extract content of @layer utilities', () => {
 			const css = '@layer utilities { .flex { display: flex; } }';
 			expect(extractUtilitiesBlock(css)).toEqual(
@@ -762,7 +762,7 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('parseClassBlocks', () => {
+	describe('parseclassblocks', () => {
 		it('should handle nested blocks inside class', () => {
 			const input =
 				'.test { color: red; @supports (grid) { display: grid; } }';
@@ -799,7 +799,7 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('resolveCalc', () => {
+	describe('resolvecalc', () => {
 		it('should evaluate addition', () => {
 			expect(resolveCalc('calc(10px + 5px)')).toEqual('15px');
 		});
@@ -865,7 +865,7 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('resolveValue', () => {
+	describe('resolvevalue', () => {
 		it('should handle value with no transformations needed', () => {
 			const lookup = () => {
 				return null;
@@ -963,7 +963,7 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('resolveVars', () => {
+	describe('resolvevars', () => {
 		it('should handle multiple var() in same value', () => {
 			const lookup = (name: string) => {
 				if (name === '--x') {
@@ -1050,7 +1050,7 @@ describe('@/libs/tw/css-to-style', () => {
 		});
 	});
 
-	describe('unescapeClassName', () => {
+	describe('unescapeclassname', () => {
 		it('should handle multiple backslashes', () => {
 			expect(unescapeClassName('p-\\[10px\\]\\.5')).toEqual('p-[10px].5');
 		});

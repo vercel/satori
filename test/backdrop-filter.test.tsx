@@ -1,14 +1,16 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
 describe('backdrop-filter', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	describe('blur', () => {
-		it('should apply backdrop-filter blur via SVG filter and <use>', async () => {
+		it('should apply backdrop-filter blur via svg filter and <use>', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -112,7 +114,7 @@ describe('backdrop-filter', () => {
 			expect(svg).toContain('feGaussianBlur');
 		});
 
-		it('should include feComposite atop for blur edge fix', async () => {
+		it('should include fecomposite atop for blur edge fix', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -926,7 +928,7 @@ describe('backdrop-filter', () => {
 			expect(svg).toContain('operator="atop"');
 		});
 
-		it('should chain invert and hue-rotate without feComposite', async () => {
+		it('should chain invert and hue-rotate without fecomposite', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -961,7 +963,7 @@ describe('backdrop-filter', () => {
 			expect(svg).not.toContain('feComposite');
 		});
 
-		it('should chain brightness and contrast without feComposite', async () => {
+		it('should chain brightness and contrast without fecomposite', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -1053,7 +1055,7 @@ describe('backdrop-filter', () => {
 			expect(svg).not.toContain('clipPath');
 		});
 
-		it('should not include feComposite for non-blur filters', async () => {
+		it('should not include fecomposite for non-blur filters', async () => {
 			const svg = await satori(
 				<div
 					style={{

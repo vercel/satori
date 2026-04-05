@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Error', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('error', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	it('should throw if flex missing on div that has children', async () => {
 		let error = new Error();

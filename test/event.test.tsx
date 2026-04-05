@@ -1,13 +1,15 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Event', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('event', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
-	it('should trigger the onNodeDetected callback', async () => {
+	it('should trigger the onnodedetected callback', async () => {
 		const nodes = [];
 		await satori(
 			<div style={{ width: '100%', height: 50, display: 'flex' }}>

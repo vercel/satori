@@ -1,23 +1,32 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Emojis', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('emojis', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	it('should detect emojis correctly', async () => {
 		const emojis = [];
 		await satori(<div>⛷👨‍👩‍👧❤️‍🔥🏳️‍🌈㊗️🛠👶🏾</div>, {
 			width: 100,
 			height: 100,
-			fonts,
-			loadAdditionalAsset: async (languageCode, segment) => {
-				if (languageCode === 'emoji') {
-					emojis.push(segment);
+			fonts: {
+				data: fonts,
+				defaultFont: {
+					family: 'Roboto',
+					key: 'roboto',
+					weight: 400
+				},
+				load: async font => {
+					if (font.languageCode === 'emoji') {
+						emojis.push(font.segment);
+					}
+					return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==';
 				}
-				return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==';
 			}
 		});
 		expect(emojis).toMatchInlineSnapshot(`

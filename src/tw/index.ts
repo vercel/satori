@@ -45,6 +45,11 @@ type ElementProps = {
 	[key: string]: unknown;
 };
 
+type OnTailwind = (
+	className: string,
+	style: Record<string, string | number>
+) => void;
+
 type TwElement = ReactElement & {
 	props: ElementProps;
 	type: string | ((...args: unknown[]) => ReactNode);
@@ -60,10 +65,13 @@ const isTwElement = (node: ReactNode): node is TwElement => {
 	);
 };
 
-const transformTwElement = async (element: TwElement): Promise<TwElement> => {
+const transformTwElement = async (
+	element: TwElement,
+	onTailwind?: OnTailwind
+): Promise<TwElement> => {
 	if (typeof element.type === 'function') {
 		const rendered: ReactNode = await element.type(element.props);
-		const transformed = await transformTwNode(rendered);
+		const transformed = await transformTwNode(rendered, onTailwind);
 
 		if (!isTwElement(transformed)) {
 			throw new Error('Invalid element');
@@ -78,6 +86,10 @@ const transformTwElement = async (element: TwElement): Promise<TwElement> => {
 
 	if (typeof className === 'string') {
 		const twStyles = tw(className);
+
+		if (onTailwind) {
+			onTailwind(className, twStyles);
+		}
 		const rawStyle: Record<string, unknown> = style ?? {};
 		const existingStyle: Record<string, unknown> = {};
 
@@ -97,8 +109,12 @@ const transformTwElement = async (element: TwElement): Promise<TwElement> => {
 
 	if (children) {
 		const newChildren = Array.isArray(children)
-			? await Promise.all(children.map(transformTwNode))
-			: await transformTwNode(children);
+			? await Promise.all(
+					children.map(child => {
+						return transformTwNode(child, onTailwind);
+					})
+			  )
+			: await transformTwNode(children, onTailwind);
 
 		if (newChildren !== children) {
 			newProps = { ...newProps, children: newChildren };
@@ -119,16 +135,23 @@ const transformTwElement = async (element: TwElement): Promise<TwElement> => {
 	return result;
 };
 
-const transformTwNode = async (node: ReactNode): Promise<ReactNode> => {
+const transformTwNode = async (
+	node: ReactNode,
+	onTailwind?: OnTailwind
+): Promise<ReactNode> => {
 	if (Array.isArray(node)) {
-		return Promise.all(node.map(transformTwNode));
+		return Promise.all(
+			node.map(child => {
+				return transformTwNode(child, onTailwind);
+			})
+		);
 	}
 
 	if (!isTwElement(node)) {
 		return node;
 	}
 
-	return transformTwElement(node);
+	return transformTwElement(node, onTailwind);
 };
 
 export { initTw, transformTwElement, transformTwNode, tw };

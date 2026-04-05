@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import kebabCase from 'lodash/kebabCase.js';
 
+import type { LanguageCode } from '../language.js';
 import type { Weight } from '../font.js';
 import { isReactElement } from '../utils.js';
 
@@ -10,13 +11,15 @@ type FontAlias = string | { key: string; url: string };
 type DetectedFont = {
 	family: string;
 	key: string;
+	languageCode?: LanguageCode;
+	segment?: string;
 	url?: string;
 	weight: Weight;
 };
 
 type DetectionConfig = {
 	aliases?: Record<string, FontAlias>;
-	fallbackFont?: DetectedFont | null;
+	defaultFont?: DetectedFont | null;
 	resolveFontWeight?: boolean;
 };
 
@@ -101,10 +104,10 @@ const detectFonts = (
 	const fonts = new Map<string, DetectedFont>();
 	walkElement(element, fonts, null, config);
 
-	if (fonts.size === 0 && config.fallbackFont) {
+	if (fonts.size === 0 && config.defaultFont) {
 		fonts.set(
-			`${config.fallbackFont.key}:${config.fallbackFont.weight}`,
-			config.fallbackFont
+			`${config.defaultFont.key}:${config.defaultFont.weight}`,
+			config.defaultFont
 		);
 	}
 

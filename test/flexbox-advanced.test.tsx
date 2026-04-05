@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Flexbox Advanced', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('flexbox advanced', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	describe('flex-grow', () => {
 		it('should render elements with flex-grow', async () => {
@@ -284,7 +286,7 @@ describe('Flexbox Advanced', () => {
 	});
 
 	describe('align-self', () => {
-		it('should render alignSelf flex-start', async () => {
+		it('should render alignself flex-start', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -317,7 +319,7 @@ describe('Flexbox Advanced', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should render alignSelf flex-end', async () => {
+		it('should render alignself flex-end', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -350,7 +352,7 @@ describe('Flexbox Advanced', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should render alignSelf center', async () => {
+		it('should render alignself center', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -383,7 +385,7 @@ describe('Flexbox Advanced', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should render alignSelf stretch', async () => {
+		it('should render alignself stretch', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -417,7 +419,7 @@ describe('Flexbox Advanced', () => {
 	});
 
 	describe('align-content', () => {
-		it('should render alignContent flex-start', async () => {
+		it('should render aligncontent flex-start', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -443,7 +445,7 @@ describe('Flexbox Advanced', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should render alignContent center', async () => {
+		it('should render aligncontent center', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -469,7 +471,7 @@ describe('Flexbox Advanced', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should render alignContent space-between', async () => {
+		it('should render aligncontent space-between', async () => {
 			const svg = await satori(
 				<div
 					style={{

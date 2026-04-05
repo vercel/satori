@@ -81,12 +81,12 @@ describe('tw/index', () => {
 		});
 
 		describe('backdrop filters', () => {
-			it('should convert backdrop-blur to backdropFilter', () => {
+			it('should convert backdrop-blur to backdropfilter', () => {
 				const result = tw('backdrop-blur');
 				expect(result.backdropFilter).toContain('blur(');
 			});
 
-			it('should convert backdrop-blur-md to backdropFilter', () => {
+			it('should convert backdrop-blur-md to backdropfilter', () => {
 				const result = tw('backdrop-blur-md');
 				expect(result.backdropFilter).toContain('blur(');
 			});
@@ -135,7 +135,7 @@ describe('tw/index', () => {
 				expect(result.backdropFilter).toContain('sepia(');
 			});
 
-			it('should set WebkitBackdropFilter alongside backdropFilter', () => {
+			it('should set webkitbackdropfilter alongside backdropfilter', () => {
 				const result = tw('backdrop-blur-sm');
 				expect(result.WebkitBackdropFilter).toEqual(
 					result.backdropFilter
@@ -200,7 +200,7 @@ describe('tw/index', () => {
 				expect(tw('bg-fixed').backgroundAttachment).toEqual('fixed');
 			});
 
-			it('should convert bg-gradient-to-r to a backgroundImage', () => {
+			it('should convert bg-gradient-to-r to a backgroundimage', () => {
 				expect(tw('bg-gradient-to-r').backgroundImage).toBeTruthy();
 			});
 
@@ -554,7 +554,7 @@ describe('tw/index', () => {
 		});
 
 		describe('borders', () => {
-			it('should convert border to borderStyle and borderWidth', () => {
+			it('should convert border to borderstyle and borderwidth', () => {
 				const result = tw('border');
 				expect(result.borderStyle).toEqual('solid');
 				expect(result.borderWidth).toEqual('1px');
@@ -592,7 +592,7 @@ describe('tw/index', () => {
 				expect(tw('border-double').borderStyle).toEqual('double');
 			});
 
-			it('should convert border-e-2 to borderRightWidth', () => {
+			it('should convert border-e-2 to borderrightwidth', () => {
 				expect(tw('border-e-2').borderRightWidth).toEqual('2px');
 			});
 
@@ -612,7 +612,7 @@ describe('tw/index', () => {
 				expect(tw('border-r').borderRightWidth).toEqual('1px');
 			});
 
-			it('should convert border-s-2 to borderLeftWidth', () => {
+			it('should convert border-s-2 to borderleftwidth', () => {
 				expect(tw('border-s-2').borderLeftWidth).toEqual('2px');
 			});
 
@@ -1741,7 +1741,7 @@ describe('tw/index', () => {
 				expect(tw('mb-4').marginBottom).toEqual('1rem');
 			});
 
-			it('should convert me-4 to marginRight', () => {
+			it('should convert me-4 to marginright', () => {
 				expect(tw('me-4').marginRight).toEqual('1rem');
 			});
 
@@ -1753,7 +1753,7 @@ describe('tw/index', () => {
 				expect(tw('mr-4').marginRight).toEqual('1rem');
 			});
 
-			it('should convert ms-4 to marginLeft', () => {
+			it('should convert ms-4 to marginleft', () => {
 				expect(tw('ms-4').marginLeft).toEqual('1rem');
 			});
 
@@ -2034,7 +2034,7 @@ describe('tw/index', () => {
 				expect(tw('pb-4').paddingBottom).toEqual('1rem');
 			});
 
-			it('should convert pe-4 to paddingRight', () => {
+			it('should convert pe-4 to paddingright', () => {
 				expect(tw('pe-4').paddingRight).toEqual('1rem');
 			});
 
@@ -2046,7 +2046,7 @@ describe('tw/index', () => {
 				expect(tw('pr-4').paddingRight).toEqual('1rem');
 			});
 
-			it('should convert ps-4 to paddingLeft', () => {
+			it('should convert ps-4 to paddingleft', () => {
 				expect(tw('ps-4').paddingLeft).toEqual('1rem');
 			});
 
@@ -2156,13 +2156,13 @@ describe('tw/index', () => {
 				expect(tw('scroll-m-4').scrollMargin).toEqual('1rem');
 			});
 
-			it('should convert scroll-mx-4 to scrollMarginLeft and scrollMarginRight', () => {
+			it('should convert scroll-mx-4 to scrollmarginleft and scrollmarginright', () => {
 				const result = tw('scroll-mx-4');
 				expect(result.scrollMarginLeft).toEqual('1rem');
 				expect(result.scrollMarginRight).toEqual('1rem');
 			});
 
-			it('should convert scroll-my-4 to scrollMarginTop and scrollMarginBottom', () => {
+			it('should convert scroll-my-4 to scrollmargintop and scrollmarginbottom', () => {
 				const result = tw('scroll-my-4');
 				expect(result.scrollMarginTop).toEqual('1rem');
 				expect(result.scrollMarginBottom).toEqual('1rem');
@@ -2172,7 +2172,7 @@ describe('tw/index', () => {
 				expect(tw('scroll-p-4').scrollPadding).toEqual('1rem');
 			});
 
-			it('should convert scroll-px-4 to scrollPaddingLeft and scrollPaddingRight', () => {
+			it('should convert scroll-px-4 to scrollpaddingleft and scrollpaddingright', () => {
 				const result = tw('scroll-px-4');
 				expect(result.scrollPaddingLeft).toEqual('1rem');
 				expect(result.scrollPaddingRight).toEqual('1rem');
@@ -2210,7 +2210,7 @@ describe('tw/index', () => {
 				expect(result).not.toHaveProperty('color');
 			});
 
-			it('should convert inset-shadow-sm to a boxShadow value', () => {
+			it('should convert inset-shadow-sm to a boxshadow value', () => {
 				expect(tw('inset-shadow-sm').boxShadow).toBeTruthy();
 			});
 
@@ -2230,17 +2230,17 @@ describe('tw/index', () => {
 				expect(tw('ring-1').boxShadow).toBeTruthy();
 			});
 
-			it('should convert ring-2 ring-black to boxShadow with black', () => {
+			it('should convert ring-2 ring-black to boxshadow with black', () => {
 				const result = tw('ring-2 ring-black');
 				expect(result.boxShadow).toContain('#000');
 			});
 
-			it('should convert ring-2 ring-red-500 to boxShadow with red', () => {
+			it('should convert ring-2 ring-red-500 to boxshadow with red', () => {
 				const result = tw('ring-2 ring-red-500');
 				expect(result.boxShadow).toContain('#fb2c36');
 			});
 
-			it('should convert ring-2 ring-transparent to boxShadow with transparent', () => {
+			it('should convert ring-2 ring-transparent to boxshadow with transparent', () => {
 				const result = tw('ring-2 ring-transparent');
 				expect(result.boxShadow).toContain('transparent');
 			});
@@ -2249,7 +2249,7 @@ describe('tw/index', () => {
 				expect(tw('ring-4').boxShadow).toBeTruthy();
 			});
 
-			it('should convert shadow to a boxShadow value', () => {
+			it('should convert shadow to a boxshadow value', () => {
 				expect(tw('shadow').boxShadow).toBeTruthy();
 			});
 
@@ -2261,13 +2261,13 @@ describe('tw/index', () => {
 				expect(tw('shadow-2xs').boxShadow).toBeTruthy();
 			});
 
-			it('should convert shadow-lg shadow-red-500 to boxShadow with red', () => {
+			it('should convert shadow-lg shadow-red-500 to boxshadow with red', () => {
 				const result = tw('shadow-lg shadow-red-500');
 				expect(result.boxShadow).toContain('#fb2c36');
 				expect(result).not.toHaveProperty('color');
 			});
 
-			it('should convert shadow-lg to a boxShadow value', () => {
+			it('should convert shadow-lg to a boxshadow value', () => {
 				expect(tw('shadow-lg').boxShadow).toBeTruthy();
 			});
 
@@ -2275,11 +2275,11 @@ describe('tw/index', () => {
 				expect(tw('shadow-md').boxShadow).toBeTruthy();
 			});
 
-			it('should convert shadow-none to a boxShadow value', () => {
+			it('should convert shadow-none to a boxshadow value', () => {
 				expect(tw('shadow-none').boxShadow).toBeTruthy();
 			});
 
-			it('should convert shadow-sm to a boxShadow value', () => {
+			it('should convert shadow-sm to a boxshadow value', () => {
 				expect(tw('shadow-sm').boxShadow).toBeTruthy();
 			});
 
@@ -2291,7 +2291,7 @@ describe('tw/index', () => {
 				expect(tw('shadow-xs').boxShadow).toBeTruthy();
 			});
 
-			it('should not have double spaces in ring boxShadow', () => {
+			it('should not have double spaces in ring boxshadow', () => {
 				const result = tw('ring-2');
 				expect(result.boxShadow).not.toContain('  ');
 			});
@@ -2317,7 +2317,7 @@ describe('tw/index', () => {
 			});
 		});
 
-		describe('SVG', () => {
+		describe('svg', () => {
 			it('should convert fill-black', () => {
 				expect(tw('fill-black').fill).toEqual('#000');
 			});
@@ -2746,7 +2746,7 @@ describe('tw/index', () => {
 		});
 
 		describe('truncate', () => {
-			it('should convert truncate to overflow, textOverflow, whiteSpace', () => {
+			it('should convert truncate to overflow, textoverflow, whitespace', () => {
 				const result = tw('truncate');
 				expect(result.overflow).toEqual('hidden');
 				expect(result.textOverflow).toEqual('ellipsis');

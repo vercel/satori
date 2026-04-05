@@ -1,13 +1,15 @@
 import { it, describe, expect } from 'vitest';
 
-import { initFonts, loadDynamicAsset, toImage } from './utils.js';
-import satori from '../src/index.js';
+import { initFonts, loadMissingFont, toImage } from './utils.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Text Decoration', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('text decoration', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
-	it('Should work correctly when `text-decoration-line: line-through` and `text-align: right`', async () => {
+	it('should work correctly when `text-decoration-line: line-through` and `text-align: right`', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -38,19 +40,23 @@ describe('Text Decoration', () => {
 			{
 				width: 200,
 				height: 200,
-				fonts,
-				loadAdditionalAsset: (
-					languageCode: string,
-					segment: string
-				) => {
-					return loadDynamicAsset(languageCode, segment) as any;
+				fonts: {
+					data: fonts,
+					defaultFont: {
+						family: 'Roboto',
+						key: 'roboto',
+						weight: 400
+					},
+					load: async font => {
+						return loadMissingFont(font);
+					}
 				}
 			}
 		);
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly when `text-decoration-line: underline` and `text-align: right`', async () => {
+	it('should work correctly when `text-decoration-line: underline` and `text-align: right`', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -81,19 +87,23 @@ describe('Text Decoration', () => {
 			{
 				width: 200,
 				height: 200,
-				fonts,
-				loadAdditionalAsset: (
-					languageCode: string,
-					segment: string
-				) => {
-					return loadDynamicAsset(languageCode, segment) as any;
+				fonts: {
+					data: fonts,
+					defaultFont: {
+						family: 'Roboto',
+						key: 'roboto',
+						weight: 400
+					},
+					load: async font => {
+						return loadMissingFont(font);
+					}
 				}
 			}
 		);
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly when `text-decoration-style: dotted`', async () => {
+	it('should work correctly when `text-decoration-style: dotted`', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -126,7 +136,7 @@ describe('Text Decoration', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly when `text-decoration-style: dashed`', async () => {
+	it('should work correctly when `text-decoration-style: dashed`', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -159,7 +169,7 @@ describe('Text Decoration', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly with `text-decoration` and `transform`', async () => {
+	it('should work correctly with `text-decoration` and `transform`', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -185,19 +195,23 @@ describe('Text Decoration', () => {
 			{
 				width: 100,
 				height: 100,
-				fonts,
-				loadAdditionalAsset: (
-					languageCode: string,
-					segment: string
-				) => {
-					return loadDynamicAsset(languageCode, segment) as any;
+				fonts: {
+					data: fonts,
+					defaultFont: {
+						family: 'Roboto',
+						key: 'roboto',
+						weight: 400
+					},
+					load: async font => {
+						return loadMissingFont(font);
+					}
 				}
 			}
 		);
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly when `text-decoration-style: double`', async () => {
+	it('should work correctly when `text-decoration-style: double`', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -238,7 +252,7 @@ describe('Text Decoration', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should skip ink by default when `text-decoration-line: underline`', async () => {
+	it('should skip ink by default when `text-decoration-line: underline`', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -261,7 +275,7 @@ describe('Text Decoration', () => {
 		expect(toImage(svg, 260)).toMatchImageSnapshot();
 	});
 
-	it('Should render continuous line when `text-decoration-skip-ink: none`', async () => {
+	it('should render continuous line when `text-decoration-skip-ink: none`', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -285,7 +299,7 @@ describe('Text Decoration', () => {
 		expect(toImage(svg, 260)).toMatchImageSnapshot();
 	});
 
-	it('Should skip ink correctly with complex descenders', async () => {
+	it('should skip ink correctly with complex descenders', async () => {
 		const svg = await satori(
 			<div
 				style={{

@@ -1,12 +1,14 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 import { splitEffects } from '../src/utils.js';
 
-describe('Units', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('units', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	it('should support %', async () => {
 		const svg = await satori(

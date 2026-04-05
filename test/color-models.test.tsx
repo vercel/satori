@@ -1,19 +1,21 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
 // TODO: no support for 'text-decoration' or 'outline'
 
-describe('Color Models', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('color models', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	// TODO: test `background` shorthand?
 
 	// TODO: `filter` supported?
 
-	describe('backgroundColor and color', () => {
+	describe('backgroundcolor and color', () => {
 		it('should support hexadecimal', async () => {
 			const svg = await satori(
 				<div

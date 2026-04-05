@@ -7,9 +7,11 @@ import { it, describe, expect } from 'vitest';
 import { initFonts, toImage } from './utils.js';
 import satori, { type Font } from '../src/index.js';
 
-describe('Minimal JSX runtime', () => {
+describe('minimal jsx runtime', () => {
 	let fonts: Font[];
-	initFonts(f => (fonts = f));
+	initFonts(f => {
+		fonts = f;
+	});
 
 	it('should support async function components', async () => {
 		function MyComponent() {
@@ -63,7 +65,7 @@ describe('Minimal JSX runtime', () => {
 		expect(toImage(svg2, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support Fragment elements', async () => {
+	it('should support fragment elements', async () => {
 		const MyComponent = () => (
 			<>
 				<h1 style={{ fontSize: 16 }}>

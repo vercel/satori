@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
 describe('transform', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	describe('translate', () => {
 		it('should translate shape', async () => {

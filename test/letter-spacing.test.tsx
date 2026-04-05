@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Letter Spacing', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('letter spacing', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	it('should render text with positive letter-spacing', async () => {
 		const svg = await satori(

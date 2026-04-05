@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Shadow', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('shadow', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	describe('box-shadow', () => {
 		it('should render regular box shadow', async () => {
@@ -197,7 +199,7 @@ describe('Shadow', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should not produce NaN when blur radius is omitted', async () => {
+		it('should not produce nan when blur radius is omitted', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -214,7 +216,7 @@ describe('Shadow', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should not produce NaN with multiple shadows missing blur radius', async () => {
+		it('should not produce nan with multiple shadows missing blur radius', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -232,7 +234,7 @@ describe('Shadow', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should not produce NaN with transparent shadow missing blur', async () => {
+		it('should not produce nan with transparent shadow missing blur', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -304,7 +306,7 @@ describe('Shadow', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should support text shadows with backgroundClip text', async () => {
+		it('should support text shadows with backgroundclip text', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -324,7 +326,7 @@ describe('Shadow', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should support text shadows with backgroundClip and no background', async () => {
+		it('should support text shadows with backgroundclip and no background', async () => {
 			const svg = await satori(
 				<div
 					style={{

@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Gradient', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('gradient', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	describe('linear-gradient', () => {
 		it('should support linear-gradient', async () => {
@@ -86,7 +88,7 @@ describe('Gradient', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should support using background instead of backgroundImage', async () => {
+		it('should support using background instead of backgroundimage', async () => {
 			const svg = await satori(
 				<div
 					style={{

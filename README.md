@@ -453,6 +453,37 @@ await satori(
 
 Multiple fonts can be passed to Satori and used in `fontFamily`.
 
+Alternatively, `fonts` can be a config object that auto-detects fonts from JSX and loads them on demand:
+
+```js
+await satori(
+  <div className="font-[inter]">Hello</div>,
+  {
+    width: 600,
+    height: 400,
+    fonts: {
+      // Font to load when no fontFamily is specified in JSX
+      defaultFont: { family: 'Inter', key: 'inter', weight: 400 },
+      // Callback to load fonts by key and weight
+      load: async (font) => {
+        const url = `https://cdn.jsdelivr.net/fontsource/fonts/${font.key}@latest/latin-${font.weight}-normal.ttf`;
+        const res = await fetch(url);
+        if (!res.ok) { return null; }
+        return { data: await res.arrayBuffer(), name: font.key, weight: font.weight };
+      },
+      // Optional: pre-loaded font data to include
+      data: [{ name: 'CustomFont', data: customFontBuffer, weight: 400 }],
+      // Optional: map font family names to different keys
+      aliases: { 'ui-sans-serif': 'inter' },
+      // Optional: pass fontWeight from CSS to the load callback
+      resolveFontWeight: true,
+    },
+  }
+)
+```
+
+When `fonts` is a config object, the `load` callback is also called for missing glyphs during layout (e.g., CJK characters, emojis). In this case, the `DetectedFont` will include `languageCode` and `segment` fields to identify what needs to be loaded. The callback can return a string (image URL for grapheme rendering) or `FontOptions` (font data).
+
 > [!TIP]
 > We recommend you define global fonts instead of creating a new object and pass it to satori for better performance, if your fonts do not change. [Read it for more detail](https://github.com/feliperohdee/satori/issues/590)
 
@@ -490,22 +521,31 @@ Supported locales are exported as the `Locale` enum type.
 
 #### Dynamically Load Emojis and Fonts
 
-Satori supports dynamically loading emoji images (grapheme pictures) and fonts. The `loadAdditionalAsset` function will be called when a text segment is rendered but missing the image or font:
+Satori supports dynamically loading emoji images (grapheme pictures) and fonts. When `fonts` is a config object with a `load` callback, it will be called for missing glyphs with `languageCode` and `segment` fields:
 
 ```jsx
 await satori(
   <div>👋 你好</div>,
   {
-    // `code` will be the detected language code, `emoji` if it's an Emoji, or `unknown` if not able to tell.
-    // `segment` will be the content to render.
-    loadAdditionalAsset: async (code: string, segment: string) => {
-      if (code === 'emoji') {
-        // if segment is an emoji
-        return `data:image/svg+xml;base64,...`
-      }
+    fonts: {
+      defaultFont: { family: 'Inter', key: 'inter', weight: 400 },
+      load: async (font) => {
+        // When loading missing glyphs, `font.languageCode` is set.
+        // `font.segment` is the content to render.
+        if (font.languageCode === 'emoji') {
+          return `data:image/svg+xml;base64,...`
+        }
 
-      // if segment is normal text
-      return loadFontFromSystem(code)
+        if (font.languageCode) {
+          return loadFontForLanguage(font.languageCode)
+        }
+
+        // Initial font detection from JSX
+        const url = `https://cdn.jsdelivr.net/fontsource/fonts/${font.key}@latest/latin-${font.weight}-normal.ttf`;
+        const res = await fetch(url);
+        if (!res.ok) { return null; }
+        return { data: await res.arrayBuffer(), name: font.key, weight: font.weight };
+      }
     }
   }
 )

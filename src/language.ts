@@ -48,6 +48,7 @@ type SpecialCodeKey = keyof typeof specialCode;
 type CodeKey = keyof typeof specialCode | keyof typeof code;
 type Locale = keyof typeof code;
 type LangCode = CodeKey | 'unknown';
+type LanguageCode = LangCode | (string & {});
 
 const locales = Object.keys({ ...code, ...specialCode }) as Locale[];
 const isValidLocale = (x: any): x is Locale => {
@@ -93,5 +94,5 @@ const normalizeLocale = (locale?: string): Locale | undefined => {
 	}
 };
 
-export type { LangCode, Locale };
+export type { LangCode, LanguageCode, Locale };
 export { detectLanguageCode, isValidLocale, locales, normalizeLocale };

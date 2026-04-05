@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
-import { initFonts, loadDynamicAsset, toImage } from './utils.js';
-import satori from '../src/index.js';
+import { initFonts, loadMissingFont, toImage } from './utils.js';
+import satori, { type Font } from '../src/index.js';
 
 describe('word-break', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	describe('normal', () => {
 		it('should not break word if possible to wrap', async () => {
@@ -175,7 +177,7 @@ describe('word-break', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
-		it('should not break CJK with word-break: keep-all', async () => {
+		it('should not break cjk with word-break: keep-all', async () => {
 			const svg = await satori(
 				<div
 					style={{
@@ -197,12 +199,16 @@ describe('word-break', () => {
 				{
 					width: 200,
 					height: 200,
-					fonts,
-					loadAdditionalAsset: (
-						languageCode: string,
-						segment: string
-					) => {
-						return loadDynamicAsset(languageCode, segment) as any;
+					fonts: {
+						data: fonts,
+						defaultFont: {
+							family: 'Roboto',
+							key: 'roboto',
+							weight: 400
+						},
+						load: async font => {
+							return loadMissingFont(font);
+						}
 					}
 				}
 			);

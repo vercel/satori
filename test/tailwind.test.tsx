@@ -1,13 +1,15 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Tailwind', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('tailwind', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
-	it('should render div with tailwind className', async () => {
+	it('should render div with tailwind classname', async () => {
 		const svg = await satori(
 			<div className='flex w-full h-full bg-red-500'>Hello</div>,
 			{
@@ -20,7 +22,7 @@ describe('Tailwind', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should render nested elements with className', async () => {
+	it('should render nested elements with classname', async () => {
 		const svg = await satori(
 			<div className='flex flex-col w-full h-full bg-blue-500 p-4'>
 				<span className='text-white font-bold'>Title</span>
@@ -36,7 +38,7 @@ describe('Tailwind', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('should merge className styles with inline style (inline wins)', async () => {
+	it('should merge classname styles with inline style (inline wins)', async () => {
 		const svg = await satori(
 			<div
 				className='bg-red-500 w-full h-full'
@@ -90,7 +92,7 @@ describe('Tailwind', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('should handle elements without className', async () => {
+	it('should handle elements without classname', async () => {
 		const svg = await satori(
 			<div className='flex w-full h-full'>
 				<div
@@ -108,7 +110,7 @@ describe('Tailwind', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should handle custom tailwind CSS config', async () => {
+	it('should handle custom tailwind css config', async () => {
 		const customCss = `
 			@layer theme, base, components, utilities;
 

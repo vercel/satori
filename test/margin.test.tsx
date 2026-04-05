@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Margin', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('margin', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	it('should render element with margin shorthand (1 value)', async () => {
 		const svg = await satori(
@@ -300,7 +302,7 @@ describe('Margin', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should render marginLeft auto', async () => {
+	it('should render marginleft auto', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -324,7 +326,7 @@ describe('Margin', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should render marginRight auto', async () => {
+	it('should render marginright auto', async () => {
 		const svg = await satori(
 			<div
 				style={{

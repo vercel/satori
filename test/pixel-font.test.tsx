@@ -1,14 +1,16 @@
 import { it, describe, expect } from 'vitest';
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-describe('Pixel Font Alignment', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('pixel font alignment', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
-	it('Should align pixel and hinted fonts with pixel boundaries', async () => {
+	it('should align pixel and hinted fonts with pixel boundaries', async () => {
 		const habboFont = readFileSync(
 			join(process.cwd(), 'test/assets/Habbo.ttf')
 		);

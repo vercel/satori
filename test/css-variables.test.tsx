@@ -1,7 +1,7 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
 declare module 'react' {
 	interface CSSProperties {
@@ -10,11 +10,13 @@ declare module 'react' {
 	}
 }
 
-describe('CSS Variables', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('css variables', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
-	it('should support basic CSS variable declaration and usage', async () => {
+	it('should support basic css variable declaration and usage', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -33,7 +35,7 @@ describe('CSS Variables', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support CSS variable inheritance', async () => {
+	it('should support css variable inheritance', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -67,7 +69,7 @@ describe('CSS Variables', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support CSS variable override in children', async () => {
+	it('should support css variable override in children', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -102,7 +104,7 @@ describe('CSS Variables', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support CSS variable fallback values', async () => {
+	it('should support css variable fallback values', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -120,7 +122,7 @@ describe('CSS Variables', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support nested CSS variables', async () => {
+	it('should support nested css variables', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -140,7 +142,7 @@ describe('CSS Variables', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support CSS variables with dimensions', async () => {
+	it('should support css variables with dimensions', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -159,7 +161,7 @@ describe('CSS Variables', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support multiple CSS variables in nested inheritance', async () => {
+	it('should support multiple css variables in nested inheritance', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -194,7 +196,7 @@ describe('CSS Variables', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support CSS variables with border properties', async () => {
+	it('should support css variables with border properties', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -235,7 +237,7 @@ describe('CSS Variables', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support CSS variables with percentage values', async () => {
+	it('should support css variables with percentage values', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -255,7 +257,7 @@ describe('CSS Variables', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support CSS variable for text color', async () => {
+	it('should support css variable for text color', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -286,7 +288,7 @@ describe('CSS Variables', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('should support CSS variable for inherited text color', async () => {
+	it('should support css variable for inherited text color', async () => {
 		const svg = await satori(
 			<div
 				style={{

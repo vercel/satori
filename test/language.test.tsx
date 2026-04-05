@@ -1,14 +1,16 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
 import { detectLanguageCode } from '../src/language.js';
 
-let fonts;
-initFonts(f => (fonts = f));
+let fonts: Font[];
+initFonts(f => {
+	fonts = f;
+});
 
-describe('detectLanguageCode', () => {
+describe('detectlanguagecode', () => {
 	it('should detect emoji', async () => {
 		expect(detectLanguageCode('🔺')).toEqual(['emoji']);
 		expect(detectLanguageCode('😀')).toEqual(['emoji']);
@@ -52,7 +54,7 @@ describe('detectLanguageCode', () => {
 		]);
 	});
 
-	it('should detect traditional chinese(HK) when locale is zh-cn', async () => {
+	it('should detect traditional chinese(hk) when locale is zh-cn', async () => {
 		expect(detectLanguageCode('我知道怎麼說中文', 'zh-HK')).toEqual([
 			'zh-HK',
 			'ja-JP',
@@ -61,7 +63,7 @@ describe('detectLanguageCode', () => {
 		]);
 	});
 
-	it('should detect traditional chinese(TW) when locale is zh-tw', async () => {
+	it('should detect traditional chinese(tw) when locale is zh-tw', async () => {
 		expect(detectLanguageCode('我知道怎麼說中文', 'zh-TW')).toEqual([
 			'zh-TW',
 			'ja-JP',
@@ -118,7 +120,7 @@ describe('detectLanguageCode', () => {
 		expect(detectLanguageCode('☻')).toEqual(['symbol']);
 	});
 
-	it('should not crash when rendering Arabic letters', async () => {
+	it('should not crash when rendering arabic letters', async () => {
 		const svg = await satori(
 			<div
 				style={{

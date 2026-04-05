@@ -1,13 +1,15 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Line Clamp', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('line clamp', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
-	it('Should work correctly', async () => {
+	it('should work correctly', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -74,7 +76,7 @@ describe('Line Clamp', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should replace custom block ellipsis with default ellipsis when too long', async () => {
+	it('should replace custom block ellipsis with default ellipsis when too long', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -105,7 +107,7 @@ describe('Line Clamp', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should not work when display is not set to block', async () => {
+	it('should not work when display is not set to block', async () => {
 		const svg = await satori(
 			<div
 				style={{
@@ -135,7 +137,7 @@ describe('Line Clamp', () => {
 		expect(toImage(svg, 200)).toMatchImageSnapshot();
 	});
 
-	it('Should work correctly when `text-align: center`', async () => {
+	it('should work correctly when `text-align: center`', async () => {
 		const svg = await satori(
 			<div
 				style={{

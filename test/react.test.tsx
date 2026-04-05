@@ -2,13 +2,15 @@ import { forwardRef } from 'react';
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('React APIs', () => {
-	let fonts: any;
-	initFonts(f => (fonts = f));
+describe('react apis', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
-	it('should support `forwardRef` wrapped components', async () => {
+	it('should support `forwardref` wrapped components', async () => {
 		const Foo = forwardRef(function _() {
 			return <div>hello</div>;
 		});

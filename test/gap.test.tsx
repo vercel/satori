@@ -44,7 +44,7 @@ describe('flex gap', () => {
 		expect(toImage(svg, 100)).toMatchImageSnapshot();
 	});
 
-	it('should support rowGap and columnGap', async () => {
+	it('should support rowgap and columngap', async () => {
 		const svg = await satori(
 			<div
 				style={{

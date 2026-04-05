@@ -5,25 +5,28 @@ import type { DetectedFont } from './detection.js';
 import { detectFonts } from './detection.js';
 import { loadFonts } from './loader.js';
 
-type FontLoaderConfig = {
+type FontsConfig = {
 	aliases?: Record<string, string | { key: string; url: string }>;
-	fallbackFont?: DetectedFont | null;
-	load: (font: DetectedFont) => Promise<FontOptions | null>;
+	data?: FontOptions[];
+	defaultFont: DetectedFont;
+	load: (
+		font: DetectedFont
+	) => Promise<FontOptions | FontOptions[] | string | null>;
 	resolveFontWeight?: boolean;
 };
 
 const detectAndLoadFonts = async (
 	element: ReactElement,
-	config: FontLoaderConfig
+	config: FontsConfig
 ): Promise<FontOptions[]> => {
 	const detected = detectFonts(element, {
 		aliases: config.aliases,
-		fallbackFont: config.fallbackFont,
+		defaultFont: config.defaultFont,
 		resolveFontWeight: config.resolveFontWeight
 	});
 
 	return loadFonts(detected, config.load);
 };
 
-export type { DetectedFont, FontLoaderConfig };
+export type { DetectedFont, FontsConfig };
 export { detectAndLoadFonts, detectFonts, loadFonts };

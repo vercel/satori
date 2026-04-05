@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('clipPath', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('clippath', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	it('should render clip-path', async () => {
 		const svgs = await Promise.all(

@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Position', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('position', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	describe('absolute', () => {
 		it('should support absolute position', async () => {

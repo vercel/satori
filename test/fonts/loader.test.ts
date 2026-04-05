@@ -25,7 +25,7 @@ describe('fonts/loader', () => {
 		fontPending.clear();
 	});
 
-	describe('loadFont', () => {
+	describe('loadfont', () => {
 		it('should load font at requested weight', async () => {
 			const load = vi.fn(async (detected: DetectedFont) => {
 				return mockFont(detected);
@@ -80,7 +80,7 @@ describe('fonts/loader', () => {
 			expect(load).toHaveBeenCalledTimes(1);
 		});
 
-		it('should deduplicate concurrent calls via fontPending', async () => {
+		it('should deduplicate concurrent calls via fontpending', async () => {
 			const load = vi.fn(async (detected: DetectedFont) => {
 				return mockFont(detected);
 			});
@@ -131,7 +131,7 @@ describe('fonts/loader', () => {
 		});
 	});
 
-	describe('loadFonts', () => {
+	describe('loadfonts', () => {
 		it('should load multiple fonts from detected entries', async () => {
 			const load = vi.fn(async (detected: DetectedFont) => {
 				return mockFont(detected);

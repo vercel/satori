@@ -1,11 +1,13 @@
 import { it, describe, expect } from 'vitest';
 
 import { initFonts, toImage } from './utils.js';
-import satori from '../src/index.js';
+import satori, { type Font } from '../src/index.js';
 
-describe('Overflow', () => {
-	let fonts;
-	initFonts(f => (fonts = f));
+describe('overflow', () => {
+	let fonts: Font[];
+	initFonts(f => {
+		fonts = f;
+	});
 
 	it('should not show overflowed text', async () => {
 		const svg = await satori(

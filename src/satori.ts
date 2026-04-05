@@ -9,7 +9,7 @@ import { segment } from './utils.js';
 import FontLoader, { FontOptions } from './font.js';
 import layout from './layout.js';
 import svg from './builder/svg.js';
-import type { FontLoaderConfig } from './fonts/index.js';
+import type { FontsConfig } from './fonts/index.js';
 import type { SatoriNode } from './layout.js';
 
 // We don't need to initialize the opentype instances every time.
@@ -29,14 +29,13 @@ type SatoriOptions = (
 ) & {
 	debug?: boolean;
 	embedFont?: boolean;
-	fontLoader?: FontLoaderConfig;
-	fonts: FontOptions[];
+	fonts: FontOptions[] | FontsConfig;
 	graphemeImages?: Record<string, string>;
-	loadAdditionalAsset?: (
-		languageCode: string,
-		segment: string
-	) => Promise<string | Array<FontOptions>>;
 	onNodeDetected?: (node: SatoriNode) => void;
+	onTailwind?: (
+		className: string,
+		style: Record<string, string | number>
+	) => void;
 	pointScaleFactor?: number;
 	tailwind?: boolean | string;
 };
@@ -91,6 +90,15 @@ const unique = <T>(arr: T[]): T[] => {
 	return Array.from(new Set(arr));
 };
 
+const isFontsConfig = (
+	fonts: FontOptions[] | FontsConfig
+): fonts is FontsConfig => {
+	return (
+		!Array.isArray(fonts) &&
+		typeof (fonts as FontsConfig).load === 'function'
+	);
+};
+
 const satori = async (
 	_element: ReactNode,
 	options: SatoriOptions
@@ -142,25 +150,29 @@ const satori = async (
 		const customCss =
 			typeof options.tailwind === 'string' ? options.tailwind : undefined;
 		await initTw(customCss);
-		element = await transformTwNode(element);
+		element = await transformTwNode(element, options.onTailwind);
 	}
 
-	if (options.fontLoader) {
+	// Normalize fonts option
+	let fontsConfig: FontsConfig | null = null;
+	let fontOptions: FontOptions[];
+
+	if (isFontsConfig(options.fonts)) {
+		fontsConfig = options.fonts;
 		const detectedFonts = await detectAndLoadFonts(
 			element as ReactElement,
-			options.fontLoader
+			fontsConfig
 		);
-
-		options.fonts = [...(options.fonts || []), ...detectedFonts];
+		fontOptions = [...(fontsConfig.data || []), ...detectedFonts];
+	} else {
+		fontOptions = options.fonts || [];
 	}
 
-	options.fonts = options.fonts || [];
-
 	let font: FontLoader;
-	if (fontCache.has(options.fonts)) {
-		font = fontCache.get(options.fonts);
+	if (fontCache.has(fontOptions)) {
+		font = fontCache.get(fontOptions);
 	} else {
-		fontCache.set(options.fonts, (font = new FontLoader(options.fonts)));
+		fontCache.set(fontOptions, (font = new FontLoader(fontOptions)));
 	}
 
 	await preProcessNode(element);
@@ -187,7 +199,7 @@ const satori = async (
 		embedFont: options.embedFont,
 		debug: options.debug,
 		graphemeImages,
-		canLoadAdditionalAssets: !!options.loadAdditionalAsset,
+		canLoadMissingFonts: !!fontsConfig,
 		onNodeDetected: options.onNodeDetected
 	});
 
@@ -196,45 +208,45 @@ const satori = async (
 		locale?: Locale;
 	}[];
 
-	if (options.loadAdditionalAsset) {
-		if (segmentsMissingFont.length) {
-			const languageCodes = convertToLanguageCodes(segmentsMissingFont);
-			const fonts: FontOptions[] = [];
-			const images: Record<string, string> = {};
+	if (fontsConfig && segmentsMissingFont.length) {
+		const languageCodes = convertToLanguageCodes(segmentsMissingFont);
+		const fonts: FontOptions[] = [];
+		const images: Record<string, string> = {};
 
-			await Promise.all(
-				Object.entries(languageCodes).flatMap(([code, segments]) => {
-					return segments.map(_segment => {
-						const key = `${code}_${_segment}`;
-						if (processedWordsMissingFonts.has(key)) {
-							return null;
-						}
-						processedWordsMissingFonts.add(key);
+		await Promise.all(
+			Object.entries(languageCodes).flatMap(([code, segments]) => {
+				return segments.map(_segment => {
+					const key = `${code}_${_segment}`;
+					if (processedWordsMissingFonts.has(key)) {
+						return null;
+					}
+					processedWordsMissingFonts.add(key);
 
-						return (async () => {
-							const asset: any =
-								await options.loadAdditionalAsset(
-									code,
-									_segment
-								);
-							if (typeof asset === 'string') {
-								images[_segment] = asset;
-							} else if (asset) {
-								if (Array.isArray(asset)) {
-									fonts.push(...asset);
-								} else {
-									fonts.push(asset);
-								}
+					return (async () => {
+						const result = await fontsConfig.load({
+							family: code,
+							key: code,
+							languageCode: code,
+							segment: _segment,
+							weight: 400
+						});
+
+						if (typeof result === 'string') {
+							images[_segment] = result;
+						} else if (result) {
+							if (Array.isArray(result)) {
+								fonts.push(...result);
+							} else {
+								fonts.push(result);
 							}
-						})();
-					});
-				})
-			);
+						}
+					})();
+				});
+			})
+		);
 
-			// Directly mutate the font provider and the grapheme map.
-			font.addFonts(fonts);
-			Object.assign(graphemeImages, images);
-		}
+		font.addFonts(fonts);
+		Object.assign(graphemeImages, images);
 	}
 
 	await handler.next();
