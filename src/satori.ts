@@ -1,14 +1,16 @@
-import type { ReactNode } from 'react';
-import type { SatoriNode } from './layout.js';
+import type { ReactElement, ReactNode } from 'react';
 
-import FontLoader, { FontOptions } from './font.js';
 import { cache, inflightRequests } from './handler/image.js';
-import { preProcessNode } from './handler/preprocess.js';
+import { detectAndLoadFonts } from './fonts/index.js';
 import { detectLanguageCode, LangCode, Locale } from './language.js';
+import { getYoga, TYoga } from './yoga.js';
+import { preProcessNode } from './handler/preprocess.js';
+import { segment } from './utils.js';
+import FontLoader, { FontOptions } from './font.js';
 import layout from './layout.js';
 import svg from './builder/svg.js';
-import { getYoga, TYoga } from './yoga.js';
-import { segment } from './utils.js';
+import type { FontLoaderConfig } from './fonts/index.js';
+import type { SatoriNode } from './layout.js';
 
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap();
@@ -27,6 +29,7 @@ type SatoriOptions = (
 ) & {
 	debug?: boolean;
 	embedFont?: boolean;
+	fontLoader?: FontLoaderConfig;
 	fonts: FontOptions[];
 	graphemeImages?: Record<string, string>;
 	loadAdditionalAsset?: (
@@ -99,15 +102,6 @@ const satori = async (
 			'Satori is not initialized: expect `yoga` to be loaded, got ' + Yoga
 		);
 	}
-	options.fonts = options.fonts || [];
-
-	let font: FontLoader;
-	if (fontCache.has(options.fonts)) {
-		font = fontCache.get(options.fonts);
-	} else {
-		fontCache.set(options.fonts, (font = new FontLoader(options.fonts)));
-	}
-
 	const definedWidth = 'width' in options ? options.width : undefined;
 	const definedHeight = 'height' in options ? options.height : undefined;
 
@@ -149,6 +143,24 @@ const satori = async (
 			typeof options.tailwind === 'string' ? options.tailwind : undefined;
 		await initTw(customCss);
 		element = await transformTwNode(element);
+	}
+
+	if (options.fontLoader) {
+		const detectedFonts = await detectAndLoadFonts(
+			element as ReactElement,
+			options.fontLoader
+		);
+
+		options.fonts = [...(options.fonts || []), ...detectedFonts];
+	}
+
+	options.fonts = options.fonts || [];
+
+	let font: FontLoader;
+	if (fontCache.has(options.fonts)) {
+		font = fontCache.get(options.fonts);
+	} else {
+		fontCache.set(options.fonts, (font = new FontLoader(options.fonts)));
 	}
 
 	await preProcessNode(element);
