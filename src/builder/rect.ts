@@ -228,17 +228,11 @@ const rect = async (
 		});
 	}
 
-	const { backgroundClip, filter: cssFilter, mixBlendMode } = style;
+	const { backgroundClip, mixBlendMode } = style;
 
-	const inlineStyle =
-		[
-			cssFilter ? `filter:${cssFilter}` : undefined,
-			mixBlendMode ? `mix-blend-mode:${mixBlendMode}` : undefined
-		]
-			.filter(v => {
-				return v;
-			})
-			.join(';') || undefined;
+	const inlineStyle = mixBlendMode
+		? `mix-blend-mode:${mixBlendMode}`
+		: undefined;
 
 	const currentClipPath =
 		backgroundClip === 'text'

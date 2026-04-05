@@ -101,7 +101,6 @@ const buildText = (
 			'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
 			height,
 			href: image,
-			style: style.filter ? `filter:${style.filter}` : undefined,
 			transform: matrix || undefined,
 			width,
 			x: left,
@@ -185,8 +184,7 @@ const buildText = (
 			? `${style.WebkitTextStrokeWidth}px`
 			: needsFauxBold
 			? `${fauxBoldStrokeWidth}`
-			: undefined,
-		style: style.filter ? `filter:${style.filter}` : undefined
+			: undefined
 	};
 	return [
 		(filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +

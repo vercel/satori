@@ -123,7 +123,6 @@ const buildTextNodes = async function* (
 		lineHeight,
 		textWrap,
 		fontSize,
-		filter: cssFilter,
 		tabSize = 8,
 		letterSpacing,
 		_inheritedBackgroundClipTextPath,
@@ -1033,7 +1032,6 @@ const buildTextNodes = async function* (
 							: needsFauxBold
 							? `${engine.fauxBoldStrokeWidth}`
 							: undefined,
-						style: cssFilter ? `filter:${cssFilter}` : undefined,
 						transform: matrix ? matrix : undefined
 				  }) +
 				  '</g>'

@@ -29,7 +29,6 @@ const list = new Set([
 	// Special case: SVG doesn't apply these to children elements so we need to
 	// make it inheritable here.
 	'opacity',
-	'filter',
 
 	// Special properties of Satori:
 	'_viewportWidth',

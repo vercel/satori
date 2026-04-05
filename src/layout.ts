@@ -376,6 +376,13 @@ const layout = async function* (
 		);
 	}
 
+	const cssFilter = computedStyle.filter as string | undefined;
+	if (cssFilter && cssFilter !== 'none') {
+		const innerContent = baseRenderResult + childrenRenderResult;
+		baseRenderResult = `<g style="filter:${cssFilter}">${innerContent}</g>`;
+		childrenRenderResult = '';
+	}
+
 	return depsRenderResult + baseRenderResult + childrenRenderResult;
 };
 
