@@ -40,7 +40,7 @@ const list = new Set([
 	'_inheritedBackgroundClipTextHasBackground'
 ]);
 
-export default function inheritable(style: SerializedStyle): SerializedStyle {
+const inheritable = (style: SerializedStyle): SerializedStyle => {
 	const inheritedStyle: SerializedStyle = {};
 	for (const prop in style) {
 		// CSS custom properties (--*) always inherit
@@ -49,4 +49,6 @@ export default function inheritable(style: SerializedStyle): SerializedStyle {
 		}
 	}
 	return inheritedStyle;
-}
+};
+
+export default inheritable;

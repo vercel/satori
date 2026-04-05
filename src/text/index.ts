@@ -2,7 +2,18 @@
  * This module calculates the layout of a text string. Currently the only
  * supported inline node is text. All other nodes are using block layout.
  */
+import cssColorParse from 'parse-css-color';
 import type { LayoutContext } from '../layout.js';
+import type { GlyphBox } from '../font.js';
+
+import buildDecoration from '../builder/text-decoration.js';
+import buildText, { container } from '../builder/text.js';
+import { buildDropShadow } from '../builder/shadow.js';
+import { getYoga, TYoga, YogaNode } from '../yoga.js';
+import { HorizontalEllipsis, Space, Tab } from './characters.js';
+import { Locale } from '../language.js';
+import { genMeasurer } from './measurer.js';
+import { preprocess } from './processor.js';
 import {
 	v,
 	segment,
@@ -12,38 +23,81 @@ import {
 	isString,
 	lengthToNumber
 } from '../utils.js';
-import { getYoga, TYoga, YogaNode } from '../yoga.js';
-import buildText, { container } from '../builder/text.js';
-import { buildDropShadow } from '../builder/shadow.js';
-import buildDecoration from '../builder/text-decoration.js';
-import type { GlyphBox } from '../font.js';
-import { Locale } from '../language.js';
-import { HorizontalEllipsis, Space, Tab } from './characters.js';
-import { genMeasurer } from './measurer.js';
-import { preprocess } from './processor.js';
-import cssColorParse from 'parse-css-color';
 
 const skippedWordWhenFindingMissingFont = new Set([Tab]);
 
-function shouldSkipWhenFindingMissingFont(word: string): boolean {
+const shouldSkipWhenFindingMissingFont = (word: string): boolean => {
 	return skippedWordWhenFindingMissingFont.has(word);
-}
+};
 
-function isFullyTransparent(color: string): boolean {
-	if (color === 'transparent') return true;
+const isFullyTransparent = (color: string): boolean => {
+	if (color === 'transparent') {
+		return true;
+	}
 	const parsed = cssColorParse(color);
 	return parsed ? parsed.alpha === 0 : false;
-}
+};
 
-function isOpaqueWhite(color: string): boolean {
-	if (!color) return false;
+const isOpaqueWhite = (color: string): boolean => {
+	if (!color) {
+		return false;
+	}
 	const parsed = cssColorParse(color);
-	if (!parsed) return false;
+	if (!parsed) {
+		return false;
+	}
 	const [r, g, b, a] = parsed.values;
 	return r === 255 && g === 255 && b === 255 && (a === undefined || a === 1);
-}
+};
 
-export default async function* buildTextNodes(
+const createTextContainerNode = (Yoga: TYoga, textAlign: string): YogaNode => {
+	// Create a container node for this text fragment.
+	const textContainer = Yoga.Node.create();
+	textContainer.setAlignItems(Yoga.ALIGN_BASELINE);
+	textContainer.setJustifyContent(
+		v(
+			textAlign,
+			{
+				left: Yoga.JUSTIFY_FLEX_START,
+				right: Yoga.JUSTIFY_FLEX_END,
+				center: Yoga.JUSTIFY_CENTER,
+				justify: Yoga.JUSTIFY_SPACE_BETWEEN,
+				// We don't have other writing modes yet.
+				start: Yoga.JUSTIFY_FLEX_START,
+				end: Yoga.JUSTIFY_FLEX_END
+			},
+			Yoga.JUSTIFY_FLEX_START,
+			'textAlign'
+		)
+	);
+
+	return textContainer;
+};
+
+const detectTabs = (
+	text: string
+):
+	| {
+			index: null;
+			tabCount: 0;
+	  }
+	| {
+			index: number;
+			tabCount: number;
+	  } => {
+	const result = /(\t)+/.exec(text);
+	return result
+		? {
+				index: result.index,
+				tabCount: result[0].length
+		  }
+		: {
+				index: null,
+				tabCount: 0
+		  };
+};
+
+const buildTextNodes = async function* (
 	content: string,
 	context: LayoutContext
 ): AsyncGenerator<{ word: string; locale?: Locale }[], string, [any, any]> {
@@ -101,16 +155,17 @@ export default async function* buildTextNodes(
 
 	// Yield segments that are missing a font.
 	const wordsMissingFont = canLoadAdditionalAssets
-		? segment(processedContent, 'grapheme').filter(
-				word =>
+		? segment(processedContent, 'grapheme').filter(word => {
+				return (
 					!shouldSkipWhenFindingMissingFont(word) && !engine.has(word)
-		  )
+				);
+		  })
 		: [];
 
 	yield wordsMissingFont.map(word => {
 		return {
-			word,
-			locale
+			locale,
+			word
 		};
 	});
 
@@ -119,9 +174,9 @@ export default async function* buildTextNodes(
 		engine = font.getEngine(fontSize, lineHeight, parentStyle, locale);
 	}
 
-	function isImage(s: string): boolean {
+	const isImage = (s: string): boolean => {
 		return !!(graphemeImages && graphemeImages[s]);
-	}
+	};
 
 	const { measureGrapheme, measureGraphemeArray, measureText } = genMeasurer(
 		engine,
@@ -146,8 +201,8 @@ export default async function* buildTextNodes(
 	} => {
 		if (text.length === 0) {
 			return {
-				originWidth: 0,
 				endingSpacesWidth: 0,
+				originWidth: 0,
 				text
 			};
 		}
@@ -175,8 +230,8 @@ export default async function* buildTextNodes(
 			text.trimEnd() === text ? originWidth : measureText(text.trimEnd());
 
 		return {
-			originWidth,
 			endingSpacesWidth: originWidth - afterTrimEndWidth,
+			originWidth,
 			text
 		};
 	};
@@ -197,7 +252,7 @@ export default async function* buildTextNodes(
 	})[] = [];
 
 	// With the given container width, compute the text layout.
-	function flow(width: number) {
+	const flow = (width: number) => {
 		let lines = 0;
 		let maxWidth = 0;
 		let lineIndex = -1;
@@ -329,12 +384,12 @@ export default async function* buildTextNodes(
 
 			if (w === 0) {
 				wordPositionInLayout.push({
-					y: height,
-					x,
-					width: 0,
+					isImage: false,
 					line: lines,
 					lineIndex,
-					isImage: false
+					width: 0,
+					x,
+					y: height
 				});
 			} else {
 				const _texts = segment(word, 'word');
@@ -359,12 +414,12 @@ export default async function* buildTextNodes(
 
 					texts.push(_text);
 					wordPositionInLayout.push({
-						y: height,
-						x,
-						width: _width,
+						isImage: _isImage,
 						line: lines,
 						lineIndex,
-						isImage: _isImage
+						width: _width,
+						x,
+						y: height
 					});
 
 					x += _width;
@@ -385,13 +440,13 @@ export default async function* buildTextNodes(
 		}
 
 		// @TODO: Support `line-height`.
-		return { width: maxWidth, height };
-	}
+		return { height, width: maxWidth };
+	};
 
 	// It's possible that the text's measured size is different from the container's
 	// size, because the container might have a fixed width or height or being
 	// expanded by its parent.
-	let measuredTextSize = { width: 0, height: 0 };
+	let measuredTextSize = { height: 0, width: 0 };
 	textContainer.setMeasureFunc(containerWidth => {
 		const { width, height } = flow(containerWidth);
 
@@ -413,8 +468,8 @@ export default async function* buildTextNodes(
 			}
 			flow(r);
 			const _width = Math.ceil(r);
-			measuredTextSize = { width: _width, height };
-			return { width: _width, height };
+			measuredTextSize = { height, width: _width };
+			return { height, width: _width };
 		}
 
 		// When doing `text-wrap: pretty`, we try to avoid ending a paragraph with a single word
@@ -443,20 +498,20 @@ export default async function* buildTextNodes(
 
 				// Use the result if it reduces orphans without adding too many lines
 				if (result.height <= height * 1.3) {
-					measuredTextSize = { width, height: result.height };
-					return { width, height: result.height };
+					measuredTextSize = { height: result.height, width };
+					return { height: result.height, width };
 				}
 			}
 		}
 
 		const _width = Math.ceil(width);
-		measuredTextSize = { width: _width, height };
+		measuredTextSize = { height, width: _width };
 		// This may be a temporary fix, I didn't dig deep into yoga.
 		// But when the return value of width here doesn't change (assuming the value of width is 216.9),
 		// when we later get the width through `parent.getComputedWidth()`, sometimes it returns 216 and sometimes 217.
 		// I'm not sure if this is a yoga bug, but it seems related to the entire page width.
 		// So I use Math.ceil.
-		return { width: _width, height };
+		return { height, width: _width };
 	});
 
 	const [x, y] = yield;
@@ -525,10 +580,10 @@ export default async function* buildTextNodes(
 
 		filter = buildDropShadow(
 			{
-				width: measuredTextSize.width,
 				height: measuredTextSize.height,
 				id,
-				padding: strokePadding
+				padding: strokePadding,
+				width: measuredTextSize.width
 			},
 			{
 				shadowColor: textShadowColor,
@@ -548,9 +603,9 @@ export default async function* buildTextNodes(
 	let extra = '';
 	let skippedLine = -1;
 	type DecorationLine = {
+		ascender: number;
 		left: number;
 		top: number;
-		ascender: number;
 		width: number;
 	};
 	let decorationLines: Record<number, DecorationLine | null> = {};
@@ -563,7 +618,9 @@ export default async function* buildTextNodes(
 		const layout = wordPositionInLayout[i];
 		const nextLayout = wordPositionInLayout[i + 1];
 
-		if (!layout) continue;
+		if (!layout) {
+			continue;
+		}
 
 		let text = texts[i];
 		let path: string | null = null;
@@ -632,16 +689,16 @@ export default async function* buildTextNodes(
 			}
 			const baseline = top + offset + baselineDelta + baselineOfWord;
 			return {
-				underlineY: baseline + baselineOfWord * 0.1,
-				strokeWidth: Math.max(1, fontSize * 0.1)
+				strokeWidth: Math.max(1, fontSize * 0.1),
+				underlineY: baseline + baselineOfWord * 0.1
 			};
 		};
 
 		if (!decorationLines[line]) {
 			decorationLines[line] = {
+				ascender: baselineOfWord,
 				left: leftOffset,
 				top: top + topOffset + baselineDelta,
-				ascender: baselineOfWord,
 				width: extendedWidth ? containerWidth : lineWidths[line]
 			};
 		}
@@ -657,7 +714,7 @@ export default async function* buildTextNodes(
 			const isNotLastLine = line < lineWidths.length - 1;
 			const isLastAllowedLine = line + 1 === lineLimit;
 
-			function calcEllipsis(baseWidth: number, _text: string) {
+			const calcEllipsis = (baseWidth: number, _text: string) => {
 				const chars = segment(_text, 'grapheme', locale);
 
 				let subset = '';
@@ -680,10 +737,10 @@ export default async function* buildTextNodes(
 				}
 
 				return {
-					subset,
-					resolvedWidth
+					resolvedWidth,
+					subset
 				};
-			}
+			};
 
 			if (
 				isLastAllowedLine &&
@@ -855,20 +912,20 @@ export default async function* buildTextNodes(
 		} else {
 			const [t, shape] = buildText(
 				{
-					content: text,
-					filter,
-					id,
-					left: left + leftOffset,
-					top: top + topOffset,
-					width,
-					height: heightOfWord,
-					matrix,
-					opacity,
-					image,
 					clipPathId,
+					content: text,
 					debug,
 					fauxBoldStrokeWidth: engine.fauxBoldStrokeWidth,
-					shape: !!_inheritedBackgroundClipTextPath
+					filter,
+					height: heightOfWord,
+					id,
+					image,
+					left: left + leftOffset,
+					matrix,
+					opacity,
+					shape: !!_inheritedBackgroundClipTextPath,
+					top: top + topOffset,
+					width
 				},
 				parentStyle
 			);
@@ -884,18 +941,20 @@ export default async function* buildTextNodes(
 	if (parentStyle.textDecorationLine) {
 		decorationShape = Object.entries(decorationLines)
 			.map(([lineIndex, deco]) => {
-				if (!deco) return '';
+				if (!deco) {
+					return '';
+				}
 				const glyphBoxes = decorationGlyphs[lineIndex] || [];
 
 				return buildDecoration(
 					{
-						left: left + deco.left,
-						top: deco.top,
-						width: deco.width,
 						ascender: deco.ascender,
 						clipPathId,
+						glyphBoxes,
+						left: left + deco.left,
 						matrix,
-						glyphBoxes
+						top: deco.top,
+						width: deco.width
 					},
 					parentStyle
 				);
@@ -1013,49 +1072,6 @@ export default async function* buildTextNodes(
 	}
 
 	return result;
-}
+};
 
-function createTextContainerNode(Yoga: TYoga, textAlign: string): YogaNode {
-	// Create a container node for this text fragment.
-	const textContainer = Yoga.Node.create();
-	textContainer.setAlignItems(Yoga.ALIGN_BASELINE);
-	textContainer.setJustifyContent(
-		v(
-			textAlign,
-			{
-				left: Yoga.JUSTIFY_FLEX_START,
-				right: Yoga.JUSTIFY_FLEX_END,
-				center: Yoga.JUSTIFY_CENTER,
-				justify: Yoga.JUSTIFY_SPACE_BETWEEN,
-				// We don't have other writing modes yet.
-				start: Yoga.JUSTIFY_FLEX_START,
-				end: Yoga.JUSTIFY_FLEX_END
-			},
-			Yoga.JUSTIFY_FLEX_START,
-			'textAlign'
-		)
-	);
-
-	return textContainer;
-}
-
-function detectTabs(text: string):
-	| {
-			index: null;
-			tabCount: 0;
-	  }
-	| {
-			index: number;
-			tabCount: number;
-	  } {
-	const result = /(\t)+/.exec(text);
-	return result
-		? {
-				index: result.index,
-				tabCount: result[0].length
-		  }
-		: {
-				index: null,
-				tabCount: 0
-		  };
-}
+export default buildTextNodes;

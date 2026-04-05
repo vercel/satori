@@ -4,7 +4,11 @@ import type { ParsedTransformOrigin } from '../transform-origin.js';
 const baseMatrix = [1, 0, 0, 1, 0, 0];
 
 // Mutate the array in place.
-function resolveTransforms(transforms: any[], width: number, height: number) {
+const resolveTransforms = (
+	transforms: any[],
+	width: number,
+	height: number
+) => {
 	let matrix = [...baseMatrix];
 
 	// Handle CSS transforms To make it easier, we convert different transform
@@ -72,24 +76,24 @@ function resolveTransforms(transforms: any[], width: number, height: number) {
 	transforms.splice(0, transforms.length);
 	transforms.push(...matrix);
 	(transforms as any).__resolved = true;
-}
+};
 
-export default function transform(
+const transformFn = (
 	{
+		height,
 		left,
 		top,
-		width,
-		height
+		width
 	}: {
+		height: number;
 		left: number;
 		top: number;
 		width: number;
-		height: number;
 	},
 	transforms: number[],
 	isInheritingTransform: boolean,
 	transformOrigin?: ParsedTransformOrigin
-) {
+) => {
 	let result: number[];
 
 	if (!(transforms as any).__resolved) {
@@ -130,5 +134,11 @@ export default function transform(
 		matrix.splice(0, 6, ...result);
 	}
 
-	return `matrix(${result.map(v => v.toFixed(2)).join(',')})`;
-}
+	return `matrix(${result
+		.map(v => {
+			return v.toFixed(2);
+		})
+		.join(',')})`;
+};
+
+export default transformFn;

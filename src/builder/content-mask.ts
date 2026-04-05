@@ -7,26 +7,26 @@
 import { buildXMLString } from '../utils.js';
 import border from './border.js';
 
-export default function contentMask(
+const contentMask = (
 	{
+		borderOnly,
+		height,
 		id,
 		left,
-		top,
-		width,
-		height,
 		matrix,
-		borderOnly
+		top,
+		width
 	}: {
+		borderOnly?: boolean;
+		height: number;
 		id: string;
 		left: number;
+		matrix: string | undefined;
 		top: number;
 		width: number;
-		height: number;
-		matrix: string | undefined;
-		borderOnly?: boolean;
 	},
 	style: Record<string, number | string>
-) {
+) => {
 	const offsetLeft =
 		((style.borderLeftWidth as number) || 0) +
 		(borderOnly ? 0 : (style.paddingLeft as number) || 0);
@@ -41,10 +41,10 @@ export default function contentMask(
 		(borderOnly ? 0 : (style.paddingBottom as number) || 0);
 
 	const contentArea = {
-		x: left + offsetLeft,
-		y: top + offsetTop,
+		height: height - offsetTop - offsetBottom,
 		width: width - offsetLeft - offsetRight,
-		height: height - offsetTop - offsetBottom
+		x: left + offsetLeft,
+		y: top + offsetTop
 	};
 
 	const _contentMask = buildXMLString(
@@ -56,29 +56,31 @@ export default function contentMask(
 			// add transformation matrix to mask if overflow is hidden AND a
 			// transformation style is defined, otherwise children will be clipped
 			// incorrectly
+			mask: style._inheritedMaskId
+				? `url(#${style._inheritedMaskId})`
+				: undefined,
 			transform:
 				style.overflow === 'hidden' && style.transform && matrix
 					? matrix
-					: undefined,
-			mask: style._inheritedMaskId
-				? `url(#${style._inheritedMaskId})`
-				: undefined
+					: undefined
 		}) +
 			border(
 				{
-					left,
-					top,
-					width,
+					asContentMask: true,
 					height,
+					left,
+					maskBorderOnly: borderOnly,
 					props: {
 						transform: matrix ? matrix : undefined
 					},
-					asContentMask: true,
-					maskBorderOnly: borderOnly
+					top,
+					width
 				},
 				style
 			)
 	);
 
 	return _contentMask;
-}
+};
+
+export default contentMask;

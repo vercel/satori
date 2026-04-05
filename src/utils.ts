@@ -3,7 +3,7 @@ import LineBreaker from 'linebreak';
 
 import CssDimension from './vendor/parse-css-dimension/index.js';
 
-export function isReactElement(node: ReactNode): node is ReactElement {
+const isReactElement = (node: ReactNode): node is ReactElement => {
 	const type = typeof node;
 	if (
 		type === 'number' ||
@@ -14,25 +14,25 @@ export function isReactElement(node: ReactNode): node is ReactElement {
 		return false;
 	}
 	return true;
-}
+};
 
-export function isClass(f: Function) {
+const isClass = (f: Function) => {
 	return /^class\s/.test(f.toString());
-}
+};
 
-export function isForwardRefComponent(type: any) {
+const isForwardRefComponent = (type: any) => {
 	return type && type.$$typeof === Symbol.for('react.forward_ref');
-}
+};
 
-export function isReactComponent(type: any) {
+const isReactComponent = (type: any) => {
 	return typeof type === 'function' || isForwardRefComponent(type);
-}
+};
 
-export function hasDangerouslySetInnerHTMLProp(props: any) {
+const hasDangerouslySetInnerHTMLProp = (props: any) => {
 	return 'dangerouslySetInnerHTML' in props;
-}
+};
 
-export function normalizeChildren(children: any) {
+const normalizeChildren = (children: any) => {
 	const flattend =
 		typeof children === 'undefined'
 			? []
@@ -62,26 +62,32 @@ export function normalizeChildren(children: any) {
 		}
 	}
 	return res;
-}
+};
 
-export function lengthToNumber(
+const lengthToNumber = (
 	length: string | number,
 	baseFontSize: number,
 	baseLength: number,
 	inheritedStyle: Record<string, string | number>,
 	percentage = false
-): number | undefined {
-	if (typeof length === 'number') return length;
+): number | undefined => {
+	if (typeof length === 'number') {
+		return length;
+	}
 
 	// Convert em and rem values to number (px), convert rad to deg.
 	try {
 		length = length.trim();
 
 		// Not length: `1px/2px`, `1px 2px`, `1px, 2px`, `calc(1px)`.
-		if (/[ /\(,]/.test(length)) return;
+		if (/[ /\(,]/.test(length)) {
+			return;
+		}
 
 		// Just a number as string: '100'
-		if (length === String(+length)) return +length;
+		if (length === String(+length)) {
+			return +length;
+		}
 
 		const parsed = new CssDimension(length);
 		if (parsed.type === 'length') {
@@ -115,9 +121,9 @@ export function lengthToNumber(
 	} catch {
 		// Not a length unit, silently ignore.
 	}
-}
+};
 
-export function calcDegree(deg: string) {
+const calcDegree = (deg: string) => {
 	const parsed = new CssDimension(deg);
 
 	switch (parsed.unit) {
@@ -130,10 +136,10 @@ export function calcDegree(deg: string) {
 		case 'grad':
 			return 0.9 * parsed.value;
 	}
-}
+};
 
 // Multiplies two 2d transform matrices.
-export function multiply(m1: number[], m2: number[]) {
+const multiply = (m1: number[], m2: number[]) => {
 	return [
 		m1[0] * m2[0] + m1[2] * m2[1],
 		m1[1] * m2[0] + m1[3] * m2[1],
@@ -142,14 +148,14 @@ export function multiply(m1: number[], m2: number[]) {
 		m1[0] * m2[4] + m1[2] * m2[5] + m1[4],
 		m1[1] * m2[4] + m1[3] * m2[5] + m1[5]
 	];
-}
+};
 
-export function v(
+const v = (
 	field: string | number | undefined,
 	map: Record<string, any>,
 	fallback: any,
 	errorIfNotAllowedForProperty?: string
-) {
+) => {
 	let value = map[field];
 	if (typeof value === 'undefined') {
 		if (errorIfNotAllowedForProperty && typeof field !== 'undefined') {
@@ -157,14 +163,16 @@ export function v(
 				`Invalid value for CSS property "${errorIfNotAllowedForProperty}". Allowed values: ${Object.keys(
 					map
 				)
-					.map(_v => `"${_v}"`)
+					.map(_v => {
+						return `"${_v}"`;
+					})
 					.join(' | ')}. Received: "${field}".`
 			);
 		}
 		value = fallback;
 	}
 	return value;
-}
+};
 
 let wordSegmenter;
 let graphemeSegmenter;
@@ -172,18 +180,20 @@ let graphemeSegmenter;
 // Implementation modified from
 // https://github.com/niklasvh/html2canvas/blob/6521a487d78172f7179f7c973c1a3af40eb92009/src/css/layout/text.ts
 // https://drafts.csswg.org/css-text/#word-separator
-export const wordSeparators = [
+const wordSeparators = [
 	0x0020, 0x00a0, 0x1361, 0x10100, 0x10101, 0x1039, 0x1091, 0xa
-].map(point => String.fromCodePoint(point));
+].map(point => {
+	return String.fromCodePoint(point);
+});
 
 const segmentCache = new Map<string, string[]>();
 const MAX_SEGMENT_CACHE_SIZE = 500;
 
-export function segment(
+const segment = (
 	content: string,
 	granularity: 'word' | 'grapheme',
 	locale?: string
-): string[] {
+): string[] => {
 	const cacheKey = `${granularity}:${locale || ''}:${content}`;
 
 	if (segmentCache.has(cacheKey)) {
@@ -206,13 +216,13 @@ export function segment(
 	let result: string[];
 
 	if (granularity === 'grapheme') {
-		result = [...graphemeSegmenter.segment(content)].map(
-			seg => seg.segment
-		);
+		result = [...graphemeSegmenter.segment(content)].map(seg => {
+			return seg.segment;
+		});
 	} else {
-		const segmented = [...wordSegmenter.segment(content)].map(
-			seg => seg.segment
-		) as string[];
+		const segmented = [...wordSegmenter.segment(content)].map(seg => {
+			return seg.segment;
+		}) as string[];
 
 		const output = [];
 
@@ -245,13 +255,13 @@ export function segment(
 
 	segmentCache.set(cacheKey, result);
 	return result;
-}
+};
 
-export function buildXMLString(
+const buildXMLString = (
 	type: string,
 	attrs: Record<string, string | number>,
 	children?: string
-) {
+) => {
 	let attrString = '';
 
 	for (const [k, _v] of Object.entries(attrs)) {
@@ -264,20 +274,22 @@ export function buildXMLString(
 		return `<${type}${attrString}>${children}</${type}>`;
 	}
 	return `<${type}${attrString}/>`;
-}
+};
 
-export function createLRU<T>(max = 20) {
+const createLRU = <T>(max = 20) => {
 	const store: Map<string, T> = new Map();
-	function get(key: string): T | undefined {
+	const get = (key: string): T | undefined => {
 		const value = store.get(key);
-		if (value === undefined) return undefined;
+		if (value === undefined) {
+			return undefined;
+		}
 
 		// Move to end (most recently used)
 		store.delete(key);
 		store.set(key, value);
 		return value;
-	}
-	function set(key: string, value: T) {
+	};
+	const set = (key: string, value: T) => {
 		if (store.has(key)) {
 			store.delete(key);
 		} else if (store.size >= max) {
@@ -286,42 +298,42 @@ export function createLRU<T>(max = 20) {
 		}
 
 		store.set(key, value);
-	}
-	function clear() {
+	};
+	const clear = () => {
 		store.clear();
-	}
+	};
 
 	return {
-		set,
+		clear,
 		get,
-		clear
+		set
 	};
-}
+};
 
-export function parseViewBox(viewBox?: string | null | undefined) {
+const parseViewBox = (viewBox?: string | null | undefined) => {
 	return viewBox ? viewBox.split(/[, ]/).filter(Boolean).map(Number) : null;
-}
+};
 
-export function toString(x: unknown): string {
+const toString = (x: unknown): string => {
 	return Object.prototype.toString.call(x);
-}
+};
 
-export function isString(x: unknown): x is string {
+const isString = (x: unknown): x is string => {
 	return typeof x === 'string';
-}
+};
 
-export function isNumber(x: unknown): x is number {
+const isNumber = (x: unknown): x is number => {
 	return typeof x === 'number';
-}
+};
 
-export function isUndefined(x: unknown): x is undefined {
+const isUndefined = (x: unknown): x is undefined => {
 	return typeof x === 'undefined';
-}
+};
 
-export function asPointPercentageLength(
+const asPointPercentageLength = (
 	x: string | number,
 	propertyName?: string
-): number | `${number}%` | undefined {
+): number | `${number}%` | undefined => {
 	if (typeof x === 'number') {
 		return x;
 	}
@@ -346,12 +358,12 @@ export function asPointPercentageLength(
 		}. Expected a number or a percentage value (e.g., "50%").`
 	);
 	return undefined;
-}
+};
 
-export function asPointAutoPercentageLength(
+const asPointAutoPercentageLength = (
 	x: string | number,
 	propertyName?: string
-): number | 'auto' | `${number}%` | undefined {
+): number | 'auto' | `${number}%` | undefined => {
 	if (typeof x === 'number') {
 		return x;
 	}
@@ -379,21 +391,21 @@ export function asPointAutoPercentageLength(
 		}. Expected a number, "auto", or a percentage value (e.g., "50%").`
 	);
 	return undefined;
-}
+};
 
-export function splitByBreakOpportunities(
+const splitByBreakOpportunities = (
 	content: string,
 	wordBreak: string
 ): {
 	words: string[];
 	requiredBreaks: boolean[];
-} {
+} => {
 	if (wordBreak === 'break-all') {
-		return { words: segment(content, 'grapheme'), requiredBreaks: [] };
+		return { requiredBreaks: [], words: segment(content, 'grapheme') };
 	}
 
 	if (wordBreak === 'keep-all') {
-		return { words: segment(content, 'word'), requiredBreaks: [] };
+		return { requiredBreaks: [], words: segment(content, 'word') };
 	}
 
 	const breaker = new LineBreaker(content);
@@ -416,20 +428,19 @@ export function splitByBreakOpportunities(
 		bk = breaker.nextBreak();
 	}
 
-	return { words, requiredBreaks };
-}
-
-export const midline = (s: string) => {
-	return s.replaceAll(
-		/([A-Z])/g,
-		(_, letter: string) => `-${letter.toLowerCase()}`
-	);
+	return { requiredBreaks, words };
 };
 
-export function splitEffects(
+const midline = (s: string) => {
+	return s.replaceAll(/([A-Z])/g, (_, letter: string) => {
+		return `-${letter.toLowerCase()}`;
+	});
+};
+
+const splitEffects = (
 	input: string,
 	separator: string | RegExp = ','
-): string[] {
+): string[] => {
 	const result = [];
 	let l = 0;
 	let parenCount = 0;
@@ -451,4 +462,31 @@ export function splitEffects(
 	result.push(input.slice(l).trim());
 
 	return result;
-}
+};
+
+export {
+	asPointAutoPercentageLength,
+	asPointPercentageLength,
+	buildXMLString,
+	calcDegree,
+	createLRU,
+	hasDangerouslySetInnerHTMLProp,
+	isClass,
+	isForwardRefComponent,
+	isNumber,
+	isReactComponent,
+	isReactElement,
+	isString,
+	isUndefined,
+	lengthToNumber,
+	midline,
+	multiply,
+	normalizeChildren,
+	parseViewBox,
+	segment,
+	splitByBreakOpportunities,
+	splitEffects,
+	toString,
+	v,
+	wordSeparators
+};

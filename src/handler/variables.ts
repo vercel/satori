@@ -8,18 +8,18 @@
 
 import valueParser from 'postcss-value-parser';
 
-export type CSSVariables = Record<string, string>;
+type CSSVariables = Record<string, string>;
 
 /**
  * Extracts custom properties (--*) from a style object
  * Returns both the variables and the remaining style properties
  */
-export function extractCustomProperties(
+const extractCustomProperties = (
 	style: Record<string, string | number>
 ): {
 	variables: CSSVariables;
 	remainingStyle: Record<string, string | number>;
-} {
+} => {
 	const variables: CSSVariables = {};
 	const remainingStyle: Record<string, string | number> = {};
 
@@ -32,30 +32,30 @@ export function extractCustomProperties(
 		}
 	}
 
-	return { variables, remainingStyle };
-}
+	return { remainingStyle, variables };
+};
 
 /**
  * Merges inherited variables with current variables
  * Current variables override inherited ones (cascading)
  */
-export function mergeVariables(
+const mergeVariables = (
 	inherited: CSSVariables,
 	current: CSSVariables
-): CSSVariables {
+): CSSVariables => {
 	return { ...inherited, ...current };
-}
+};
 
 /**
  * Resolves var() references in a CSS value
  * Supports fallback values: var(--name, fallback)
  * Handles nested var() calls
  */
-export function resolveVariables(
+const resolveVariables = (
 	value: string | number,
 	variables: CSSVariables,
 	visitedVars = new Set<string>()
-): string | number {
+): string | number => {
 	// Only process strings
 	if (typeof value !== 'string') {
 		return value;
@@ -81,7 +81,7 @@ export function resolveVariables(
 					return;
 				}
 
-				const { varName, fallback } = args;
+				const { fallback, varName } = args;
 
 				// Check for circular reference
 				if (visitedVars.has(varName)) {
@@ -141,15 +141,15 @@ export function resolveVariables(
 	}
 
 	return value;
-}
+};
 
 /**
  * Extracts variable name and fallback from var() function arguments
  * Handles: var(--name) and var(--name, fallback)
  */
-function extractVarArgs(
+const extractVarArgs = (
 	node: valueParser.FunctionNode
-): { varName: string; fallback?: string } | null {
+): { fallback?: string; varName: string } | null => {
 	if (!node.nodes || node.nodes.length === 0) {
 		return null;
 	}
@@ -179,31 +179,31 @@ function extractVarArgs(
 		// Collect all nodes after the comma as the fallback
 		const fallbackNodes = node.nodes.slice(commaIndex + 1);
 		const fallback = valueParser.stringify(fallbackNodes).trim();
-		return { varName, fallback };
+		return { fallback, varName };
 	}
 
 	return { varName };
-}
+};
 
 /**
  * Replaces a function node with a raw string value
  */
-function replaceNode(node: valueParser.Node, value: string) {
+const replaceNode = (node: valueParser.Node, value: string) => {
 	// Replace the function node with a word node
 	node.type = 'word';
 	node.value = value;
 	// Remove function-specific properties
 	delete (node as any).nodes;
-}
+};
 
 /**
  * Resolves all variables in a style object
  * Returns a new style object with var() references resolved
  */
-export function resolveStyleVariables(
+const resolveStyleVariables = (
 	style: Record<string, string | number>,
 	variables: CSSVariables
-): Record<string, string | number> {
+): Record<string, string | number> => {
 	const resolved: Record<string, string | number> = {};
 
 	for (const prop in style) {
@@ -211,4 +211,12 @@ export function resolveStyleVariables(
 	}
 
 	return resolved;
-}
+};
+
+export type { CSSVariables };
+export {
+	extractCustomProperties,
+	mergeVariables,
+	resolveStyleVariables,
+	resolveVariables
+};

@@ -1,36 +1,36 @@
+import CssDimension from '../vendor/parse-css-dimension/index.js';
 import type { ParsedTransformOrigin } from '../transform-origin.js';
 
 import backgroundImage from './background-image.js';
-import radius, { getBorderRadiusClipPath } from './border-radius.js';
-import { boxShadow } from './shadow.js';
-import transform from './transform.js';
-import overflow from './overflow.js';
-import { buildXMLString } from '../utils.js';
 import border, { getBorderClipPath } from './border.js';
-import { genClipPath } from './clip-path.js';
 import buildMaskImage from './mask-image.js';
-import CssDimension from '../vendor/parse-css-dimension/index.js';
+import overflow from './overflow.js';
+import radius, { getBorderRadiusClipPath } from './border-radius.js';
+import transform from './transform.js';
+import { boxShadow } from './shadow.js';
+import { buildXMLString } from '../utils.js';
+import { genClipPath } from './clip-path.js';
 
 /**
  * Parse object-position value into [xOffset, yOffset] in pixels.
  * Supports keywords (left, center, right, top, bottom), percentages, and lengths.
  * Similar to background-position parsing.
  */
-function parseObjectPosition(
+const parseObjectPosition = (
 	position: string,
 	containerWidth: number,
 	containerHeight: number
-): [number, number] {
+): [number, number] => {
 	const parts = position.toLowerCase().trim().split(/\s+/);
 
 	// Convert keyword to percentage
 	const keywordToPercent = (keyword: string, axis: 'x' | 'y'): string => {
 		const map = {
-			left: '0%',
+			bottom: '100%',
 			center: '50%',
+			left: '0%',
 			right: '100%',
-			top: '0%',
-			bottom: '100%'
+			top: '0%'
 		};
 		return map[keyword] || keyword;
 	};
@@ -101,32 +101,34 @@ function parseObjectPosition(
 		parseValue(xValue, containerWidth),
 		parseValue(yValue, containerHeight)
 	];
-}
+};
 
-export default async function rect(
+const rect = async (
 	{
-		id,
-		left,
-		top,
-		width,
+		debug,
 		height,
+		id,
 		isInheritingTransform,
+		left,
 		src,
-		debug
+		top,
+		width
 	}: {
+		debug?: boolean;
+		height: number;
 		id: string;
+		isInheritingTransform: boolean;
 		left: number;
+		src?: string;
 		top: number;
 		width: number;
-		height: number;
-		isInheritingTransform: boolean;
-		src?: string;
-		debug?: boolean;
 	},
 	style: Record<string, number | string>,
 	inheritableStyle: Record<string, number | string>
-) {
-	if (style.display === 'none') return '';
+) => {
+	if (style.display === 'none') {
+		return '';
+	}
 
 	const isImage = !!src;
 
@@ -148,10 +150,10 @@ export default async function rect(
 	if (style.transform) {
 		matrix = transform(
 			{
+				height,
 				left,
 				top,
-				width,
-				height
+				width
 			},
 			style.transform as unknown as number[],
 			isInheritingTransform,
@@ -170,7 +172,7 @@ export default async function rect(
 		) {
 			const background = (style.backgroundImage as any)[index];
 			const image = await backgroundImage(
-				{ id: id + '_' + index, width, height, left, top },
+				{ height, id: id + '_' + index, left, top, width },
 				background,
 				inheritableStyle
 			);
@@ -190,7 +192,7 @@ export default async function rect(
 	}
 
 	const [miId, mi] = await buildMaskImage(
-		{ id, left, top, width, height },
+		{ height, id, left, top, width },
 		style,
 		inheritableStyle
 	);
@@ -203,7 +205,7 @@ export default async function rect(
 		: undefined;
 
 	const path = radius(
-		{ left, top, width, height },
+		{ height, left, top, width },
 		style as Record<string, number>
 	);
 	if (path) {
@@ -214,15 +216,15 @@ export default async function rect(
 
 	if (debug) {
 		extra = buildXMLString('rect', {
-			x: left,
-			y: top,
-			width,
-			height,
+			'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
 			fill: 'transparent',
+			height,
 			stroke: '#ff5757',
 			'stroke-width': 1,
 			transform: matrix || undefined,
-			'clip-path': clipPathId ? `url(#${clipPathId})` : undefined
+			width,
+			x: left,
+			y: top
 		});
 	}
 
@@ -233,7 +235,9 @@ export default async function rect(
 			cssFilter ? `filter:${cssFilter}` : undefined,
 			mixBlendMode ? `mix-blend-mode:${mixBlendMode}` : undefined
 		]
-			.filter(v => v)
+			.filter(v => {
+				return v;
+			})
 			.join(';') || undefined;
 
 	const currentClipPath =
@@ -246,7 +250,7 @@ export default async function rect(
 			: undefined;
 
 	const clip = overflow(
-		{ left, top, width, height, path, id, matrix, currentClipPath, src },
+		{ currentClipPath, height, id, left, matrix, path, src, top, width },
 		style as Record<string, number>,
 		inheritableStyle
 	);
@@ -255,32 +259,32 @@ export default async function rect(
 	// @TODO: Not sure if this is the best way to do it, maybe <pattern> with
 	// multiple <image>s is better.
 	let shape = fills
-		.map(fill =>
-			buildXMLString(type, {
-				x: left,
-				y: top,
-				width,
-				height,
-				fill,
-				d: path ? path : undefined,
-				transform: matrix ? matrix : undefined,
+		.map(fill => {
+			return buildXMLString(type, {
 				'clip-path': style.transform ? undefined : currentClipPath,
+				d: path ? path : undefined,
+				fill,
+				height,
+				mask: style.transform ? undefined : maskId,
 				style: inlineStyle,
-				mask: style.transform ? undefined : maskId
-			})
-		)
+				transform: matrix ? matrix : undefined,
+				width,
+				x: left,
+				y: top
+			});
+		})
 		.join('');
 
 	const borderClip = getBorderClipPath(
 		{
+			borderPath: path,
+			borderType: type,
+			currentClipPathId: clipPathId,
+			height,
 			id,
 			left,
 			top,
-			width,
-			height,
-			currentClipPathId: clipPathId,
-			borderPath: path,
-			borderType: type
+			width
 		},
 		style
 	);
@@ -450,37 +454,37 @@ export default async function rect(
 		if (style.transform) {
 			imageBorderRadius = getBorderRadiusClipPath(
 				{
-					id,
 					borderRadiusPath: path,
 					borderType: type,
+					height,
+					id,
 					left,
 					top,
-					width,
-					height
+					width
 				},
 				style
 			);
 		}
 
 		shape += buildXMLString('image', {
-			x: imageX,
-			y: imageY,
-			width: imageWidth,
-			height: imageHeight,
-			href: src,
-			preserveAspectRatio,
-			transform: matrix ? matrix : undefined,
-			style: inlineStyle,
 			'clip-path': style.transform
 				? imageBorderRadius
 					? `url(#${imageBorderRadius[1]})`
 					: undefined
 				: `url(#satori_cp-${id})`,
+			height: imageHeight,
+			href: src,
 			mask: style.transform
 				? undefined
 				: miId
 				? `url(#${miId})`
-				: `url(#satori_om-${id})`
+				: `url(#satori_om-${id})`,
+			preserveAspectRatio,
+			style: inlineStyle,
+			transform: matrix ? matrix : undefined,
+			width: imageWidth,
+			x: imageX,
+			y: imageY
 		});
 	}
 
@@ -490,16 +494,16 @@ export default async function rect(
 
 		shape += border(
 			{
-				left,
-				top,
-				width,
 				height,
+				left,
 				props: {
-					transform: matrix ? matrix : undefined,
 					// When using `background-clip: text`, we need to draw the extra border because
 					// it shouldn't be clipped by the clip path, so we are not using currentClipPath here.
-					'clip-path': `url(#${rectClipId})`
-				}
+					'clip-path': `url(#${rectClipId})`,
+					transform: matrix ? matrix : undefined
+				},
+				top,
+				width
 			},
 			style
 		);
@@ -508,23 +512,23 @@ export default async function rect(
 	// box-shadow.
 	const shadow = boxShadow(
 		{
-			width,
 			height,
 			id,
 			opacity,
 			shape: buildXMLString(type, {
-				x: left,
-				y: top,
-				width,
-				height,
+				'clip-path': currentClipPath,
+				d: path ? path : undefined,
 				fill: '#fff',
+				height,
+				mask: maskId,
 				stroke: '#fff',
 				'stroke-width': 0,
-				d: path ? path : undefined,
 				transform: matrix ? matrix : undefined,
-				'clip-path': currentClipPath,
-				mask: maskId
-			})
+				width,
+				x: left,
+				y: top
+			}),
+			width
 		},
 		style
 	);
@@ -546,4 +550,6 @@ export default async function rect(
 		(shadow ? shadow[1] : '') +
 		extra
 	);
-}
+};
+
+export default rect;

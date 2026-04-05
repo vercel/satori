@@ -1,9 +1,11 @@
-export function stringFromCode(code: string): string {
+const stringFromCode = (code: string): string => {
 	code = code.replace('U+', '0x');
 
 	return String.fromCodePoint(Number(code));
-}
+};
 
-export const Space = stringFromCode('U+0020');
-export const Tab = stringFromCode('U+0009');
-export const HorizontalEllipsis = stringFromCode('U+2026');
+const Space = stringFromCode('U+0020');
+const Tab = stringFromCode('U+0009');
+const HorizontalEllipsis = stringFromCode('U+2026');
+
+export { HorizontalEllipsis, Space, Tab, stringFromCode };

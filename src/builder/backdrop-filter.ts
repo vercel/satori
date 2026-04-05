@@ -267,7 +267,7 @@ const parseFilterValue = (value: string): string => {
 	return primitives;
 };
 
-export const buildBackdropFilter = (
+const buildBackdropFilter = (
 	options: BuildBackdropFilterOptions
 ): string => {
 	const {
@@ -331,3 +331,5 @@ export const buildBackdropFilter = (
 
 	return defs + buildXMLString('g', gAttrs, useElement);
 };
+
+export { buildBackdropFilter };

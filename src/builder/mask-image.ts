@@ -1,25 +1,32 @@
 import { buildXMLString } from '../utils.js';
-import buildBackgroundImage from './background-image.js';
 import type { MaskProperty } from '../parser/mask.js';
 
-const genMaskImageId = (id: string) => `satori_mi-${id}`;
+import buildBackgroundImage from './background-image.js';
 
-export default async function buildMaskImage(
+const genMaskImageId = (id: string) => {
+	return `satori_mi-${id}`;
+};
+
+const buildMaskImage = async (
 	v: {
+		height: number;
 		id: string;
 		left: number;
 		top: number;
 		width: number;
-		height: number;
 	},
 	style: Record<string, string | number>,
 	inheritedStyle: Record<string, string | number>
-): Promise<[string, string]> {
-	if (!style.maskImage) return ['', ''];
-	const { left, top, width, height, id } = v;
+): Promise<[string, string]> => {
+	if (!style.maskImage) {
+		return ['', ''];
+	}
+	const { height, id, left, top, width } = v;
 	const maskImage = style.maskImage as unknown as MaskProperty[];
 	const length = maskImage.length;
-	if (!length) return ['', ''];
+	if (!length) {
+		return ['', ''];
+	}
 	const miId = genMaskImageId(id);
 
 	let mask = '';
@@ -28,7 +35,7 @@ export default async function buildMaskImage(
 		const m = maskImage[i];
 
 		const [_id, def] = await buildBackgroundImage(
-			{ id: `${miId}-${i}`, left, top, width, height },
+			{ height, id: `${miId}-${i}`, left, top, width },
 			m,
 			inheritedStyle,
 			'mask'
@@ -37,15 +44,17 @@ export default async function buildMaskImage(
 		mask +=
 			def +
 			buildXMLString('rect', {
-				x: left,
-				y: top,
-				width,
+				fill: `url(#${_id})`,
 				height,
-				fill: `url(#${_id})`
+				width,
+				x: left,
+				y: top
 			});
 	}
 
 	mask = buildXMLString('mask', { id: miId }, mask);
 
 	return [miId, mask];
-}
+};
+
+export default buildMaskImage;

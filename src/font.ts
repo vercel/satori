@@ -2,36 +2,48 @@
  * This class handles everything related to fonts.
  */
 import opentype from '@shuding/opentype.js';
+
 import { Locale, locales, isValidLocale } from './language.js';
 
-export type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
-export type WeightName = 'normal' | 'bold';
-export type FontWeight = Weight | WeightName;
-export type FontStyle = 'normal' | 'italic';
+type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
+type WeightName = 'normal' | 'bold';
+type FontWeight = Weight | WeightName;
+type FontStyle = 'normal' | 'italic';
 const SUFFIX_WHEN_LANG_NOT_SET = 'unknown';
 
-export interface FontOptions {
+type FontOptions = {
 	data: Buffer | ArrayBuffer;
-	name: string;
-	weight?: Weight;
-	style?: FontStyle;
 	lang?: string;
-}
+	name: string;
+	style?: FontStyle;
+	weight?: Weight;
+};
 
-export type GlyphBox = {
+type GlyphBox = {
 	x1: number;
 	x2: number;
 	y1: number;
 	y2: number;
 };
 type SkipInkBand = {
-	underlineY: number;
 	strokeWidth: number;
+	underlineY: number;
 };
 
-export type FontEngine = {
-	has: (s: string) => boolean;
+type FontEngine = {
 	baseline: (s?: string, resolvedFont?: any) => number;
+	fauxBoldStrokeWidth?: number;
+	getSVG: (
+		s: string,
+		style: {
+			fontSize: number;
+			left: number;
+			letterSpacing: number;
+			top: number;
+		},
+		band?: SkipInkBand
+	) => { boxes: GlyphBox[]; path: string };
+	has: (s: string) => boolean;
 	height: (s?: string, resolvedFont?: any) => number;
 	measure: (
 		s: string,
@@ -40,17 +52,6 @@ export type FontEngine = {
 			letterSpacing: number;
 		}
 	) => number;
-	getSVG: (
-		s: string,
-		style: {
-			fontSize: number;
-			top: number;
-			left: number;
-			letterSpacing: number;
-		},
-		band?: SkipInkBand
-	) => { path: string; boxes: GlyphBox[] };
-	fauxBoldStrokeWidth?: number;
 };
 
 type BandPoint = [number, number];
@@ -60,7 +61,7 @@ type LineSegment = {
 	to: BandPoint;
 };
 
-function flattenPath(commands: opentype.Path['commands']): LineSegment[] {
+const flattenPath = (commands: opentype.Path['commands']): LineSegment[] => {
 	const segments: LineSegment[] = [];
 	let start: BandPoint = [0, 0];
 	let current: BandPoint = [0, 0];
@@ -109,9 +110,9 @@ function flattenPath(commands: opentype.Path['commands']): LineSegment[] {
 	}
 
 	return segments;
-}
+};
 
-function evaluateBezier(points: BandPoint[], t: number): BandPoint {
+const evaluateBezier = (points: BandPoint[], t: number): BandPoint => {
 	let working = points;
 
 	while (working.length > 1) {
@@ -126,20 +127,24 @@ function evaluateBezier(points: BandPoint[], t: number): BandPoint {
 	}
 
 	return working[0];
-}
+};
 
-function computeBandBox(
+const computeBandBox = (
 	commands: opentype.Path['commands'],
 	band?: SkipInkBand
-): GlyphBox[] {
-	if (!band) return [];
+): GlyphBox[] => {
+	if (!band) {
+		return [];
+	}
 
 	const strokeWidth = band.strokeWidth;
 	const bandMin = band.underlineY - strokeWidth * 0.25;
 	const bandMax = band.underlineY + strokeWidth * 2.5;
 
 	const segments = flattenPath(commands);
-	if (!segments.length) return [];
+	if (!segments.length) {
+		return [];
+	}
 
 	const bandHeight = bandMax - bandMin;
 	const ySamples = Math.max(12, Math.ceil(bandHeight / 0.25));
@@ -156,18 +161,26 @@ function computeBandBox(
 			const [x1, y1] = seg.from;
 			const [x2, y2] = seg.to;
 
-			if (y1 === y2) continue;
+			if (y1 === y2) {
+				continue;
+			}
 			const yMin = Math.min(y1, y2);
 			const yMax = Math.max(y1, y2);
-			if (y < yMin || y >= yMax) continue;
+			if (y < yMin || y >= yMax) {
+				continue;
+			}
 
 			const t = (y - y1) / (y2 - y1);
 			const x = x1 + (x2 - x1) * t;
 			intersections.push(x);
 		}
 
-		if (!intersections.length) continue;
-		intersections.sort((a, b) => a - b);
+		if (!intersections.length) {
+			continue;
+		}
+		intersections.sort((a, b) => {
+			return a - b;
+		});
 
 		for (let j = 0; j < intersections.length - 1; j += 2) {
 			const from = Math.min(intersections[j], intersections[j + 1]);
@@ -180,9 +193,13 @@ function computeBandBox(
 		}
 	}
 
-	if (!columnHits.size) return [];
+	if (!columnHits.size) {
+		return [];
+	}
 
-	const columns = Array.from(columnHits.values()).sort((a, b) => a - b);
+	const columns = Array.from(columnHits.values()).sort((a, b) => {
+		return a - b;
+	});
 	const inkRanges: [number, number][] = [];
 
 	let rangeStart = columns[0];
@@ -214,88 +231,91 @@ function computeBandBox(
 	}
 
 	return boxes;
-}
+};
 
-function computeBoundingBox(
-	commands: opentype.Path['commands']
-): GlyphBox | null {
-	const xs: number[] = [];
-	const ys: number[] = [];
-
-	for (const cmd of commands) {
-		if ('x' in cmd && typeof cmd.x === 'number') xs.push(cmd.x);
-		if ('y' in cmd && typeof cmd.y === 'number') ys.push(cmd.y);
-		if ('x1' in cmd && typeof cmd.x1 === 'number') xs.push(cmd.x1);
-		if ('y1' in cmd && typeof cmd.y1 === 'number') ys.push(cmd.y1);
-		if ('x2' in cmd && typeof cmd.x2 === 'number') xs.push(cmd.x2);
-		if ('y2' in cmd && typeof cmd.y2 === 'number') ys.push(cmd.y2);
-	}
-
-	if (!xs.length || !ys.length) {
-		return null;
-	}
-
-	return {
-		x1: Math.min(...xs),
-		x2: Math.max(...xs),
-		y1: Math.min(...ys),
-		y2: Math.max(...ys)
-	};
-}
-
-function compareFont(
+const compareFont = (
 	weight,
 	style,
 	[matchedWeight, matchedStyle],
 	[nextWeight, nextStyle]
-) {
+) => {
 	if (matchedWeight !== nextWeight) {
 		// Put the defined weight first.
-		if (!matchedWeight) return 1;
-		if (!nextWeight) return -1;
+		if (!matchedWeight) {
+			return 1;
+		}
+		if (!nextWeight) {
+			return -1;
+		}
 
 		// Exact match.
-		if (matchedWeight === weight) return -1;
-		if (nextWeight === weight) return 1;
+		if (matchedWeight === weight) {
+			return -1;
+		}
+		if (nextWeight === weight) {
+			return 1;
+		}
 
 		// 400 and 500.
-		if (weight === 400 && matchedWeight === 500) return -1;
-		if (weight === 500 && matchedWeight === 400) return -1;
-		if (weight === 400 && nextWeight === 500) return 1;
-		if (weight === 500 && nextWeight === 400) return 1;
+		if (weight === 400 && matchedWeight === 500) {
+			return -1;
+		}
+		if (weight === 500 && matchedWeight === 400) {
+			return -1;
+		}
+		if (weight === 400 && nextWeight === 500) {
+			return 1;
+		}
+		if (weight === 500 && nextWeight === 400) {
+			return 1;
+		}
 
 		// Less than 400.
 		if (weight < 400) {
-			if (matchedWeight < weight && nextWeight < weight)
+			if (matchedWeight < weight && nextWeight < weight) {
 				return nextWeight - matchedWeight;
-			if (matchedWeight < weight) return -1;
-			if (nextWeight < weight) return 1;
+			}
+			if (matchedWeight < weight) {
+				return -1;
+			}
+			if (nextWeight < weight) {
+				return 1;
+			}
 			return matchedWeight - nextWeight;
 		}
 
 		// Greater than 500.
-		if (weight < matchedWeight && weight < nextWeight)
+		if (weight < matchedWeight && weight < nextWeight) {
 			return matchedWeight - nextWeight;
-		if (weight < matchedWeight) return -1;
-		if (weight < nextWeight) return 1;
+		}
+		if (weight < matchedWeight) {
+			return -1;
+		}
+		if (weight < nextWeight) {
+			return 1;
+		}
 		return nextWeight - matchedWeight;
 	}
 
 	if (matchedStyle !== nextStyle) {
 		// Exact match.
-		if (matchedStyle === style) return -1;
-		if (nextStyle === style) return 1;
+		if (matchedStyle === style) {
+			return -1;
+		}
+		if (nextStyle === style) {
+			return 1;
+		}
 	}
 
 	return -1;
-}
+};
 
 const cachedParsedFont = new WeakMap<
 	Buffer | ArrayBuffer,
 	opentype.Font | null | undefined
 >();
 
-export default class FontLoader {
+class FontLoader {
 	defaultFont: opentype.Font;
 	fonts = new Map<string, [opentype.Font, Weight?, FontStyle?][]>();
 	constructor(fontOptions: FontOptions[]) {
@@ -316,10 +336,15 @@ export default class FontLoader {
 			return null;
 		}
 
-		if (weight === 'normal') weight = 400;
-		if (weight === 'bold') weight = 700;
-		if (typeof weight === 'string')
+		if (weight === 'normal') {
+			weight = 400;
+		}
+		if (weight === 'bold') {
+			weight = 700;
+		}
+		if (typeof weight === 'string') {
 			weight = Number.parseInt(weight, 10) as Weight;
+		}
 
 		const fonts = [...this.fonts.get(name)];
 
@@ -390,7 +415,9 @@ export default class FontLoader {
 			}
 
 			// We use the first font as the default font fallback.
-			if (!this.defaultFont) this.defaultFont = font;
+			if (!this.defaultFont) {
+				this.defaultFont = font;
+			}
 
 			const _name = `${name.toLowerCase()}_${_lang}`;
 
@@ -425,7 +452,9 @@ export default class FontLoader {
 
 		fontFamily = (
 			Array.isArray(fontFamily) ? fontFamily : [fontFamily]
-		).map(name => name.toLowerCase());
+		).map(name => {
+			return name.toLowerCase();
+		});
 		let fonts = [];
 		let primaryMatchedWeight: Weight | undefined;
 
@@ -476,7 +505,9 @@ export default class FontLoader {
 			}
 		};
 		for (const name of keys) {
-			if (fontFamily.includes(name)) continue;
+			if (fontFamily.includes(name)) {
+				continue;
+			}
 			if (locale) {
 				const lang = getLangFromFontName(name);
 				if (lang) {
@@ -538,8 +569,9 @@ export default class FontLoader {
 			}
 
 			const code = word.charCodeAt(0);
-			if (cachedFontResolver.has(code))
+			if (cachedFontResolver.has(code)) {
 				return cachedFontResolver.get(code);
+			}
 
 			const font = _fonts.find((_font, index) => {
 				return (
@@ -609,17 +641,6 @@ export default class FontLoader {
 		}
 
 		const engine = {
-			fauxBoldStrokeWidth,
-			has: (s: string) => {
-				if (s === '\n') return true;
-				const font = resolve(s);
-				if (!font) return false;
-				(font as any)._trackBrokenChars = [];
-				font.stringToGlyphs(s);
-				if (!(font as any)._trackBrokenChars.length) return true;
-				(font as any)._trackBrokenChars = undefined;
-				return false;
-			},
 			baseline: (
 				s?: string,
 				resolvedFont = typeof s === 'undefined'
@@ -631,6 +652,35 @@ export default class FontLoader {
 				const contentHeight = asc - desc;
 
 				return asc + (height(resolvedFont) - contentHeight) / 2;
+			},
+			fauxBoldStrokeWidth,
+			getSVG: (
+				s: string,
+				style: {
+					fontSize: number;
+					left: number;
+					letterSpacing: number;
+					top: number;
+				},
+				band?: SkipInkBand
+			) => {
+				return this.getSVG(resolveFont, s, style, band);
+			},
+			has: (s: string) => {
+				if (s === '\n') {
+					return true;
+				}
+				const font = resolve(s);
+				if (!font) {
+					return false;
+				}
+				(font as any)._trackBrokenChars = [];
+				font.stringToGlyphs(s);
+				if (!(font as any)._trackBrokenChars.length) {
+					return true;
+				}
+				(font as any)._trackBrokenChars = undefined;
+				return false;
 			},
 			height: (
 				s?: string,
@@ -648,18 +698,6 @@ export default class FontLoader {
 				}
 			) => {
 				return this.measure(resolveFont, s, style);
-			},
-			getSVG: (
-				s: string,
-				style: {
-					fontSize: number;
-					top: number;
-					left: number;
-					letterSpacing: number;
-				},
-				band?: SkipInkBand
-			) => {
-				return this.getSVG(resolveFont, s, style, band);
 			}
 		};
 
@@ -702,11 +740,11 @@ export default class FontLoader {
 						const g = new opentype.Glyph({
 							...glyph,
 							advanceWidth: glyph.advanceWidth * scale,
-							xMin: glyph.xMin * scale,
+							path: p,
 							xMax: glyph.xMax * scale,
-							yMin: glyph.yMin * scale,
+							xMin: glyph.xMin * scale,
 							yMax: glyph.yMax * scale,
-							path: p
+							yMin: glyph.yMin * scale
 						});
 
 						glyphs[i] = g;
@@ -761,13 +799,13 @@ export default class FontLoader {
 			letterSpacing: number;
 		},
 		band?: SkipInkBand
-	): { path: string; boxes: GlyphBox[] } {
+	): { boxes: GlyphBox[]; path: string } {
 		const font = resolveFont(content);
 		const unpatch = this.patchFontFallbackResolver(font, resolveFont);
 
 		try {
 			if (fontSize === 0) {
-				return { path: '', boxes: [] };
+				return { boxes: [], path: '' };
 			}
 
 			const fullPath = new opentype.Path();
@@ -834,8 +872,8 @@ export default class FontLoader {
 			);
 
 			return {
-				path: fullPath.toPathData(1),
-				boxes
+				boxes,
+				path: fullPath.toPathData(1)
 			};
 		} finally {
 			unpatch();
@@ -843,9 +881,12 @@ export default class FontLoader {
 	}
 }
 
-function getLangFromFontName(name: string): Locale | undefined {
+const getLangFromFontName = (name: string): Locale | undefined => {
 	const arr = name.split('_');
 	const lang = arr[arr.length - 1];
 
 	return lang === SUFFIX_WHEN_LANG_NOT_SET ? undefined : (lang as Locale);
-}
+};
+
+export type { FontEngine, FontOptions, FontStyle, FontWeight, GlyphBox, Weight, WeightName };
+export default FontLoader;

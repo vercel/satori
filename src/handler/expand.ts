@@ -9,17 +9,17 @@ import { parse as parseBoxShadow } from 'css-box-shadow';
 import cssColorParse from 'parse-css-color';
 
 import CssDimension from '../vendor/parse-css-dimension/index.js';
+import { FontStyle, FontWeight } from '../font.js';
+import { MaskProperty, parseMask } from '../parser/mask.js';
 import parseTransformOrigin, {
 	ParsedTransformOrigin
 } from '../transform-origin.js';
-import { isString, lengthToNumber, v, splitEffects } from '../utils.js';
-import { MaskProperty, parseMask } from '../parser/mask.js';
-import { FontWeight, FontStyle } from '../font.js';
+import { isString, lengthToNumber, splitEffects, v } from '../utils.js';
 import {
+	CSSVariables,
 	extractCustomProperties,
 	mergeVariables,
-	resolveVariables,
-	CSSVariables
+	resolveVariables
 } from './variables.js';
 
 // https://react-cn.github.io/react/tips/style-props-value-px.html
@@ -37,12 +37,12 @@ const optOutPx = new Set([
 ]);
 const keepNumber = new Set(['lineHeight']);
 
-function handleFallbackColor(
+const handleFallbackColor = (
 	prop: string,
 	parsed: Record<string, string>,
 	rawInput: string,
 	currentColor: string
-) {
+) => {
 	if (
 		prop === 'textDecoration' &&
 		!rawInput.includes(parsed.textDecorationColor)
@@ -50,21 +50,27 @@ function handleFallbackColor(
 		parsed.textDecorationColor = currentColor;
 	}
 	return parsed;
-}
+};
 
-function purify(name: string, value?: string | number) {
+const purify = (name: string, value?: string | number) => {
 	const num = Number(value);
-	if (isNaN(num)) return value;
-	if (!optOutPx.has(name)) return num + 'px';
-	if (keepNumber.has(name)) return num;
+	if (isNaN(num)) {
+		return value;
+	}
+	if (!optOutPx.has(name)) {
+		return num + 'px';
+	}
+	if (keepNumber.has(name)) {
+		return num;
+	}
 	return String(value);
-}
+};
 
-function handleSpecialCase(
+const handleSpecialCase = (
 	name: string,
 	value: string | number,
 	currentColor: string
-) {
+) => {
 	if (name === 'zIndex') {
 		console.warn('`z-index` is currently not supported.');
 		return { [name]: value };
@@ -156,8 +162,9 @@ function handleSpecialCase(
 	}
 
 	if (name === 'transform') {
-		if (typeof value !== 'string')
+		if (typeof value !== 'string') {
 			throw new Error('Invalid `transform` value.');
+		}
 		// To support percentages in transform (which is not supported in RN), we
 		// replace them with random symbols and then replace them back after parsing.
 		const symbols = {};
@@ -218,8 +225,8 @@ function handleSpecialCase(
 		}
 
 		return {
-			WebkitTextStrokeWidth: purify(name, values[0]),
-			WebkitTextStrokeColor: purify(name, values[1])
+			WebkitTextStrokeColor: purify(name, values[1]),
+			WebkitTextStrokeWidth: purify(name, values[0])
 		};
 	}
 
@@ -237,17 +244,17 @@ function handleSpecialCase(
 	}
 
 	return;
-}
+};
 
-function getErrorHint(name: string) {
+const getErrorHint = (name: string) => {
 	if (name === 'transform') {
 		return ' Only absolute lengths such as `10px` are supported.';
 	}
 	return '';
-}
+};
 
 const RGB_SLASH = /rgb\((\d+)\s+(\d+)\s+(\d+)\s*\/\s*([\.\d]+)\)/;
-function normalizeColor(value: string | object) {
+const normalizeColor = (value: string | object) => {
 	if (typeof value === 'string') {
 		if (RGB_SLASH.test(value.trim())) {
 			// rgb(255 122 127 / .2) -> rgba(255, 122, 127, .2)
@@ -266,52 +273,46 @@ function normalizeColor(value: string | object) {
 	}
 
 	return value;
-}
+};
 
 type MainStyle = {
-	color: string;
-	fontSize: number;
-	transformOrigin: ParsedTransformOrigin;
-	maskImage: MaskProperty[];
-	opacity: number;
-	textTransform: string;
-	whiteSpace: string;
-	wordBreak: string;
-	textAlign: string;
-	textIndent: number | string;
-	lineHeight: number | string;
-	letterSpacing: number;
-
-	fontFamily: string | string[];
-	fontWeight: FontWeight;
-	fontStyle: FontStyle;
-
-	borderTopWidth: number;
+	WebkitTextStrokeColor: string;
+	WebkitTextStrokeWidth: number;
+	borderBottomWidth: number;
 	borderLeftWidth: number;
 	borderRightWidth: number;
-	borderBottomWidth: number;
-
-	paddingTop: number;
-	paddingLeft: number;
-	paddingRight: number;
-	paddingBottom: number;
-
+	borderTopWidth: number;
+	color: string;
+	columnGap: number;
 	flexGrow: number;
 	flexShrink: number;
-
+	fontFamily: string | string[];
+	fontSize: number;
+	fontStyle: FontStyle;
+	fontWeight: FontWeight;
 	gap: number;
+	letterSpacing: number;
+	lineHeight: number | string;
+	maskImage: MaskProperty[];
+	opacity: number;
+	paddingBottom: number;
+	paddingLeft: number;
+	paddingRight: number;
+	paddingTop: number;
 	rowGap: number;
-	columnGap: number;
-
-	textShadowOffset: {
-		width: number;
-		height: number;
-	}[];
+	textAlign: string;
+	textDecorationSkipInk: 'all' | 'auto' | 'none';
+	textIndent: number | string;
 	textShadowColor: string[];
+	textShadowOffset: {
+		height: number;
+		width: number;
+	}[];
 	textShadowRadius: number[];
-	WebkitTextStrokeWidth: number;
-	WebkitTextStrokeColor: string;
-	textDecorationSkipInk: 'auto' | 'none' | 'all';
+	textTransform: string;
+	transformOrigin: ParsedTransformOrigin;
+	whiteSpace: string;
+	wordBreak: string;
 };
 
 type OtherStyle = Exclude<
@@ -319,12 +320,78 @@ type OtherStyle = Exclude<
 	keyof MainStyle
 >;
 
-export type SerializedStyle = Partial<MainStyle & OtherStyle>;
+type SerializedStyle = Partial<MainStyle & OtherStyle>;
 
-export default function expand(
+const calcBaseFontSize = (
+	size: number | string,
+	inheritedSize: number
+): number => {
+	if (typeof size === 'number') {
+		return size;
+	}
+
+	try {
+		const parsed = new CssDimension(size);
+		switch (parsed.unit) {
+			case 'em':
+				return parsed.value * inheritedSize;
+			case 'rem':
+				return parsed.value * 16;
+		}
+	} catch (err) {
+		return inheritedSize;
+	}
+};
+
+/**
+ * @see https://github.com/RazrFalcon/resvg/issues/579
+ */
+const refineHSL = (color: string) => {
+	if (color.startsWith('hsl')) {
+		const t = cssColorParse(color);
+		const [h, s, l] = t.values;
+
+		return `hsl(${[h, `${s}%`, `${l}%`]
+			.concat(t.alpha === 1 ? [] : [t.alpha])
+			.join(',')})`;
+	}
+
+	return color;
+};
+
+const getCurrentColor = (
+	color: string | null,
+	inheritedColor: string
+): string => {
+	if (color && color.toLowerCase() !== 'currentcolor') {
+		return refineHSL(color);
+	}
+
+	return refineHSL(inheritedColor);
+};
+
+const convertCurrentColorToActualValue = (
+	value: string,
+	currentColor: string
+): string => {
+	return value.replace(/currentcolor/gi, currentColor);
+};
+
+const preprocess = (
+	value: string | number,
+	currentColor: string
+): string | number => {
+	if (isString(value)) {
+		value = convertCurrentColorToActualValue(value, currentColor);
+	}
+
+	return value;
+};
+
+const expand = (
 	style: Record<string, string | number> | undefined,
 	inheritedStyle: SerializedStyle
-): SerializedStyle {
+): SerializedStyle => {
 	const serializedStyle: SerializedStyle = {};
 
 	// Extract inherited CSS variables
@@ -340,7 +407,7 @@ export default function expand(
 	let processableStyle = style;
 
 	if (style) {
-		const { variables, remainingStyle } = extractCustomProperties(style);
+		const { remainingStyle, variables } = extractCustomProperties(style);
 		currentVariables = variables;
 		processableStyle = remainingStyle;
 	}
@@ -360,7 +427,7 @@ export default function expand(
 		// Resolve CSS variables in color property before processing
 		const resolvedColor = processableStyle.color
 			? resolveVariables(processableStyle.color, mergedVariables)
-			: undefined;
+			: null;
 
 		const currentColor = getCurrentColor(
 			resolvedColor as string,
@@ -464,7 +531,9 @@ export default function expand(
 					baseFontSize,
 					inheritedStyle
 				);
-				if (typeof len !== 'undefined') serializedStyle[prop] = len;
+				if (typeof len !== 'undefined') {
+					serializedStyle[prop] = len;
+				}
 				value = serializedStyle[prop];
 			}
 
@@ -506,103 +575,50 @@ export default function expand(
 		}
 
 		if (prop === 'textShadowRadius') {
-			const textShadowRadius = value as unknown as Array<number | string>;
+			const textShadowRadius = value as unknown as (number | string)[];
 
-			serializedStyle.textShadowRadius = textShadowRadius.map(_v =>
-				lengthToNumber(_v, baseFontSize, 0, inheritedStyle, false)
-			);
+			serializedStyle.textShadowRadius = textShadowRadius.map(_v => {
+				return lengthToNumber(
+					_v,
+					baseFontSize,
+					0,
+					inheritedStyle,
+					false
+				);
+			});
 		}
 
 		if (prop === 'textShadowOffset') {
-			const textShadowOffset = value as unknown as Array<{
-				width: number | string;
+			const textShadowOffset = value as unknown as {
 				height: number | string;
-			}>;
+				width: number | string;
+			}[];
 
 			serializedStyle.textShadowOffset = textShadowOffset.map(
-				({ height, width }) => ({
-					height: lengthToNumber(
-						height,
-						baseFontSize,
-						0,
-						inheritedStyle,
-						false
-					),
-					width: lengthToNumber(
-						width,
-						baseFontSize,
-						0,
-						inheritedStyle,
-						false
-					)
-				})
+				({ height, width }) => {
+					return {
+						height: lengthToNumber(
+							height,
+							baseFontSize,
+							0,
+							inheritedStyle,
+							false
+						),
+						width: lengthToNumber(
+							width,
+							baseFontSize,
+							0,
+							inheritedStyle,
+							false
+						)
+					};
+				}
 			);
 		}
 	}
 
 	return serializedStyle;
-}
+};
 
-function calcBaseFontSize(
-	size: number | string,
-	inheritedSize: number
-): number {
-	if (typeof size === 'number') return size;
-
-	try {
-		const parsed = new CssDimension(size);
-		switch (parsed.unit) {
-			case 'em':
-				return parsed.value * inheritedSize;
-			case 'rem':
-				return parsed.value * 16;
-		}
-	} catch (err) {
-		return inheritedSize;
-	}
-}
-
-/**
- * @see https://github.com/RazrFalcon/resvg/issues/579
- */
-function refineHSL(color: string) {
-	if (color.startsWith('hsl')) {
-		const t = cssColorParse(color);
-		const [h, s, l] = t.values;
-
-		return `hsl(${[h, `${s}%`, `${l}%`]
-			.concat(t.alpha === 1 ? [] : [t.alpha])
-			.join(',')})`;
-	}
-
-	return color;
-}
-
-function getCurrentColor(
-	color: string | undefined,
-	inheritedColor: string
-): string {
-	if (color && color.toLowerCase() !== 'currentcolor') {
-		return refineHSL(color);
-	}
-
-	return refineHSL(inheritedColor);
-}
-
-function convertCurrentColorToActualValue(
-	value: string,
-	currentColor: string
-): string {
-	return value.replace(/currentcolor/gi, currentColor);
-}
-
-function preprocess(
-	value: string | number,
-	currentColor: string
-): string | number {
-	if (isString(value)) {
-		value = convertCurrentColorToActualValue(value, currentColor);
-	}
-
-	return value;
-}
+export type { SerializedStyle };
+export default expand;

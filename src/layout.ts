@@ -3,6 +3,7 @@
  */
 
 import type { ReactNode } from 'react';
+
 import {
 	isReactElement,
 	isClass,
@@ -14,22 +15,22 @@ import {
 } from './utils.js';
 import { getYoga, YogaNode } from './yoga.js';
 import { SVGNodeToImage } from './handler/preprocess.js';
+import buildTextNodes from './text/index.js';
 import computeStyle from './handler/compute.js';
 import FontLoader from './font.js';
-import buildTextNodes from './text/index.js';
 import rect from './builder/rect.js';
 import { buildBackdropFilter } from './builder/backdrop-filter.js';
 import { Locale, normalizeLocale } from './language.js';
 import { SerializedStyle } from './handler/expand.js';
 
-export type BackdropFilterInfo = {
+type BackdropFilterInfo = {
 	filter: string;
 	inheritedStyle: SerializedStyle;
 	node: YogaNode;
 	style: SerializedStyle;
 };
 
-export interface LayoutContext {
+type LayoutContext = {
 	id: string;
 	parentStyle: SerializedStyle;
 	inheritedStyle: SerializedStyle;
@@ -43,21 +44,21 @@ export interface LayoutContext {
 	locale?: Locale;
 	onBackdropFilterDetected?: (info: BackdropFilterInfo) => void;
 	onNodeDetected?: (node: SatoriNode) => void;
-}
+};
 
-export interface SatoriNode {
+type SatoriNode = {
 	// Layout information.
-	left: number;
-	top: number;
-	width: number;
 	height: number;
-	type: string;
 	key?: string | number;
+	left: number;
 	props: Record<string, any>;
 	textContent?: string;
-}
+	top: number;
+	type: string;
+	width: number;
+};
 
-export default async function* layout(
+const layout = async function* (
 	element: ReactNode,
 	context: LayoutContext
 ): AsyncGenerator<
@@ -234,7 +235,9 @@ export default async function* layout(
 		iterators.push(iter);
 	}
 	yield segmentsMissingFont;
-	for (const iter of iterators) await iter.next();
+	for (const iter of iterators) {
+		await iter.next();
+	}
 
 	// 3. Post-process the node.
 	const [x, y] = yield;
@@ -252,14 +255,14 @@ export default async function* layout(
 	// node.
 	const { children: childrenNode, ...restProps } = props;
 	context.onNodeDetected?.({
-		left,
-		top,
-		width,
 		height,
-		type,
-		props: restProps,
 		key: element.key,
-		textContent: isReactElement(childrenNode) ? undefined : childrenNode
+		left,
+		props: restProps,
+		textContent: isReactElement(childrenNode) ? undefined : childrenNode,
+		top,
+		type,
+		width
 	});
 
 	// Generate the rendered markup for the current node.
@@ -267,14 +270,14 @@ export default async function* layout(
 		const src = computedStyle.__src as string;
 		baseRenderResult = await rect(
 			{
-				id,
-				left,
-				top,
-				width,
+				debug,
 				height,
-				src,
+				id,
 				isInheritingTransform,
-				debug
+				left,
+				src,
+				top,
+				width
 			},
 			computedStyle,
 			newInheritableStyle
@@ -286,14 +289,14 @@ export default async function* layout(
 		const src = await SVGNodeToImage(element, currentColor);
 		baseRenderResult = await rect(
 			{
-				id,
-				left,
-				top,
-				width,
+				debug,
 				height,
-				src,
+				id,
 				isInheritingTransform,
-				debug
+				left,
+				src,
+				top,
+				width
 			},
 			computedStyle,
 			newInheritableStyle
@@ -313,7 +316,7 @@ export default async function* layout(
 			);
 		}
 		baseRenderResult = await rect(
-			{ id, left, top, width, height, isInheritingTransform, debug },
+			{ debug, height, id, isInheritingTransform, left, top, width },
 			computedStyle,
 			newInheritableStyle
 		);
@@ -374,4 +377,7 @@ export default async function* layout(
 	}
 
 	return depsRenderResult + baseRenderResult + childrenRenderResult;
-}
+};
+
+export type { BackdropFilterInfo, LayoutContext, SatoriNode };
+export default layout;

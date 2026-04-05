@@ -8,7 +8,7 @@
 
 const DEFAULT_DISPLAY = 'flex';
 
-export default {
+const presets = {
 	// Generic block-level elements
 	p: {
 		display: DEFAULT_DISPLAY,
@@ -139,3 +139,5 @@ export default {
 		textDecoration: 'line-through'
 	}
 };
+
+export default presets;

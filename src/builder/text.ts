@@ -1,34 +1,35 @@
 import escapeHTML from 'escape-html';
 import type { ParsedTransformOrigin } from '../transform-origin.js';
-import transform from './transform.js';
-import { buildXMLString } from '../utils.js';
 
-export function container(
+import { buildXMLString } from '../utils.js';
+import transform from './transform.js';
+
+const container = (
 	{
+		height,
+		isInheritingTransform,
 		left,
 		top,
-		width,
-		height,
-		isInheritingTransform
+		width
 	}: {
+		height: number;
+		isInheritingTransform: boolean;
 		left: number;
 		top: number;
 		width: number;
-		height: number;
-		isInheritingTransform: boolean;
 	},
 	style: Record<string, number | string>
-) {
+) => {
 	let matrix = '';
 	let opacity = 1;
 
 	if (style.transform) {
 		matrix = transform(
 			{
+				height,
 				left,
 				top,
-				width,
-				height
+				width
 			},
 			style.transform as unknown as number[],
 			isInheritingTransform,
@@ -41,70 +42,70 @@ export function container(
 	}
 
 	return { matrix, opacity };
-}
+};
 
-export default function buildText(
+const buildText = (
 	{
-		id,
+		clipPathId,
 		content,
+		debug,
+		decorationShape,
+		fauxBoldStrokeWidth,
 		filter,
-		left,
-		top,
-		width,
 		height,
+		id,
+		image,
+		left,
 		matrix,
 		opacity,
-		image,
-		clipPathId,
-		debug,
-		fauxBoldStrokeWidth,
 		shape,
-		decorationShape
+		top,
+		width
 	}: {
+		clipPathId?: string;
 		content: string;
+		debug?: boolean;
+		decorationShape?: string;
+		fauxBoldStrokeWidth?: number;
 		filter: string;
-		id: string;
-		left: number;
-		top: number;
-		width: number;
 		height: number;
+		id: string;
+		image: string | null;
+		left: number;
 		matrix: string;
 		opacity: number;
-		image: string | null;
-		clipPathId?: string;
-		debug?: boolean;
-		fauxBoldStrokeWidth?: number;
 		shape?: boolean;
-		decorationShape?: string;
+		top: number;
+		width: number;
 	},
 	style: Record<string, number | string>
-) {
+) => {
 	let extra = '';
 	if (debug) {
 		extra = buildXMLString('rect', {
-			x: left,
-			y: top - height,
-			width,
-			height,
+			'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
 			fill: 'transparent',
+			height,
 			stroke: '#575eff',
 			'stroke-width': 1,
 			transform: matrix || undefined,
-			'clip-path': clipPathId ? `url(#${clipPathId})` : undefined
+			width,
+			x: left,
+			y: top - height
 		});
 	}
 
 	// This grapheme should be rendered as an image.
 	if (image) {
 		const shapeProps = {
-			href: image,
-			x: left,
-			y: top,
-			width,
-			height,
-			transform: matrix || undefined,
 			'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-			style: style.filter ? `filter:${style.filter}` : undefined
+			height,
+			href: image,
+			style: style.filter ? `filter:${style.filter}` : undefined,
+			transform: matrix || undefined,
+			width,
+			x: left,
+			y: top
 		};
 		return [
 			(filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
@@ -125,17 +126,17 @@ export default function buildText(
 	const needsFauxBold = fauxBoldStrokeWidth !== undefined;
 	const bothActive = hasWebkitStroke && needsFauxBold;
 	const textProps = {
-		x: left,
-		y: top,
-		width,
-		height,
-		'font-weight': style.fontWeight,
-		'font-style': style.fontStyle,
-		'font-size': style.fontSize,
+		'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
 		'font-family': style.fontFamily,
+		'font-size': style.fontSize,
+		'font-style': style.fontStyle,
+		'font-weight': style.fontWeight,
+		height,
 		'letter-spacing': style.letterSpacing || undefined,
 		transform: matrix || undefined,
-		'clip-path': clipPathId ? `url(#${clipPathId})` : undefined
+		width,
+		x: left,
+		y: top
 	};
 
 	// When both faux bold and webkit-text-stroke apply, render a background
@@ -164,14 +165,7 @@ export default function buildText(
 
 	const shapeProps = {
 		...textProps,
-		style: style.filter ? `filter:${style.filter}` : undefined,
-		'stroke-width': bothActive
-			? `${fauxBoldStrokeWidth}`
-			: hasWebkitStroke
-			? `${style.WebkitTextStrokeWidth}px`
-			: needsFauxBold
-			? `${fauxBoldStrokeWidth}`
-			: undefined,
+		'paint-order': hasWebkitStroke || needsFauxBold ? 'stroke' : undefined,
 		stroke: bothActive
 			? style.color
 			: hasWebkitStroke
@@ -185,7 +179,14 @@ export default function buildText(
 				: needsFauxBold
 				? 'miter'
 				: undefined,
-		'paint-order': hasWebkitStroke || needsFauxBold ? 'stroke' : undefined
+		'stroke-width': bothActive
+			? `${fauxBoldStrokeWidth}`
+			: hasWebkitStroke
+			? `${style.WebkitTextStrokeWidth}px`
+			: needsFauxBold
+			? `${fauxBoldStrokeWidth}`
+			: undefined,
+		style: style.filter ? `filter:${style.filter}` : undefined
 	};
 	return [
 		(filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
@@ -204,4 +205,7 @@ export default function buildText(
 			extra,
 		shape ? buildXMLString('text', shapeProps, escapeHTML(content)) : ''
 	];
-}
+};
+
+export { container };
+export default buildText;

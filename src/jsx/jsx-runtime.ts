@@ -12,10 +12,10 @@
  * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/index.d.ts React typings `@types/react`}
  * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/jsx-runtime.d.ts React typings for `jsx-runtime`}
  */
-import type { JSXElement, JSXKey, FC } from './types.js';
 import type { DefinedIntrinsicElements } from './intrinsic-elements.js';
+import type { JSXElement, JSXKey, FC } from './types.js';
 
-export namespace JSX {
+namespace JSX {
 	/**
 	 * **WARNING**: Satori does not support class components.
 	 * @see {@link https://github.com/vercel/satori?tab=readme-ov-file#jsx Satori JSX documentation}
@@ -43,7 +43,8 @@ export namespace JSX {
 	}
 }
 
-export function jsx(
+// Uses `arguments.length` which requires a traditional function expression.
+const jsx = function (
 	type: string | FC<any>,
 	props: Record<string, unknown>,
 	key?: JSXKey | undefined | null
@@ -58,11 +59,14 @@ export function jsx(
 	}
 	// Coerce key to string if not nullish.
 	key = key != null ? String(key) : null;
-	return { type, props, key };
-}
+	return { key, props, type };
+};
 
-export const jsxs = jsx;
-export const jsxDEV = jsx;
+const jsxs = jsx;
+const jsxDEV = jsx;
 
 // HACK: Symbol used internally by React.
-export const Fragment = Symbol.for('react.fragment');
+const Fragment = Symbol.for('react.fragment');
+
+export type { JSX };
+export { Fragment, jsx, jsxDEV, jsxs };

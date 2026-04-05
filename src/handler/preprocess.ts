@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
-import { resolveImageData, cache } from './image.js';
-import { isReactElement, parseViewBox, midline } from '../utils.js';
+
+import { cache, resolveImageData } from './image.js';
+import { isReactElement, midline, parseViewBox } from '../utils.js';
 
 // Based on
 // https://raw.githubusercontent.com/facebook/react/master/packages/react-dom/src/shared/possibleStandardNames.js
@@ -94,17 +95,23 @@ const ATTRIBUTE_MAPPING = {
 // From https://github.com/yoksel/url-encoder/blob/master/src/js/script.js
 const SVGSymbols = /[\r\n%#()<>?[\\\]^`{|}"']/g;
 
-function translateSVGNodeToSVGString(
+const translateSVGNodeToSVGString = (
 	node: ReactElement | string | (ReactElement | string)[],
 	inheritedColor: string
-): string {
-	if (!node) return '';
+): string => {
+	if (!node) {
+		return '';
+	}
 	if (Array.isArray(node)) {
 		return node
-			.map(n => translateSVGNodeToSVGString(n, inheritedColor))
+			.map(n => {
+				return translateSVGNodeToSVGString(n, inheritedColor);
+			})
 			.join('');
 	}
-	if (typeof node !== 'object') return String(node);
+	if (typeof node !== 'object') {
+		return String(node);
+	}
 
 	const type = node.type;
 	if (type === 'text') {
@@ -133,7 +140,9 @@ function translateSVGNodeToSVGString(
 
 	const styles = style
 		? ` style="${Object.entries(style)
-				.map(([k, _v]) => `${midline(k)}:${_v}`)
+				.map(([k, _v]) => {
+					return `${midline(k)}:${_v}`;
+				})
 				.join(';')}"`
 		: '';
 
@@ -141,56 +150,63 @@ function translateSVGNodeToSVGString(
 		children,
 		currentColor
 	)}</${type}>`;
-}
+};
+
 /**
  * pre process node and resolve absolute link to img data for image element
- * @param node ReactNode
- * @returns
  */
-export async function preProcessNode(node: ReactNode) {
+const preProcessNode = async (node: ReactNode) => {
 	const set = new Set<string | Buffer | ArrayBuffer>();
 	const walk = (_node: ReactNode) => {
-		if (!_node) return;
-		if (!isReactElement(_node)) return;
+		if (!_node) {
+			return;
+		}
+		if (!isReactElement(_node)) {
+			return;
+		}
 
 		if (Array.isArray(_node)) {
-			_node.forEach(v => walk(v));
+			_node.forEach(v => {
+				return walk(v);
+			});
 			return;
 		} else if (typeof _node === 'object') {
 			if (_node.type === 'image') {
 				const imageSrc = _node.props.href || _node.props.xlinkHref;
 				if (imageSrc) {
-					if (set.has(imageSrc)) {
-						// do nothing
-					} else {
+					if (!set.has(imageSrc)) {
 						set.add(imageSrc);
 					}
 				}
 			} else if (_node.type === 'img') {
-				if (set.has(_node.props.src)) {
-					// do nothing
-				} else {
+				if (!set.has(_node.props.src)) {
 					set.add(_node.props.src);
 				}
-			} else {
-				// do nothing
 			}
 		}
 
-		Array.isArray(_node.props.children)
-			? _node.props.children.map(c => walk(c))
-			: walk(_node.props.children);
+		if (Array.isArray(_node.props.children)) {
+			_node.props.children.map(c => {
+				return walk(c);
+			});
+		} else {
+			walk(_node.props.children);
+		}
 	};
 
 	walk(node);
 
-	return Promise.all(Array.from(set).map(s => resolveImageData(s)));
-}
+	return Promise.all(
+		Array.from(set).map(s => {
+			return resolveImageData(s);
+		})
+	);
+};
 
-export async function SVGNodeToImage(
+const SVGNodeToImage = async (
 	node: ReactElement,
 	inheritedColor: string
-): Promise<string> {
+): Promise<string> => {
 	let {
 		viewBox,
 		viewbox,
@@ -217,7 +233,9 @@ export async function SVGNodeToImage(
 
 	restProps.width = width;
 	restProps.height = height;
-	if (viewBox) restProps.viewBox = viewBox;
+	if (viewBox) {
+		restProps.viewBox = viewBox;
+	}
 
 	return `data:image/svg+xml;utf8,${`<svg ${Object.entries(restProps)
 		.map(([k, _v]) => {
@@ -230,4 +248,6 @@ export async function SVGNodeToImage(
 		children,
 		currentColor
 	)}</svg>`.replace(SVGSymbols, encodeURIComponent)}`;
-}
+};
+
+export { preProcessNode, SVGNodeToImage };

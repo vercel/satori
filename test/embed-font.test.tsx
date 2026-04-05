@@ -34,15 +34,15 @@ describe('embedFont: false', () => {
 
 		// Parse all <text> elements from the SVG
 		const textElementRegex =
-			/<text[^>]*\bx="([^"]+)"[^>]*\bwidth="([^"]+)"[^>]*>([^<]*)<\/text>/g;
+			/<text[^>]*?\bwidth="([^"]+)"[^>]*?\bx="([^"]+)"[^>]*?>([^<]*)<\/text>/g;
 		const textElements: { x: number; width: number; content: string }[] =
 			[];
 
 		let match;
 		while ((match = textElementRegex.exec(svg)) !== null) {
 			textElements.push({
-				x: parseFloat(match[1]),
-				width: parseFloat(match[2]),
+				x: parseFloat(match[2]),
+				width: parseFloat(match[1]),
 				content: match[3]
 			});
 		}

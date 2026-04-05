@@ -2,6 +2,8 @@ import { loadYoga } from 'yoga-layout/load';
 
 // Always preload Yoga.
 const loadingYoga = loadYoga();
-export function getYoga() {
+const getYoga = () => {
 	return loadingYoga;
-}
+};
+
+export { getYoga };

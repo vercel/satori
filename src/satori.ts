@@ -1,19 +1,19 @@
 import type { ReactNode } from 'react';
 import type { SatoriNode } from './layout.js';
 
-import layout from './layout.js';
 import FontLoader, { FontOptions } from './font.js';
+import { cache, inflightRequests } from './handler/image.js';
+import { preProcessNode } from './handler/preprocess.js';
+import { detectLanguageCode, LangCode, Locale } from './language.js';
+import layout from './layout.js';
 import svg from './builder/svg.js';
 import { getYoga, TYoga } from './yoga.js';
-import { detectLanguageCode, LangCode, Locale } from './language.js';
-import { preProcessNode } from './handler/preprocess.js';
-import { cache, inflightRequests } from './handler/image.js';
 import { segment } from './utils.js';
 
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap();
 
-export type SatoriOptions = (
+type SatoriOptions = (
 	| {
 			width: number;
 			height: number;
@@ -25,9 +25,9 @@ export type SatoriOptions = (
 			height: number;
 	  }
 ) & {
-	fonts: FontOptions[];
-	embedFont?: boolean;
 	debug?: boolean;
+	embedFont?: boolean;
+	fonts: FontOptions[];
 	graphemeImages?: Record<string, string>;
 	loadAdditionalAsset?: (
 		languageCode: string,
@@ -36,12 +36,61 @@ export type SatoriOptions = (
 	onNodeDetected?: (node: SatoriNode) => void;
 	pointScaleFactor?: number;
 };
-export type { SatoriNode };
 
-export default async function satori(
+const getRootNode = (
+	Yoga: TYoga,
+	pointScaleFactor?: SatoriOptions['pointScaleFactor']
+) => {
+	if (!pointScaleFactor) {
+		return Yoga.Node.create();
+	} else {
+		const config = Yoga.Config.create();
+		config.setPointScaleFactor(pointScaleFactor);
+		return Yoga.Node.createWithConfig(config);
+	}
+};
+
+const convertToLanguageCodes = (
+	segmentsMissingFont: { word: string; locale?: Locale }[]
+): Partial<Record<LangCode, string[]>> => {
+	const languageCodes = {};
+	let wordsByCode = {};
+
+	for (const { word, locale } of segmentsMissingFont) {
+		const code = detectLanguageCode(word, locale).join('|');
+		wordsByCode[code] = wordsByCode[code] || '';
+		wordsByCode[code] += word;
+	}
+
+	Object.keys(wordsByCode).forEach((code: LangCode) => {
+		languageCodes[code] = languageCodes[code] || [];
+		if (code === 'emoji') {
+			languageCodes[code].push(
+				...unique(segment(wordsByCode[code], 'grapheme'))
+			);
+		} else {
+			languageCodes[code][0] = languageCodes[code][0] || '';
+			languageCodes[code][0] += unique(
+				segment(
+					wordsByCode[code],
+					'grapheme',
+					code === 'unknown' ? undefined : code
+				)
+			).join('');
+		}
+	});
+
+	return languageCodes;
+};
+
+const unique = <T>(arr: T[]): T[] => {
+	return Array.from(new Set(arr));
+};
+
+const satori = async (
 	element: ReactNode,
 	options: SatoriOptions
-): Promise<string> {
+): Promise<string> => {
 	const Yoga = await getYoga();
 	if (!Yoga || !Yoga.Node) {
 		throw new Error(
@@ -61,8 +110,12 @@ export default async function satori(
 	const definedHeight = 'height' in options ? options.height : undefined;
 
 	const root = getRootNode(Yoga, options.pointScaleFactor);
-	if (definedWidth) root.setWidth(definedWidth);
-	if (definedHeight) root.setHeight(definedHeight);
+	if (definedWidth) {
+		root.setWidth(definedWidth);
+	}
+	if (definedHeight) {
+		root.setHeight(definedHeight);
+	}
 	root.setFlexDirection(Yoga.FLEX_DIRECTION_ROW);
 	root.setFlexWrap(Yoga.WRAP_WRAP);
 	root.setAlignContent(Yoga.ALIGN_AUTO);
@@ -127,29 +180,32 @@ export default async function satori(
 			const images: Record<string, string> = {};
 
 			await Promise.all(
-				Object.entries(languageCodes).flatMap(([code, segments]) =>
-					segments.map(_segment => {
+				Object.entries(languageCodes).flatMap(([code, segments]) => {
+					return segments.map(_segment => {
 						const key = `${code}_${_segment}`;
 						if (processedWordsMissingFonts.has(key)) {
 							return null;
 						}
 						processedWordsMissingFonts.add(key);
 
-						return options
-							.loadAdditionalAsset(code, _segment)
-							.then((asset: any) => {
-								if (typeof asset === 'string') {
-									images[_segment] = asset;
-								} else if (asset) {
-									if (Array.isArray(asset)) {
-										fonts.push(...asset);
-									} else {
-										fonts.push(asset);
-									}
+						return (async () => {
+							const asset: any =
+								await options.loadAdditionalAsset(
+									code,
+									_segment
+								);
+							if (typeof asset === 'string') {
+								images[_segment] = asset;
+							} else if (asset) {
+								if (Array.isArray(asset)) {
+									fonts.push(...asset);
+								} else {
+									fonts.push(asset);
 								}
-							});
-					})
-				)
+							}
+						})();
+					});
+				})
 			);
 
 			// Directly mutate the font provider and the grapheme map.
@@ -168,55 +224,8 @@ export default async function satori(
 
 	root.freeRecursive();
 
-	return svg({ width: computedWidth, height: computedHeight, content });
-}
+	return svg({ content, height: computedHeight, width: computedWidth });
+};
 
-function getRootNode(
-	Yoga: TYoga,
-	pointScaleFactor?: SatoriOptions['pointScaleFactor']
-) {
-	if (!pointScaleFactor) {
-		return Yoga.Node.create();
-	} else {
-		const config = Yoga.Config.create();
-		config.setPointScaleFactor(pointScaleFactor);
-		return Yoga.Node.createWithConfig(config);
-	}
-}
-
-function convertToLanguageCodes(
-	segmentsMissingFont: { word: string; locale?: Locale }[]
-): Partial<Record<LangCode, string[]>> {
-	const languageCodes = {};
-	let wordsByCode = {};
-
-	for (const { word, locale } of segmentsMissingFont) {
-		const code = detectLanguageCode(word, locale).join('|');
-		wordsByCode[code] = wordsByCode[code] || '';
-		wordsByCode[code] += word;
-	}
-
-	Object.keys(wordsByCode).forEach((code: LangCode) => {
-		languageCodes[code] = languageCodes[code] || [];
-		if (code === 'emoji') {
-			languageCodes[code].push(
-				...unique(segment(wordsByCode[code], 'grapheme'))
-			);
-		} else {
-			languageCodes[code][0] = languageCodes[code][0] || '';
-			languageCodes[code][0] += unique(
-				segment(
-					wordsByCode[code],
-					'grapheme',
-					code === 'unknown' ? undefined : code
-				)
-			).join('');
-		}
-	});
-
-	return languageCodes;
-}
-
-function unique<T>(arr: T[]): T[] {
-	return Array.from(new Set(arr));
-}
+export type { SatoriNode, SatoriOptions };
+export default satori;

@@ -1,37 +1,48 @@
 import { getPropertyName } from 'css-to-react-native';
+
 import { splitEffects } from '../utils.js';
 
-function getMaskProperty(style: Record<string, string | number>, name: string) {
+const getMaskProperty = (
+	style: Record<string, string | number>,
+	name: string
+) => {
 	const key = getPropertyName(`mask-${name}`);
 	return (style[key] || style[`WebkitM${key.substring(1)}`]) as string;
-}
+};
 
-export interface MaskProperty {
-	image: string;
-	position: string;
-	size: string;
-	repeat: string;
-	origin: string;
+type MaskProperty = {
 	clip: string;
-}
+	image: string;
+	origin: string;
+	position: string;
+	repeat: string;
+	size: string;
+};
 
-export function parseMask(
+const parseMask = (
 	style: Record<string, string | number>
-): MaskProperty[] {
+): MaskProperty[] => {
 	const maskImage = (style.maskImage || style.WebkitMaskImage) as string;
 
 	const common = {
-		position: getMaskProperty(style, 'position') || '0% 0%',
-		size: getMaskProperty(style, 'size') || '100% 100%',
-		repeat: getMaskProperty(style, 'repeat') || 'repeat',
+		clip: getMaskProperty(style, 'origin') || 'border-box',
 		origin: getMaskProperty(style, 'origin') || 'border-box',
-		clip: getMaskProperty(style, 'origin') || 'border-box'
+		position: getMaskProperty(style, 'position') || '0% 0%',
+		repeat: getMaskProperty(style, 'repeat') || 'repeat',
+		size: getMaskProperty(style, 'size') || '100% 100%'
 	};
 
-	let maskImages = splitEffects(maskImage).filter(v => v && v !== 'none');
+	let maskImages = splitEffects(maskImage).filter(v => {
+		return v && v !== 'none';
+	});
 
-	return maskImages.reverse().map(m => ({
-		image: m,
-		...common
-	}));
-}
+	return maskImages.reverse().map(m => {
+		return {
+			image: m,
+			...common
+		};
+	});
+};
+
+export type { MaskProperty };
+export { parseMask };

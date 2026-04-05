@@ -5,25 +5,25 @@ import CssDimension from './vendor/parse-css-dimension/index.js';
 /**
  * If key for each direction is missing, assume default (50%)
  */
-export interface ParsedTransformOrigin {
-	/** Relative horizontal transform origin in % */
-	xRelative?: number;
-	/** Relative vertical transform origin in % */
-	yRelative?: number;
+type ParsedTransformOrigin = {
 	/** Absolute horizontal transform origin in pixels */
 	xAbsolute?: number;
+	/** Relative horizontal transform origin in % */
+	xRelative?: number;
 	/** Absolute horizontal transform origin in pixels */
 	yAbsolute?: number;
-}
+	/** Relative vertical transform origin in % */
+	yRelative?: number;
+};
 
-interface ParsedUnit {
-	/** Relative unit in % */
-	relative?: number;
+type ParsedUnit = {
 	/** Absolute unit in pixels */
 	absolute?: number;
-}
+	/** Relative unit in % */
+	relative?: number;
+};
 
-function parseUnit(word: string, baseFontSize: number): ParsedUnit {
+const parseUnit = (word: string, baseFontSize: number): ParsedUnit => {
 	try {
 		const parsed = new CssDimension(word);
 		switch (parsed.unit) {
@@ -41,13 +41,13 @@ function parseUnit(word: string, baseFontSize: number): ParsedUnit {
 	} catch (e) {
 		return {};
 	}
-}
+};
 
-function handleWord(
+const handleWord = (
 	word: string,
 	baseFontSize: number,
 	unitIsHorizontal: boolean
-) {
+) => {
 	switch (word) {
 		case 'top':
 			return { yRelative: 0 };
@@ -74,12 +74,12 @@ function handleWord(
 				: {};
 		}
 	}
-}
+};
 
-export default function parseTransformOrigin(
+const parseTransformOrigin = (
 	value: string | number,
 	baseFontSize: number
-): ParsedTransformOrigin {
+): ParsedTransformOrigin => {
 	// If it's a single value and a number, then it's horizontal
 	if (typeof value === 'number') {
 		return { xAbsolute: value };
@@ -87,8 +87,12 @@ export default function parseTransformOrigin(
 	let words: string[];
 	try {
 		words = valueParser(value)
-			.nodes.filter(node => node.type === 'word')
-			.map(node => node.value);
+			.nodes.filter(node => {
+				return node.type === 'word';
+			})
+			.map(node => {
+				return node.value;
+			});
 	} catch (e) {
 		return {};
 	}
@@ -115,4 +119,7 @@ export default function parseTransformOrigin(
 	} else {
 		return {};
 	}
-}
+};
+
+export type { ParsedTransformOrigin };
+export default parseTransformOrigin;

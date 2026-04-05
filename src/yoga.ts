@@ -1,26 +1,32 @@
 import { type Yoga } from 'yoga-layout/load';
 import { type Node } from 'yoga-layout';
+
 import { type InitInput } from './yoga.external.js';
 
 export { Yoga as TYoga, Node as YogaNode, type InitInput };
 
-export function init(input: InitInput) {
+const init = async (input: InitInput) => {
 	if (process.env.SATORI_STANDALONE === '1') {
-		return import('./yoga.external.js').then(mod => mod.init(input));
+		const mod = await import('./yoga.external.js');
+		return mod.init(input);
 	} else {
 		// Do nothing. It's bundled.
 	}
-}
+};
 
-export function getYoga() {
+const getYoga = async () => {
 	if (process.env.SATORI_STANDALONE === '1') {
-		return import('./yoga.external.js').then(mod => mod.getYoga());
+		const mod = await import('./yoga.external.js');
+		return mod.getYoga();
 	} else {
-		return import('./yoga.bundled.js').then(mod => mod.getYoga());
+		const mod = await import('./yoga.bundled.js');
+		return mod.getYoga();
 	}
-}
+};
 
 if (process.env.SATORI_STANDALONE !== '1') {
 	// Preload Yoga in bundled mode.
 	import('./yoga.bundled.js');
 }
+
+export { getYoga, init };

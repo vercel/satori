@@ -4,9 +4,10 @@
  * also returns the inherited style for children of the element.
  */
 
-import presets from './presets.js';
-import inheritable from './inheritable.js';
 import expand, { SerializedStyle } from './expand.js';
+import { resolveImageData } from './image.js';
+import inheritable from './inheritable.js';
+import presets from './presets.js';
 import {
 	asPointAutoPercentageLength,
 	asPointPercentageLength,
@@ -15,17 +16,16 @@ import {
 	v
 } from '../utils.js';
 import { getYoga, YogaNode } from '../yoga.js';
-import { resolveImageData } from './image.js';
 
 type SatoriElement = keyof typeof presets;
 
-export default async function compute(
+const compute = async (
 	node: YogaNode,
 	type: SatoriElement | string,
 	inheritedStyle: SerializedStyle,
 	definedStyle: Record<string, string | number>,
 	props: Record<string, any>
-): Promise<[SerializedStyle, SerializedStyle]> {
+): Promise<[SerializedStyle, SerializedStyle]> => {
 	const Yoga = await getYoga();
 
 	// Extend the default style with defined and inherited styles.
@@ -84,7 +84,7 @@ export default async function compute(
 			contentBoxWidth = '100%';
 			node.setAspectRatio(1 / r);
 		} else {
-			// If only one sisde is not defined, we can calculate the other one.
+			// If only one side is not defined, we can calculate the other one.
 			if (contentBoxWidth === undefined) {
 				if (typeof contentBoxHeight === 'number') {
 					contentBoxWidth = contentBoxHeight / r;
@@ -172,8 +172,12 @@ export default async function compute(
 			height ||= viewBoxSize?.[3];
 		}
 
-		if (!style.width && width) style.width = width;
-		if (!style.height && height) style.height = height;
+		if (!style.width && width) {
+			style.width = width;
+		}
+		if (!style.height && height) {
+			style.height = height;
+		}
 	}
 
 	// Set properties for Yoga.
@@ -426,4 +430,6 @@ export default async function compute(
 	}
 
 	return [style, inheritable(style)];
-}
+};
+
+export default compute;

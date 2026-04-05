@@ -15,7 +15,7 @@ const yogaPromise: Promise<Yoga> = new Promise((resolve, reject) => {
 	rejectYoga = reject;
 });
 
-export type InitInput =
+type InitInput =
 	| string
 	| Request
 	| URL
@@ -25,10 +25,10 @@ export type InitInput =
 	| WebAssembly.Module
 	| Promise<Response | BufferSource | Buffer | WebAssembly.Module>;
 
-async function loadWasm(
+const loadWasm = async (
 	input: InitInput,
 	imports: WebAssembly.Imports
-): Promise<WebAssembly.WebAssemblyInstantiatedSource> {
+): Promise<WebAssembly.WebAssemblyInstantiatedSource> => {
 	let source: Response | BufferSource | Buffer | WebAssembly.Module;
 
 	if (
@@ -74,24 +74,27 @@ async function loadWasm(
 	}
 
 	return instantiated;
-}
+};
 
-export function init(input: InitInput) {
-	loadYoga({
-		instantiateWasm(imports, successCallback) {
-			loadWasm(input, imports)
-				.then(({ instance }) => {
+const init = (input: InitInput) => {
+	(async () => {
+		const yoga = await loadYoga({
+			instantiateWasm(imports, successCallback) {
+				(async () => {
+					const { instance } = await loadWasm(input, imports);
 					successCallback(instance);
-				})
-				.catch(rejectYoga);
+				})().catch(rejectYoga);
 
-			return {};
-		}
-	})
-		.then(resolveYoga)
-		.catch(rejectYoga);
-}
+				return {};
+			}
+		});
+		resolveYoga(yoga);
+	})().catch(rejectYoga);
+};
 
-export function getYoga() {
+const getYoga = () => {
 	return yogaPromise;
-}
+};
+
+export type { InitInput };
+export { getYoga, init };

@@ -1,22 +1,24 @@
 import { buildXMLString } from '../utils.js';
 
-export default function svg({
-	width,
+const svg = ({
+	content,
 	height,
-	content
+	width
 }: {
-	width: number;
-	height: number;
 	content: string;
-}) {
+	height: number;
+	width: number;
+}) => {
 	return buildXMLString(
 		'svg',
 		{
-			width,
 			height,
 			viewBox: `0 0 ${width} ${height}`,
+			width,
 			xmlns: 'http://www.w3.org/2000/svg'
 		},
 		content
 	);
-}
+};
+
+export default svg;

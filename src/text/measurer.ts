@@ -1,7 +1,7 @@
 import { FontEngine } from '../font.js';
 import { segment } from '../utils.js';
 
-export function genMeasurer(
+const genMeasurer = (
 	engine: FontEngine,
 	isImage: (grapheme: string) => boolean,
 	style: {
@@ -12,12 +12,12 @@ export function genMeasurer(
 	measureGrapheme: (grapheme: string) => number;
 	measureGraphemeArray: (graphemes: string[]) => number;
 	measureText: (text: string) => number;
-} {
+} => {
 	const { fontSize, letterSpacing } = style;
 
 	const cache = new Map<string, number>();
 
-	function measureGrapheme(grapheme: string): number {
+	const measureGrapheme = (grapheme: string): number => {
 		let width = cache.get(grapheme);
 
 		if (width === undefined) {
@@ -26,9 +26,9 @@ export function genMeasurer(
 		}
 
 		return width;
-	}
+	};
 
-	function measureGraphemeArray(graphemes: string[]): number {
+	const measureGraphemeArray = (graphemes: string[]): number => {
 		let width = 0;
 
 		for (const grapheme of graphemes) {
@@ -40,15 +40,17 @@ export function genMeasurer(
 		}
 
 		return width;
-	}
+	};
 
-	function measureText(text: string): number {
+	const measureText = (text: string): number => {
 		return measureGraphemeArray(segment(text, 'grapheme'));
-	}
+	};
 
 	return {
 		measureGrapheme,
 		measureGraphemeArray,
 		measureText
 	};
-}
+};
+
+export { genMeasurer };

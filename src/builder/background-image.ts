@@ -1,36 +1,36 @@
 import CssDimension from '../vendor/parse-css-dimension/index.js';
+import cssColorParse from 'parse-css-color';
 import { buildXMLString } from '../utils.js';
 
-import { resolveImageData } from '../handler/image.js';
 import { buildLinearGradient } from './gradient/linear.js';
 import { buildRadialGradient } from './gradient/radial.js';
-import cssColorParse from 'parse-css-color';
+import { resolveImageData } from '../handler/image.js';
 
-interface Background {
+type Background = {
 	attachment?: string;
-	color?: string;
 	clip: string;
+	color?: string;
 	image: string;
 	origin?: string;
 	position: string;
-	size: string;
 	repeat: string;
-}
+	size: string;
+};
 
-function toAbsoluteValue(v: string | number, base: number) {
+const toAbsoluteValue = (v: string | number, base: number) => {
 	if (typeof v === 'string' && v.endsWith('%')) {
 		return (base * parseFloat(v)) / 100;
 	}
 	return typeof v === 'string' ? parseFloat(v) || 0 : +v;
-}
+};
 
-function calculateKeywordSize(
+const calculateKeywordSize = (
 	keyword: string,
 	containerWidth: number,
 	containerHeight: number,
 	imageWidth: number,
 	imageHeight: number
-): [number, number] {
+): [number, number] => {
 	if (!imageWidth || !imageHeight) {
 		return [containerWidth, containerHeight];
 	}
@@ -77,7 +77,7 @@ function calculateKeywordSize(
 	}
 
 	return [containerWidth, containerHeight];
-}
+};
 
 const positionKeywordMap: Record<string, string> = {
 	bottom: '100%',
@@ -87,7 +87,7 @@ const positionKeywordMap: Record<string, string> = {
 	top: '0%'
 };
 
-export function parsePositionValues(str: string): { x: string; y: string } {
+const parsePositionValues = (str: string): { x: string; y: string } => {
 	if (!str) {
 		return { x: '0%', y: '0%' };
 	}
@@ -112,13 +112,13 @@ export function parsePositionValues(str: string): { x: string; y: string } {
 		x: positionKeywordMap[parts[0]] || parts[0],
 		y: positionKeywordMap[parts[1]] || parts[1]
 	};
-}
+};
 
-export function computeBgPositionOffset(
+const computeBgPositionOffset = (
 	rawValue: string,
 	containerSize: number,
 	imageSize: number
-): number {
+): number => {
 	if (rawValue.endsWith('%')) {
 		const percentage = parseFloat(rawValue) / 100;
 		// CSS spec: offset = (containerSize - imageSize) * percentage
@@ -134,22 +134,22 @@ export function computeBgPositionOffset(
 	} catch {
 		return 0;
 	}
-}
+};
 
-function parseLengthPairs(
+const parseLengthPairs = (
 	str: string,
 	{
-		x,
-		y,
 		defaultX,
-		defaultY
+		defaultY,
+		x,
+		y
 	}: {
-		x: number;
-		y: number;
 		defaultX: number | string;
 		defaultY: number | string;
+		x: number;
+		y: number;
 	}
-) {
+) => {
 	const parsed = str
 		? str
 				.split(' ')
@@ -163,7 +163,9 @@ function parseLengthPairs(
 						return null;
 					}
 				})
-				.filter(v => v !== null)
+				.filter(v => {
+					return v !== null;
+				})
 		: [defaultX, defaultY];
 
 	if (parsed.length === 0) {
@@ -174,21 +176,23 @@ function parseLengthPairs(
 		parsed.push(defaultY);
 	}
 
-	return parsed.map((v, index) => toAbsoluteValue(v, [x, y][index]));
-}
+	return parsed.map((v, index) => {
+		return toAbsoluteValue(v, [x, y][index]);
+	});
+};
 
-export default async function backgroundImage(
+const backgroundImage = async (
 	{
-		id,
-		width,
 		height,
+		id,
 		left,
-		top
-	}: { id: string; width: number; height: number; left: number; top: number },
-	{ image, size, position, repeat }: Background,
+		top,
+		width
+	}: { height: number; id: string; left: number; top: number; width: number },
+	{ image, position, repeat, size }: Background,
 	inheritableStyle: Record<string, number | string>,
 	from?: 'background' | 'mask'
-): Promise<string[]> {
+): Promise<string[]> => {
 	// Default to `repeat`.
 	repeat = repeat || 'repeat';
 	from = from || 'background';
@@ -233,10 +237,10 @@ export default async function backgroundImage(
 			: isKeywordSize
 			? [0, 0] // Will be calculated later when we have image dimensions
 			: parseLengthPairs(size, {
-					x: width,
-					y: height,
 					defaultX: width,
-					defaultY: height
+					defaultY: height,
+					x: width,
+					y: height
 			  });
 	const normalizedPos = parsePositionValues(position);
 
@@ -249,7 +253,7 @@ export default async function backgroundImage(
 			computeBgPositionOffset(normalizedPos.y, height, dimensions[1])
 		];
 		return buildLinearGradient(
-			{ id, width, height, repeatX, repeatY },
+			{ height, id, repeatX, repeatY, width },
 			image,
 			dimensions,
 			offsets,
@@ -267,7 +271,7 @@ export default async function backgroundImage(
 			computeBgPositionOffset(normalizedPos.y, height, dimensions[1])
 		];
 		return buildRadialGradient(
-			{ id, width, height, repeatX, repeatY },
+			{ height, id, repeatX, repeatY, width },
 			image,
 			dimensions,
 			offsets,
@@ -300,10 +304,10 @@ export default async function backgroundImage(
 		} else {
 			// Use the previously parsed dimensions
 			const dimensionsWithoutFallback = parseLengthPairs(size, {
-				x: width,
-				y: height,
 				defaultX: 0,
-				defaultY: 0
+				defaultY: 0,
+				x: width,
+				y: height
 			});
 			resolvedWidth =
 				from === 'mask'
@@ -335,21 +339,21 @@ export default async function backgroundImage(
 				buildXMLString(
 					'pattern',
 					{
+						height: repeatY ? resolvedHeight : '100%',
 						id: `satori_bi${id}`,
 						patternContentUnits: 'userSpaceOnUse',
 						patternUnits: 'userSpaceOnUse',
-						x: (repeatX ? imageOffsetX : 0) + left,
-						y: (repeatY ? imageOffsetY : 0) + top,
 						width: repeatX ? resolvedWidth : '100%',
-						height: repeatY ? resolvedHeight : '100%'
+						x: (repeatX ? imageOffsetX : 0) + left,
+						y: (repeatY ? imageOffsetY : 0) + top
 					},
 					buildXMLString('image', {
-						x: repeatX ? 0 : imageOffsetX,
-						y: repeatY ? 0 : imageOffsetY,
-						width: resolvedWidth,
 						height: resolvedHeight,
+						href: src,
 						preserveAspectRatio: 'none',
-						href: src
+						width: resolvedWidth,
+						x: repeatX ? 0 : imageOffsetX,
+						y: repeatY ? 0 : imageOffsetY
 					})
 				)
 			];
@@ -372,21 +376,21 @@ export default async function backgroundImage(
 			buildXMLString(
 				'pattern',
 				{
+					height: repeatY ? resolvedHeight : '100%',
 					id: `satori_bi${id}`,
 					patternContentUnits: 'userSpaceOnUse',
 					patternUnits: 'userSpaceOnUse',
-					x: (repeatX ? imageOffsetX : 0) + left,
-					y: (repeatY ? imageOffsetY : 0) + top,
 					width: repeatX ? resolvedWidth : '100%',
-					height: repeatY ? resolvedHeight : '100%'
+					x: (repeatX ? imageOffsetX : 0) + left,
+					y: (repeatY ? imageOffsetY : 0) + top
 				},
 				buildXMLString('image', {
-					x: repeatX ? 0 : imageOffsetX,
-					y: repeatY ? 0 : imageOffsetY,
-					width: resolvedWidth,
 					height: resolvedHeight,
+					href: src,
 					preserveAspectRatio: 'none',
-					href: src
+					width: resolvedWidth,
+					x: repeatX ? 0 : imageOffsetX,
+					y: repeatY ? 0 : imageOffsetY
 				})
 			)
 		];
@@ -403,24 +407,27 @@ export default async function backgroundImage(
 			buildXMLString(
 				'pattern',
 				{
+					height: height,
 					id: `satori_bi${id}`,
 					patternContentUnits: 'userSpaceOnUse',
 					patternUnits: 'userSpaceOnUse',
-					x: left,
-					y: top,
 					width: width,
-					height: height
+					x: left,
+					y: top
 				},
 				buildXMLString('rect', {
-					x: 0,
-					y: 0,
-					width: width,
+					fill: color,
 					height: height,
-					fill: color
+					width: width,
+					x: 0,
+					y: 0
 				})
 			)
 		];
 	}
 
 	throw new Error(`Invalid background image: "${image}"`);
-}
+};
+
+export { computeBgPositionOffset, parsePositionValues };
+export default backgroundImage;

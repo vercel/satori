@@ -1,27 +1,28 @@
 import { parseLinearGradient, ColorStop } from 'css-gradient-parser';
-import { normalizeStops } from './utils.js';
-import { buildXMLString, calcDegree, lengthToNumber } from '../../utils.js';
 
-export function buildLinearGradient(
+import { buildXMLString, calcDegree, lengthToNumber } from '../../utils.js';
+import { normalizeStops } from './utils.js';
+
+const buildLinearGradient = (
 	{
-		id,
-		width,
 		height,
+		id,
 		repeatX,
-		repeatY
+		repeatY,
+		width
 	}: {
-		id: string;
-		width: number;
 		height: number;
+		id: string;
 		repeatX: boolean;
 		repeatY: boolean;
+		width: number;
 	},
 	image: string,
 	dimensions: number[],
 	offsets: number[],
 	inheritableStyle: Record<string, number | string>,
 	from?: 'background' | 'mask'
-) {
+) => {
 	const parsed = parseLinearGradient(image);
 	const [imageWidth, imageHeight] = dimensions;
 	const repeating = image.startsWith('repeating');
@@ -69,12 +70,12 @@ export function buildLinearGradient(
 	const defs = buildXMLString(
 		'pattern',
 		{
-			id: patternId,
-			x: offsets[0] / width,
-			y: offsets[1] / height,
-			width: repeatX ? imageWidth / width : '1',
 			height: repeatY ? imageHeight / height : '1',
-			patternUnits: 'objectBoundingBox'
+			id: patternId,
+			patternUnits: 'objectBoundingBox',
+			width: repeatX ? imageWidth / width : '1',
+			x: offsets[0] / width,
+			y: offsets[1] / height
 		},
 		buildXMLString(
 			'linearGradient',
@@ -84,36 +85,40 @@ export function buildLinearGradient(
 				spreadMethod: repeating ? 'repeat' : 'pad'
 			},
 			stops
-				.map(stop =>
-					buildXMLString('stop', {
+				.map(stop => {
+					return buildXMLString('stop', {
 						offset: (stop.offset ?? 0) * 100 + '%',
 						'stop-color': stop.color
-					})
-				)
+					});
+				})
 				.join('')
 		) +
 			buildXMLString('rect', {
-				x: 0,
-				y: 0,
-				width: imageWidth,
+				fill: `url(#${gradientId})`,
 				height: imageHeight,
-				fill: `url(#${gradientId})`
+				width: imageWidth,
+				x: 0,
+				y: 0
 			})
 	);
 	return [patternId, defs];
-}
+};
 
-function resolveRepeatingCycle(stops: ColorStop[], length: number) {
+const resolveRepeatingCycle = (stops: ColorStop[], length: number) => {
 	const last = stops[stops.length - 1];
 	const { offset } = last;
-	if (!offset) return length;
+	if (!offset) {
+		return length;
+	}
 
-	if (offset.unit === '%') return (Number(offset.value) / 100) * length;
+	if (offset.unit === '%') {
+		return (Number(offset.value) / 100) * length;
+	}
 
 	return Number(offset.value);
-}
+};
 
-function resolveXYFromDirection(dir: string) {
+const resolveXYFromDirection = (dir: string) => {
 	let x1 = 0,
 		y1 = 0,
 		x2 = 0,
@@ -135,13 +140,13 @@ function resolveXYFromDirection(dir: string) {
 		y1 = 1;
 	}
 
-	return { x1, y1, x2, y2 };
-}
+	return { x1, x2, y1, y2 };
+};
 
 /**
  * calc start point and end point of linear gradient
  */
-function calcNormalPoint(v: number, w: number, h: number) {
+const calcNormalPoint = (v: number, w: number, h: number) => {
 	const r = Math.pow(h / w, 2);
 
 	// make sure angle is 0 <= angle <= 360
@@ -213,25 +218,25 @@ function calcNormalPoint(v: number, w: number, h: number) {
 	dfs(v);
 
 	return {
+		length,
 		x1: x1 / w,
-		y1: y1 / h,
 		x2: x2 / w,
-		y2: y2 / h,
-		length
+		y1: y1 / h,
+		y2: y2 / h
 	};
-}
+};
 
-function calcPercentage(
+const calcPercentage = (
 	stops: ColorStop[],
 	length: number,
 	points: {
 		x1: number;
-		y1: number;
 		x2: number;
+		y1: number;
 		y2: number;
 	},
 	inheritableStyle: Record<string, string | number>
-) {
+) => {
 	const { x1, x2, y1, y2 } = points;
 	const p1 = !stops[0].offset
 		? 0
@@ -256,15 +261,17 @@ function calcPercentage(
 				true
 		  ) / length;
 
-	const sx = (x2 - x1) * p1 + x1;
-	const sy = (y2 - y1) * p1 + y1;
 	const ex = (x2 - x1) * p2 + x1;
 	const ey = (y2 - y1) * p2 + y1;
+	const sx = (x2 - x1) * p1 + x1;
+	const sy = (y2 - y1) * p1 + y1;
 
 	return {
 		x1: sx,
-		y1: sy,
 		x2: ex,
+		y1: sy,
 		y2: ey
 	};
-}
+};
+
+export { buildLinearGradient };

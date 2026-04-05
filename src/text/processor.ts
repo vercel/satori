@@ -3,7 +3,7 @@ import { isNumber, segment, splitByBreakOpportunities } from '../utils.js';
 import { HorizontalEllipsis, Space } from './characters.js';
 import { SerializedStyle } from '../handler/expand.js';
 
-export function preprocess(
+const preprocess = (
 	content: string,
 	style: SerializedStyle,
 	locale?: Locale
@@ -16,7 +16,7 @@ export function preprocess(
 	shouldCollapseTabsAndSpaces: boolean;
 	lineLimit: number;
 	blockEllipsis: string;
-} {
+} => {
 	const { textTransform, whiteSpace, wordBreak } = style;
 
 	content = processTextTransform(content, textTransform, locale);
@@ -38,22 +38,22 @@ export function preprocess(
 	);
 
 	return {
-		words,
-		requiredBreaks,
-		allowSoftWrap,
 		allowBreakWord,
-		processedContent,
-		shouldCollapseTabsAndSpaces,
+		allowSoftWrap,
+		blockEllipsis,
 		lineLimit,
-		blockEllipsis
+		processedContent,
+		requiredBreaks,
+		shouldCollapseTabsAndSpaces,
+		words
 	};
-}
+};
 
-function processTextTransform(
+const processTextTransform = (
 	content: string,
 	textTransform: string,
 	locale?: Locale
-): string {
+): string => {
 	if (textTransform === 'uppercase') {
 		content = content.toLocaleUpperCase(locale);
 	} else if (textTransform === 'lowercase') {
@@ -76,12 +76,12 @@ function processTextTransform(
 	}
 
 	return content;
-}
+};
 
-function processTextOverflow(
+const processTextOverflow = (
 	style: SerializedStyle,
 	allowSoftWrap: boolean
-): [number, string?] {
+): [number, string?] => {
 	const {
 		textOverflow,
 		lineClamp,
@@ -118,12 +118,12 @@ function processTextOverflow(
 	}
 
 	return [Infinity];
-}
+};
 
-function processWordBreak(
+const processWordBreak = (
 	content,
 	wordBreak: string
-): { words: string[]; requiredBreaks: boolean[]; allowBreakWord: boolean } {
+): { words: string[]; requiredBreaks: boolean[]; allowBreakWord: boolean } => {
 	const allowBreakWord = ['break-all', 'break-word'].includes(wordBreak);
 
 	const { words, requiredBreaks } = splitByBreakOpportunities(
@@ -131,17 +131,17 @@ function processWordBreak(
 		wordBreak
 	);
 
-	return { words, requiredBreaks, allowBreakWord };
-}
+	return { allowBreakWord, requiredBreaks, words };
+};
 
-function processWhiteSpace(
+const processWhiteSpace = (
 	content: string,
 	whiteSpace: string
 ): {
 	content: string;
 	shouldCollapseTabsAndSpaces: boolean;
 	allowSoftWrap: boolean;
-} {
+} => {
 	const shouldKeepLinebreak = ['pre', 'pre-wrap', 'pre-line'].includes(
 		whiteSpace
 	);
@@ -164,11 +164,13 @@ function processWhiteSpace(
 			.replace(/^[ ]|[ ]$/g, '');
 	}
 
-	return { content, shouldCollapseTabsAndSpaces, allowSoftWrap };
-}
+	return { allowSoftWrap, content, shouldCollapseTabsAndSpaces };
+};
 
-function parseLineClamp(input: number | string): [number?, string?] {
-	if (typeof input === 'number') return [input];
+const parseLineClamp = (input: number | string): [number?, string?] => {
+	if (typeof input === 'number') {
+		return [input];
+	}
 
 	const regex1 = /^(\d+)\s*"(.*)"$/;
 	const regex2 = /^(\d+)\s*'(.*)'$/;
@@ -188,4 +190,6 @@ function parseLineClamp(input: number | string): [number?, string?] {
 	}
 
 	return [];
-}
+};
+
+export { preprocess };

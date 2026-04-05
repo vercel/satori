@@ -6,7 +6,7 @@
  */
 export type { CSSProperties } from './intrinsic-elements.js';
 
-export type JSXKey = string | number | bigint;
+type JSXKey = string | number | bigint;
 
 /**
  * Represents a JSX element.
@@ -23,14 +23,14 @@ export type JSXKey = string | number | bigint;
  * const element: JSXElement = <div />;
  * ```
  */
-export interface JSXElement<
+type JSXElement<
 	P = unknown,
 	T extends string | FC<P> = string | FC<P>
-> {
+> = {
 	type: T;
 	props: P;
 	key: string | null;
-}
+};
 
 type AwaitedJSXNode =
 	| JSXElement
@@ -72,7 +72,7 @@ type AwaitedJSXNode =
  * <Component customElement={<div>hello</div>} />
  * ```
  */
-export type JSXNode =
+type JSXNode =
 	| JSXElement
 	| string
 	| number
@@ -110,4 +110,6 @@ export type JSXNode =
  * }
  * ```
  */
-export type FC<P = {}> = (props: P) => JSXNode | Promise<JSXNode>;
+type FC<P = {}> = (props: P) => JSXNode | Promise<JSXNode>;
+
+export type { FC, JSXElement, JSXKey, JSXNode };

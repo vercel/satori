@@ -3,48 +3,48 @@
  */
 
 import { buildXMLString } from '../utils.js';
-import mask from './content-mask.js';
 import { buildClipPath, genClipPathId } from './clip-path.js';
+import mask from './content-mask.js';
 
-export default function overflow(
+const overflow = (
 	{
-		left,
-		top,
-		width,
-		height,
-		path,
-		matrix,
-		id,
 		currentClipPath,
-		src
+		height,
+		id,
+		left,
+		matrix,
+		path,
+		src,
+		top,
+		width
 	}: {
+		currentClipPath: string | string;
+		height: number;
+		id: string;
 		left: number;
+		matrix: string | undefined;
+		path: string;
+		src?: string;
 		top: number;
 		width: number;
-		height: number;
-		path: string;
-		matrix: string | undefined;
-		id: string;
-		currentClipPath: string | string;
-		src?: string;
 	},
 	style: Record<string, string | number>,
 	inheritableStyle: Record<string, string | number>
-) {
+) => {
 	let overflowClipPath = '';
 	const clipPath =
 		style.clipPath && style.clipPath !== 'none'
 			? buildClipPath(
 					{
-						left,
-						top,
-						width,
-						height,
-						path,
-						id,
-						matrix,
 						currentClipPath,
-						src
+						height,
+						id,
+						left,
+						matrix,
+						path,
+						src,
+						top,
+						width
 					},
 					style as Record<string, number>,
 					inheritableStyle
@@ -59,15 +59,12 @@ export default function overflow(
 		overflowClipPath = buildXMLString(
 			'clipPath',
 			{
-				id: _id,
-				'clip-path': currentClipPath
+				'clip-path': currentClipPath,
+				id: _id
 			},
 			buildXMLString(path ? 'path' : 'rect', {
-				x: left,
-				y: top,
-				width,
-				height,
 				d: path ? path : undefined,
+				height,
 				// add transformation matrix to clip path if overflow is hidden AND a
 				// transformation style is defined, otherwise children will be clipped
 				// relative to the parent's original plane instead of the transformed
@@ -75,23 +72,28 @@ export default function overflow(
 				transform:
 					style.overflow === 'hidden' && style.transform && matrix
 						? matrix
-						: undefined
+						: undefined,
+				width,
+				x: left,
+				y: top
 			})
 		);
 	}
 
 	const contentMask = mask(
 		{
+			borderOnly: src ? false : true,
+			height,
 			id: `satori_om-${id}`,
 			left,
-			top,
-			width,
-			height,
 			matrix,
-			borderOnly: src ? false : true
+			top,
+			width
 		},
 		style
 	);
 
 	return clipPath + overflowClipPath + contentMask;
-}
+};
+
+export default overflow;

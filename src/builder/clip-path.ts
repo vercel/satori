@@ -1,29 +1,32 @@
 import { buildXMLString } from '../utils.js';
 import { createShapeParser } from '../parser/shape.js';
 
-export function genClipPathId(id: string) {
+const genClipPathId = (id: string) => {
 	return `satori_cp-${id}`;
-}
-export function genClipPath(id: string) {
-	return `url(#${genClipPathId(id)})`;
-}
+};
 
-export function buildClipPath(
+const genClipPath = (id: string) => {
+	return `url(#${genClipPathId(id)})`;
+};
+
+const buildClipPath = (
 	v: {
+		currentClipPath: string | string;
+		height: number;
+		id: string;
 		left: number;
+		matrix: string | undefined;
+		path: string;
+		src?: string;
 		top: number;
 		width: number;
-		height: number;
-		path: string;
-		matrix: string | undefined;
-		id: string;
-		currentClipPath: string | string;
-		src?: string;
 	},
 	style: Record<string, string | number>,
 	inheritedStyle: Record<string, string | number>
-) {
-	if (style.clipPath === 'none') return '';
+) => {
+	if (style.clipPath === 'none') {
+		return '';
+	}
 
 	const parser = createShapeParser(v, style, inheritedStyle);
 	const clipPath = style.clipPath as string;
@@ -32,7 +35,9 @@ export function buildClipPath(
 
 	for (const k of Object.keys(parser)) {
 		tmp = parser[k](clipPath);
-		if (tmp) break;
+		if (tmp) {
+			break;
+		}
 	}
 
 	if (tmp) {
@@ -40,12 +45,14 @@ export function buildClipPath(
 		return buildXMLString(
 			'clipPath',
 			{
-				id: genClipPathId(v.id),
 				'clip-path': v.currentClipPath,
+				id: genClipPathId(v.id),
 				transform: `translate(${v.left}, ${v.top})`
 			},
 			buildXMLString(type, rest)
 		);
 	}
 	return '';
-}
+};
+
+export { buildClipPath, genClipPath, genClipPathId };

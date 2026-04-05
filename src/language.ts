@@ -46,34 +46,36 @@ const code = {
 
 type SpecialCodeKey = keyof typeof specialCode;
 type CodeKey = keyof typeof specialCode | keyof typeof code;
-export type Locale = keyof typeof code;
-export type LangCode = CodeKey | 'unknown';
+type Locale = keyof typeof code;
+type LangCode = CodeKey | 'unknown';
 
-export const locales = Object.keys({ ...code, ...specialCode }) as Locale[];
-export function isValidLocale(x: any): x is Locale {
+const locales = Object.keys({ ...code, ...specialCode }) as Locale[];
+const isValidLocale = (x: any): x is Locale => {
 	return locales.includes(x);
-}
+};
 
-export function detectLanguageCode(
+const detectLanguageCode = (
 	segment: string,
 	locale?: Locale
-): Array<Locale> | ['unknown'] | [SpecialCodeKey] {
+): Array<Locale> | ['unknown'] | [SpecialCodeKey] => {
 	for (const c of Object.keys(specialCode) as SpecialCodeKey[]) {
 		if (specialCode[c].test(segment)) {
 			return [c];
 		}
 	}
 
-	const languages = Object.keys(code).filter(lang =>
-		code[lang].test(segment)
-	) as Locale[];
+	const languages = Object.keys(code).filter(lang => {
+		return code[lang].test(segment);
+	}) as Locale[];
 
 	if (languages.length === 0) {
 		return ['unknown'];
 	}
 
 	if (locale) {
-		const index = languages.findIndex(lang => lang === locale);
+		const index = languages.findIndex(lang => {
+			return lang === locale;
+		});
 		if (index !== -1) {
 			languages.splice(index, 1);
 			languages.unshift(locale);
@@ -81,12 +83,15 @@ export function detectLanguageCode(
 	}
 
 	return languages;
-}
+};
 
-export function normalizeLocale(locale?: string): Locale | undefined {
+const normalizeLocale = (locale?: string): Locale | undefined => {
 	if (locale) {
-		return locales.find(l =>
-			l.toLowerCase().startsWith(locale.toLowerCase())
-		);
+		return locales.find(l => {
+			return l.toLowerCase().startsWith(locale.toLowerCase());
+		});
 	}
-}
+};
+
+export type { LangCode, Locale };
+export { detectLanguageCode, isValidLocale, locales, normalizeLocale };

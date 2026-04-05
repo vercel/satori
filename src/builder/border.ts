@@ -1,44 +1,46 @@
 import { buildXMLString } from '../utils.js';
 import radius from './border-radius.js';
 
-function compareBorderDirections(a: string, b: string, style: any) {
+const compareBorderDirections = (a: string, b: string, style: any) => {
 	return (
 		style[a + 'Width'] === style[b + 'Width'] &&
 		style[a + 'Style'] === style[b + 'Style'] &&
 		style[a + 'Color'] === style[b + 'Color']
 	);
-}
+};
 
-export function getBorderClipPath(
+const getBorderClipPath = (
 	{
-		id,
-		// Can be `overflow: hidden` from parent containers.
-		currentClipPathId,
 		borderPath,
 		borderType,
+		currentClipPathId,
+		height,
+		id,
+		// Can be `overflow: hidden` from parent containers.
 		left,
 		top,
-		width,
-		height
+		width
 	}: {
-		id: string;
-		currentClipPathId?: string | number;
 		borderPath?: string;
 		borderType?: 'rect' | 'path';
+		currentClipPathId?: string | number;
+		height: number;
+		id: string;
 		left: number;
 		top: number;
 		width: number;
-		height: number;
 	},
 	style: Record<string, number | string>
-) {
+) => {
 	const hasBorder =
 		style.borderTopWidth ||
 		style.borderRightWidth ||
 		style.borderBottomWidth ||
 		style.borderLeftWidth;
 
-	if (!hasBorder) return null;
+	if (!hasBorder) {
+		return null;
+	}
 
 	// In SVG, stroke is always centered on the path and there is no
 	// existing property to make it behave like CSS border. So here we
@@ -48,43 +50,43 @@ export function getBorderClipPath(
 	const defs = buildXMLString(
 		'clipPath',
 		{
-			id: rectClipId,
 			'clip-path': currentClipPathId
 				? `url(#${currentClipPathId})`
-				: undefined
+				: undefined,
+			id: rectClipId
 		},
 		buildXMLString(borderType, {
-			x: left,
-			y: top,
-			width,
+			d: borderPath ? borderPath : undefined,
 			height,
-			d: borderPath ? borderPath : undefined
+			width,
+			x: left,
+			y: top
 		})
 	);
 
 	return [defs, rectClipId];
-}
+};
 
-export default function border(
+const border = (
 	{
-		left,
-		top,
-		width,
-		height,
-		props,
 		asContentMask,
-		maskBorderOnly
+		height,
+		left,
+		maskBorderOnly,
+		props,
+		top,
+		width
 	}: {
+		asContentMask?: boolean;
+		height: number;
 		left: number;
+		maskBorderOnly?: boolean;
+		props: any;
 		top: number;
 		width: number;
-		height: number;
-		props: any;
-		asContentMask?: boolean;
-		maskBorderOnly?: boolean;
 	},
 	style: Record<string, number | string>
-) {
+) => {
 	const directions = [
 		'borderTop',
 		'borderRight',
@@ -95,9 +97,12 @@ export default function border(
 	// No border
 	if (
 		!asContentMask &&
-		!directions.some(direction => style[direction + 'Width'])
-	)
+		!directions.some(direction => {
+			return style[direction + 'Width'];
+		})
+	) {
 		return '';
+	}
 
 	let fullBorder = '';
 
@@ -138,21 +143,21 @@ export default function border(
 					: 0);
 			if (w) {
 				fullBorder += buildXMLString('path', {
-					width,
-					height,
-					...props,
+					d: radius(
+						{ height, left, top, width },
+						style as Record<string, number>,
+						partialSides
+					),
 					fill: 'none',
+					height,
 					stroke: asContentMask ? '#000' : currentStyle[2],
-					'stroke-width': w * 2,
 					'stroke-dasharray':
 						!asContentMask && currentStyle[1] === 'dashed'
 							? w * 2 + ' ' + w
 							: undefined,
-					d: radius(
-						{ left, top, width, height },
-						style as Record<string, number>,
-						partialSides
-					)
+					'stroke-width': w * 2,
+					width,
+					...props
 				});
 			}
 			partialSides = [false, false, false, false];
@@ -167,24 +172,27 @@ export default function border(
 				: 0);
 		if (w) {
 			fullBorder += buildXMLString('path', {
-				width,
-				height,
-				...props,
+				d: radius(
+					{ height, left, top, width },
+					style as Record<string, number>,
+					partialSides
+				),
 				fill: 'none',
+				height,
 				stroke: asContentMask ? '#000' : currentStyle[2],
-				'stroke-width': w * 2,
 				'stroke-dasharray':
 					!asContentMask && currentStyle[1] === 'dashed'
 						? w * 2 + ' ' + w
 						: undefined,
-				d: radius(
-					{ left, top, width, height },
-					style as Record<string, number>,
-					partialSides
-				)
+				'stroke-width': w * 2,
+				width,
+				...props
 			});
 		}
 	}
 
 	return fullBorder;
-}
+};
+
+export { getBorderClipPath };
+export default border;

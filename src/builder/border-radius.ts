@@ -10,14 +10,14 @@ import { buildXMLString, lengthToNumber } from '../utils.js';
 // Getting the intersection of a 45deg ray with the elliptical arc x^2/rx^2 + y^2/ry^2 = 1.
 // Reference:
 // https://www.w3.org/TR/SVG/implnote.html#ArcConversionEndpointToCenter
-function svgArcCenterOffset([rx, ry]: number[]) {
+const svgArcCenterOffset = ([rx, ry]: number[]) => {
 	if (Math.round(rx * 1000) === 0 && Math.round(ry * 1000) === 0) {
 		return 0;
 	}
 	return Math.round(((rx * ry) / Math.sqrt(rx * rx + ry * ry)) * 1000) / 1000;
-}
+};
 
-function resolveSize(a: number, b: number, limit: number) {
+const resolveSize = (a: number, b: number, limit: number) => {
 	if (limit < a + b) {
 		if (limit / 2 < a && limit / 2 < b) {
 			a = b = limit / 2;
@@ -28,22 +28,24 @@ function resolveSize(a: number, b: number, limit: number) {
 		}
 	}
 	return [a, b];
-}
+};
 
-function makeSmaller(arr: [number, number]) {
+const makeSmaller = (arr: [number, number]) => {
 	arr[0] = arr[1] = Math.min(arr[0], arr[1]);
-}
+};
 
 // Each corner can have 2 values, the first is the horizontal radius, the second is the vertical radius.
-function resolveRadius(
+const resolveRadius = (
 	v: number | string | undefined,
 	width: number,
 	height: number,
 	fontSize: number,
 	style: any
-): [boolean, undefined | [number, number]] {
+): [boolean, undefined | [number, number]] => {
 	if (typeof v === 'string') {
-		const sides = v.split(' ').map(s => s.trim());
+		const sides = v.split(' ').map(s => {
+			return s.trim();
+		});
 		const singleValue = !sides[1] && !sides[0].endsWith('%');
 		sides[1] = sides[1] || sides[0];
 		return [
@@ -64,31 +66,32 @@ function resolveRadius(
 		return [true, [Math.min(v, width), Math.min(v, height)]];
 	}
 	return [true, undefined];
-}
+};
 
-const radiusZeroOrNull = (_radius?: [number, number]) =>
-	_radius && _radius[0] !== 0 && _radius[1] !== 0;
+const radiusZeroOrNull = (_radius?: [number, number]) => {
+	return _radius && _radius[0] !== 0 && _radius[1] !== 0;
+};
 
-export function getBorderRadiusClipPath(
+const getBorderRadiusClipPath = (
 	{
-		id,
 		borderRadiusPath,
 		borderType,
+		height,
+		id,
 		left,
 		top,
-		width,
-		height
+		width
 	}: {
-		id: string;
 		borderRadiusPath?: string;
 		borderType?: 'rect' | 'path';
+		height: number;
+		id: string;
 		left: number;
 		top: number;
 		width: number;
-		height: number;
 	},
 	style: Record<string, number | string>
-) {
+) => {
 	const rectClipId = `satori_brc-${id}`;
 	const defs = buildXMLString(
 		'clipPath',
@@ -96,37 +99,37 @@ export function getBorderRadiusClipPath(
 			id: rectClipId
 		},
 		buildXMLString(borderType, {
-			x: left,
-			y: top,
-			width,
+			d: borderRadiusPath ? borderRadiusPath : undefined,
 			height,
-			d: borderRadiusPath ? borderRadiusPath : undefined
+			width,
+			x: left,
+			y: top
 		})
 	);
 
 	return [defs, rectClipId];
-}
+};
 
-export default function radius(
+const radius = (
 	{
+		height,
 		left,
 		top,
-		width,
-		height
+		width
 	}: {
+		height: number;
 		left: number;
 		top: number;
 		width: number;
-		height: number;
 	},
 	style: Record<string, any>,
 	partialSides?: boolean[]
-) {
+) => {
 	let {
-		borderTopLeftRadius,
-		borderTopRightRadius,
 		borderBottomLeftRadius,
 		borderBottomRightRadius,
+		borderTopLeftRadius,
+		borderTopRightRadius,
 		fontSize
 	} = style;
 
@@ -253,8 +256,9 @@ export default function radius(
 		// https://w3c.github.io/csswg-drafts/css-backgrounds-3/#corner-transitions
 		let start = partialSides.indexOf(false);
 
-		if (!partialSides.includes(true))
+		if (!partialSides.includes(true)) {
 			throw new Error('Invalid `partialSides`.');
+		}
 
 		if (start === -1) {
 			start = 0;
@@ -264,7 +268,7 @@ export default function radius(
 			}
 		}
 
-		function getArc(i: number) {
+		const getArc = (i: number) => {
 			const c0 = svgArcCenterOffset(
 				[
 					borderTopLeftRadius,
@@ -307,7 +311,7 @@ export default function radius(
 						],
 						[left, top + height - borderBottomLeftRadius[1]]
 				  ];
-		}
+		};
 
 		let result = '';
 
@@ -333,4 +337,7 @@ export default function radius(
 
 	// Generate the path
 	return `M${left + borderTopLeftRadius[0]},${top} ${T} ${R} ${B} ${L}`;
-}
+};
+
+export { getBorderRadiusClipPath };
+export default radius;
