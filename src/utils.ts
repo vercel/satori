@@ -3,6 +3,11 @@ import LineBreaker from 'linebreak';
 
 import CssDimension from './vendor/parse-css-dimension/index.js';
 
+type ForwardRefComponent = {
+	$$typeof: symbol;
+	render: Function;
+};
+
 const isReactElement = (node: ReactNode): node is ReactElement => {
 	const type = typeof node;
 	if (
@@ -20,8 +25,12 @@ const isClass = (f: Function) => {
 	return /^class\s/.test(f.toString());
 };
 
-const isForwardRefComponent = (type: any) => {
-	return type && type.$$typeof === Symbol.for('react.forward_ref');
+const isForwardRefComponent = (type: unknown): type is ForwardRefComponent => {
+	return (
+		!!type &&
+		(type as ForwardRefComponent).$$typeof ===
+			Symbol.for('react.forward_ref')
+	);
 };
 
 const isReactComponent = (type: any) => {
@@ -464,6 +473,7 @@ const splitEffects = (
 	return result;
 };
 
+export type { ForwardRefComponent };
 export {
 	asPointAutoPercentageLength,
 	asPointPercentageLength,

@@ -193,7 +193,7 @@ const replaceNode = (node: valueParser.Node, value: string) => {
 	node.type = 'word';
 	node.value = value;
 	// Remove function-specific properties
-	delete (node as any).nodes;
+	delete (node as valueParser.FunctionNode).nodes;
 };
 
 /**

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { FontOptions } from '../../src/font.js';
+import type { Font } from '../../src/font.js';
 import type { DetectedFont } from '../../src/fonts/detection.js';
 import {
 	fontCache,
@@ -9,7 +9,7 @@ import {
 	loadFonts
 } from '../../src/fonts/loader.js';
 
-const mockFont = (detected: DetectedFont): FontOptions => {
+const mockFont = (detected: DetectedFont): Font => {
 	return {
 		data: new ArrayBuffer(8),
 		name: detected.family,

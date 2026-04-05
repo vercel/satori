@@ -88,12 +88,13 @@
 	},
 	"scripts": {
 		"build": "yarn build:default && yarn build:standalone",
+		"check:types": "tsc --noEmit",
 		"generate:tw": "node scripts/generate-tailwind-css.mjs",
 		"build:default": "NODE_ENV=production tsup",
 		"build:standalone": "NODE_ENV=production SATORI_STANDALONE=1 tsup",
 		"dev": "NODE_ENV=development tsup src/index.ts --watch",
 		"dev:test": "NODE_ENV=test vitest --update",
-		"lint": "prettier --write . && eslint . --ext .js,.jsx,.ts,.tsx --quiet",
+		"lint": "yarn check:types && prettier --write . && eslint . --ext .js,.jsx,.ts,.tsx --quiet",
 		"npm:publish": "yarn lint && yarn test && yarn build && yarn version --patch --no-git-tag-version && yarn publish --non-interactive",
 		"test": "NODE_ENV=test vitest run"
 	},

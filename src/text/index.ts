@@ -1065,8 +1065,7 @@ const buildTextNodes = async function* (
 
 	// Attach information to the parent node.
 	if (backgroundClipDef) {
-		(parentStyle._inheritedBackgroundClipTextPath as any).value +=
-			backgroundClipDef;
+		parentStyle._inheritedBackgroundClipTextPath.value += backgroundClipDef;
 	}
 
 	return result;

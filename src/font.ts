@@ -5,18 +5,18 @@ import opentype from '@shuding/opentype.js';
 
 import { Locale, locales, isValidLocale } from './language.js';
 
-type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
-type WeightName = 'normal' | 'bold';
-type FontWeight = Weight | WeightName;
+type FontWeight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
+type FontWeightName = 'normal' | 'bold';
 type FontStyle = 'normal' | 'italic';
+type FontWithTracking = opentype.Font & { _trackBrokenChars?: string[] };
 const SUFFIX_WHEN_LANG_NOT_SET = 'unknown';
 
-type FontOptions = {
+type Font = {
 	data: Buffer | ArrayBuffer;
 	lang?: string;
 	name: string;
 	style?: FontStyle;
-	weight?: Weight;
+	weight?: FontWeight;
 };
 
 type GlyphBox = {
@@ -317,8 +317,8 @@ const cachedParsedFont = new WeakMap<
 
 class FontLoader {
 	defaultFont: opentype.Font;
-	fonts = new Map<string, [opentype.Font, Weight?, FontStyle?][]>();
-	constructor(fontOptions: FontOptions[]) {
+	fonts = new Map<string, [opentype.Font, FontWeight?, FontStyle?][]>();
+	constructor(fontOptions: Font[]) {
 		this.addFonts(fontOptions);
 	}
 
@@ -329,7 +329,7 @@ class FontLoader {
 		style
 	}: {
 		name: string;
-		weight: Weight | WeightName;
+		weight: FontWeight | FontWeightName;
 		style: FontStyle;
 	}) {
 		if (!this.fonts.has(name)) {
@@ -343,7 +343,7 @@ class FontLoader {
 			weight = 700;
 		}
 		if (typeof weight === 'string') {
-			weight = Number.parseInt(weight, 10) as Weight;
+			weight = Number.parseInt(weight, 10) as FontWeight;
 		}
 
 		const fonts = [...this.fonts.get(name)];
@@ -370,7 +370,7 @@ class FontLoader {
 		return { font: matchedFont[0], weight: matchedFont[1] };
 	}
 
-	public addFonts(fontOptions: FontOptions[]) {
+	public addFonts(fontOptions: Font[]) {
 		for (const fontOption of fontOptions) {
 			const { name, data, lang } = fontOption;
 			if (lang && !isValidLocale(lang)) {
@@ -381,7 +381,7 @@ class FontLoader {
 				);
 			}
 			const _lang = lang ?? SUFFIX_WHEN_LANG_NOT_SET;
-			let font;
+			let font: FontWithTracking;
 
 			if (cachedParsedFont.has(data)) {
 				font = cachedParsedFont.get(data);
@@ -404,8 +404,8 @@ class FontLoader {
 					const index = originalCharToGlyphIndex.call(font, char);
 					if (index === 0) {
 						// The current requested char is missing a glyph.
-						if ((font as any)._trackBrokenChars) {
-							(font as any)._trackBrokenChars.push(char);
+						if (font._trackBrokenChars) {
+							font._trackBrokenChars.push(char);
 						}
 					}
 					return index;
@@ -439,7 +439,7 @@ class FontLoader {
 			fontStyle = 'normal'
 		}: {
 			fontFamily?: string | string[];
-			fontWeight?: FontWeight;
+			fontWeight?: FontWeight | FontWeightName;
 			fontStyle?: FontStyle;
 		},
 		locale: Locale | undefined
@@ -456,7 +456,7 @@ class FontLoader {
 			return name.toLowerCase();
 		});
 		let fonts = [];
-		let primaryMatchedWeight: Weight | undefined;
+		let primaryMatchedWeight: FontWeight | undefined;
 
 		fontFamily.forEach(face => {
 			const getNormal = this.get({
@@ -494,7 +494,10 @@ class FontLoader {
 		const additionalFonts = [];
 		const pushFallback = (
 			arr: opentype.Font[],
-			result: { font: opentype.Font; weight: Weight | undefined } | null
+			result: {
+				font: opentype.Font;
+				weight: FontWeight | undefined;
+			} | null
 		) => {
 			if (!result) {
 				return;
@@ -674,12 +677,13 @@ class FontLoader {
 				if (!font) {
 					return false;
 				}
-				(font as any)._trackBrokenChars = [];
+				const tracked = font as FontWithTracking;
+				tracked._trackBrokenChars = [];
 				font.stringToGlyphs(s);
-				if (!(font as any)._trackBrokenChars.length) {
+				if (!tracked._trackBrokenChars.length) {
 					return true;
 				}
-				(font as any)._trackBrokenChars = undefined;
+				tracked._trackBrokenChars = undefined;
 				return false;
 			},
 			height: (
@@ -708,8 +712,9 @@ class FontLoader {
 		font: opentype.Font,
 		resolveFont: (word: string, fallback?: boolean) => opentype.Font
 	) {
-		const brokenChars = [];
-		(font as any)._trackBrokenChars = brokenChars;
+		const tracked = font as FontWithTracking;
+		const brokenChars: string[] = [];
+		tracked._trackBrokenChars = brokenChars;
 
 		const originalStringToGlyphs = font.stringToGlyphs;
 		font.stringToGlyphs = (s: string, ...args: any) => {
@@ -757,7 +762,7 @@ class FontLoader {
 
 		return () => {
 			font.stringToGlyphs = originalStringToGlyphs;
-			(font as any)._trackBrokenChars = undefined;
+			tracked._trackBrokenChars = undefined;
 		};
 	}
 
@@ -889,12 +894,11 @@ const getLangFromFontName = (name: string): Locale | undefined => {
 };
 
 export type {
+	Font,
 	FontEngine,
-	FontOptions,
 	FontStyle,
 	FontWeight,
-	GlyphBox,
-	Weight,
-	WeightName
+	FontWeightName,
+	GlyphBox
 };
 export default FontLoader;

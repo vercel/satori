@@ -1,17 +1,15 @@
-import type { FontOptions } from '../font.js';
+import type { Font } from '../font.js';
 import type { DetectedFont } from './detection.js';
 
-type LoadFn = (
-	font: DetectedFont
-) => Promise<FontOptions | FontOptions[] | string | null>;
+type LoadFn = (font: DetectedFont) => Promise<Font | Font[] | string | null>;
 
-const fontCache = new Map<string, FontOptions>();
-const fontPending = new Map<string, Promise<FontOptions | null>>();
+const fontCache = new Map<string, Font>();
+const fontPending = new Map<string, Promise<Font | null>>();
 
 const loadFont = async (
 	detected: DetectedFont,
 	load: LoadFn
-): Promise<FontOptions | null> => {
+): Promise<Font | null> => {
 	const cacheKey = `${detected.key}:${detected.weight}`;
 	const cached = fontCache.get(cacheKey);
 
@@ -50,14 +48,14 @@ const loadFont = async (
 const loadFonts = async (
 	entries: DetectedFont[],
 	load: LoadFn
-): Promise<FontOptions[]> => {
+): Promise<Font[]> => {
 	const results = await Promise.all(
 		entries.map(entry => {
 			return loadFont(entry, load);
 		})
 	);
 
-	return results.filter((font): font is FontOptions => {
+	return results.filter((font): font is Font => {
 		return font !== null;
 	});
 };

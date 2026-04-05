@@ -1,3 +1,4 @@
+import type { TransformArray } from '../handler/expand.js';
 import { multiply } from '../utils.js';
 import type { ParsedTransformOrigin } from '../transform-origin.js';
 
@@ -5,7 +6,7 @@ const baseMatrix = [1, 0, 0, 1, 0, 0];
 
 // Mutate the array in place.
 const resolveTransforms = (
-	transforms: any[],
+	transforms: TransformArray,
 	width: number,
 	height: number
 ) => {
@@ -75,7 +76,7 @@ const resolveTransforms = (
 
 	transforms.splice(0, transforms.length);
 	transforms.push(...matrix);
-	(transforms as any).__resolved = true;
+	transforms.__resolved = true;
 };
 
 const transformFn = (
@@ -90,13 +91,13 @@ const transformFn = (
 		top: number;
 		width: number;
 	},
-	transforms: number[],
+	transforms: TransformArray,
 	isInheritingTransform: boolean,
 	transformOrigin?: ParsedTransformOrigin
 ) => {
 	let result: number[];
 
-	if (!(transforms as any).__resolved) {
+	if (!transforms.__resolved) {
 		resolveTransforms(transforms, width, height);
 	}
 
@@ -126,8 +127,8 @@ const transformFn = (
 		);
 
 		// And we need to apply its parent transform if it has one.
-		if ((matrix as any).__parent) {
-			result = multiply((matrix as any).__parent, result);
+		if (matrix.__parent) {
+			result = multiply(matrix.__parent, result);
 		}
 
 		// Mutate self.

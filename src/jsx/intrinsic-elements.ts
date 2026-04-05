@@ -816,7 +816,7 @@ type ImgHTMLAttributes<T> = HTMLAttributes<T> & {
 	loading?: 'eager' | 'lazy' | undefined;
 	referrerPolicy?: HTMLAttributeReferrerPolicy | undefined;
 	sizes?: string | undefined;
-	src?: string | undefined;
+	src?: string | ArrayBuffer | undefined;
 	srcSet?: string | undefined;
 	useMap?: string | undefined;
 	width?: number | string | undefined;

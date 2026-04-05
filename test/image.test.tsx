@@ -28,7 +28,7 @@ let requests = [];
 beforeEach(() => {
 	// Polyfill fetch
 	requests = [];
-	(globalThis as any).fetch = async url => {
+	globalThis.fetch = (async (url: string) => {
 		requests.push(url);
 		if (url.includes('wrong-url')) {
 			throw Error('wrong url');
@@ -80,7 +80,7 @@ beforeEach(() => {
 				return bytes.buffer;
 			}
 		};
-	};
+	}) as typeof fetch;
 });
 
 afterEach(() => {
@@ -495,7 +495,7 @@ describe('image', () => {
 				<img
 					width='100%'
 					height='100%'
-					src={PNG_SAMPLE_ARRAYBUFFER as any}
+					src={PNG_SAMPLE_ARRAYBUFFER as unknown as string}
 				/>
 			</div>,
 			{ width: 100, height: 100, fonts }

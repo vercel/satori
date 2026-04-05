@@ -6,7 +6,7 @@ import { detectLanguageCode, LangCode, Locale } from './language.js';
 import { getYoga, TYoga } from './yoga.js';
 import { preProcessNode } from './handler/preprocess.js';
 import { segment } from './utils.js';
-import FontLoader, { FontOptions } from './font.js';
+import FontLoader, { Font } from './font.js';
 import layout from './layout.js';
 import svg from './builder/svg.js';
 import type { FontsConfig } from './fonts/index.js';
@@ -29,7 +29,7 @@ type SatoriOptions = (
 ) & {
 	debug?: boolean;
 	embedFont?: boolean;
-	fonts: FontOptions[] | FontsConfig;
+	fonts: Font[] | FontsConfig;
 	graphemeImages?: Record<string, string>;
 	onNodeDetected?: (node: SatoriNode) => void;
 	onTailwind?: (
@@ -90,9 +90,7 @@ const unique = <T>(arr: T[]): T[] => {
 	return Array.from(new Set(arr));
 };
 
-const isFontsConfig = (
-	fonts: FontOptions[] | FontsConfig
-): fonts is FontsConfig => {
+const isFontsConfig = (fonts: Font[] | FontsConfig): fonts is FontsConfig => {
 	return (
 		!Array.isArray(fonts) &&
 		typeof (fonts as FontsConfig).load === 'function'
@@ -155,7 +153,7 @@ const satori = async (
 
 	// Normalize fonts option
 	let fontsConfig: FontsConfig | null = null;
-	let fontOptions: FontOptions[];
+	let fontOptions: Font[];
 
 	if (isFontsConfig(options.fonts)) {
 		fontsConfig = options.fonts;
@@ -210,7 +208,7 @@ const satori = async (
 
 	if (fontsConfig && segmentsMissingFont.length) {
 		const languageCodes = convertToLanguageCodes(segmentsMissingFont);
-		const fonts: FontOptions[] = [];
+		const fonts: Font[] = [];
 		const images: Record<string, string> = {};
 
 		await Promise.all(

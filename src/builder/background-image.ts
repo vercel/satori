@@ -429,5 +429,6 @@ const backgroundImage = async (
 	throw new Error(`Invalid background image: "${image}"`);
 };
 
+export type { Background };
 export { computeBgPositionOffset, parsePositionValues };
 export default backgroundImage;

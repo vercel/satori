@@ -8,13 +8,14 @@ import { parseElementStyle } from 'css-background-parser';
 import { parse as parseBoxShadow } from 'css-box-shadow';
 import cssColorParse from 'parse-css-color';
 
-import CssDimension from '../vendor/parse-css-dimension/index.js';
-import { FontStyle, FontWeight } from '../font.js';
+import { FontStyle, FontWeight, FontWeightName } from '../font.js';
+import { isString, lengthToNumber, splitEffects, v } from '../utils.js';
 import { MaskProperty, parseMask } from '../parser/mask.js';
+import CssDimension from '../vendor/parse-css-dimension/index.js';
+import type { Background } from '../builder/background-image.js';
 import parseTransformOrigin, {
 	ParsedTransformOrigin
 } from '../transform-origin.js';
-import { isString, lengthToNumber, splitEffects, v } from '../utils.js';
 import {
 	CSSVariables,
 	extractCustomProperties,
@@ -275,9 +276,17 @@ const normalizeColor = (value: string | object) => {
 	return value;
 };
 
+type TransformArray = number[] & {
+	__parent?: TransformArray;
+	__resolved?: boolean;
+};
+
+type MutableRef = { value: string };
+
 type MainStyle = {
-	WebkitTextStrokeColor: string;
-	WebkitTextStrokeWidth: number;
+	_inheritedBackgroundClipTextHasBackground: string;
+	_inheritedBackgroundClipTextPath: MutableRef;
+	backgroundImage: Background[];
 	borderBottomWidth: number;
 	borderLeftWidth: number;
 	borderRightWidth: number;
@@ -289,7 +298,7 @@ type MainStyle = {
 	fontFamily: string | string[];
 	fontSize: number;
 	fontStyle: FontStyle;
-	fontWeight: FontWeight;
+	fontWeight: FontWeight | FontWeightName;
 	gap: number;
 	letterSpacing: number;
 	lineHeight: number | string;
@@ -304,21 +313,18 @@ type MainStyle = {
 	textDecorationSkipInk: 'all' | 'auto' | 'none';
 	textIndent: number | string;
 	textShadowColor: string[];
-	textShadowOffset: {
-		height: number;
-		width: number;
-	}[];
+	textShadowOffset: { height: number; width: number }[];
 	textShadowRadius: number[];
 	textTransform: string;
+	transform: TransformArray;
 	transformOrigin: ParsedTransformOrigin;
+	WebkitTextStrokeColor: string;
+	WebkitTextStrokeWidth: number;
 	whiteSpace: string;
 	wordBreak: string;
 };
 
-type OtherStyle = Exclude<
-	Record<PropertyKey, string | number>,
-	keyof MainStyle
->;
+type OtherStyle = Record<string, string | number>;
 
 type SerializedStyle = Partial<MainStyle & OtherStyle>;
 
@@ -502,7 +508,7 @@ const expand = (
 
 	if (serializedStyle.transformOrigin) {
 		serializedStyle.transformOrigin = parseTransformOrigin(
-			serializedStyle.transformOrigin as any,
+			serializedStyle.transformOrigin as unknown as string | number,
 			baseFontSize
 		);
 	}
@@ -540,7 +546,7 @@ const expand = (
 			if (typeof value === 'string' || typeof value === 'object') {
 				const color = normalizeColor(value);
 				if (color) {
-					serializedStyle[prop] = color as any;
+					serializedStyle[prop] = color as typeof value;
 				}
 				value = serializedStyle[prop];
 			}
@@ -552,7 +558,7 @@ const expand = (
 		}
 
 		if (prop === 'transform') {
-			const transforms = value as any as {
+			const transforms = value as unknown as {
 				[type: string]: number | string;
 			}[];
 
@@ -620,5 +626,5 @@ const expand = (
 	return serializedStyle;
 };
 
-export type { SerializedStyle };
+export type { MutableRef, SerializedStyle, TransformArray };
 export default expand;

@@ -4,6 +4,15 @@
 
 import type { ReactNode } from 'react';
 
+import { getYoga, YogaNode } from './yoga.js';
+import { SVGNodeToImage } from './handler/preprocess.js';
+import buildTextNodes from './text/index.js';
+import computeStyle from './handler/compute.js';
+import FontLoader from './font.js';
+import rect from './builder/rect.js';
+import { buildBackdropFilter } from './builder/backdrop-filter.js';
+import { Locale, normalizeLocale } from './language.js';
+import type { MutableRef, SerializedStyle } from './handler/expand.js';
 import {
 	isReactElement,
 	isClass,
@@ -13,15 +22,6 @@ import {
 	isReactComponent,
 	isForwardRefComponent
 } from './utils.js';
-import { getYoga, YogaNode } from './yoga.js';
-import { SVGNodeToImage } from './handler/preprocess.js';
-import buildTextNodes from './text/index.js';
-import computeStyle from './handler/compute.js';
-import FontLoader from './font.js';
-import rect from './builder/rect.js';
-import { buildBackdropFilter } from './builder/backdrop-filter.js';
-import { Locale, normalizeLocale } from './language.js';
-import { SerializedStyle } from './handler/expand.js';
 
 type BackdropFilterInfo = {
 	filter: string;
@@ -107,7 +107,7 @@ const layout = async function* (
 			// This is a hack to support React.forwardRef wrapped components.
 			// https://github.com/vercel/satori/issues/600
 			if (isForwardRefComponent(element.type)) {
-				render = (element.type as any).render;
+				render = element.type.render;
 			} else {
 				render = element.type as Function;
 			}
@@ -158,7 +158,7 @@ const layout = async function* (
 	const isInheritingTransform =
 		computedStyle.transform === inheritedStyle.transform;
 	if (!isInheritingTransform) {
-		(computedStyle.transform as any).__parent = inheritedStyle.transform;
+		computedStyle.transform.__parent = inheritedStyle.transform;
 	}
 
 	// If the element has `overflow` set to `hidden` or clip-path is set, we need to create a clip
@@ -188,7 +188,7 @@ const layout = async function* (
 	// If the element has `background-clip: text` set, we need to create a clip
 	// path and use it in all its children.
 	if (computedStyle.backgroundClip === 'text') {
-		const mutateRefValue = { value: '' } as any;
+		const mutateRefValue: MutableRef = { value: '' };
 		newInheritableStyle._inheritedBackgroundClipTextPath = mutateRefValue;
 		computedStyle._inheritedBackgroundClipTextPath = mutateRefValue;
 
@@ -227,7 +227,10 @@ const layout = async function* (
 		});
 		if (canLoadMissingFonts) {
 			segmentsMissingFont.push(
-				...(((await iter.next()).value as any) || [])
+				...(((await iter.next()).value as {
+					word: string;
+					locale?: string;
+				}[]) || [])
 			);
 		} else {
 			await iter.next();
@@ -372,7 +375,7 @@ const layout = async function* (
 					? `url(#${computedStyle._inheritedClipPathId})`
 					: undefined
 			},
-			(computedStyle._inheritedBackgroundClipTextPath as any).value
+			computedStyle._inheritedBackgroundClipTextPath.value
 		);
 	}
 

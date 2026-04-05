@@ -1,6 +1,7 @@
 import CssDimension from '../vendor/parse-css-dimension/index.js';
 import type { ParsedTransformOrigin } from '../transform-origin.js';
 
+import type { Background } from './background-image.js';
 import backgroundImage from './background-image.js';
 import border, { getBorderClipPath } from './border.js';
 import buildMaskImage from './mask-image.js';
@@ -164,13 +165,10 @@ const rect = async (
 	let backgroundShapes = '';
 	if (style.backgroundImage) {
 		const backgrounds: string[][] = [];
+		const bgImages = style.backgroundImage as unknown as Background[];
 
-		for (
-			let index = 0;
-			index < (style.backgroundImage as any).length;
-			index++
-		) {
-			const background = (style.backgroundImage as any)[index];
+		for (let index = 0; index < bgImages.length; index++) {
+			const background = bgImages[index];
 			const image = await backgroundImage(
 				{ height, id: id + '_' + index, left, top, width },
 				background,

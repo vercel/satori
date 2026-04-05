@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import kebabCase from 'lodash/kebabCase.js';
 
 import type { LanguageCode } from '../language.js';
-import type { Weight } from '../font.js';
+import type { FontWeight } from '../font.js';
 import { isReactElement } from '../utils.js';
 
 type FontAlias = string | { key: string; url: string };
@@ -14,7 +14,7 @@ type DetectedFont = {
 	languageCode?: LanguageCode;
 	segment?: string;
 	url?: string;
-	weight: Weight;
+	weight: FontWeight;
 };
 
 type DetectionConfig = {
@@ -49,9 +49,9 @@ const resolveAlias = (
 const resolveFontWeight = (
 	style: ElementProps['style'],
 	enabled: boolean
-): Weight => {
+): FontWeight => {
 	if (enabled && typeof style?.fontWeight === 'number') {
-		return style.fontWeight as Weight;
+		return style.fontWeight as FontWeight;
 	}
 
 	return 400;
