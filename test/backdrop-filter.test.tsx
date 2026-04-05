@@ -467,6 +467,7 @@ describe('backdrop-filter', () => {
 			);
 
 			expect(svg).toContain('feColorMatrix');
+			expect(svg).toContain('color-interpolation-filters="sRGB"');
 			expect(svg).toContain('type="matrix"');
 			// Full sepia coefficients for amount=1.
 			expect(svg).toContain('0.393');

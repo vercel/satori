@@ -83,6 +83,7 @@ const parseFilterValue = (value: string): string => {
 				: parseFloat(saturateMatch[1]);
 		const result = 'satori_bfsat';
 		primitives += buildXMLString('feColorMatrix', {
+			'color-interpolation-filters': 'sRGB',
 			in: lastResult,
 			result,
 			type: 'saturate',
@@ -101,7 +102,7 @@ const parseFilterValue = (value: string): string => {
 		const result = 'satori_bfbri';
 		primitives += buildXMLString(
 			'feComponentTransfer',
-			{ in: lastResult, result },
+			{ 'color-interpolation-filters': 'sRGB', in: lastResult, result },
 			buildXMLString('feFuncR', { slope: val, type: 'linear' }) +
 				buildXMLString('feFuncG', { slope: val, type: 'linear' }) +
 				buildXMLString('feFuncB', { slope: val, type: 'linear' })
@@ -120,7 +121,7 @@ const parseFilterValue = (value: string): string => {
 		const result = 'satori_bfcon';
 		primitives += buildXMLString(
 			'feComponentTransfer',
-			{ in: lastResult, result },
+			{ 'color-interpolation-filters': 'sRGB', in: lastResult, result },
 			buildXMLString('feFuncR', {
 				intercept,
 				slope: val,
@@ -149,6 +150,7 @@ const parseFilterValue = (value: string): string => {
 				: parseFloat(grayscaleMatch[1]);
 		const result = 'satori_bfgray';
 		primitives += buildXMLString('feColorMatrix', {
+			'color-interpolation-filters': 'sRGB',
 			in: lastResult,
 			result,
 			type: 'saturate',
@@ -190,6 +192,7 @@ const parseFilterValue = (value: string): string => {
 			0
 		];
 		primitives += buildXMLString('feColorMatrix', {
+			'color-interpolation-filters': 'sRGB',
 			in: lastResult,
 			result,
 			type: 'matrix',
@@ -204,6 +207,7 @@ const parseFilterValue = (value: string): string => {
 		const degrees = parseFloat(hueRotateMatch[1]);
 		const result = 'satori_bfhue';
 		primitives += buildXMLString('feColorMatrix', {
+			'color-interpolation-filters': 'sRGB',
 			in: lastResult,
 			result,
 			type: 'hueRotate',
@@ -224,7 +228,7 @@ const parseFilterValue = (value: string): string => {
 		const tableValues = `${val} ${1 - val}`;
 		primitives += buildXMLString(
 			'feComponentTransfer',
-			{ in: lastResult, result },
+			{ 'color-interpolation-filters': 'sRGB', in: lastResult, result },
 			buildXMLString('feFuncR', { tableValues, type: 'table' }) +
 				buildXMLString('feFuncG', { tableValues, type: 'table' }) +
 				buildXMLString('feFuncB', { tableValues, type: 'table' })
@@ -292,7 +296,6 @@ const buildBackdropFilter = (options: BuildBackdropFilterOptions): string => {
 	const filterDef = buildXMLString(
 		'filter',
 		{
-			'color-interpolation-filters': 'linearRGB',
 			height: '200%',
 			id: filterId,
 			width: '200%',
