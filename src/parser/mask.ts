@@ -19,9 +19,7 @@ type MaskProperty = {
 	size: string;
 };
 
-const parseMask = (
-	style: Record<string, string | number>
-): MaskProperty[] => {
+const parseMask = (style: Record<string, string | number>): MaskProperty[] => {
 	const maskImage = (style.maskImage || style.WebkitMaskImage) as string;
 
 	const common = {

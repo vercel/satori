@@ -1880,4 +1880,9 @@ type DefinedIntrinsicElements = {
 	view: SVGProps<SVGViewElement>;
 };
 
-export type { CSSProperties, DefinedIntrinsicElements, HTMLElementType, SVGElementType };
+export type {
+	CSSProperties,
+	DefinedIntrinsicElements,
+	HTMLElementType,
+	SVGElementType
+};

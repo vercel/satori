@@ -23,10 +23,7 @@ type JSXKey = string | number | bigint;
  * const element: JSXElement = <div />;
  * ```
  */
-type JSXElement<
-	P = unknown,
-	T extends string | FC<P> = string | FC<P>
-> = {
+type JSXElement<P = unknown, T extends string | FC<P> = string | FC<P>> = {
 	type: T;
 	props: P;
 	key: string | null;

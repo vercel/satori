@@ -267,9 +267,7 @@ const parseFilterValue = (value: string): string => {
 	return primitives;
 };
 
-const buildBackdropFilter = (
-	options: BuildBackdropFilterOptions
-): string => {
+const buildBackdropFilter = (options: BuildBackdropFilterOptions): string => {
 	const {
 		bgGroupId,
 		filterValue,

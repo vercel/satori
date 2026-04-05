@@ -888,5 +888,13 @@ const getLangFromFontName = (name: string): Locale | undefined => {
 	return lang === SUFFIX_WHEN_LANG_NOT_SET ? undefined : (lang as Locale);
 };
 
-export type { FontEngine, FontOptions, FontStyle, FontWeight, GlyphBox, Weight, WeightName };
+export type {
+	FontEngine,
+	FontOptions,
+	FontStyle,
+	FontWeight,
+	GlyphBox,
+	Weight,
+	WeightName
+};
 export default FontLoader;
