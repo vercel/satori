@@ -5,6 +5,23 @@ import { cssToStyle, extractCustomProperties } from './css-to-style.js';
 import { TAILWIND_CSS } from './tailwind-css.js';
 import { isReactElement } from '../utils.js';
 
+type ElementProps = {
+	children?: ReactNode;
+	className?: string | null;
+	style?: Record<string, unknown>;
+	[key: string]: unknown;
+};
+
+type OnTailwind = (
+	className: string,
+	style: Record<string, string | number>
+) => void;
+
+type TwElement = ReactElement & {
+	props: ElementProps;
+	type: string | ((...args: unknown[]) => ReactNode);
+};
+
 let customProps: Record<string, string> = {};
 const cache = new Map<string, Record<string, string | number>>();
 
@@ -36,23 +53,6 @@ const tw = (classString: string): Record<string, string | number> => {
 	cache.set(normalizedKey, style);
 
 	return style;
-};
-
-type ElementProps = {
-	children?: ReactNode;
-	className?: string | null;
-	style?: Record<string, unknown>;
-	[key: string]: unknown;
-};
-
-type OnTailwind = (
-	className: string,
-	style: Record<string, string | number>
-) => void;
-
-type TwElement = ReactElement & {
-	props: ElementProps;
-	type: string | ((...args: unknown[]) => ReactNode);
 };
 
 const isTwElement = (node: ReactNode): node is TwElement => {

@@ -5,11 +5,11 @@ import opentype from '@shuding/opentype.js';
 
 import { Locale, locales, isValidLocale } from './language.js';
 
+type BandPoint = [number, number];
 type FontWeight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
 type FontWeightName = 'normal' | 'bold';
 type FontStyle = 'normal' | 'italic';
 type FontWithTracking = opentype.Font & { _trackBrokenChars?: string[] };
-const SUFFIX_WHEN_LANG_NOT_SET = 'unknown';
 
 type Font = {
 	data: Buffer | ArrayBuffer;
@@ -17,17 +17,6 @@ type Font = {
 	name: string;
 	style?: FontStyle;
 	weight?: FontWeight;
-};
-
-type GlyphBox = {
-	x1: number;
-	x2: number;
-	y1: number;
-	y2: number;
-};
-type SkipInkBand = {
-	strokeWidth: number;
-	underlineY: number;
 };
 
 type FontEngine = {
@@ -54,12 +43,24 @@ type FontEngine = {
 	) => number;
 };
 
-type BandPoint = [number, number];
+type GlyphBox = {
+	x1: number;
+	x2: number;
+	y1: number;
+	y2: number;
+};
 
 type LineSegment = {
 	from: BandPoint;
 	to: BandPoint;
 };
+
+type SkipInkBand = {
+	strokeWidth: number;
+	underlineY: number;
+};
+
+const SUFFIX_WHEN_LANG_NOT_SET = 'unknown';
 
 const flattenPath = (commands: opentype.Path['commands']): LineSegment[] => {
 	const segments: LineSegment[] = [];

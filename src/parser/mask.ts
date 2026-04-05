@@ -2,14 +2,6 @@ import { getPropertyName } from 'css-to-react-native';
 
 import { splitEffects } from '../utils.js';
 
-const getMaskProperty = (
-	style: Record<string, string | number>,
-	name: string
-) => {
-	const key = getPropertyName(`mask-${name}`);
-	return (style[key] || style[`WebkitM${key.substring(1)}`]) as string;
-};
-
 type MaskProperty = {
 	clip: string;
 	image: string;
@@ -17,6 +9,14 @@ type MaskProperty = {
 	position: string;
 	repeat: string;
 	size: string;
+};
+
+const getMaskProperty = (
+	style: Record<string, string | number>,
+	name: string
+) => {
+	const key = getPropertyName(`mask-${name}`);
+	return (style[key] || style[`WebkitM${key.substring(1)}`]) as string;
 };
 
 const parseMask = (style: Record<string, string | number>): MaskProperty[] => {

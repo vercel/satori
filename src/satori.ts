@@ -12,9 +12,6 @@ import svg from './builder/svg.js';
 import type { FontsConfig } from './fonts/index.js';
 import type { SatoriNode } from './layout.js';
 
-// We don't need to initialize the opentype instances every time.
-const fontCache = new WeakMap();
-
 type SatoriOptions = (
 	| {
 			width: number;
@@ -39,6 +36,9 @@ type SatoriOptions = (
 	pointScaleFactor?: number;
 	tailwind?: boolean | string;
 };
+
+// We don't need to initialize the opentype instances every time.
+const fontCache = new WeakMap();
 
 const getRootNode = (
 	Yoga: TYoga,

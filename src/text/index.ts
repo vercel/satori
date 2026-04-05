@@ -24,6 +24,13 @@ import {
 	lengthToNumber
 } from '../utils.js';
 
+type DecorationLine = {
+	ascender: number;
+	left: number;
+	top: number;
+	width: number;
+};
+
 const skippedWordWhenFindingMissingFont = new Set([Tab]);
 
 const shouldSkipWhenFindingMissingFont = (word: string): boolean => {
@@ -601,12 +608,6 @@ const buildTextNodes = async function* (
 	let mergedPath = '';
 	let extra = '';
 	let skippedLine = -1;
-	type DecorationLine = {
-		ascender: number;
-		left: number;
-		top: number;
-		width: number;
-	};
 	let decorationLines: Record<number, DecorationLine | null> = {};
 	let decorationGlyphs: Record<number, GlyphBox[]> = {};
 	let wordBuffer: string | null = null;

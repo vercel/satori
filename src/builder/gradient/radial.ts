@@ -8,6 +8,9 @@ import {
 import { buildXMLString, lengthToNumber } from '../../utils.js';
 import { normalizeStops } from './utils.js';
 
+type PositionKeyWord = 'center' | 'left' | 'right' | 'top' | 'bottom';
+type Shape = 'circle' | 'ellipse';
+
 const buildRadialGradient = (
 	{
 		height,
@@ -152,8 +155,6 @@ const buildRadialGradient = (
 	return result;
 };
 
-type PositionKeyWord = 'center' | 'left' | 'right' | 'top' | 'bottom';
-
 const calcColorStopTotalLength = (
 	width: number,
 	stops: ColorStop[],
@@ -240,8 +241,6 @@ const calcPos = (
 			return { y: yDelta };
 	}
 };
-
-type Shape = 'circle' | 'ellipse';
 
 const calcRadialGradientProps = (
 	shape: Shape,

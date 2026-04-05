@@ -1,5 +1,15 @@
 import { loadYoga as loadYogaUntyped, type Yoga } from 'yoga-layout/load';
 
+type InitInput =
+	| string
+	| Request
+	| URL
+	| Response
+	| BufferSource
+	| Buffer
+	| WebAssembly.Module
+	| Promise<Response | BufferSource | Buffer | WebAssembly.Module>;
+
 const loadYoga = loadYogaUntyped as (options: {
 	wasmBinary?: ArrayBuffer | ArrayBufferLike;
 	instantiateWasm?: (
@@ -14,16 +24,6 @@ const yogaPromise: Promise<Yoga> = new Promise((resolve, reject) => {
 	resolveYoga = resolve;
 	rejectYoga = reject;
 });
-
-type InitInput =
-	| string
-	| Request
-	| URL
-	| Response
-	| BufferSource
-	| Buffer
-	| WebAssembly.Module
-	| Promise<Response | BufferSource | Buffer | WebAssembly.Module>;
 
 const loadWasm = async (
 	input: InitInput,

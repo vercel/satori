@@ -9,6 +9,8 @@
 
 import { createLRU, parseViewBox } from '../utils.js';
 
+type ResolvedImageData = [string, number?, number?] | readonly [];
+
 const AVIF = 'image/avif';
 const WEBP = 'image/webp';
 const APNG = 'image/apng';
@@ -60,7 +62,6 @@ const parsePNG = (buf: ArrayBuffer) => {
 	return [v.getUint16(18, false), v.getUint16(22, false)] as [number, number];
 };
 
-type ResolvedImageData = [string, number?, number?] | readonly [];
 const cache = createLRU<ResolvedImageData>(500);
 const inflightRequests = new Map<string, Promise<ResolvedImageData>>();
 

@@ -7,6 +7,8 @@
 
 import { buildXMLString, lengthToNumber } from '../utils.js';
 
+type Arc = [[number, number], [number, number]];
+
 // Getting the intersection of a 45deg ray with the elliptical arc x^2/rx^2 + y^2/ry^2 = 1.
 // Reference:
 // https://www.w3.org/TR/SVG/implnote.html#ArcConversionEndpointToCenter
@@ -222,7 +224,6 @@ const radius = (
 		makeSmaller(borderBottomRightRadius);
 	}
 
-	type Arc = [[number, number], [number, number]];
 	const p: Arc[] = [];
 	p[0] = [borderTopRightRadius, borderTopRightRadius];
 	p[1] = [

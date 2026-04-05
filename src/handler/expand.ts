@@ -23,6 +23,58 @@ import {
 	resolveVariables
 } from './variables.js';
 
+type TransformArray = number[] & {
+	__parent?: TransformArray;
+	__resolved?: boolean;
+};
+
+type MutableRef = { value: string };
+
+type MainStyle = {
+	_inheritedBackgroundClipTextHasBackground: string;
+	_inheritedBackgroundClipTextPath: MutableRef;
+	backgroundImage: Background[];
+	borderBottomWidth: number;
+	borderLeftWidth: number;
+	borderRightWidth: number;
+	borderTopWidth: number;
+	color: string;
+	columnGap: number;
+	flexGrow: number;
+	flexShrink: number;
+	fontFamily: string | string[];
+	fontSize: number;
+	fontStyle: FontStyle;
+	fontWeight: FontWeight | FontWeightName;
+	gap: number;
+	letterSpacing: number;
+	lineHeight: number | string;
+	maskImage: MaskProperty[];
+	opacity: number;
+	paddingBottom: number;
+	paddingLeft: number;
+	paddingRight: number;
+	paddingTop: number;
+	rowGap: number;
+	textAlign: string;
+	textDecorationSkipInk: 'all' | 'auto' | 'none';
+	textIndent: number | string;
+	textShadowColor: string[];
+	textShadowOffset: { height: number; width: number }[];
+	textShadowRadius: number[];
+	textTransform: string;
+	transform: TransformArray;
+	transformOrigin: ParsedTransformOrigin;
+	WebkitTextStrokeColor: string;
+	WebkitTextStrokeWidth: number;
+	whiteSpace: string;
+	wordBreak: string;
+};
+
+type OtherStyle = Record<string, string | number>;
+
+type SerializedStyle = Partial<MainStyle & OtherStyle>;
+
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
 	'flex',
@@ -275,58 +327,6 @@ const normalizeColor = (value: string | object) => {
 
 	return value;
 };
-
-type TransformArray = number[] & {
-	__parent?: TransformArray;
-	__resolved?: boolean;
-};
-
-type MutableRef = { value: string };
-
-type MainStyle = {
-	_inheritedBackgroundClipTextHasBackground: string;
-	_inheritedBackgroundClipTextPath: MutableRef;
-	backgroundImage: Background[];
-	borderBottomWidth: number;
-	borderLeftWidth: number;
-	borderRightWidth: number;
-	borderTopWidth: number;
-	color: string;
-	columnGap: number;
-	flexGrow: number;
-	flexShrink: number;
-	fontFamily: string | string[];
-	fontSize: number;
-	fontStyle: FontStyle;
-	fontWeight: FontWeight | FontWeightName;
-	gap: number;
-	letterSpacing: number;
-	lineHeight: number | string;
-	maskImage: MaskProperty[];
-	opacity: number;
-	paddingBottom: number;
-	paddingLeft: number;
-	paddingRight: number;
-	paddingTop: number;
-	rowGap: number;
-	textAlign: string;
-	textDecorationSkipInk: 'all' | 'auto' | 'none';
-	textIndent: number | string;
-	textShadowColor: string[];
-	textShadowOffset: { height: number; width: number }[];
-	textShadowRadius: number[];
-	textTransform: string;
-	transform: TransformArray;
-	transformOrigin: ParsedTransformOrigin;
-	WebkitTextStrokeColor: string;
-	WebkitTextStrokeWidth: number;
-	whiteSpace: string;
-	wordBreak: string;
-};
-
-type OtherStyle = Record<string, string | number>;
-
-type SerializedStyle = Partial<MainStyle & OtherStyle>;
 
 const calcBaseFontSize = (
 	size: number | string,
