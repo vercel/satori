@@ -35,6 +35,7 @@ type SatoriOptions = (
 	) => Promise<string | Array<FontOptions>>;
 	onNodeDetected?: (node: SatoriNode) => void;
 	pointScaleFactor?: number;
+	tailwind?: boolean | string;
 };
 
 const getRootNode = (
@@ -88,9 +89,10 @@ const unique = <T>(arr: T[]): T[] => {
 };
 
 const satori = async (
-	element: ReactNode,
+	_element: ReactNode,
 	options: SatoriOptions
 ): Promise<string> => {
+	let element = _element;
 	const Yoga = await getYoga();
 	if (!Yoga || !Yoga.Node) {
 		throw new Error(
@@ -140,6 +142,15 @@ const satori = async (
 
 	cache.clear();
 	inflightRequests.clear();
+
+	if (options.tailwind) {
+		const { initTw, transformTwNode } = await import('./tw/index.js');
+		const customCss =
+			typeof options.tailwind === 'string' ? options.tailwind : undefined;
+		await initTw(customCss);
+		element = await transformTwNode(element);
+	}
+
 	await preProcessNode(element);
 
 	const handler = layout(element, {

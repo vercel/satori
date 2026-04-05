@@ -8,6 +8,77 @@ This fork extends the [original Satori](https://github.com/vercel/satori) with t
 - **`mix-blend-mode`** — full support
 - **`backdrop-filter`** — simulated via SVG filter primitives (`blur`, `brightness`, `contrast`, `grayscale`, `hue-rotate`, `invert`, `opacity`, `saturate`, `sepia`). Uses `<use>` to reference background content with `feGaussianBlur` and `feOffset` edge-extension for consistent blur without transparent edges. Color-sensitive filters use `color-interpolation-filters="sRGB"` to match browser rendering. Supports `mask-image` for blurred fades and `border-radius` on the clip path
 - **Faux bold (synthetic bold)** — when only a regular weight font (e.g., 400) is loaded and bold text is requested (e.g., `fontWeight: 700`), glyphs are automatically thickened using an SVG stroke matching the fill color, replicating browser font synthesis. Stroke width scales with the weight difference. Explicit `-webkit-text-stroke` takes precedence
+- **Tailwind CSS support** — optional `tailwind` flag that pre-processes the element tree, converting `className` props into inline styles using the Tailwind CSS v4 compiler. Supports the default theme (`tailwind: true`) or a custom CSS config (`tailwind: '<css>'`). Requires `tailwindcss` as a peer dependency. Zero overhead when disabled
+
+## Tailwind CSS
+
+Satori supports Tailwind CSS class names. Pass `tailwind: true` to enable.
+
+### Installation
+
+`tailwindcss` is an optional peer dependency — install it only if you need className support:
+
+```bash
+yarn add tailwindcss
+```
+
+### Usage
+
+```tsx
+const svg = await satori(
+  <div className="flex flex-col w-full h-full bg-blue-500 p-8">
+    <span className="text-white text-4xl font-bold">Hello World</span>
+    <span className="text-white/50 text-xl">Built with Tailwind</span>
+  </div>,
+  {
+    width: 800,
+    height: 400,
+    fonts,
+    tailwind: true,
+  },
+)
+```
+
+The `tailwind` option accepts:
+
+| Value | Behavior |
+|---|---|
+| `false` / `undefined` | Disabled (default). No overhead, fully backward compatible |
+| `true` | Enabled with the default Tailwind v4 theme |
+| `string` | Enabled with a custom Tailwind CSS config |
+
+### Custom Theme
+
+```tsx
+const svg = await satori(
+  <div className="flex w-full h-full bg-brand">Custom</div>,
+  {
+    width: 800,
+    height: 400,
+    fonts,
+    tailwind: `
+      @layer theme, base, components, utilities;
+      @layer theme {
+        @theme {
+          --color-brand: #ff00ff;
+        }
+      }
+      @layer utilities {
+        @tailwind utilities;
+      }
+    `,
+  },
+)
+```
+
+### Style Priority
+
+When both `className` and `style` are present, inline styles always take priority:
+
+```tsx
+// backgroundColor will be "blue", not the Tailwind red-500 value
+<div className="bg-red-500" style={{ backgroundColor: 'blue' }} />
+```
 
 ## Overview
 

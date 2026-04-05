@@ -16,6 +16,7 @@ export default defineConfig({
 		resolve: ['./types']
 	},
 	minify: process.env.NODE_ENV !== 'development',
+	external: ['tailwindcss'],
 	format: ['esm', 'cjs'],
 	noExternal: ['emoji-regex-xs', 'yoga-layout'],
 	esbuildOptions(options) {

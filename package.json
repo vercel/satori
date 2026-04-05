@@ -28,6 +28,7 @@
 		"prettier": "^2.7.1",
 		"react": "^17.0.2",
 		"sharp": "^0.34.3",
+		"tailwindcss": "^4.2.2",
 		"tsup": "^7.1.0",
 		"typescript": "5.1.3",
 		"vitest": "^4.1.2"
@@ -70,6 +71,14 @@
 		"yoga.wasm"
 	],
 	"main": "./dist/index.js",
+	"peerDependencies": {
+		"tailwindcss": ">=4.0.0"
+	},
+	"peerDependenciesMeta": {
+		"tailwindcss": {
+			"optional": true
+		}
+	},
 	"module": "./dist/index.js",
 	"repository": {
 		"type": "git",
@@ -77,6 +86,7 @@
 	},
 	"scripts": {
 		"build": "yarn build:default && yarn build:standalone",
+		"generate:tw": "node scripts/generate-tailwind-css.mjs",
 		"build:default": "NODE_ENV=production tsup",
 		"build:standalone": "NODE_ENV=production SATORI_STANDALONE=1 tsup",
 		"dev": "NODE_ENV=development tsup src/index.ts --watch",
@@ -94,5 +104,5 @@
 			]
 		}
 	},
-	"version": "0.0.37"
+	"version": "0.0.38"
 }
