@@ -197,6 +197,56 @@ describe('Shadow', () => {
 			expect(toImage(svg, 100)).toMatchImageSnapshot();
 		});
 
+		it('should not produce NaN when blur radius is omitted', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						width: 50,
+						height: 50,
+						margin: '25px 25px',
+						background: 'white',
+						boxShadow: '5px 5px black'
+					}}
+				></div>,
+				{ width: 100, height: 100, fonts }
+			);
+			expect(svg).not.toContain('NaN');
+			expect(toImage(svg, 100)).toMatchImageSnapshot();
+		});
+
+		it('should not produce NaN with multiple shadows missing blur radius', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						width: 50,
+						height: 50,
+						margin: '25px 25px',
+						background: 'white',
+						boxShadow:
+							'0 0 #0000, 0 0 #0000, 0 0 #0000, 0 0 #0000, 2px 2px 0px rgba(0,0,0,1)'
+					}}
+				></div>,
+				{ width: 100, height: 100, fonts }
+			);
+			expect(svg).not.toContain('NaN');
+			expect(toImage(svg, 100)).toMatchImageSnapshot();
+		});
+
+		it('should not produce NaN with transparent shadow missing blur', async () => {
+			const svg = await satori(
+				<div
+					style={{
+						width: 50,
+						height: 50,
+						margin: '25px 25px',
+						boxShadow: '0 0 transparent'
+					}}
+				></div>,
+				{ width: 100, height: 100, fonts }
+			);
+			expect(svg).not.toContain('NaN');
+		});
+
 		it('should support multiple text shadows', async () => {
 			const svg = await satori(
 				<div
