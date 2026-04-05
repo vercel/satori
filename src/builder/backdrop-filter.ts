@@ -291,12 +291,10 @@ export const buildBackdropFilter = (
 	const clipId = `satori_bfc-${id}`;
 
 	// Filter definition with generous region for blur overflow.
-	// CSS filters operate in sRGB; SVG defaults to linearRGB which distorts
-	// brightness, contrast, and blur blending.
 	const filterDef = buildXMLString(
 		'filter',
 		{
-			'color-interpolation-filters': 'sRGB',
+			'color-interpolation-filters': 'linearRGB',
 			height: '200%',
 			id: filterId,
 			width: '200%',
