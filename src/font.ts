@@ -783,18 +783,19 @@ export default class FontLoader {
             thaiUpperStackTop = null
           }
 
-          let glyphPath: opentype.Path
+          let cached = cachedPath.get(glyph)
           if (!cachedPath.has(glyph)) {
-            glyphPath = glyph.getPath(gX, gY, gFontSize, options)
-            cachedPath.set(glyph, [gX, gY, glyphPath])
-          } else {
-            const [_x, _y, _glyphPath] = cachedPath.get(glyph)
-            glyphPath = new opentype.Path()
-            glyphPath.commands = _glyphPath.commands.map((command) => ({
-              ...command,
-            }))
-            translatePath(glyphPath, gX - _x, gY - _y)
+            const basePath = glyph.getPath(gX, gY, gFontSize, options)
+            cachedPath.set(glyph, [gX, gY, basePath])
+            cached = [gX, gY, basePath]
           }
+
+          const [_x, _y, _glyphPath] = cached
+          const glyphPath = new opentype.Path()
+          glyphPath.commands = _glyphPath.commands.map((command) => ({
+            ...command,
+          }))
+          translatePath(glyphPath, gX - _x, gY - _y)
 
           let thaiYOffset = 0
           const glyphBox = isThaiUpperMark
