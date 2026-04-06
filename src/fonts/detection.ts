@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react';
+import kebabCase from 'lodash/kebabCase';
 
-import kebabCase from 'lodash/kebabCase.js';
-
-import type { LanguageCode } from '../language.js';
-import type { FontWeight } from '../font.js';
-import { isReactElement } from '../utils.js';
+import type { LanguageCode } from '../language';
+import type { FontWeight } from '../font';
+import { isReactElement } from '../utils';
 
 type FontAlias = string | { key: string; url: string };
 

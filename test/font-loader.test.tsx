@@ -2,8 +2,8 @@ import { beforeAll, it, describe, expect } from 'vitest';
 import { join } from 'path';
 import { readFile } from 'node:fs/promises';
 
-import satori from '../src/index.js';
-import { toImage } from './utils.js';
+import satori from '../src';
+import { toImage } from './utils';
 
 let fontData: Buffer;
 

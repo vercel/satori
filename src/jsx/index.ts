@@ -1,9 +1,8 @@
-import type { JSXNode, JSXElement, JSXKey, FC } from './types.js';
+import type { JSXNode, JSXElement, JSXKey, FC } from './types';
 
-import { jsx } from './jsx-runtime.js';
-
-export type * from './types.js';
-export { Fragment, type JSX } from './jsx-runtime.js';
+export { Fragment, type JSX } from './jsx-runtime';
+export type * from './types';
+import { jsx } from './jsx-runtime';
 
 /**
  * Create a `ReactElement`-like object.

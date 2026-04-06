@@ -17,7 +17,7 @@ import {
 	resolveValue,
 	resolveVars,
 	unescapeClassName
-} from '../../src/tw/css-to-style.js';
+} from '../../src/tw/css-to-style';
 
 describe('@/libs/tw/css-to-style', () => {
 	describe('coerceunitlessvalue', () => {

@@ -1,7 +1,7 @@
 import { getStylesForProperty } from 'css-to-react-native';
 
-import { default as buildBorderRadius } from '../builder/border-radius.js';
-import { lengthToNumber } from '../utils.js';
+import { default as buildBorderRadius } from '../builder/border-radius';
+import { lengthToNumber } from '../utils';
 
 const regexMap = {
 	circle: /circle\((.+)\)/,

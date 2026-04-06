@@ -5,7 +5,7 @@
 // TODO: Support the `border-radius: 10px / 20px` syntax.
 // https://developer.mozilla.org/en-US/docs/Web/CSS/border-radius
 
-import { buildXMLString, lengthToNumber } from '../utils.js';
+import { buildXMLString, lengthToNumber } from '../utils';
 
 type Arc = [[number, number], [number, number]];
 

@@ -1,8 +1,8 @@
 {
 	"compilerOptions": {
 		"jsx": "react-jsx",
-		"module": "node16",
-		"moduleResolution": "node16",
+		"module": "esnext",
+		"moduleResolution": "bundler",
 		"esModuleInterop": true,
 		"target": "ES2021",
 		"lib": ["esnext", "dom"],

@@ -1,8 +1,8 @@
 import { forwardRef } from 'react';
 import { it, describe, expect } from 'vitest';
 
-import { initFonts, toImage } from './utils.js';
-import satori, { type Font } from '../src/index.js';
+import { initFonts, toImage } from './utils';
+import satori, { Font } from '../src';
 
 describe('react apis', () => {
 	let fonts: Font[];

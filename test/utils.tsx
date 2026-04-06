@@ -4,8 +4,8 @@ import { join } from 'path';
 import { readFile } from 'node:fs/promises';
 import { toMatchImageSnapshot } from 'jest-image-snapshot';
 
-import type { LanguageCode } from '../src/language.js';
-import { type Font } from '../src/index.js';
+import type { LanguageCode } from '../src/language';
+import type{ Font } from '../src';
 
 const getDynamicAsset = async (text: string): Promise<Buffer> => {
 	const fontPath = join(process.cwd(), 'test', 'assets', text);

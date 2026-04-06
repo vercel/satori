@@ -1,9 +1,9 @@
 import type { ReactElement, ReactNode } from 'react';
 
-import { buildCss, initCompiler } from './compiler.js';
-import { cssToStyle, extractCustomProperties } from './css-to-style.js';
-import { TAILWIND_CSS } from './tailwind-css.js';
-import { isReactElement } from '../utils.js';
+import { buildCss, initCompiler } from './compiler';
+import { cssToStyle, extractCustomProperties } from './css-to-style';
+import { TAILWIND_CSS } from './tailwind-css';
+import { isReactElement } from '../utils';
 
 type ElementProps = {
 	children?: ReactNode;

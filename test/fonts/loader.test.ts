@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { Font } from '../../src/font.js';
-import type { DetectedFont } from '../../src/fonts/detection.js';
+import type { Font } from '../../src/font';
+import type { DetectedFont } from '../../src/fonts/detection';
 import {
 	fontCache,
 	fontPending,
 	loadFont,
 	loadFonts
-} from '../../src/fonts/loader.js';
+} from '../../src/fonts/loader';
 
 const mockFont = (detected: DetectedFont): Font => {
 	return {

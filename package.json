@@ -17,6 +17,8 @@
 	},
 	"devDependencies": {
 		"@resvg/resvg-js": "^2.1.0",
+		"@types/css-to-react-native": "^3.0.2",
+		"@types/escape-html": "^1.0.4",
 		"@types/lodash": "^4.17.24",
 		"@types/node": "^16",
 		"@types/opentype.js": "^1.3.3",

@@ -4,8 +4,8 @@
  * child element inside a `overflow: hidden` container.
  */
 
-import { buildXMLString } from '../utils.js';
-import border from './border.js';
+import { buildXMLString } from '../utils';
+import border from './border';
 
 const contentMask = (
 	{

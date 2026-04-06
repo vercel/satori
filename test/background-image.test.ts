@@ -1,16 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../src/handler/image.js', () => {
+vi.mock('../src/handler/image', () => {
 	return {
 		resolveImageData: vi.fn()
 	};
 });
 
-import { resolveImageData } from '../src/handler/image.js';
+import { resolveImageData } from '../src/handler/image';
 import backgroundImage, {
 	computeBgPositionOffset,
 	parsePositionValues
-} from '../src/builder/background-image.js';
+} from '../src/builder/background-image';
 
 const extractAttr = (xml: string, tag: string, attr: string): string | null => {
 	const tagRegex = new RegExp(`<${tag}\\s[^>]*?\\b${attr}="([^"]*)"`, 'i');

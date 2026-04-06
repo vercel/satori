@@ -12,8 +12,8 @@
  * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/index.d.ts React typings `@types/react`}
  * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/jsx-runtime.d.ts React typings for `jsx-runtime`}
  */
-import type { DefinedIntrinsicElements } from './intrinsic-elements.js';
-import type { JSXElement, JSXKey, FC } from './types.js';
+import type { DefinedIntrinsicElements } from './intrinsic-elements';
+import type { JSXElement, JSXKey, FC } from './types';
 
 namespace JSX {
 	/**

@@ -1,7 +1,7 @@
-import { Locale } from '../language.js';
-import { isNumber, segment, splitByBreakOpportunities } from '../utils.js';
-import { HorizontalEllipsis, Space } from './characters.js';
-import { SerializedStyle } from '../handler/expand.js';
+import { Locale } from '../language';
+import { isNumber, segment, splitByBreakOpportunities } from '../utils';
+import { HorizontalEllipsis, Space } from './characters';
+import { SerializedStyle } from '../handler/expand';
 
 const preprocess = (
 	content: string,

@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { detectFonts } from '../../src/fonts/detection.js';
+import { detectFonts } from '../../src/fonts/detection';
 
 describe('fonts/detection', () => {
 	describe('detectfonts', () => {

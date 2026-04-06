@@ -1,9 +1,9 @@
 /**
  * This class handles everything related to fonts.
  */
-import opentype from '@shuding/opentype.js';
+import opentype from '@shuding/opentype';
 
-import { Locale, locales, isValidLocale } from './language.js';
+import { Locale, locales, isValidLocale } from './language';
 
 type BandPoint = [number, number];
 type FontWeight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;

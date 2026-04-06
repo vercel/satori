@@ -1,7 +1,7 @@
 import { parseLinearGradient, ColorStop } from 'css-gradient-parser';
 
-import { buildXMLString, calcDegree, lengthToNumber } from '../../utils.js';
-import { normalizeStops } from './utils.js';
+import { buildXMLString, calcDegree, lengthToNumber } from '../../utils';
+import { normalizeStops } from './utils';
 
 const buildLinearGradient = (
 	{

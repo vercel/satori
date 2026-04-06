@@ -1,4 +1,4 @@
-import { SerializedStyle } from './expand.js';
+import { SerializedStyle } from './expand';
 
 const list = new Set([
 	'color',

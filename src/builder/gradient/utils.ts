@@ -1,7 +1,7 @@
 import cssColorParse from 'parse-css-color';
 import type { ColorStop } from 'css-gradient-parser';
 
-import { lengthToNumber } from '../../utils.js';
+import { lengthToNumber } from '../../utils';
 
 type Stop = {
 	color: string;

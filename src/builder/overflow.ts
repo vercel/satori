@@ -2,9 +2,9 @@
  * Generate clip path for the given element.
  */
 
-import { buildXMLString } from '../utils.js';
-import { buildClipPath, genClipPathId } from './clip-path.js';
-import mask from './content-mask.js';
+import { buildXMLString } from '../utils';
+import { buildClipPath, genClipPathId } from './clip-path';
+import mask from './content-mask';
 
 const overflow = (
 	{

@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { ElementProps, TwElement } from '../../src/tw/index.js';
-import { transformTwElement, transformTwNode } from '../../src/tw/index.js';
+import type { ElementProps, TwElement } from '../../src/tw';
+import { transformTwElement, transformTwNode } from '../../src/tw';
 
-vi.mock('../../src/tw/compiler.js', () => {
+vi.mock('../../src/tw/compiler', () => {
 	return {
 		buildCss: () => {
 			return '';
@@ -14,7 +14,7 @@ vi.mock('../../src/tw/compiler.js', () => {
 	};
 });
 
-vi.mock('../../src/tw/css-to-style.js', () => {
+vi.mock('../../src/tw/css-to-style', () => {
 	const styles: Record<string, Record<string, string>> = {
 		flex: { display: 'flex' },
 		'p-4': { padding: '1rem' },

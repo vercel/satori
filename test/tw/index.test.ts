@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { initTw, tw } from '../../src/tw/index.js';
+import { initTw, tw } from '../../src/tw';
 
-describe('tw/index', () => {
+describe('tw', () => {
 	beforeAll(async () => {
 		await initTw();
 	});

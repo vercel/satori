@@ -1,8 +1,8 @@
 import { it, describe, expect } from 'vitest';
 
-import { initFonts, toImage } from './utils.js';
-import satori, { type Font } from '../src/index.js';
-import { splitEffects } from '../src/utils.js';
+import { initFonts, toImage } from './utils';
+import satori, { Font } from '../src';
+import { splitEffects } from '../src/utils';
 
 describe('units', () => {
 	let fonts: Font[];

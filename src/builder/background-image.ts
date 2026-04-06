@@ -1,10 +1,10 @@
-import CssDimension from '../vendor/parse-css-dimension/index.js';
 import cssColorParse from 'parse-css-color';
-import { buildXMLString } from '../utils.js';
 
-import { buildLinearGradient } from './gradient/linear.js';
-import { buildRadialGradient } from './gradient/radial.js';
-import { resolveImageData } from '../handler/image.js';
+import { buildLinearGradient } from './gradient/linear';
+import { buildRadialGradient } from './gradient/radial';
+import { buildXMLString } from '../utils';
+import { resolveImageData } from '../handler/image';
+import CssDimension from '../vendor/parse-css-dimension';
 
 type Background = {
 	attachment?: string;

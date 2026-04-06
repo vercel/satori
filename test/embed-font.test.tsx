@@ -1,7 +1,7 @@
 import { it, describe, expect } from 'vitest';
 
-import { initFonts } from './utils.js';
-import satori, { type Font } from '../src/index.js';
+import { initFonts } from './utils';
+import satori, { Font } from '../src';
 
 describe('embedfont: false', () => {
 	let fonts: Font[];

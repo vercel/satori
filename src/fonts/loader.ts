@@ -1,5 +1,5 @@
-import type { Font } from '../font.js';
-import type { DetectedFont } from './detection.js';
+import type { Font } from '../font';
+import type { DetectedFont } from './detection';
 
 type LoadFn = (font: DetectedFont) => Promise<Font | Font[] | string | null>;
 

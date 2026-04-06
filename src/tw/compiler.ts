@@ -1,4 +1,4 @@
-import { TAILWIND_CSS } from './tailwind-css.js';
+import { TAILWIND_CSS } from './tailwind-css';
 
 type TailwindCompiler = {
 	build: (classes: string[]) => string;

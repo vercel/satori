@@ -1,16 +1,17 @@
 import type { ReactElement, ReactNode } from 'react';
 
-import { cache, inflightRequests } from './handler/image.js';
-import { detectAndLoadFonts } from './fonts/index.js';
-import { detectLanguageCode, LangCode, Locale } from './language.js';
-import { getYoga, TYoga } from './yoga.js';
-import { preProcessNode } from './handler/preprocess.js';
-import { segment } from './utils.js';
-import FontLoader, { Font } from './font.js';
-import layout from './layout.js';
-import svg from './builder/svg.js';
-import type { FontsConfig } from './fonts/index.js';
-import type { SatoriNode } from './layout.js';
+import { cache, inflightRequests } from './handler/image';
+import { detectAndLoadFonts } from './fonts';
+import { detectLanguageCode, LangCode, Locale } from './language';
+import { getYoga, TYoga } from './yoga';
+import { initTw, transformTwNode } from './tw';
+import { preProcessNode } from './handler/preprocess';
+import { segment } from './utils';
+import FontLoader, { Font } from './font';
+import layout from './layout';
+import svg from './builder/svg';
+import type { FontsConfig } from './fonts';
+import type { SatoriNode } from './layout';
 
 type SatoriOptions = (
 	| {
@@ -144,7 +145,6 @@ const satori = async (
 	inflightRequests.clear();
 
 	if (options.tailwind) {
-		const { initTw, transformTwNode } = await import('./tw/index.js');
 		const customCss =
 			typeof options.tailwind === 'string' ? options.tailwind : undefined;
 		await initTw(customCss);

@@ -1,7 +1,7 @@
 import { it, describe, expect } from 'vitest';
 
-import { toImage } from './utils.js';
-import satori from '../src/index.js';
+import { toImage } from './utils';
+import satori from '../src';
 
 describe('display', () => {
 	it('should support display: contents', async () => {

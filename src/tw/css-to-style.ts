@@ -1,5 +1,5 @@
-import { convertOklch } from './oklch.js';
-import { UNITLESS_CSS_PROPERTIES } from './unitless-css-properties.js';
+import { convertOklch } from './oklch';
+import { UNITLESS_CSS_PROPERTIES } from './unitless-css-properties';
 
 // Coerce numeric string to number for unitless CSS properties (fontWeight, lineHeight, etc.)
 const coerceUnitlessValue = (prop: string, value: string): string | number => {

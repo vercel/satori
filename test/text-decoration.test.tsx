@@ -1,7 +1,7 @@
 import { it, describe, expect } from 'vitest';
 
-import { initFonts, loadMissingFont, toImage } from './utils.js';
-import satori, { type Font } from '../src/index.js';
+import { initFonts, loadMissingFont, toImage } from './utils';
+import satori, { Font } from '../src';
 
 describe('text decoration', () => {
 	let fonts: Font[];

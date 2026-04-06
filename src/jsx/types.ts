@@ -4,7 +4,7 @@
  *
  * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/index.d.ts `@types/react`}
  */
-export type { CSSProperties } from './intrinsic-elements.js';
+export type { CSSProperties } from './intrinsic-elements';
 
 type JSXKey = string | number | bigint;
 

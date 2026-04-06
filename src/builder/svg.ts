@@ -1,4 +1,4 @@
-import { buildXMLString } from '../utils.js';
+import { buildXMLString } from '../utils';
 
 const svg = ({
 	content,

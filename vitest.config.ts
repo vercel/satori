@@ -3,8 +3,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
 	resolve: {
 		alias: {
-			'@shuding/opentype.js':
-				'@shuding/opentype.js/dist/opentype.module.js'
+			'@shuding/opentype': '@shuding/opentype.js/dist/opentype.module'
 		}
 	},
 	test: {

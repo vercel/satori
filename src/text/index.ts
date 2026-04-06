@@ -3,17 +3,17 @@
  * supported inline node is text. All other nodes are using block layout.
  */
 import cssColorParse from 'parse-css-color';
-import type { LayoutContext } from '../layout.js';
-import type { GlyphBox } from '../font.js';
 
-import buildDecoration from '../builder/text-decoration.js';
-import buildText, { container } from '../builder/text.js';
-import { buildDropShadow } from '../builder/shadow.js';
-import { getYoga, TYoga, YogaNode } from '../yoga.js';
-import { HorizontalEllipsis, Space, Tab } from './characters.js';
-import { Locale } from '../language.js';
-import { genMeasurer } from './measurer.js';
-import { preprocess } from './processor.js';
+import { buildDropShadow } from '../builder/shadow';
+import { genMeasurer } from './measurer';
+import { getYoga, TYoga, YogaNode } from '../yoga';
+import { HorizontalEllipsis, Space, Tab } from './characters';
+import { Locale } from '../language';
+import { preprocess } from './processor';
+import buildDecoration from '../builder/text-decoration';
+import buildText, { container } from '../builder/text';
+import type { GlyphBox } from '../font';
+import type { LayoutContext } from '../layout';
 import {
 	v,
 	segment,
@@ -22,7 +22,7 @@ import {
 	isUndefined,
 	isString,
 	lengthToNumber
-} from '../utils.js';
+} from '../utils';
 
 type DecorationLine = {
 	ascender: number;

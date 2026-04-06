@@ -1,5 +1,5 @@
-import { FontEngine } from '../font.js';
-import { segment } from '../utils.js';
+import { FontEngine } from '../font';
+import { segment } from '../utils';
 
 const genMeasurer = (
 	engine: FontEngine,

@@ -1,8 +1,8 @@
 import escapeHTML from 'escape-html';
-import type { ParsedTransformOrigin } from '../transform-origin.js';
 
-import { buildXMLString } from '../utils.js';
-import transform from './transform.js';
+import { buildXMLString } from '../utils';
+import transform from './transform';
+import type { ParsedTransformOrigin } from '../transform-origin';
 
 const container = (
 	{

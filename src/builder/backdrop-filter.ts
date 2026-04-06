@@ -1,5 +1,5 @@
-import { buildXMLString } from '../utils.js';
-import radius from './border-radius.js';
+import { buildXMLString } from '../utils';
+import radius from './border-radius';
 
 type BuildBackdropFilterOptions = {
 	bgGroupId: string;

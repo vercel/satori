@@ -1,6 +1,6 @@
-import type { TransformArray } from '../handler/expand.js';
-import { multiply } from '../utils.js';
-import type { ParsedTransformOrigin } from '../transform-origin.js';
+import type { TransformArray } from '../handler/expand';
+import { multiply } from '../utils';
+import type { ParsedTransformOrigin } from '../transform-origin';
 
 const baseMatrix = [1, 0, 0, 1, 0, 0];
 

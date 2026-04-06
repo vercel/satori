@@ -1,6 +1,6 @@
 import { getPropertyName } from 'css-to-react-native';
 
-import { splitEffects } from '../utils.js';
+import { splitEffects } from '../utils';
 
 type MaskProperty = {
 	clip: string;

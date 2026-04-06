@@ -2,9 +2,9 @@ import { beforeAll, it, describe, expect } from 'vitest';
 import { join } from 'path';
 import { readFile } from 'node:fs/promises';
 
-import { toImage } from './utils.js';
-import satori from '../src/index.js';
-import type { SatoriOptions } from '../src/index.js';
+import { toImage } from './utils';
+import satori from '../src';
+import type { SatoriOptions } from '../src';
 
 describe('faux-bold', () => {
 	let fontsRegularOnly: SatoriOptions['fonts'];

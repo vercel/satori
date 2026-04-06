@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { buildCss, initCompiler } from '../../src/tw/compiler.js';
+import { buildCss, initCompiler } from '../../src/tw/compiler';
 
 describe('tw/compiler', () => {
 	describe('buildcss before init', () => {

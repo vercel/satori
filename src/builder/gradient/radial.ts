@@ -5,8 +5,8 @@ import {
 	parseRadialGradient
 } from 'css-gradient-parser';
 
-import { buildXMLString, lengthToNumber } from '../../utils.js';
-import { normalizeStops } from './utils.js';
+import { buildXMLString, lengthToNumber } from '../../utils';
+import { normalizeStops } from './utils';
 
 type PositionKeyWord = 'center' | 'left' | 'right' | 'top' | 'bottom';
 type Shape = 'circle' | 'ellipse';

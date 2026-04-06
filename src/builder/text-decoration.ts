@@ -1,5 +1,5 @@
-import { buildXMLString } from '../utils.js';
-import type { GlyphBox } from '../font.js';
+import { buildXMLString } from '../utils';
+import type { GlyphBox } from '../font';
 
 const buildSkipInkSegments = (
 	start: number,

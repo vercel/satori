@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 
-import { cache, resolveImageData } from './image.js';
-import { isReactElement, midline, parseViewBox } from '../utils.js';
+import { cache, resolveImageData } from './image';
+import { isReactElement, midline, parseViewBox } from '../utils';
 
 // Based on
 // https://raw.githubusercontent.com/facebook/react/master/packages/react-dom/src/shared/possibleStandardNames.js

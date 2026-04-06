@@ -1,5 +1,5 @@
-import { buildXMLString } from '../utils.js';
-import radius from './border-radius.js';
+import { buildXMLString } from '../utils';
+import radius from './border-radius';
 
 const compareBorderDirections = (a: string, b: string, style: any) => {
 	return (

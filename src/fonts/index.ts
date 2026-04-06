@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react';
 
-import type { Font } from '../font.js';
-import type { DetectedFont } from './detection.js';
-import { detectFonts } from './detection.js';
-import { loadFonts } from './loader.js';
+import type { Font } from '../font';
+import type { DetectedFont } from './detection';
+import { detectFonts } from './detection';
+import { loadFonts } from './loader';
 
 type FontsConfig = {
 	aliases?: Record<string, string | { key: string; url: string }>;

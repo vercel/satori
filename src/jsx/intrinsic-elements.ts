@@ -9,7 +9,7 @@
  *
  * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/index.d.ts React typings `@types/react`}
  */
-import type { JSXNode } from './types.js';
+import type { JSXNode } from './types';
 
 /**
  * Subset of CSS properties that Satori supports.

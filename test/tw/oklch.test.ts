@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { convertOklch, oklchToHex } from '../../src/tw/oklch.js';
+import { convertOklch, oklchToHex } from '../../src/tw/oklch';
 
 describe('tw/oklch', () => {
 	describe('convertoklch', () => {

@@ -1,7 +1,6 @@
-import { buildXMLString } from '../utils.js';
-import type { MaskProperty } from '../parser/mask.js';
-
-import buildBackgroundImage from './background-image.js';
+import { buildXMLString } from '../utils';
+import buildBackgroundImage from './background-image';
+import type { MaskProperty } from '../parser/mask';
 
 const genMaskImageId = (id: string) => {
 	return `satori_mi-${id}`;

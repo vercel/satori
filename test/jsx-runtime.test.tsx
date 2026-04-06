@@ -4,8 +4,8 @@
 
 import { it, describe, expect } from 'vitest';
 
-import { initFonts, toImage } from './utils.js';
-import satori, { type Font } from '../src/index.js';
+import { initFonts, toImage } from './utils';
+import satori, { Font } from '../src';
 
 describe('minimal jsx runtime', () => {
 	let fonts: Font[];
@@ -15,7 +15,6 @@ describe('minimal jsx runtime', () => {
 
 	it('should support async function components', async () => {
 		function MyComponent() {
-			// @ts-expect-error until we can replace import source with package.json import.
 			return <h1 style={{ fontSize: 16 }}>Hello from My Component</h1>;
 		}
 
@@ -53,7 +52,6 @@ describe('minimal jsx runtime', () => {
 					display: 'flex'
 				}}
 			>
-				{/* @ts-expect-error React v17 doesn't support async components. */}
 				<MyAsyncComponent />
 			</div>,
 			{

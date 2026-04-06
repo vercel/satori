@@ -7,7 +7,7 @@
  * TODO: We might want another option to disable image caching by default.
  */
 
-import { createLRU, parseViewBox } from '../utils.js';
+import { createLRU, parseViewBox } from '../utils';
 
 type ResolvedImageData = [string, number?, number?] | readonly [];
 

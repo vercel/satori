@@ -1,7 +1,7 @@
 import type { ReactNode, ReactElement } from 'react';
 import LineBreaker from 'linebreak';
 
-import CssDimension from './vendor/parse-css-dimension/index.js';
+import CssDimension from './vendor/parse-css-dimension';
 
 type ForwardRefComponent = {
 	$$typeof: symbol;

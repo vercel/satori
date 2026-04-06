@@ -2,7 +2,7 @@
 // generation time 10x'd when adding this filter (WASM in browser).
 // https://drafts.fxtf.org/filter-effects/#feGaussianBlurElement
 
-import { buildXMLString } from '../utils.js';
+import { buildXMLString } from '../utils';
 
 const shiftPath = (path: string, dx: number, dy: number) => {
 	return path.replace(/([MA])([0-9.-]+),([0-9.-]+)/g, (_, command, x, y) => {

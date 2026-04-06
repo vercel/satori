@@ -4,15 +4,15 @@
 
 import type { ReactNode } from 'react';
 
-import { getYoga, YogaNode } from './yoga.js';
-import { SVGNodeToImage } from './handler/preprocess.js';
-import buildTextNodes from './text/index.js';
-import computeStyle from './handler/compute.js';
-import FontLoader from './font.js';
-import rect from './builder/rect.js';
-import { buildBackdropFilter } from './builder/backdrop-filter.js';
-import { Locale, normalizeLocale } from './language.js';
-import type { MutableRef, SerializedStyle } from './handler/expand.js';
+import { getYoga, YogaNode } from './yoga';
+import { SVGNodeToImage } from './handler/preprocess';
+import buildTextNodes from './text';
+import computeStyle from './handler/compute';
+import FontLoader from './font';
+import rect from './builder/rect';
+import { buildBackdropFilter } from './builder/backdrop-filter';
+import { Locale, normalizeLocale } from './language';
+import type { MutableRef, SerializedStyle } from './handler/expand';
 import {
 	isReactElement,
 	isClass,
@@ -21,7 +21,7 @@ import {
 	hasDangerouslySetInnerHTMLProp,
 	isReactComponent,
 	isForwardRefComponent
-} from './utils.js';
+} from './utils';
 
 type BackdropFilterInfo = {
 	filter: string;

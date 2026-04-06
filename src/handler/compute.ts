@@ -4,18 +4,18 @@
  * also returns the inherited style for children of the element.
  */
 
-import expand, { SerializedStyle } from './expand.js';
-import { resolveImageData } from './image.js';
-import inheritable from './inheritable.js';
-import presets from './presets.js';
+import { getYoga, YogaNode } from '../yoga';
+import { resolveImageData } from './image';
+import expand, { SerializedStyle } from './expand';
+import inheritable from './inheritable';
+import presets from './presets';
 import {
 	asPointAutoPercentageLength,
 	asPointPercentageLength,
 	lengthToNumber,
 	parseViewBox,
 	v
-} from '../utils.js';
-import { getYoga, YogaNode } from '../yoga.js';
+} from '../utils';
 
 type SatoriElement = keyof typeof presets;
 

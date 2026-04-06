@@ -1,16 +1,15 @@
-import CssDimension from '../vendor/parse-css-dimension/index.js';
-import type { ParsedTransformOrigin } from '../transform-origin.js';
-
-import type { Background } from './background-image.js';
-import backgroundImage from './background-image.js';
-import border, { getBorderClipPath } from './border.js';
-import buildMaskImage from './mask-image.js';
-import overflow from './overflow.js';
-import radius, { getBorderRadiusClipPath } from './border-radius.js';
-import transform from './transform.js';
-import { boxShadow } from './shadow.js';
-import { buildXMLString } from '../utils.js';
-import { genClipPath } from './clip-path.js';
+import { boxShadow } from './shadow';
+import { buildXMLString } from '../utils';
+import { genClipPath } from './clip-path';
+import backgroundImage from './background-image';
+import border, { getBorderClipPath } from './border';
+import buildMaskImage from './mask-image';
+import CssDimension from '../vendor/parse-css-dimension';
+import overflow from './overflow';
+import radius, { getBorderRadiusClipPath } from './border-radius';
+import transform from './transform';
+import type { Background } from './background-image';
+import type { ParsedTransformOrigin } from '../transform-origin';
 
 /**
  * Parse object-position value into [xOffset, yOffset] in pixels.
