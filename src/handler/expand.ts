@@ -8,20 +8,20 @@ import { parseElementStyle } from 'css-background-parser';
 import { parse as parseBoxShadow } from 'css-box-shadow';
 import cssColorParse from 'parse-css-color';
 
-import { FontStyle, FontWeight, FontWeightName } from '../font.js';
-import { isString, lengthToNumber, splitEffects, v } from '../utils.js';
-import { MaskProperty, parseMask } from '../parser/mask.js';
-import CssDimension from '../vendor/parse-css-dimension/index.js';
-import type { Background } from '../builder/background-image.js';
+import { FontStyle, FontWeight, FontWeightName } from '../font';
+import { isString, lengthToNumber, splitEffects, v } from '../utils';
+import { MaskProperty, parseMask } from '../parser/mask';
+import CssDimension from '../vendor/parse-css-dimension/index';
+import type { Background } from '../builder/background-image';
 import parseTransformOrigin, {
 	ParsedTransformOrigin
-} from '../transform-origin.js';
+} from '../transform-origin';
 import {
 	CSSVariables,
 	extractCustomProperties,
 	mergeVariables,
 	resolveVariables
-} from './variables.js';
+} from './variables';
 
 type TransformArray = number[] & {
 	__parent?: TransformArray;
@@ -92,13 +92,13 @@ const keepNumber = new Set(['lineHeight']);
 
 const handleFallbackColor = (
 	prop: string,
-	parsed: Record<string, string>,
+	parsed: Record<string, string | number>,
 	rawInput: string,
 	currentColor: string
 ) => {
 	if (
 		prop === 'textDecoration' &&
-		!rawInput.includes(parsed.textDecorationColor)
+		!rawInput.includes(`${parsed.textDecorationColor}`)
 	) {
 		parsed.textDecorationColor = currentColor;
 	}
@@ -116,7 +116,7 @@ const purify = (name: string, value?: string | number) => {
 	if (keepNumber.has(name)) {
 		return num;
 	}
-	return String(value);
+	return `${value}`;
 };
 
 const handleSpecialCase = (
@@ -160,13 +160,13 @@ const handleSpecialCase = (
 	}
 
 	if (/^border(Top|Right|Bottom|Left)?$/.test(name)) {
-		const resolved = getStylesForProperty('border', value, true);
+		const resolved = getStylesForProperty('border', `${value}`, true);
 
 		// Border width should be default to 3px (medium) instead of 1px:
 		// https://w3c.github.io/csswg-drafts/css-backgrounds-3/#border-width
 		// Although on Chrome it will be displayed as 1.5px but let's stick to the
 		// spec.
-		if (resolved.borderWidth === 1 && !String(value).includes('1px')) {
+		if (resolved.borderWidth === 1 && !`${value}`.includes('1px')) {
 			resolved.borderWidth = 3;
 		}
 
@@ -175,7 +175,7 @@ const handleSpecialCase = (
 		// fallbacks to default color values.
 		if (
 			resolved.borderColor === 'black' &&
-			!String(value).includes('black')
+			!`${value}`.includes('black')
 		) {
 			resolved.borderColor = currentColor;
 		}
@@ -244,9 +244,9 @@ const handleSpecialCase = (
 				value
 			)
 		) {
-			return getStylesForProperty('backgroundImage', value, true);
+			return getStylesForProperty('backgroundImage', `${value}`, true);
 		}
-		return getStylesForProperty('background', value, true);
+		return getStylesForProperty('background', `${value}`, true);
 	}
 
 	if (name === 'textShadow') {
@@ -404,7 +404,7 @@ const expand = (
 	const inheritedVariables: CSSVariables = {};
 	for (const prop in inheritedStyle) {
 		if (prop.startsWith('--')) {
-			inheritedVariables[prop] = String(inheritedStyle[prop]);
+			inheritedVariables[prop] = `${inheritedStyle[prop]}`;
 		}
 	}
 
@@ -466,7 +466,7 @@ const expand = (
 					handleSpecialCase(name, value, currentColor) ||
 					handleFallbackColor(
 						name,
-						getStylesForProperty(name, purify(name, value), true),
+						getStylesForProperty(name, `${purify(name, value)}`, true),
 						value as string,
 						currentColor
 					);

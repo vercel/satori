@@ -26,7 +26,7 @@ const extractCustomProperties = (
 	for (const prop in style) {
 		if (prop.startsWith('--')) {
 			// Custom property
-			variables[prop] = String(style[prop]);
+			variables[prop] = `${style[prop]}`;
 		} else {
 			remainingStyle[prop] = style[prop];
 		}
@@ -112,7 +112,7 @@ const resolveVariables = (
 						newVisitedVars
 					);
 
-					replaceNode(node, String(resolvedValue));
+					replaceNode(node, `${resolvedValue}`);
 				} else if (fallback !== undefined) {
 					// Variable not found, use fallback
 					// Recursively resolve fallback in case it contains var()
@@ -121,7 +121,7 @@ const resolveVariables = (
 						variables,
 						visitedVars
 					);
-					replaceNode(node, String(resolvedFallback));
+					replaceNode(node, `${resolvedFallback}`);
 				} else {
 					// Variable not found and no fallback, use initial value
 					// According to CSS spec, this should be treated as invalid

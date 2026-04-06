@@ -110,7 +110,7 @@ const translateSVGNodeToSVGString = (
 			.join('');
 	}
 	if (typeof node !== 'object') {
-		return String(node);
+		return `${node}`;
 	}
 
 	const type = node.type;
@@ -156,7 +156,7 @@ const translateSVGNodeToSVGString = (
  * pre process node and resolve absolute link to img data for image element
  */
 const preProcessNode = async (node: ReactNode) => {
-	const set = new Set<string | Buffer | ArrayBuffer>();
+	const set = new Set<string | ArrayBuffer>();
 	const walk = (_node: ReactNode) => {
 		if (!_node) {
 			return;

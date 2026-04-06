@@ -92,7 +92,7 @@ const layout = async function* (
 
 		if (!isReactElement(element)) {
 			// Process as text node.
-			iter = buildTextNodes(String(element), context);
+			iter = buildTextNodes(`${element}`, context);
 			yield (await iter.next()).value as {
 				word: string;
 				locale?: Locale;

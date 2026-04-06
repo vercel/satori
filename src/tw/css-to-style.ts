@@ -52,7 +52,7 @@ const convertOpacityPercentage = (value: string): string => {
 	const percentageMatch = value.match(/^([\d.]+)%$/);
 
 	if (percentageMatch) {
-		return String(parseFloat(percentageMatch[1]) / 100);
+		return `${parseFloat(percentageMatch[1]) / 100}`;
 	}
 
 	return value;

@@ -58,7 +58,7 @@ const normalizeChildren = (children: any) => {
 			continue;
 		}
 		if (typeof value === 'number') {
-			value = String(value);
+			value = `${value}`;
 		}
 		if (
 			typeof value === 'string' &&
@@ -94,7 +94,7 @@ const lengthToNumber = (
 		}
 
 		// Just a number as string: '100'
-		if (length === String(+length)) {
+		if (length === `${+length}`) {
 			return +length;
 		}
 

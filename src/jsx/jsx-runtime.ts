@@ -58,7 +58,7 @@ const jsx = function (
 		props = restProps;
 	}
 	// Coerce key to string if not nullish.
-	key = key != null ? String(key) : null;
+	key = key != null ? `${key}` : null;
 	return { key, props, type };
 };
 

@@ -166,7 +166,7 @@ const createShapeParser = (
 		const radiusMap = getStylesForProperty('borderRadius', radius, true);
 		const r = Object.values(radiusMap)
 			.map(s => {
-				return String(s);
+				return `${s}`;
 			})
 			.map((s, i) => {
 				return (
@@ -183,7 +183,7 @@ const createShapeParser = (
 			getStylesForProperty('margin', inset, true)
 		)
 			.map(s => {
-				return String(s);
+				return `${s}`;
 			})
 			.map((s, i) => {
 				return (
