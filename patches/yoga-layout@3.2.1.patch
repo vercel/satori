@@ -86,7 +86,7 @@ index efd1554faeebc6d6d792878f0ec63e4122ff3d96..232f122ef8fb2ba1c43844f88114ba46
 -  return wrapAssembly(await loadYogaImpl());
 +export async function loadYoga(wasmOptions) {
 +  const { default: loadYogaImpl } =
-+    process.env.SATORI_STANDALONE === '1'
++    typeof process !== 'undefined' && process.env.SATORI_STANDALONE === '1'
 +      ? await import('../binaries/yoga-wasm-esm.js')
 +      : await import('../binaries/yoga-wasm-base64-esm.js')
 +

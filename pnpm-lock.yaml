@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   yoga-layout@3.2.1:
-    hash: fcspke77bs3aszvcx6say6fj7q
+    hash: ux5a6sn4brsdz3wixoc6enguwq
     path: patches/yoga-layout@3.2.1.patch
 
 importers:
@@ -45,7 +45,7 @@ importers:
         version: 4.2.0
       yoga-layout:
         specifier: ^3.2.1
-        version: 3.2.1(patch_hash=fcspke77bs3aszvcx6say6fj7q)
+        version: 3.2.1(patch_hash=ux5a6sn4brsdz3wixoc6enguwq)
     devDependencies:
       '@resvg/resvg-js':
         specifier: ^2.1.0
@@ -10144,7 +10144,7 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /yoga-layout@3.2.1(patch_hash=fcspke77bs3aszvcx6say6fj7q):
+  /yoga-layout@3.2.1(patch_hash=ux5a6sn4brsdz3wixoc6enguwq):
     resolution: {integrity: sha512-0LPOt3AxKqMdFBZA3HBAt/t/8vIKq7VaQYbuA8WxCgung+p9TVyKRYdpvCb80HcdTN2NkbIKbhNwKUfm3tQywQ==}
     dev: false
     patched: true
