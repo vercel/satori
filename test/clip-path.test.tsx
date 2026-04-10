@@ -137,4 +137,54 @@ describe('clipPath', () => {
 
     expect(toImage(svg)).toMatchImageSnapshot()
   })
+
+  it('should render shape for rect', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          clipPath: 'rect(30% 60% 60% 30% round 5px)',
+          fontSize: 32,
+          fontWeight: 600,
+        }}
+      ></div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg)).toMatchImageSnapshot()
+  })
+
+  it('should render shape for rect with auto keyword', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          clipPath: 'rect(10px auto 20px auto)',
+          fontSize: 32,
+          fontWeight: 600,
+        }}
+      ></div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg)).toMatchImageSnapshot()
+  })
 })

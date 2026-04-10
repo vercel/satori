@@ -8,6 +8,7 @@ const regexMap = {
   path: /path\((.+)\)/,
   polygon: /polygon\((.+)\)/,
   inset: /inset\((.+)\)/,
+  rect: /rect\((.+)\)/,
 }
 
 export function createShapeParser(
@@ -144,22 +145,13 @@ export function createShapeParser(
 
     if (!res) return null
 
-    const [inset, radius] = (
-      res[1].includes('round') ? res[1] : `${res[1].trim()} round 0`
-    ).split('round')
-    const radiusMap = getStylesForProperty('borderRadius', radius, true)
-    const r = Object.values(radiusMap)
-      .map((s) => String(s))
-      .map(
-        (s, i) =>
-          lengthToNumber(
-            s,
-            inheritedStyle.fontSize as number,
-            i === 0 || i === 2 ? height : width,
-            inheritedStyle,
-            true
-          ) || 0
-      )
+    const [inset, radius] = splitRound(res[1])
+    const { r, radiusMap } = resolveRadius(
+      radius,
+      width,
+      height,
+      inheritedStyle
+    )
     const offsets = Object.values(getStylesForProperty('margin', inset, true))
       .map((s) => String(s))
       .map(
@@ -194,6 +186,60 @@ export function createShapeParser(
       height: h,
     }
   }
+  function parseRect(str: string) {
+    const res = str.match(regexMap['rect'])
+
+    if (!res) return null
+
+    const [rect, radius] = splitRound(res[1])
+    const { r, radiusMap } = resolveRadius(
+      radius,
+      width,
+      height,
+      inheritedStyle
+    )
+
+    let [a, b, c, d] = rect
+      .split(' ')
+      .map((s) => String(s))
+      .map((s, i) => {
+        const v = s === 'auto' ? (i === 0 || i === 3 ? 0 : '100%') : s
+        return (
+          lengthToNumber(
+            v,
+            inheritedStyle.fontSize as number,
+            i === 0 || i === 2 ? height : width,
+            inheritedStyle,
+            true
+          ) || 0
+        )
+      })
+
+    b = Math.max(b, d)
+    c = Math.max(c, a)
+
+    const x = d
+    const y = a
+    const w = b - d
+    const h = c - a
+
+    if (r.some((v) => v > 0)) {
+      const m = buildBorderRadius(
+        { left: x, top: y, width: w, height: h },
+        { ...style, ...radiusMap }
+      )
+
+      return { type: 'path', d: m }
+    }
+
+    return {
+      type: 'rect',
+      x,
+      y,
+      width: w,
+      height: h,
+    }
+  }
 
   return {
     parseCircle,
@@ -201,7 +247,37 @@ export function createShapeParser(
     parsePath,
     parsePolygon,
     parseInset,
+    parseRect,
   }
+}
+
+function splitRound(shape: string) {
+  return (shape.includes('round') ? shape : `${shape.trim()} round 0`).split(
+    'round'
+  )
+}
+
+function resolveRadius(
+  radius: string,
+  width: number,
+  height: number,
+  inheritedStyle: Record<string, string | number>
+) {
+  const radiusMap = getStylesForProperty('borderRadius', radius, true)
+  const r = Object.values(radiusMap)
+    .map(String)
+    .map(
+      (s, i) =>
+        lengthToNumber(
+          s,
+          inheritedStyle.fontSize as number,
+          i === 0 || i === 2 ? height : width,
+          inheritedStyle,
+          true
+        ) || 0
+    )
+
+  return { r, radiusMap }
 }
 
 function resolveFillRule(str: string) {
