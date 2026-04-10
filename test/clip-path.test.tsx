@@ -187,4 +187,29 @@ describe('clipPath', () => {
     )
     expect(toImage(svg)).toMatchImageSnapshot()
   })
+
+  it('should render shape for xywh', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          clipPath: 'xywh(5px 5px 30% 20% round 5px)',
+          fontSize: 32,
+          fontWeight: 600,
+        }}
+      ></div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg)).toMatchImageSnapshot()
+  })
 })
