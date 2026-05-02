@@ -210,6 +210,34 @@ describe('Mask-*', () => {
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it('should support mask-mode', async () => {
+    const svgs = await Promise.all(
+      (['alpha', 'luminance', 'match-source'] as const).map((maskMode) =>
+        satori(
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              backgroundImage: `url(${PNG_SAMPLE})`,
+              maskImage: 'linear-gradient(to right, blue, transparent)',
+              maskMode,
+            }}
+          ></div>,
+          { width: 100, height: 100, fonts }
+        )
+      )
+    )
+
+    expect(svgs[0]).toContain('mask-type="alpha"')
+    expect(svgs[1]).toContain('mask-type="luminance"')
+    expect(svgs[2]).not.toContain('mask-type=')
+
+    svgs.forEach((svg) => {
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+  })
+
   it('should support mask-image on positioned elements', async () => {
     const svg = await satori(
       <div
