@@ -1,9 +1,7 @@
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import React from 'react'
-
-// Generous Roboto subset covering ASCII printable glyphs.
-const ROBOTO_SUBSET =
-  ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
 
 const TAGLINE = 'ENLIGHTENED JSX, NOW IN MOTION'
 const W = 960
@@ -18,7 +16,7 @@ const easeOutQuint = (t: number) => 1 - Math.pow(1 - t, 5)
 
 type LoadedFonts = Array<{
   name: string
-  data: ArrayBuffer
+  data: Buffer
   weight: 400 | 700
   style: 'normal'
 }>
@@ -28,38 +26,19 @@ function loadFonts(): Promise<LoadedFonts> {
   if (fontsPromise) return fontsPromise
   const promise: Promise<LoadedFonts> = (async () => {
     const [regular, bold] = await Promise.all([
-      fetchRoboto(400),
-      fetchRoboto(700),
+      readFile(join(process.cwd(), 'public/inter-latin-ext-400-normal.woff')),
+      readFile(join(process.cwd(), 'public/inter-latin-ext-700-normal.woff')),
     ])
     return [
-      { name: 'Roboto', data: regular, weight: 400, style: 'normal' },
-      { name: 'Roboto', data: bold, weight: 700, style: 'normal' },
+      { name: 'Inter', data: regular, weight: 400, style: 'normal' },
+      { name: 'Inter', data: bold, weight: 700, style: 'normal' },
     ]
   })()
   promise.catch(() => {
-    // Reset on failure so the next request can retry.
     if (fontsPromise === promise) fontsPromise = null
   })
   fontsPromise = promise
   return promise
-}
-
-async function fetchRoboto(weight: 400 | 700): Promise<ArrayBuffer> {
-  const cssUrl = `https://fonts.googleapis.com/css2?family=Roboto:wght@${weight}&text=${encodeURIComponent(
-    ROBOTO_SUBSET
-  )}`
-  const css = await (
-    await fetch(cssUrl, {
-      headers: {
-        // Tell Google Fonts to serve TTF instead of WOFF2.
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; de-at) AppleWebKit/533.21.1 (KHTML, like Gecko) Version/5.0.5 Safari/533.21.1',
-      },
-    })
-  ).text()
-  const match = css.match(/src: url\((.+?)\) format\('(truetype|opentype)'\)/)
-  if (!match) throw new Error(`Could not locate Roboto ${weight} URL in CSS`)
-  return (await fetch(match[1])).arrayBuffer()
 }
 
 function sanitizeText(raw: unknown): string {
@@ -98,7 +77,7 @@ function renderTitleCard(text: string, progress: number): React.ReactElement {
         justifyContent: 'center',
         background: `radial-gradient(circle at 50% 42%, ${bgInner}, ${bgOuter})`,
         color: 'white',
-        fontFamily: 'Roboto',
+        fontFamily: 'Inter',
       }}
     >
       <div
@@ -119,20 +98,23 @@ function renderTitleCard(text: string, progress: number): React.ReactElement {
         {Array.from(text).map((ch, i) => {
           const start = 0.22 + i * stagger
           const t = easeOutCubic(range(progress, start, start + 0.5))
+          const baseStyle = {
+            display: 'flex',
+            fontSize,
+            fontWeight: 700,
+            letterSpacing: -fontSize * 0.04,
+            opacity: t,
+            transform: `translateY(${(1 - t) * 70}px)`,
+            padding: '0 2px',
+            lineHeight: 1.1,
+          } as const
+          if (ch === ' ') {
+            return (
+              <div key={i} style={{ ...baseStyle, width: fontSize * 0.35 }} />
+            )
+          }
           return (
-            <div
-              key={i}
-              style={{
-                display: 'flex',
-                fontSize,
-                fontWeight: 700,
-                letterSpacing: -fontSize * 0.04,
-                opacity: t,
-                transform: `translateY(${(1 - t) * 70}px)`,
-                padding: '0 2px',
-                lineHeight: 1.1,
-              }}
-            >
+            <div key={i} style={baseStyle}>
               {ch === ' ' ? ' ' : ch}
             </div>
           )

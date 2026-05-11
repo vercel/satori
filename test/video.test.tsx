@@ -15,7 +15,7 @@ const range = (t: number, a: number, b: number) => clamp01((t - a) / (b - a))
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 const easeOutQuint = (t: number) => 1 - Math.pow(1 - t, 5)
 
-const TITLE = 'satori'
+const TITLE = 'hello world'
 const STAGGER = 0.05
 
 describe('Video', () => {
@@ -77,23 +77,22 @@ describe('Video', () => {
               {Array.from(TITLE).map((ch, i) => {
                 const start = 0.22 + i * STAGGER
                 const t = easeOutCubic(range(progress, start, start + 0.5))
-                const isSpace = ch === ' '
+                const baseStyle = {
+                  display: 'flex',
+                  fontSize: 96,
+                  fontWeight: 700,
+                  letterSpacing: -4,
+                  opacity: t,
+                  transform: `translateY(${(1 - t) * 70}px)`,
+                  padding: '0 2px',
+                  lineHeight: 1.1,
+                } as const
+                if (ch === ' ') {
+                  return <div key={i} style={{ ...baseStyle, width: 32 }} />
+                }
                 return (
-                  <div
-                    key={i}
-                    style={{
-                      display: 'flex',
-                      fontSize: 96,
-                      fontWeight: 700,
-                      letterSpacing: -4,
-                      opacity: t,
-                      transform: `translateY(${(1 - t) * 70}px)`,
-                      padding: '0 2px',
-                      lineHeight: 1.1,
-                      width: isSpace ? 32 : undefined,
-                    }}
-                  >
-                    {isSpace ? '' : ch}
+                  <div key={i} style={baseStyle}>
+                    {ch}
                   </div>
                 )
               })}
