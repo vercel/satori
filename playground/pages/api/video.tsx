@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import React from 'react'
+import { video } from 'satori/video'
 
 const TAGLINE = 'ENLIGHTENED JSX, NOW IN MOTION'
 const W = 960
@@ -115,7 +116,7 @@ function renderTitleCard(text: string, progress: number): React.ReactElement {
           }
           return (
             <div key={i} style={baseStyle}>
-              {ch === ' ' ? ' ' : ch}
+              {ch}
             </div>
           )
         })}
@@ -151,10 +152,6 @@ export default async function handler(
 ) {
   try {
     const text = sanitizeText(req.query.text)
-
-    // Dynamic import keeps Next from trying to statically analyze the native
-    // `sharp` binding at build time.
-    const { video } = await import('satori/video')
     const fonts = await loadFonts()
 
     const mp4 = await video(
