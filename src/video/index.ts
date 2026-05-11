@@ -12,6 +12,15 @@ export type VideoOptions = Omit<SatoriOptions, 'width' | 'height'> & {
   bitrate?: number
   quality?: number
   groupOfPictures?: number
+  /**
+   * Number of frames whose Satori + sharp work can be in flight at once. The
+   * H.264 encoder still consumes frames strictly in order — concurrency lets
+   * upcoming frames render while the current one is being encoded, and lets
+   * sharp use its libuv threadpool for multiple frames in parallel.
+   *
+   * Default: 4 (matches the default libuv UV_THREADPOOL_SIZE).
+   */
+  concurrency?: number
 }
 
 export type FrameContext = {
@@ -79,6 +88,7 @@ export async function video(
     bitrate,
     quality,
     groupOfPictures,
+    concurrency = 4,
     ...rest
   } = options
 
@@ -93,9 +103,13 @@ export async function video(
   if (fps <= 0) {
     throw new Error('satori/video: fps must be > 0')
   }
+  if (!Number.isInteger(concurrency) || concurrency < 1) {
+    throw new Error('satori/video: concurrency must be a positive integer')
+  }
 
   const satoriOptions = { ...rest, width, height } as SatoriOptions
   const totalFrames = computeTotalFrames(duration, fps)
+  const windowSize = Math.min(concurrency, totalFrames)
 
   const encoder = await createH264MP4Encoder()
   encoder.width = width
@@ -109,17 +123,33 @@ export async function video(
     .slice(2)}.mp4`
   encoder.initialize()
 
+  // Sliding window of in-flight render promises. Producers run ahead of the
+  // encoder so Satori + sharp can overlap with the synchronous WASM encode.
+  const inFlight = new Map<number, Promise<Buffer>>()
+  const startFrame = (i: number) => {
+    const p = renderFrame(
+      renderer,
+      satoriOptions,
+      width,
+      height,
+      i,
+      totalFrames,
+      fps
+    )
+    // Suppress unhandled-rejection warnings for frames we may never await
+    // (e.g. an earlier frame throws and we bail out of the loop).
+    p.catch(() => undefined)
+    inFlight.set(i, p)
+  }
+
+  let nextStart = 0
+  while (nextStart < windowSize) startFrame(nextStart++)
+
   try {
-    for (let frame = 0; frame < totalFrames; frame++) {
-      const rgba = await renderFrame(
-        renderer,
-        satoriOptions,
-        width,
-        height,
-        frame,
-        totalFrames,
-        fps
-      )
+    for (let i = 0; i < totalFrames; i++) {
+      const rgba = await inFlight.get(i)!
+      inFlight.delete(i)
+      if (nextStart < totalFrames) startFrame(nextStart++)
       encoder.addFrameRgba(rgba)
     }
     encoder.finalize()

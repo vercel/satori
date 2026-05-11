@@ -32,7 +32,7 @@ describe('Video', () => {
     ]
   })
 
-  it.only('renders a kinetic title card to MP4', async () => {
+  it('renders a kinetic title card to MP4', async () => {
     const mp4 = await video(
       ({ progress }) => {
         const dot = easeOutQuint(range(progress, 0, 0.4))
@@ -105,11 +105,10 @@ describe('Video', () => {
                 fontSize: 18,
                 fontWeight: 400,
                 opacity: tagline * 0.72,
-                letterSpacing: 8,
                 transform: `translateY(${(1 - tagline) * 16}px)`,
               }}
             >
-              ENLIGHTENED JSX, NOW IN MOTION
+              enlightened jsx, now in motion
             </div>
           </div>
         )
@@ -121,6 +120,7 @@ describe('Video', () => {
         fps: FPS,
         fonts,
         quality: 22,
+        concurrency: 4,
       }
     )
 
