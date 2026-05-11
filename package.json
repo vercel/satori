@@ -9,6 +9,9 @@
     "*": {
       "wasm": [
         "./dist/index.d.ts"
+      ],
+      "video": [
+        "./dist/video/index.d.ts"
       ]
     }
   },
@@ -53,6 +56,11 @@
       "types": "./dist/jsx/jsx-runtime.d.ts",
       "import": "./dist/jsx/jsx-runtime.js",
       "require": "./dist/jsx/jsx-runtime.cjs"
+    },
+    "./video": {
+      "types": "./dist/video/index.d.ts",
+      "import": "./dist/video/index.js",
+      "require": "./dist/video/index.cjs"
     }
   },
   "scripts": {
@@ -123,6 +131,14 @@
     "typescript": "^5",
     "vitest": "^0.32.0"
   },
+  "peerDependencies": {
+    "sharp": "*"
+  },
+  "peerDependenciesMeta": {
+    "sharp": {
+      "optional": true
+    }
+  },
   "dependencies": {
     "@shuding/opentype.js": "1.4.0-beta.0",
     "css-background-parser": "^0.1.0",
@@ -131,6 +147,7 @@
     "css-to-react-native": "^3.0.0",
     "emoji-regex-xs": "^2.0.1",
     "escape-html": "^1.0.3",
+    "h264-mp4-encoder": "^1.0.12",
     "linebreak": "^1.1.0",
     "parse-css-color": "^0.2.1",
     "postcss-value-parser": "^4.2.0",

@@ -9,6 +9,7 @@ export default defineConfig({
     [isStandaloneBuild ? 'standalone' : 'index']: 'src/index.ts',
     'jsx/index': 'src/jsx/index.ts',
     'jsx/jsx-runtime': 'src/jsx/jsx-runtime.ts',
+    'video/index': 'src/video/index.ts',
   },
   splitting: false,
   sourcemap: true,

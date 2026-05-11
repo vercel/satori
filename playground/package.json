@@ -17,7 +17,7 @@
     "fflate": "^0.7.3",
     "intl-segmenter-polyfill": "^0.4.4",
     "js-base64": "^3.7.2",
-    "next": "^12.2.5",
+    "next": "^16.2.6",
     "pdfkit": "^0.13.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -25,6 +25,7 @@
     "react-live": "^2.4.1",
     "react-resizable-panels": "^0.0.30",
     "satori": "workspace:*",
+    "sharp": "^0.34.3",
     "svg-to-pdfkit": "^0.1.8"
   },
   "devDependencies": {

@@ -8,6 +8,7 @@ node_modules
 dist
 .pnpm-debug.log
 __diff_output__
+__video_output__
 .eslintcache
 coverage
 
