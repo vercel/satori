@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import * as sharpNs from 'sharp'
+import * as hmeNs from 'h264-mp4-encoder'
 import type { SatoriOptions } from '../satori.js'
 import satori from '../satori.js'
 
@@ -25,35 +27,19 @@ export type VideoRenderer = (
 type SharpFactory = typeof import('sharp')
 type HMEModule = typeof import('h264-mp4-encoder')
 
-let sharpModule: SharpFactory | undefined
-async function loadSharp(): Promise<SharpFactory> {
-  if (sharpModule) return sharpModule
-  try {
-    const mod: any = await import('sharp')
-    sharpModule = (mod.default ?? mod) as SharpFactory
-    return sharpModule
-  } catch (err) {
-    throw new Error(
-      'satori/video requires `sharp` as a peer dependency. Install it with your package manager (e.g. `npm install sharp`). ' +
-        `Original error: ${(err as Error).message}`
-    )
-  }
-}
-
-let hmeModule: HMEModule | undefined
-async function loadHME(): Promise<HMEModule> {
-  if (hmeModule) return hmeModule
-  const mod: any = await import('h264-mp4-encoder')
-  hmeModule = (mod.default ?? mod) as HMEModule
-  return hmeModule
-}
+// Resolve both backends at module evaluation. On serverless platforms this
+// front-loads the native binding and WASM compilation into cold-start rather
+// than the first request.
+const sharp: SharpFactory = ((sharpNs as any).default ??
+  sharpNs) as SharpFactory
+const hme: HMEModule = ((hmeNs as any).default ?? hmeNs) as HMEModule
+const { createH264MP4Encoder } = hme
 
 function computeTotalFrames(durationMs: number, fps: number): number {
   return Math.max(1, Math.round((durationMs / 1000) * fps))
 }
 
 async function rasterize(
-  sharp: SharpFactory,
   svg: string,
   width: number,
   height: number
@@ -72,14 +58,13 @@ async function renderFrame(
   height: number,
   frame: number,
   totalFrames: number,
-  fps: number,
-  sharp: SharpFactory
+  fps: number
 ): Promise<Buffer> {
   const progress = totalFrames <= 1 ? 0 : frame / (totalFrames - 1)
   const time = (frame / fps) * 1000
   const element = await renderer({ frame, progress, time })
   const svg = await satori(element, satoriOptions)
-  return rasterize(sharp, svg, width, height)
+  return rasterize(svg, width, height)
 }
 
 export async function video(
@@ -112,9 +97,6 @@ export async function video(
   const satoriOptions = { ...rest, width, height } as SatoriOptions
   const totalFrames = computeTotalFrames(duration, fps)
 
-  const sharp = await loadSharp()
-  const { createH264MP4Encoder } = await loadHME()
-
   const encoder = await createH264MP4Encoder()
   encoder.width = width
   encoder.height = height
@@ -136,8 +118,7 @@ export async function video(
         height,
         frame,
         totalFrames,
-        fps,
-        sharp
+        fps
       )
       encoder.addFrameRgba(rgba)
     }
