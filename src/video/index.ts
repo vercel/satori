@@ -55,6 +55,10 @@ const hmePromise: Promise<HMEModule> = import('h264-mp4-encoder').then(
 )
 hmePromise.catch(() => undefined)
 
+// Diagnostic logging — temporarily always on while we trace a Vercel hang.
+const dlog = (event: string, extra: Record<string, unknown> = {}) =>
+  console.log(`[satori/video] ${event}`, extra)
+
 function computeTotalFrames(durationMs: number, fps: number): number {
   return Math.max(1, Math.round((durationMs / 1000) * fps))
 }
@@ -84,9 +88,14 @@ async function renderFrame(
 ): Promise<Buffer> {
   const progress = totalFrames <= 1 ? 0 : frame / (totalFrames - 1)
   const time = (frame / fps) * 1000
+  dlog('renderFrame:before-renderer', { frame })
   const element = await renderer({ frame, progress, time })
+  dlog('renderFrame:before-satori', { frame })
   const svg = await satori(element, satoriOptions)
-  return rasterize(sharp, svg, width, height)
+  dlog('renderFrame:before-rasterize', { frame, svgBytes: svg.length })
+  const rgba = await rasterize(sharp, svg, width, height)
+  dlog('renderFrame:done', { frame, rgbaBytes: rgba.byteLength })
+  return rgba
 }
 
 export async function video(
@@ -124,10 +133,13 @@ export async function video(
   const totalFrames = computeTotalFrames(duration, fps)
   const windowSize = Math.min(concurrency, totalFrames)
 
+  dlog('video:awaiting-backends', { totalFrames, windowSize })
   const [sharp, hme] = await Promise.all([sharpPromise, hmePromise])
+  dlog('video:backends-ready')
   const { createH264MP4Encoder } = hme
 
   const encoder = await createH264MP4Encoder()
+  dlog('video:encoder-constructed')
   encoder.width = width
   encoder.height = height
   encoder.frameRate = fps
@@ -138,6 +150,7 @@ export async function video(
     .toString(36)
     .slice(2)}.mp4`
   encoder.initialize()
+  dlog('video:encoder-initialized')
 
   // Sliding window of in-flight render promises. Producers run ahead of the
   // encoder so Satori + sharp can overlap with the synchronous WASM encode.
@@ -164,13 +177,20 @@ export async function video(
 
   try {
     for (let i = 0; i < totalFrames; i++) {
+      dlog('video:awaiting-frame', { frame: i })
       const rgba = await inFlight.get(i)!
+      dlog('video:got-frame', { frame: i })
       inFlight.delete(i)
       if (nextStart < totalFrames) startFrame(nextStart++)
       encoder.addFrameRgba(rgba)
+      dlog('video:frame-encoded', { frame: i })
     }
+    dlog('video:finalizing')
     encoder.finalize()
-    return encoder.FS.readFile(encoder.outputFilename)
+    dlog('video:reading-output')
+    const bytes = encoder.FS.readFile(encoder.outputFilename)
+    dlog('video:read-done', { bytes: bytes.byteLength })
+    return bytes
   } finally {
     try {
       encoder.FS.unlink(encoder.outputFilename)
