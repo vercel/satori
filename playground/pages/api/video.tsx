@@ -2,7 +2,11 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import React from 'react'
+import satori from 'satori'
 import { video } from 'satori/video'
+
+// Record module-evaluation timing so a stage probe can report cold-start cost.
+const MODULE_LOADED_AT = Date.now()
 
 const TAGLINE = 'ENLIGHTENED JSX, NOW IN MOTION'
 const W = 960
@@ -146,16 +150,129 @@ export const config = {
   },
 }
 
+const SOLID_FRAME = {
+  type: 'div',
+  props: {
+    style: {
+      width: '100%',
+      height: '100%',
+      backgroundColor: 'red',
+    },
+  },
+} as const
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const stage = String(req.query.stage ?? 'full')
+  const handlerStart = Date.now()
+  const log = (event: string, extra: Record<string, unknown> = {}) => {
+    console.log(
+      `[video] stage=${stage} ${event} ms=${Date.now() - handlerStart}`,
+      extra
+    )
+  }
+
   try {
+    // Stage 0: did module evaluation complete? If you hit a 120s timeout
+    // *before* this handler runs, none of the stage probes will respond — the
+    // hang is in one of the top-level imports (satori/video, sharp, h264).
+    if (stage === 'module') {
+      return res.status(200).json({
+        ok: true,
+        moduleLoadAt: MODULE_LOADED_AT,
+        handlerStart,
+        sinceModuleLoad: handlerStart - MODULE_LOADED_AT,
+      })
+    }
+
+    // Stage 1: just import the video entry. With static imports it's already
+    // done; this probe confirms the module is reachable.
+    if (stage === 'import') {
+      log('import-only')
+      return res.status(200).json({
+        ok: true,
+        videoFn: typeof video,
+        satoriFn: typeof satori,
+        ms: Date.now() - handlerStart,
+      })
+    }
+
+    // Stage 2: read fonts from disk. Will fail with ENOENT if `public/` isn't
+    // bundled into the serverless function.
+    if (stage === 'fonts') {
+      const fonts = await loadFonts()
+      log('fonts-loaded', { count: fonts.length })
+      return res.status(200).json({
+        ok: true,
+        fonts: fonts.map((f) => ({
+          name: f.name,
+          weight: f.weight,
+          bytes: f.data.byteLength,
+        })),
+        ms: Date.now() - handlerStart,
+      })
+    }
+
+    // Stage 3: one Satori call → SVG string. Exercises yoga + text shaping,
+    // but neither sharp nor the encoder.
+    if (stage === 'satori') {
+      const fonts = await loadFonts()
+      log('fonts-loaded')
+      const svg = await satori(renderTitleCard('hi', 0.5), {
+        width: 320,
+        height: 180,
+        fonts: fonts as any,
+      })
+      log('satori-done', { svgBytes: svg.length })
+      return res.status(200).json({
+        ok: true,
+        svgBytes: svg.length,
+        ms: Date.now() - handlerStart,
+      })
+    }
+
+    // Stage 4: full video pipeline but trivial — 1 frame, 64×64, solid color
+    // (no text shaping). If everything else passed and this hangs, the
+    // h264-mp4-encoder WASM is the suspect.
+    if (stage === 'encode-one') {
+      const fonts = await loadFonts()
+      log('fonts-loaded')
+      const mp4 = await video(() => SOLID_FRAME as any, {
+        width: 64,
+        height: 64,
+        duration: 33,
+        fps: 30,
+        fonts: fonts as any,
+      })
+      log('encode-done', { bytes: mp4.byteLength })
+      return res.status(200).json({
+        ok: true,
+        bytes: mp4.byteLength,
+        ms: Date.now() - handlerStart,
+      })
+    }
+
+    // Stage full (default): the real thing, with per-frame timing.
     const text = sanitizeText(req.query.text)
     const fonts = await loadFonts()
+    log('fonts-loaded')
+
+    let frameCount = 0
+    const sampleTimings: Array<{ frame: number; ms: number }> = []
+    let lastFrameEnd = Date.now()
 
     const mp4 = await video(
-      ({ progress }: { progress: number }) => renderTitleCard(text, progress),
+      ({ progress, frame }: { progress: number; frame: number }) => {
+        if (frame % 10 === 0) {
+          const now = Date.now()
+          sampleTimings.push({ frame, ms: now - lastFrameEnd })
+          lastFrameEnd = now
+        }
+        frameCount++
+        return renderTitleCard(text, progress)
+      },
       {
         width: W,
         height: H,
@@ -166,6 +283,12 @@ export default async function handler(
       }
     )
 
+    log('full-done', {
+      frameCount,
+      bytes: mp4.byteLength,
+      sampleTimings,
+    })
+
     res.setHeader('Content-Type', 'video/mp4')
     res.setHeader('Content-Length', String(mp4.byteLength))
     res.setHeader(
@@ -174,8 +297,9 @@ export default async function handler(
     )
     res.status(200).send(Buffer.from(mp4))
   } catch (err) {
-    console.error('[/api/video] failed:', err)
+    console.error('[/api/video] failed at stage=', stage, err)
     res.status(500).json({
+      stage,
       error: (err as Error).message ?? 'video render failed',
     })
   }
