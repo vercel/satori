@@ -291,6 +291,64 @@ export default async function handler(
       })
     }
 
+    // Stage 4ab: run the full satori → sharp → encoder pipeline by hand, with
+    // a log between every step. Exposes whichever individual call is hanging
+    // when the integrated `video()` doesn't return.
+    if (stage === 'pipeline-step') {
+      const fonts = await loadFonts()
+      log('fonts-loaded')
+
+      const svg = await satori(SOLID_FRAME as any, {
+        width: 64,
+        height: 64,
+        fonts: fonts as any,
+      })
+      log('satori-done', { svgBytes: svg.length })
+
+      const sharpMod: any = await import('sharp')
+      const sharp = sharpMod.default ?? sharpMod
+      log('sharp-imported')
+
+      const rgba = await sharp(Buffer.from(svg), { density: 96 })
+        .resize(64, 64)
+        .ensureAlpha()
+        .raw()
+        .toBuffer()
+      log('sharp-done', { rgbaBytes: rgba.byteLength })
+
+      const hme: any = await import('h264-mp4-encoder')
+      const { createH264MP4Encoder } = hme.default ?? hme
+      const encoder = await createH264MP4Encoder()
+      encoder.width = 64
+      encoder.height = 64
+      encoder.frameRate = 30
+      encoder.outputFilename = `probe-${Date.now()}.mp4`
+      encoder.initialize()
+      log('encoder-ready')
+
+      encoder.addFrameRgba(rgba)
+      log('frame-added')
+
+      encoder.finalize()
+      log('encoder-finalized')
+
+      const bytes = encoder.FS.readFile(encoder.outputFilename) as Uint8Array
+      log('encoder-read-done', { bytes: bytes.byteLength })
+
+      try {
+        encoder.FS.unlink(encoder.outputFilename)
+      } catch {
+        // ignore
+      }
+      encoder.delete()
+
+      return res.status(200).json({
+        ok: true,
+        bytes: bytes.byteLength,
+        ms: Date.now() - handlerStart,
+      })
+    }
+
     // Stage 4b: full video pipeline but trivial — 1 frame, 64×64, solid color
     // (no text shaping). If `encoder-only` passes but this hangs, it's the
     // satori → sharp → encoder integration.
