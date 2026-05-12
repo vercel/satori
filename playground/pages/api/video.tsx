@@ -349,6 +349,37 @@ export default async function handler(
       })
     }
 
+    // Stage 4c: invoke video() with a logging renderer. Tells us whether
+    // video() is hanging *before* it ever calls the user function (i.e. in
+    // module-load promises / createH264MP4Encoder) versus inside the
+    // satori/sharp/encoder pipeline.
+    if (stage === 'video-debug') {
+      const fonts = await loadFonts()
+      log('fonts-loaded')
+      let rendererCalls = 0
+      const mp4 = await video(
+        (ctx: { frame: number }) => {
+          rendererCalls++
+          log('renderer-called', { frame: ctx.frame })
+          return SOLID_FRAME as any
+        },
+        {
+          width: 64,
+          height: 64,
+          duration: 33,
+          fps: 30,
+          fonts: fonts as any,
+        }
+      )
+      log('video-debug-done', { bytes: mp4.byteLength, rendererCalls })
+      return res.status(200).json({
+        ok: true,
+        bytes: mp4.byteLength,
+        rendererCalls,
+        ms: Date.now() - handlerStart,
+      })
+    }
+
     // Stage 4b: full video pipeline but trivial — 1 frame, 64×64, solid color
     // (no text shaping). If `encoder-only` passes but this hangs, it's the
     // satori → sharp → encoder integration.

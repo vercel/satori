@@ -1,6 +1,4 @@
 import type { ReactNode } from 'react'
-import * as sharpNs from 'sharp'
-import * as hmeNs from 'h264-mp4-encoder'
 import type { SatoriOptions } from '../satori.js'
 import satori from '../satori.js'
 
@@ -36,19 +34,33 @@ export type VideoRenderer = (
 type SharpFactory = typeof import('sharp')
 type HMEModule = typeof import('h264-mp4-encoder')
 
-// Resolve both backends at module evaluation. On serverless platforms this
-// front-loads the native binding and WASM compilation into cold-start rather
-// than the first request.
-const sharp: SharpFactory = ((sharpNs as any).default ??
-  sharpNs) as SharpFactory
-const hme: HMEModule = ((hmeNs as any).default ?? hmeNs) as HMEModule
-const { createH264MP4Encoder } = hme
+// Kick off resolution of both backends at module evaluation so the native
+// binding (sharp) and WASM compilation (h264-mp4-encoder) front-load into
+// serverless cold-start rather than the first request.
+//
+// We use *dynamic* `import(...)` rather than static `import` because Next.js
+// (and similar bundlers) re-process static native-module imports inside
+// prebuilt npm packages in ways that can leave the runtime module in a hung
+// state. Dynamic imports are left as opaque runtime calls and resolve normally
+// against the host's node_modules.
+const sharpPromise: Promise<SharpFactory> = import('sharp').then(
+  (mod: any) => (mod.default ?? mod) as SharpFactory
+)
+// Prevent unhandledRejection at module load — consumers still see the
+// rejection when they await the promise.
+sharpPromise.catch(() => undefined)
+
+const hmePromise: Promise<HMEModule> = import('h264-mp4-encoder').then(
+  (mod: any) => (mod.default ?? mod) as HMEModule
+)
+hmePromise.catch(() => undefined)
 
 function computeTotalFrames(durationMs: number, fps: number): number {
   return Math.max(1, Math.round((durationMs / 1000) * fps))
 }
 
 async function rasterize(
+  sharp: SharpFactory,
   svg: string,
   width: number,
   height: number
@@ -61,6 +73,7 @@ async function rasterize(
 }
 
 async function renderFrame(
+  sharp: SharpFactory,
   renderer: VideoRenderer,
   satoriOptions: SatoriOptions,
   width: number,
@@ -73,7 +86,7 @@ async function renderFrame(
   const time = (frame / fps) * 1000
   const element = await renderer({ frame, progress, time })
   const svg = await satori(element, satoriOptions)
-  return rasterize(svg, width, height)
+  return rasterize(sharp, svg, width, height)
 }
 
 export async function video(
@@ -111,6 +124,9 @@ export async function video(
   const totalFrames = computeTotalFrames(duration, fps)
   const windowSize = Math.min(concurrency, totalFrames)
 
+  const [sharp, hme] = await Promise.all([sharpPromise, hmePromise])
+  const { createH264MP4Encoder } = hme
+
   const encoder = await createH264MP4Encoder()
   encoder.width = width
   encoder.height = height
@@ -128,6 +144,7 @@ export async function video(
   const inFlight = new Map<number, Promise<Buffer>>()
   const startFrame = (i: number) => {
     const p = renderFrame(
+      sharp,
       renderer,
       satoriOptions,
       width,
