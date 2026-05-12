@@ -8,6 +8,19 @@ import { video } from 'satori/video'
 // Record module-evaluation timing so a stage probe can report cold-start cost.
 const MODULE_LOADED_AT = Date.now()
 
+// Surface anything that would otherwise silently kill the worker on Lambda.
+// `--unhandled-rejections=strict` would otherwise terminate the process and
+// Vercel would report only a 120s timeout, no log, no error response.
+if (!(global as any).__videoProbeHandlersInstalled) {
+  ;(global as any).__videoProbeHandlersInstalled = true
+  process.on('unhandledRejection', (reason) => {
+    console.error('[video] UNHANDLED REJECTION:', reason)
+  })
+  process.on('uncaughtException', (err) => {
+    console.error('[video] UNCAUGHT EXCEPTION:', err)
+  })
+}
+
 const TAGLINE = 'ENLIGHTENED JSX, NOW IN MOTION'
 const W = 960
 const H = 540
@@ -233,9 +246,54 @@ export default async function handler(
       })
     }
 
-    // Stage 4: full video pipeline but trivial — 1 frame, 64×64, solid color
-    // (no text shaping). If everything else passed and this hangs, the
-    // h264-mp4-encoder WASM is the suspect.
+    // Stage 4a: exercise *only* the h264 WASM against a hand-built RGBA buffer.
+    // No satori, no sharp. If this hangs, every line between `log()`s in the
+    // Vercel function logs tells us exactly which WASM call doesn't return.
+    if (stage === 'encoder-only') {
+      const hme: any = await import('h264-mp4-encoder')
+      const { createH264MP4Encoder } = hme.default ?? hme
+      log('encoder-module-loaded')
+
+      const encoder = await createH264MP4Encoder()
+      log('encoder-constructed')
+
+      encoder.width = 64
+      encoder.height = 64
+      encoder.frameRate = 30
+      encoder.outputFilename = `probe-${Date.now()}.mp4`
+      log('encoder-configured')
+
+      encoder.initialize()
+      log('encoder-initialized')
+
+      const rgba = Buffer.alloc(64 * 64 * 4, 0xff) // solid white
+      encoder.addFrameRgba(rgba)
+      log('encoder-frame-added')
+
+      encoder.finalize()
+      log('encoder-finalized')
+
+      const bytes = encoder.FS.readFile(encoder.outputFilename) as Uint8Array
+      log('encoder-readFile-done', { bytes: bytes.byteLength })
+
+      try {
+        encoder.FS.unlink(encoder.outputFilename)
+      } catch {
+        // ignore
+      }
+      encoder.delete()
+      log('encoder-deleted')
+
+      return res.status(200).json({
+        ok: true,
+        bytes: bytes.byteLength,
+        ms: Date.now() - handlerStart,
+      })
+    }
+
+    // Stage 4b: full video pipeline but trivial — 1 frame, 64×64, solid color
+    // (no text shaping). If `encoder-only` passes but this hangs, it's the
+    // satori → sharp → encoder integration.
     if (stage === 'encode-one') {
       const fonts = await loadFonts()
       log('fonts-loaded')
