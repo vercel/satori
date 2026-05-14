@@ -1,6 +1,5 @@
-// TODO: use `#satori/jsx` as import source after upgradine vitest.
 /** @jsxRuntime automatic */
-/** @jsxImportSource ../src/jsx */
+/** @jsxImportSource #satori/jsx */
 
 import { it, describe, expect } from 'vitest'
 
@@ -13,7 +12,6 @@ describe('Minimal JSX runtime', () => {
 
   it('should support async function components', async () => {
     function MyComponent() {
-      // @ts-expect-error until we can replace import source with package.json import.
       return <h1 style={{ fontSize: 16 }}>Hello from My Component</h1>
     }
 
@@ -49,7 +47,6 @@ describe('Minimal JSX runtime', () => {
           display: 'flex',
         }}
       >
-        {/* @ts-expect-error React v17 doesn't support async components. */}
         <MyAsyncComponent />
       </div>,
       {
