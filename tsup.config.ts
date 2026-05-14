@@ -3,13 +3,15 @@ import { join } from 'path'
 import { replace } from 'esbuild-plugin-replace'
 
 const isStandaloneBuild = !!process.env.SATORI_STANDALONE
+const entry = {
+  [isStandaloneBuild ? 'standalone' : 'index']: 'src/index.ts',
+  'jsx/index': 'src/jsx/index.ts',
+  'jsx/jsx-runtime': 'src/jsx/jsx-runtime.ts',
+  ...(isStandaloneBuild ? {} : { 'video/index': 'src/video/index.ts' }),
+}
 
 export default defineConfig({
-  entry: {
-    [isStandaloneBuild ? 'standalone' : 'index']: 'src/index.ts',
-    'jsx/index': 'src/jsx/index.ts',
-    'jsx/jsx-runtime': 'src/jsx/jsx-runtime.ts',
-  },
+  entry,
   splitting: false,
   sourcemap: true,
   target: 'node16',
