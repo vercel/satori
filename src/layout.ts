@@ -12,7 +12,7 @@ import {
   isReactComponent,
   isForwardRefComponent,
 } from './utils.js'
-import { getYoga, YogaNode } from './yoga.js'
+import { TYoga, YogaNode } from './yoga.js'
 import { SVGNodeToImage } from './handler/preprocess.js'
 import computeStyle from './handler/compute.js'
 import FontLoader from './font.js'
@@ -22,6 +22,7 @@ import { Locale, normalizeLocale } from './language.js'
 import { SerializedStyle } from './handler/expand.js'
 
 export interface LayoutContext {
+  yoga: TYoga
   id: string
   parentStyle: SerializedStyle
   inheritedStyle: SerializedStyle
@@ -57,8 +58,8 @@ export default async function* layout(
   string,
   [number, number]
 > {
-  const Yoga = await getYoga()
   const {
+    yoga: Yoga,
     id,
     inheritedStyle,
     parent,
@@ -137,6 +138,7 @@ export default async function* layout(
   parent.insertChild(node, parent.getChildCount())
 
   const [computedStyle, newInheritableStyle] = await computeStyle(
+    Yoga,
     node,
     type,
     inheritedStyle,
@@ -188,6 +190,7 @@ export default async function* layout(
   const segmentsMissingFont: { word: string; locale?: string }[] = []
   for (const child of normalizedChildren) {
     const iter = layout(child, {
+      yoga: Yoga,
       id: id + '-' + i++,
       parentStyle: computedStyle,
       inheritedStyle: newInheritableStyle,

@@ -45,9 +45,7 @@ export default async function satori(
   element: ReactNode,
   options: SatoriOptions
 ): Promise<string> {
-  console.log('[satori] enter, awaiting yoga')
   const Yoga = await getYoga()
-  console.log('[satori] yoga resolved, Yoga?', !!Yoga, 'Node?', !!Yoga?.Node)
   if (!Yoga || !Yoga.Node) {
     throw new Error(
       'Satori is not initialized: expect `yoga` to be loaded, got ' + Yoga
@@ -92,11 +90,10 @@ export default async function satori(
 
   cache.clear()
   inflightRequests.clear()
-  console.log('[satori] before preProcessNode')
   await preProcessNode(element)
-  console.log('[satori] after preProcessNode')
 
   const handler = layout(element, {
+    yoga: Yoga,
     id: 'id',
     parentStyle: {},
     inheritedStyle: {
@@ -141,14 +138,10 @@ export default async function satori(
     },
   })
 
-  console.log('[satori] before handler.next #1')
   const segmentsMissingFont = (await handler.next()).value as {
     word: string
     locale?: Locale
   }[]
-  console.log('[satori] after handler.next #1', {
-    missing: segmentsMissingFont?.length,
-  })
 
   if (options.loadAdditionalAsset) {
     if (segmentsMissingFont.length) {
@@ -188,14 +181,10 @@ export default async function satori(
     }
   }
 
-  console.log('[satori] before handler.next #2')
   await handler.next()
-  console.log('[satori] before calculateLayout')
   root.calculateLayout(definedWidth, definedHeight, Yoga.DIRECTION_LTR)
 
-  console.log('[satori] before handler.next #3')
   const content = (await handler.next([0, 0])).value as string
-  console.log('[satori] after handler.next #3')
 
   const computedWidth = root.getComputedWidth()
   const computedHeight = root.getComputedHeight()

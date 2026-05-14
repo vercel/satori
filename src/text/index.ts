@@ -12,7 +12,7 @@ import {
   isString,
   lengthToNumber,
 } from '../utils.js'
-import { getYoga, TYoga, YogaNode } from '../yoga.js'
+import { TYoga, YogaNode } from '../yoga.js'
 import buildText, { container } from '../builder/text.js'
 import { buildDropShadow } from '../builder/shadow.js'
 import buildDecoration from '../builder/text-decoration.js'
@@ -47,9 +47,8 @@ export default async function* buildTextNodes(
   content: string,
   context: LayoutContext
 ): AsyncGenerator<{ word: string; locale?: Locale }[], string, [any, any]> {
-  const Yoga = await getYoga()
-
   const {
+    yoga: Yoga,
     parentStyle,
     inheritedStyle,
     parent,

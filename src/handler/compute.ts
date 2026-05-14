@@ -14,20 +14,19 @@ import {
   parseViewBox,
   v,
 } from '../utils.js'
-import { getYoga, YogaNode } from '../yoga.js'
+import { TYoga, YogaNode } from '../yoga.js'
 import { resolveImageData } from './image.js'
 
 type SatoriElement = keyof typeof presets
 
 export default async function compute(
+  Yoga: TYoga,
   node: YogaNode,
   type: SatoriElement | string,
   inheritedStyle: SerializedStyle,
   definedStyle: Record<string, string | number>,
   props: Record<string, any>
 ): Promise<[SerializedStyle, SerializedStyle]> {
-  const Yoga = await getYoga()
-
   // Extend the default style with defined and inherited styles.
   const style: SerializedStyle = Object.assign(
     {},
