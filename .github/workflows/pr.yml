@@ -3,6 +3,10 @@ on:
   pull_request:
     types: [opened, edited, synchronize]
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
