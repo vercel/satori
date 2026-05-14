@@ -38,7 +38,22 @@ export type SatoriOptions = (
   tailwindConfig?: TwConfig
   onNodeDetected?: (node: SatoriNode) => void
   pointScaleFactor?: number
+  textEngine?: TextEngine
 }
+
+export interface TextEngine {
+  getLineBreaks(
+    text: string,
+    options?: {
+      locale?: string
+      wordBreak?: 'normal' | 'break-all' | 'keep-all'
+      lineBreak?: 'normal' | 'loose' | 'strict' | 'anywhere'
+    }
+  ): Array<{ position: number; required: boolean }>
+  segmentWords?(text: string, locale?: string): string[]
+  segmentGraphemes?(text: string, locale?: string): string[]
+}
+
 export type { SatoriNode }
 
 export default async function satori(
@@ -116,6 +131,7 @@ export default async function satori(
     graphemeImages,
     canLoadAdditionalAssets: !!options.loadAdditionalAsset,
     onNodeDetected: options.onNodeDetected,
+    textEngine: options.textEngine,
     getTwStyles: (tw, style) => {
       const twToStyles = getTw({
         width: definedWidth,

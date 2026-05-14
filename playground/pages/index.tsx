@@ -19,14 +19,16 @@ import { loadEmoji, getIconCode, apis } from '../utils/twemoji'
 import Introduction from '../components/introduction'
 import PanelResizeHandle from '../components/panel-resize-handle'
 import { languageFontMap } from '../utils/font'
+import { init as initICU4X, createTextEngine } from 'icu4satori'
 
-import playgroundTabs, { Tabs } from '../cards/playground-data'
+import playgroundTabs, { type Tabs } from '../cards/playground-data'
 import previewTabs from '../cards/preview-tabs'
+import type { TextEngine, SatoriOptions } from 'satori'
 
 const cardNames = Object.keys(playgroundTabs)
 const editedCards: Tabs = { ...playgroundTabs }
 
-async function init() {
+async function init(): Promise<SatoriOptions['fonts']> {
   if (typeof window === 'undefined') return []
 
   const [font, fontBold, fontIcon, Segmenter] =
@@ -98,10 +100,11 @@ const loadDynamicAsset = withCache(
   async (emojiType: keyof typeof apis, _code: string, text: string) => {
     if (_code === 'emoji') {
       // It's an emoji, load the image.
-      return (
-        `data:image/svg+xml;base64,` +
-        btoa(await loadEmoji(emojiType, getIconCode(text)))
-      )
+      const emojiData = await loadEmoji(emojiType, getIconCode(text))
+      if (emojiData.startsWith('data:')) {
+        return emojiData
+      }
+      return `data:image/svg+xml;base64,` + btoa(emojiData)
     }
 
     const codes = _code.split('|')
@@ -228,6 +231,23 @@ function initResvgWorker() {
 
 const loadFonts = init()
 const renderPNG = initResvgWorker()
+
+let cachedTextEngine: TextEngine | null = null
+async function loadTextEngine() {
+  if (typeof window === 'undefined') return null
+  if (cachedTextEngine) return cachedTextEngine
+  try {
+    const origin = window.location.origin
+    await initICU4X(`${origin}/icu_capi.wasm`)
+    const res = await fetch(`${origin}/data.postcard`)
+    const buf = await res.arrayBuffer()
+    cachedTextEngine = createTextEngine(new Uint8Array(buf))
+    return cachedTextEngine
+  } catch (e) {
+    console.error('Failed to load ICU4X text engine:', e)
+    return null
+  }
+}
 
 interface ITabs {
   options: string[]
@@ -415,10 +435,15 @@ const LiveSatori = withLive(function ({
 }: {
   live?: { element: React.ComponentType; error: string }
 }) {
-  const [options, setOptions] = useState<object | null>(null)
+  const [options, setOptions] = useState<Pick<SatoriOptions, 'fonts'> | null>(
+    null
+  )
   const [debug, setDebug] = useState(false)
   const [fontEmbed, setFontEmbed] = useState(true)
-  const [emojiType, setEmojiType] = useState('twemoji')
+  const [useICU4X, setUseICU4X] = useState(false)
+  const [textEngine, setTextEngine] = useState<TextEngine | null>(null)
+  const [icu4xLoading, setIcu4xLoading] = useState(false)
+  const [emojiType, setEmojiType] = useState('notoColor')
   const [objectURL, setObjectURL] = useState<string>('')
   const [renderType, setRenderType] = useState('svg')
   const [renderError, setRenderError] = useState(null)
@@ -487,7 +512,7 @@ const LiveSatori = withLive(function ({
       setWidth(Math.min(overrideOptions.width || 800, 2000))
       setHeight(Math.min(overrideOptions.height || 800, 2000))
       setDebug(!!overrideOptions.debug)
-      setEmojiType(overrideOptions.emojiType || 'twemoji')
+      setEmojiType(overrideOptions.emojiType || 'notoColor')
       setFontEmbed(!!overrideOptions.fontEmbed)
     }
   }, [overrideOptions])
@@ -558,6 +583,7 @@ const LiveSatori = withLive(function ({
               width,
               height,
               debug,
+              ...(useICU4X && textEngine ? { textEngine } : {}),
               loadAdditionalAsset: (code: string, text: string) =>
                 loadDynamicAsset(emojiType, code, text),
             })
@@ -641,6 +667,8 @@ const LiveSatori = withLive(function ({
     emojiType,
     fontEmbed,
     renderType,
+    useICU4X,
+    textEngine,
   ])
 
   return (
@@ -687,7 +715,7 @@ const LiveSatori = withLive(function ({
                       <>
                         <style
                           dangerouslySetInnerHTML={{
-                            __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');body{display:flex;height:100%;margin:0;tab-size:8;font-family:Inter,sans-serif;overflow:hidden}body>div,body>div *{box-sizing:border-box;display:flex}`,
+                            __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons&family=Noto+Sans+Thai&family=Noto+Sans+JP&family=Noto+Sans+KR&family=Noto+Sans+SC&family=Noto+Sans+TC');body{display:flex;height:100%;margin:0;tab-size:8;font-family:Inter,"Noto Sans JP","Noto Sans KR","Noto Sans SC","Noto Sans TC","Noto Sans Thai",sans-serif;overflow:hidden}body>div,body>div *{box-sizing:border-box;display:flex}`,
                           }}
                         />
                         {live?.element ? <live.element /> : null}
@@ -848,6 +876,36 @@ const LiveSatori = withLive(function ({
               />
             </div>
             <div className='control'>
+              <label htmlFor='icu4x'>ICU4X TextEngine</label>
+              <input
+                id='icu4x'
+                type='checkbox'
+                checked={useICU4X}
+                disabled={icu4xLoading}
+                onChange={async () => {
+                  if (!useICU4X && !textEngine) {
+                    setIcu4xLoading(true)
+                    const engine = await loadTextEngine()
+                    setTextEngine(engine)
+                    setIcu4xLoading(false)
+                    if (engine) {
+                      setUseICU4X(true)
+                      toast.success(
+                        'ICU4X TextEngine loaded (WASM 96KB + data 355KB)'
+                      )
+                    } else {
+                      toast.error('Failed to load ICU4X TextEngine')
+                    }
+                  } else {
+                    setUseICU4X(!useICU4X)
+                  }
+                }}
+              />
+              {icu4xLoading && (
+                <span style={{ fontSize: 12, marginLeft: 4 }}>Loading...</span>
+              )}
+            </div>
+            <div className='control'>
               <label htmlFor='emoji'>Emoji Provider</label>
               <select
                 id='emoji'
@@ -857,7 +915,8 @@ const LiveSatori = withLive(function ({
                 <option value='twemoji'>Twemoji</option>
                 <option value='fluent'>Fluent Emoji</option>
                 <option value='fluentFlat'>Fluent Emoji Flat</option>
-                <option value='noto'>Noto Emoji</option>
+                <option value='notoColor'>Noto Color Emoji (latest)</option>
+                <option value='noto'>Noto Emoji (old)</option>
                 <option value='blobmoji'>Blobmoji</option>
                 <option value='openmoji'>OpenMoji</option>
               </select>

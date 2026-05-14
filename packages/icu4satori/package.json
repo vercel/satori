@@ -1,0 +1,29 @@
+{
+  "name": "icu4satori",
+  "version": "0.0.1",
+  "description": "ICU4X-powered text engine for satori",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    },
+    "./wasm": "./wasm/icu_capi.wasm",
+    "./data": "./wasm/data.postcard"
+  },
+  "files": [
+    "dist/",
+    "wasm/"
+  ],
+  "scripts": {
+    "prebuild": "test -d vendor || make -C build vendor",
+    "build": "tsdown",
+    "dev": "tsdown --watch"
+  },
+  "devDependencies": {
+    "tsdown": "^0.21.6",
+    "typescript": "^5.9.3"
+  }
+}

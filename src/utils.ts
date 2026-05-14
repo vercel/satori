@@ -372,11 +372,45 @@ export function asPointAutoPercentageLength(
 
 export function splitByBreakOpportunities(
   content: string,
-  wordBreak: string
+  wordBreak: string,
+  lineBreak?: string,
+  locale?: string,
+  textEngine?: import('./satori.js').TextEngine
 ): {
   words: string[]
   requiredBreaks: boolean[]
 } {
+  // TextEngine path: use ICU4X for all word-break modes
+  if (textEngine) {
+    const breaks = textEngine.getLineBreaks(content, {
+      wordBreak: (wordBreak === 'break-word' ? 'normal' : wordBreak) as
+        | 'normal'
+        | 'break-all'
+        | 'keep-all',
+      lineBreak: lineBreak as
+        | 'normal'
+        | 'loose'
+        | 'strict'
+        | 'anywhere'
+        | undefined,
+      locale,
+    })
+
+    const words: string[] = []
+    const requiredBreaks: boolean[] = [false]
+    let last = 0
+
+    for (const brk of breaks) {
+      if (brk.position === 0) continue // skip ICU4X start-of-text sentinel
+      words.push(content.slice(last, brk.position))
+      requiredBreaks.push(brk.required)
+      last = brk.position
+    }
+
+    return { words, requiredBreaks }
+  }
+
+  // Fallback path: current implementation
   if (wordBreak === 'break-all') {
     return { words: segment(content, 'grapheme'), requiredBreaks: [] }
   }

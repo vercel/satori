@@ -24,6 +24,7 @@ const list = new Set([
   'whiteSpace',
   'transform',
   'wordBreak',
+  'lineBreak',
   'tabSize',
 
   // Special case: SVG doesn't apply these to children elements so we need to

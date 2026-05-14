@@ -1,0 +1,11 @@
+[package]
+name = "icu4satori"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+icu_capi = { version = "2.0.0", features = ["buffer_provider"] }
