@@ -22,6 +22,22 @@ import {
   CSSVariables,
 } from './variables.js'
 
+// Transform functions actually implemented by `builder/transform.ts` plus the
+// shorthands that `css-to-react-native` unfolds. Used in `handleSpecialCase`
+// to reject unsupported transforms (e.g. `translateZ`, `translate3d`, `rotateX`,
+// `perspective`, `matrix`) with a clear error before reaching the parser.
+const SUPPORTED_TRANSFORM_FUNCTIONS = [
+  'translate',
+  'translateX',
+  'translateY',
+  'scale',
+  'scaleX',
+  'scaleY',
+  'rotate',
+  'skewX',
+  'skewY',
+]
+
 // https://react-cn.github.io/react/tips/style-props-value-px.html
 const optOutPx = new Set([
   'flex',
@@ -154,6 +170,24 @@ function handleSpecialCase(
 
   if (name === 'transform') {
     if (typeof value !== 'string') throw new Error('Invalid `transform` value.')
+
+    // Validate that only supported transform functions are used. The list
+    // mirrors the cases handled in `builder/transform.ts` plus the shorthand
+    // syntaxes that `css-to-react-native` unfolds. Anything outside the list
+    // (e.g. `translateZ`, `translate3d`, `rotateX`, `perspective`, `matrix`)
+    // would otherwise produce a cryptic downstream error like
+    // "Y[r] is not a function" — give the user a clear message instead.
+    for (const match of value.matchAll(/([a-zA-Z][a-zA-Z0-9]*)\s*\(/g)) {
+      if (!SUPPORTED_TRANSFORM_FUNCTIONS.includes(match[1])) {
+        throw new Error(
+          `\`transform: ${match[1]}()\` is not supported. ` +
+            `Supported transform functions: ${SUPPORTED_TRANSFORM_FUNCTIONS.join(
+              ', '
+            )}.`
+        )
+      }
+    }
+
     // To support percentages in transform (which is not supported in RN), we
     // replace them with random symbols and then replace them back after parsing.
     const symbols = {}
