@@ -73,7 +73,14 @@ export default async function satori(
   root.setJustifyContent(Yoga.JUSTIFY_FLEX_START)
   root.setOverflow(Yoga.OVERFLOW_HIDDEN)
 
-  const graphemeImages = { ...options.graphemeImages }
+  // Null-prototype object so that `graphemeImages[text]` lookups for strings
+  // that match `Object.prototype` property names (e.g. "constructor",
+  // "toString", "valueOf") return `undefined` instead of inherited methods.
+  // See https://github.com/vercel/satori/issues/746.
+  const graphemeImages: Record<string, string> = Object.assign(
+    Object.create(null),
+    options.graphemeImages
+  )
   // Some Chinese characters have different glyphs in Chinese and
   // Japanese, but their Unicode is the same. If the user needs to display
   // the Chinese and Japanese characters simultaneously correctly, the user
