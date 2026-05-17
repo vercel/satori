@@ -2,7 +2,125 @@
  * This class handles everything related to fonts.
  */
 import opentype from '@shuding/opentype.js'
+import { inflateSync } from 'fflate'
 import { Locale, locales, isValidLocale } from './language.js'
+import { shapeText, parseFontFeatureSettings } from './harfbuzz.js'
+import { segment } from './utils.js'
+
+/**
+ * Check if a character is whitespace (space, tab, etc.)
+ */
+function isWhitespace(char: string): boolean {
+  return /^\s$/.test(char)
+}
+
+/**
+ * Split content into segments where each segment uses the same font.
+ * Returns array of [text, font] pairs.
+ *
+ * Whitespace characters are kept with the preceding segment's font when
+ * possible. This ensures proper spacing within text runs and prevents
+ * HarfBuzz from shaping whitespace separately (which can cause spacing issues).
+ */
+function splitByFont(
+  content: string,
+  resolveFont: (word: string) => opentype.Font
+): Array<[string, opentype.Font]> {
+  if (!content) return []
+
+  const graphemes = segment(content, 'grapheme')
+  const result: Array<[string, opentype.Font]> = []
+
+  let currentText = ''
+  let currentFont: opentype.Font | null = null
+
+  for (const grapheme of graphemes) {
+    // For whitespace, try to keep it with the current font if the font
+    // has a glyph for it. This maintains proper spacing within text runs.
+    let font: opentype.Font
+    if (isWhitespace(grapheme) && currentFont !== null) {
+      // Check if current font has a glyph for this whitespace
+      if (currentFont.charToGlyphIndex(grapheme)) {
+        font = currentFont
+      } else {
+        font = resolveFont(grapheme)
+      }
+    } else {
+      font = resolveFont(grapheme)
+    }
+
+    if (currentFont === null) {
+      currentFont = font
+      currentText = grapheme
+    } else if (font === currentFont) {
+      currentText += grapheme
+    } else {
+      result.push([currentText, currentFont])
+      currentText = grapheme
+      currentFont = font
+    }
+  }
+
+  if (currentText && currentFont) {
+    result.push([currentText, currentFont])
+  }
+
+  return result
+}
+
+/**
+ * Convert WOFF to raw sfnt (TrueType/OpenType) format for HarfBuzz.
+ */
+function woffToSfnt(woff: ArrayBuffer): ArrayBuffer {
+  const view = new DataView(woff)
+  const numTables = view.getUint16(12)
+  const sfntSize = view.getUint32(16)
+
+  const sfnt = new ArrayBuffer(sfntSize)
+  const out = new DataView(sfnt)
+  const outBytes = new Uint8Array(sfnt)
+
+  // Write sfnt header (flavor from WOFF becomes signature)
+  out.setUint32(0, view.getUint32(4))
+  out.setUint16(4, numTables)
+  const entrySelector = Math.floor(Math.log2(numTables))
+  const searchRange = (1 << entrySelector) * 16
+  out.setUint16(6, searchRange)
+  out.setUint16(8, entrySelector)
+  out.setUint16(10, numTables * 16 - searchRange)
+
+  let tableOffset = 12 + numTables * 16
+
+  for (let i = 0; i < numTables; i++) {
+    const entry = 44 + i * 20
+    const tag = view.getUint32(entry)
+    const offset = view.getUint32(entry + 4)
+    const compLen = view.getUint32(entry + 8)
+    const origLen = view.getUint32(entry + 12)
+    const checksum = view.getUint32(entry + 16)
+
+    // Write table record
+    const record = 12 + i * 16
+    out.setUint32(record, tag)
+    out.setUint32(record + 4, checksum)
+    out.setUint32(record + 8, tableOffset)
+    out.setUint32(record + 12, origLen)
+
+    // Decompress or copy table data
+    if (compLen < origLen) {
+      const compressed = new Uint8Array(woff, offset + 2, compLen - 2)
+      const decompressed = new Uint8Array(origLen)
+      inflateSync(compressed, decompressed)
+      outBytes.set(decompressed, tableOffset)
+    } else {
+      outBytes.set(new Uint8Array(woff, offset, origLen), tableOffset)
+    }
+
+    tableOffset += (origLen + 3) & ~3
+  }
+
+  return sfnt
+}
 
 export type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900
 export type WeightName = 'normal' | 'bold'
@@ -38,6 +156,8 @@ export type FontEngine = {
     style: {
       fontSize: number
       letterSpacing: number
+      fontFeatureSettings?: string
+      direction?: string
     }
   ) => number
   getSVG: (
@@ -47,6 +167,8 @@ export type FontEngine = {
       top: number
       left: number
       letterSpacing: number
+      fontFeatureSettings?: string
+      direction?: string
     },
     band?: SkipInkBand
   ) => { path: string; boxes: GlyphBox[] }
@@ -355,17 +477,32 @@ export default class FontLoader {
       if (cachedParsedFont.has(data)) {
         font = cachedParsedFont.get(data)
       } else {
-        font = opentype.parse(
-          // Buffer to ArrayBuffer.
+        // Convert Buffer to ArrayBuffer if needed
+        const arrayBuffer =
           'buffer' in data
             ? data.buffer.slice(
                 data.byteOffset,
                 data.byteOffset + data.byteLength
               )
-            : data,
+            : data
+
+        font = opentype.parse(
+          arrayBuffer,
           // @ts-ignore
           { lowMemory: true }
         )
+
+        // Store the raw font data for HarfBuzz (convert WOFF to sfnt if needed)
+        const bytes = new Uint8Array(arrayBuffer)
+        const isWoff =
+          bytes[0] === 0x77 &&
+          bytes[1] === 0x4f &&
+          bytes[2] === 0x46 &&
+          bytes[3] === 0x46
+        ;(font as any)._rawFontData = isWoff
+          ? woffToSfnt(arrayBuffer)
+          : arrayBuffer
+
         // Modify the `charToGlyphIndex` method, so we can know which char is
         // being mapped to which glyph.
         const originalCharToGlyphIndex = font.charToGlyphIndex
@@ -559,11 +696,14 @@ export default class FontLoader {
         if (s === '\n') return true
         const font = resolve(s)
         if (!font) return false
-        ;(font as any)._trackBrokenChars = []
-        font.stringToGlyphs(s)
-        if (!(font as any)._trackBrokenChars.length) return true
-        ;(font as any)._trackBrokenChars = undefined
-        return false
+        // Use charToGlyphIndex directly instead of stringToGlyphs to avoid
+        // triggering opentype.js GSUB processing which can emit warnings for
+        // unsupported lookup types (e.g., "lookupType: 5 - substFormat: 3").
+        // We only need to check if basic glyphs exist for the characters.
+        for (const char of segment(s, 'grapheme')) {
+          if (!font.charToGlyphIndex(char)) return false
+        }
+        return true
       },
       baseline: (
         s?: string,
@@ -670,21 +810,55 @@ export default class FontLoader {
     {
       fontSize,
       letterSpacing = 0,
+      fontFeatureSettings,
+      direction,
     }: {
       fontSize: number
       letterSpacing: number
+      fontFeatureSettings?: string
+      direction?: string
     }
   ) {
-    const font = resolveFont(content)
-    const unpatch = this.patchFontFallbackResolver(font, resolveFont)
+    const features = fontFeatureSettings
+      ? parseFontFeatureSettings(fontFeatureSettings)
+      : {}
 
-    try {
-      return font.getAdvanceWidth(content, fontSize, {
-        letterSpacing: letterSpacing / fontSize,
+    // Note: We don't pass CSS direction to HarfBuzz for shaping.
+    // HarfBuzz auto-detects the script direction (Arabic shapes RTL,
+    // Devanagari shapes LTR, etc.). CSS direction only affects visual
+    // layout, not character shaping/joining.
+
+    // Split content by font for proper font fallback
+    const segments = splitByFont(content, resolveFont)
+
+    let totalWidth = 0
+    for (const [text, font] of segments) {
+      const shaped = shapeText(font, text, {
+        features,
       })
-    } finally {
-      unpatch()
+
+      let segmentWidth = 0
+      for (const glyph of shaped) {
+        segmentWidth += glyph.ax
+      }
+
+      totalWidth += (segmentWidth / font.unitsPerEm) * fontSize
     }
+
+    const spacingWidth = letterSpacing * (content.length - 1)
+
+    return totalWidth + spacingWidth
+
+    // // Use opentype.js only if HarfBuzz not available
+    // const unpatch = this.patchFontFallbackResolver(font, resolveFont)
+
+    // try {
+    //   return font.getAdvanceWidth(content, fontSize, {
+    //     letterSpacing: letterSpacing / fontSize,
+    //   })
+    // } finally {
+    //   unpatch()
+    // }
   }
 
   private getSVG(
@@ -695,64 +869,68 @@ export default class FontLoader {
       top,
       left,
       letterSpacing = 0,
+      fontFeatureSettings,
+      direction,
     }: {
       fontSize: number
       top: number
       left: number
       letterSpacing: number
+      fontFeatureSettings?: string
+      direction?: string
     },
     band?: SkipInkBand
   ): { path: string; boxes: GlyphBox[] } {
-    const font = resolveFont(content)
-    const unpatch = this.patchFontFallbackResolver(font, resolveFont)
+    if (fontSize === 0) {
+      return { path: '', boxes: [] }
+    }
 
-    try {
-      if (fontSize === 0) {
-        return { path: '', boxes: [] }
-      }
+    const features = fontFeatureSettings
+      ? parseFontFeatureSettings(fontFeatureSettings)
+      : {}
 
-      const fullPath = new opentype.Path()
-      const boxes: GlyphBox[] = []
+    // Split content by font for proper font fallback
+    const segments = splitByFont(content.replace(/\n/g, ''), resolveFont)
 
-      const options = {
-        letterSpacing: letterSpacing / fontSize,
-      }
+    const fullPath = new opentype.Path()
+    const boxes: GlyphBox[] = []
 
-      const cachedPath = new WeakMap<
-        opentype.Glyph,
-        [number, number, opentype.Path]
-      >()
+    let cursorX = left
+    const cursorY = top
 
-      font.forEachGlyph(
-        content.replace(/\n/g, ''),
-        left,
-        top,
-        fontSize,
-        options,
-        function (glyph, gX, gY, gFontSize) {
-          let glyphPath: opentype.Path
-          if (!cachedPath.has(glyph)) {
-            glyphPath = glyph.getPath(gX, gY, gFontSize, options)
-            cachedPath.set(glyph, [gX, gY, glyphPath])
-          } else {
-            const [_x, _y, _glyphPath] = cachedPath.get(glyph)
-            glyphPath = new opentype.Path()
-            glyphPath.commands = _glyphPath.commands.map((command) => {
-              const movedCommand = { ...command }
-              for (let k in movedCommand) {
-                if (typeof movedCommand[k] === 'number') {
-                  if (k === 'x' || k === 'x1' || k === 'x2') {
-                    movedCommand[k] += gX - _x
-                  }
-                  if (k === 'y' || k === 'y1' || k === 'y2') {
-                    movedCommand[k] += gY - _y
-                  }
-                }
-              }
-              return movedCommand
-            })
-          }
+    // Process each font segment
+    for (const [text, font] of segments) {
+      const scale = fontSize / font.unitsPerEm
 
+      // Let HarfBuzz auto-detect script and direction via guessSegmentProperties().
+      // We don't override direction because HarfBuzz needs to detect the correct
+      // script-specific direction for proper shaping (Arabic=RTL, Latin=LTR, etc.)
+      const shaped = shapeText(font, text, {
+        features,
+      })
+
+      // DEBUG: Uncomment to trace glyph positions
+      // console.log(`getSVG segment: "${text}", fontSize=${fontSize}, letterSpacing=${letterSpacing}`)
+
+      // Process shaped glyphs for this segment
+      for (let i = 0; i < shaped.length; i++) {
+        const shapedGlyph = shaped[i]
+        // Get the glyph from opentype.js by ID
+        const glyph = font.glyphs.get(shapedGlyph.g)
+
+        // DEBUG: Uncomment to trace glyph positions
+        // const char = text[i] || '?'
+        // console.log(`  [${i}] char="${char}" glyph=${shapedGlyph.g} cursorX=${cursorX.toFixed(2)} ax=${shapedGlyph.ax} advance=${(shapedGlyph.ax * scale).toFixed(2)}px`)
+
+        if (glyph && glyph.path) {
+          // Calculate glyph position
+          const gX = cursorX + shapedGlyph.dx * scale
+          const gY = cursorY + shapedGlyph.dy * scale
+
+          // Get the glyph path and transform it
+          const glyphPath = glyph.getPath(gX, gY, fontSize, {})
+
+          // Compute band boxes for text decoration skip-ink
           const bandBoxes = band ? computeBandBox(glyphPath.commands, band) : []
           if (bandBoxes.length) {
             boxes.push(...bandBoxes)
@@ -760,15 +938,84 @@ export default class FontLoader {
 
           fullPath.extend(glyphPath)
         }
-      )
 
-      return {
-        path: fullPath.toPathData(1),
-        boxes,
+        // Advance cursor by the shaped advance.
+        // Add letterSpacing between glyphs (not after the last one).
+        cursorX += shapedGlyph.ax * scale
+        if (i < shaped.length - 1) {
+          cursorX += letterSpacing
+        }
       }
-    } finally {
-      unpatch()
     }
+
+    return {
+      path: fullPath.toPathData(1),
+      boxes,
+    }
+    // }
+
+    // Use opentype.js only if HarfBuzz not available
+    // const unpatch = this.patchFontFallbackResolver(font, resolveFont)
+
+    // try {
+    //   const fullPath = new opentype.Path()
+    //   const boxes: GlyphBox[] = []
+
+    //   const options = {
+    //     letterSpacing: letterSpacing / fontSize,
+    //   }
+
+    //   const cachedPath = new WeakMap<
+    //     opentype.Glyph,
+    //     [number, number, opentype.Path]
+    //   >()
+
+    //   font.forEachGlyph(
+    //     content.replace(/\n/g, ''),
+    //     left,
+    //     top,
+    //     fontSize,
+    //     options,
+    //     function (glyph, gX, gY, gFontSize) {
+    //       let glyphPath: opentype.Path
+    //       if (!cachedPath.has(glyph)) {
+    //         glyphPath = glyph.getPath(gX, gY, gFontSize, options)
+    //         cachedPath.set(glyph, [gX, gY, glyphPath])
+    //       } else {
+    //         const [_x, _y, _glyphPath] = cachedPath.get(glyph)
+    //         glyphPath = new opentype.Path()
+    //         glyphPath.commands = _glyphPath.commands.map((command) => {
+    //           const movedCommand = { ...command }
+    //           for (let k in movedCommand) {
+    //             if (typeof movedCommand[k] === 'number') {
+    //               if (k === 'x' || k === 'x1' || k === 'x2') {
+    //                 movedCommand[k] += gX - _x
+    //               }
+    //               if (k === 'y' || k === 'y1' || k === 'y2') {
+    //                 movedCommand[k] += gY - _y
+    //               }
+    //             }
+    //           }
+    //           return movedCommand
+    //         })
+    //       }
+
+    //       const bandBoxes = band ? computeBandBox(glyphPath.commands, band) : []
+    //       if (bandBoxes.length) {
+    //         boxes.push(...bandBoxes)
+    //       }
+
+    //       fullPath.extend(glyphPath)
+    //     }
+    //   )
+
+    //   return {
+    //     path: fullPath.toPathData(1),
+    //     boxes,
+    //   }
+    // } finally {
+    //   unpatch()
+    // }
   }
 }
 

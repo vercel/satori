@@ -72,6 +72,8 @@ export default async function* buildTextNodes(
     filter: cssFilter,
     tabSize = 8,
     letterSpacing,
+    fontFeatureSettings,
+    direction,
     _inheritedBackgroundClipTextPath,
     _inheritedBackgroundClipTextHasBackground,
     flexShrink,
@@ -128,6 +130,8 @@ export default async function* buildTextNodes(
     {
       fontSize,
       letterSpacing,
+      fontFeatureSettings,
+      direction,
     }
   )
 
@@ -362,6 +366,12 @@ export default async function* buildTextNodes(
           })
 
           x += _width
+          // Add letterSpacing between adjacent sub-segments (but not after the last).
+          // This ensures x positions match the full word width which includes
+          // inter-grapheme letterSpacing.
+          if (j < _texts.length - 1 && letterSpacing > 0) {
+            x += letterSpacing
+          }
         }
       }
 
@@ -751,6 +761,8 @@ export default async function* buildTextNodes(
           // Since we need to pass the baseline position, add the ascender to the top.
           top: top + topOffset + baselineOfWord + baselineDelta,
           letterSpacing,
+          fontFeatureSettings,
+          direction,
         },
         band
       )
@@ -807,6 +819,8 @@ export default async function* buildTextNodes(
             left: left + leftOffset,
             top: top + topOffset,
             letterSpacing,
+            fontFeatureSettings,
+            direction,
           },
           band
         )

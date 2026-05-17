@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HarfBuzz Test</title>
+</head>
+<body>
+  <h1>Testing HarfBuzz in Browser</h1>
+  <div id="output"></div>
+  
+  <script type="module">
+    import satori from './dist/index.js'
+    
+    const output = document.getElementById('output')
+    
+    async function test() {
+      try {
+        output.innerHTML += '<p>Loading font...</p>'
+        
+        const fontResponse = await fetch('/test/assets/Roboto-Regular.ttf')
+        const fontData = await fontResponse.arrayBuffer()
+        
+        output.innerHTML += '<p>Calling satori...</p>'
+        
+        const svg = await satori(
+          {
+            type: 'div',
+            props: {
+              style: { fontSize: 32, fontFeatureSettings: '"smcp" 1' },
+              children: 'Test Small Caps'
+            }
+          },
+          {
+            width: 400,
+            height: 200,
+            fonts: [{ name: 'Roboto', data: fontData, weight: 400 }]
+          }
+        )
+        
+        output.innerHTML += '<p>✅ Success! SVG length: ' + svg.length + '</p>'
+        output.innerHTML += '<div>' + svg + '</div>'
+      } catch (error) {
+        output.innerHTML += '<p style="color: red">❌ Error: ' + error.message + '</p>'
+        console.error('Full error:', error)
+      }
+    }
+    
+    test()
+  </script>
+</body>
+</html>

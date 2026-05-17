@@ -11,6 +11,7 @@ import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
 import { cache, inflightRequests } from './handler/image.js'
 import { segment } from './utils.js'
+import { initHarfBuzz, isHarfBuzzInitialized } from './harfbuzz.js'
 
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
@@ -45,12 +46,14 @@ export default async function satori(
   element: ReactNode,
   options: SatoriOptions
 ): Promise<string> {
-  const Yoga = await getYoga()
+  // Initialize Yoga and HarfBuzz now
+  const [Yoga] = await Promise.all([getYoga(), initHarfBuzz()])
   if (!Yoga || !Yoga.Node) {
     throw new Error(
       'Satori is not initialized: expect `yoga` to be loaded, got ' + Yoga
     )
   }
+
   options.fonts = options.fonts || []
 
   let font: FontLoader

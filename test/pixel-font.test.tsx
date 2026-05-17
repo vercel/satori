@@ -65,11 +65,13 @@ describe('Pixel Font Alignment', () => {
     // Check path coordinates for integer values
     const integerPathCoordinates = (svg.match(/\bd="[^"]*"/g) ?? []).every(
       (pathData) => {
-        const coordinates = pathData
-          .match(/\bd="([^"]+)"/)?.[1]
-          .match(/[-]?\d+(?:\.\d+)?/g)
-          .map(Number)
+        const pathContent = pathData.match(/\bd="([^"]+)"/)?.[1]
+        if (!pathContent) return true // Skip empty paths
 
+        const coordinateMatches = pathContent.match(/[-]?\d+(?:\.\d+)?/g)
+        if (!coordinateMatches) return true // Skip paths without coordinates
+
+        const coordinates = coordinateMatches.map(Number)
         const nonIntegers = coordinates.filter((v) => !Number.isInteger(v))
         if (nonIntegers.length > 0) {
           console.log('Non-integer coordinates found:', nonIntegers)
