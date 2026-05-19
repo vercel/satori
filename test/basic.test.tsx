@@ -216,4 +216,23 @@ describe('Basic', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  // https://github.com/vercel/satori/issues/746
+  it('should render text matching Object.prototype property names as glyphs, not images', async () => {
+    for (const word of [
+      'constructor',
+      'toString',
+      'valueOf',
+      'hasOwnProperty',
+      '__proto__',
+    ]) {
+      const svg = await satori(<div>{word}</div>, {
+        width: 200,
+        height: 50,
+        fonts,
+      })
+      expect(svg).not.toMatch(/<image\b/)
+      expect(svg).toMatch(/<path\b/)
+    }
+  })
 })
