@@ -9,6 +9,9 @@
     "build": "next build",
     "start": "next start"
   },
+  "engines": {
+    "node": ">=18.12"
+  },
   "dependencies": {
     "@babel/runtime": "^7.19.0",
     "@monaco-editor/react": "^4.4.5",
