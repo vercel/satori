@@ -10,7 +10,7 @@
     "start": "next start"
   },
   "engines": {
-    "node": ">=18.12"
+    "node": ">=18.12 <23"
   },
   "dependencies": {
     "@babel/runtime": "^7.19.0",
