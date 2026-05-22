@@ -16,7 +16,8 @@ export type VideoOptions = Omit<SatoriOptions, 'width' | 'height'> & {
    * upcoming frames render while the current one is being encoded, and lets
    * sharp use its libuv threadpool for multiple frames in parallel.
    *
-   * Default: 4 (matches the default libuv UV_THREADPOOL_SIZE).
+   * Default: 2 (keeps enough work in flight to overlap rasterization and
+   * encoding without oversubscribing small serverless CPU allocations).
    */
   concurrency?: number
 }
@@ -65,11 +66,22 @@ async function rasterize(
   width: number,
   height: number
 ): Promise<Buffer> {
-  return sharp(Buffer.from(svg), { density: 96 })
-    .resize(width, height)
+  const input = Buffer.from(svg)
+  const { data, info } = await sharp(input)
     .ensureAlpha()
     .raw()
-    .toBuffer()
+    .toBuffer({ resolveWithObject: true })
+
+  if (
+    info.width === width &&
+    info.height === height &&
+    info.channels === 4 &&
+    data.byteLength === width * height * 4
+  ) {
+    return data
+  }
+
+  return sharp(input).resize(width, height).ensureAlpha().raw().toBuffer()
 }
 
 async function renderFrame(
@@ -102,7 +114,7 @@ export async function video(
     bitrate,
     quality,
     groupOfPictures,
-    concurrency = 4,
+    concurrency = 2,
     ...rest
   } = options
 
