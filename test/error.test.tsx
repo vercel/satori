@@ -96,6 +96,34 @@ describe('Error', () => {
     expect(typeof svg).toBe('string')
   })
 
+  it('should throw a clear error for unsupported transform functions (translateZ)', async () => {
+    const result = satori(
+      <div style={{ transform: 'translateZ(1px)' }}>Test</div>,
+      {
+        width: 10,
+        height: 10,
+        fonts,
+      }
+    )
+    expect(result).rejects.toThrowError(
+      '`transform: translateZ()` is not supported. Supported transform functions: translate, translateX, translateY, scale, scaleX, scaleY, rotate, skewX, skewY.'
+    )
+  })
+
+  it('should throw a clear error for unsupported transform functions in a list (rotateX)', async () => {
+    const result = satori(
+      <div style={{ transform: 'rotate(45deg) rotateX(30deg)' }}>Test</div>,
+      {
+        width: 10,
+        height: 10,
+        fonts,
+      }
+    )
+    expect(result).rejects.toThrowError(
+      '`transform: rotateX()` is not supported. Supported transform functions: translate, translateX, translateY, scale, scaleX, scaleY, rotate, skewX, skewY.'
+    )
+  })
+
   it('should not allowed to set negative value to rg-size', async () => {
     const result = satori(
       <div
