@@ -147,7 +147,7 @@ export default function buildText(
         'text',
         {
           ...shapeProps,
-          fill: style.color,
+          fill: style.WebkitTextFillColor || style.color,
           opacity: opacity !== 1 ? opacity : undefined,
         },
         escapeHTML(content)
