@@ -116,4 +116,18 @@ describe('Emojis', () => {
 
     expect(await toImage(svg)).toMatchImageSnapshot()
   })
+
+  // https://github.com/vercel/satori/issues/746
+  it('should render text that matches Object.prototype property names', async () => {
+    const svg = await satori(<div>constructor toString valueOf</div>, {
+      width: 200,
+      height: 100,
+      fonts,
+    })
+    // The text used to be silently replaced with the inherited prototype
+    // method, e.g. `<image href="function Object() { [native code] }" .../>`.
+    expect(svg).not.toContain('[native code]')
+    expect(svg).not.toContain('[object Object]')
+    expect(svg).not.toContain('<image ')
+  })
 })
