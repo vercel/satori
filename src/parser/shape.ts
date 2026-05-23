@@ -8,6 +8,8 @@ const regexMap = {
   path: /path\((.+)\)/,
   polygon: /polygon\((.+)\)/,
   inset: /inset\((.+)\)/,
+  rect: /rect\((.+)\)/,
+  xywh: /xywh\((.+)\)/,
 }
 
 export function createShapeParser(
@@ -144,22 +146,13 @@ export function createShapeParser(
 
     if (!res) return null
 
-    const [inset, radius] = (
-      res[1].includes('round') ? res[1] : `${res[1].trim()} round 0`
-    ).split('round')
-    const radiusMap = getStylesForProperty('borderRadius', radius, true)
-    const r = Object.values(radiusMap)
-      .map((s) => String(s))
-      .map(
-        (s, i) =>
-          lengthToNumber(
-            s,
-            inheritedStyle.fontSize as number,
-            i === 0 || i === 2 ? height : width,
-            inheritedStyle,
-            true
-          ) || 0
-      )
+    const [inset, radius] = splitRound(res[1])
+    const { r, radiusMap } = resolveRadius(
+      radius,
+      width,
+      height,
+      inheritedStyle
+    )
     const offsets = Object.values(getStylesForProperty('margin', inset, true))
       .map((s) => String(s))
       .map(
@@ -177,22 +170,76 @@ export function createShapeParser(
     const w = width - (offsets[1] + offsets[3])
     const h = height - (offsets[0] + offsets[2])
 
-    if (r.some((v) => v > 0)) {
-      const d = buildBorderRadius(
-        { left: x, top: y, width: w, height: h },
-        { ...style, ...radiusMap }
-      )
+    return resolveRectLikeShape(r, x, y, w, h, radiusMap, style)
+  }
+  function parseRect(str: string) {
+    const res = str.match(regexMap['rect'])
 
-      return { type: 'path', d }
-    }
+    if (!res) return null
 
-    return {
-      type: 'rect',
-      x,
-      y,
-      width: w,
-      height: h,
-    }
+    const [rect, radius] = splitRound(res[1])
+    const { r, radiusMap } = resolveRadius(
+      radius,
+      width,
+      height,
+      inheritedStyle
+    )
+
+    let [a, b, c, d] = rect
+      .split(' ')
+      .map((s) => String(s))
+      .map((s, i) => {
+        const v = s === 'auto' ? (i === 0 || i === 3 ? 0 : '100%') : s
+        return (
+          lengthToNumber(
+            v,
+            inheritedStyle.fontSize as number,
+            i === 0 || i === 2 ? height : width,
+            inheritedStyle,
+            true
+          ) || 0
+        )
+      })
+
+    b = Math.max(b, d)
+    c = Math.max(c, a)
+
+    const x = d
+    const y = a
+    const w = b - d
+    const h = c - a
+
+    return resolveRectLikeShape(r, x, y, w, h, radiusMap, style)
+  }
+  function parseXywh(str: string) {
+    const res = str.match(regexMap['xywh'])
+
+    if (!res) return null
+
+    const [rect, radius] = splitRound(res[1])
+    const { r, radiusMap } = resolveRadius(
+      radius,
+      width,
+      height,
+      inheritedStyle
+    )
+
+    const [x, y, w, h] = rect
+      .split(' ')
+      .map((s) => String(s))
+      .map((s, i) => {
+        return (
+          lengthToNumber(
+            s,
+            inheritedStyle.fontSize as number,
+            i === 0 || i === 2 ? width : height,
+            inheritedStyle,
+            true
+          ) || 0
+        )
+      })
+
+    return resolveRectLikeShape(r, x, y, w, h, radiusMap, style)
   }
 
   return {
@@ -201,7 +248,38 @@ export function createShapeParser(
     parsePath,
     parsePolygon,
     parseInset,
+    parseRect,
+    parseXywh,
   }
+}
+
+function splitRound(shape: string) {
+  return (shape.includes('round') ? shape : `${shape.trim()} round 0`).split(
+    'round'
+  )
+}
+
+function resolveRadius(
+  radius: string,
+  width: number,
+  height: number,
+  inheritedStyle: Record<string, string | number>
+) {
+  const radiusMap = getStylesForProperty('borderRadius', radius, true)
+  const r = Object.values(radiusMap)
+    .map(String)
+    .map(
+      (s, i) =>
+        lengthToNumber(
+          s,
+          inheritedStyle.fontSize as number,
+          i === 0 || i === 2 ? height : width,
+          inheritedStyle,
+          true
+        ) || 0
+    )
+
+  return { r, radiusMap }
 }
 
 function resolveFillRule(str: string) {
@@ -209,6 +287,33 @@ function resolveFillRule(str: string) {
     str.replace(/('|")/g, '').match(/^(nonzero|evenodd)?,?(.+)/) || []
 
   return [fillRule, d]
+}
+
+function resolveRectLikeShape(
+  r: number[],
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  radiusMap: Record<string, any>,
+  style: Record<string, string | number>
+) {
+  if (r.some((v) => v > 0)) {
+    const m = buildBorderRadius(
+      { left: x, top: y, width: w, height: h },
+      { ...style, ...radiusMap }
+    )
+
+    return { type: 'path', d: m }
+  }
+
+  return {
+    type: 'rect',
+    x,
+    y,
+    width: w,
+    height: h,
+  }
 }
 
 function resolvePosition(position: string, xDelta: number, yDelta: number) {
