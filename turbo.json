@@ -1,8 +1,14 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "pipeline": {
+  "globalPassThroughEnv": ["COREPACK_HOME"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "dist/**"]
+    },
     "dev": {
-      "cache": false
+      "cache": false,
+      "persistent": true
     }
   }
 }
