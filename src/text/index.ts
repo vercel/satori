@@ -119,7 +119,11 @@ export default async function* buildTextNodes(
   }
 
   function isImage(s: string): boolean {
-    return !!(graphemeImages && graphemeImages[s])
+    return !!(
+      graphemeImages &&
+      Object.prototype.hasOwnProperty.call(graphemeImages, s) &&
+      graphemeImages[s]
+    )
   }
 
   const { measureGrapheme, measureGraphemeArray, measureText } = genMeasurer(
@@ -551,7 +555,11 @@ export default async function* buildTextNodes(
     let path: string | null = null
     let isLastDisplayedBeforeEllipsis = false
 
-    const image = graphemeImages ? graphemeImages[text] : null
+    const image =
+      graphemeImages &&
+      Object.prototype.hasOwnProperty.call(graphemeImages, text)
+        ? graphemeImages[text]
+        : null
 
     let topOffset = layout.y
     let leftOffset = layout.x
