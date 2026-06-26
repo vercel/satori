@@ -297,6 +297,8 @@ const cachedParsedFont = new WeakMap<
 export default class FontLoader {
   defaultFont: opentype.Font
   fonts = new Map<string, [opentype.Font, Weight?, FontStyle?][]>()
+  cachedFontResolver = new Map<number, opentype.Font | undefined>()
+
   constructor(fontOptions: FontOptions[]) {
     this.addFonts(fontOptions)
   }
@@ -489,7 +491,6 @@ export default class FontLoader {
       }
     }
 
-    const cachedFontResolver = new Map<number, opentype.Font | undefined>()
     const resolveFont = (word: string, fallback = true) => {
       const _fonts = [
         ...fonts,
@@ -506,7 +507,8 @@ export default class FontLoader {
       }
 
       const code = word.charCodeAt(0)
-      if (cachedFontResolver.has(code)) return cachedFontResolver.get(code)
+      if (this.cachedFontResolver.has(code))
+        return this.cachedFontResolver.get(code)
 
       const font = _fonts.find((_font, index) => {
         return (
@@ -516,7 +518,7 @@ export default class FontLoader {
       })
 
       if (font) {
-        cachedFontResolver.set(code, font)
+        this.cachedFontResolver.set(code, font)
       }
 
       return font
