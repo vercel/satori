@@ -35,14 +35,6 @@ function isFullyTransparent(color: string): boolean {
   return parsed ? parsed.alpha === 0 : false
 }
 
-function isOpaqueWhite(color: string): boolean {
-  if (!color) return false
-  const parsed = cssColorParse(color)
-  if (!parsed) return false
-  const [r, g, b, a] = parsed.values
-  return r === 255 && g === 255 && b === 255 && (a === undefined || a === 1)
-}
-
 export default async function* buildTextNodes(
   content: string,
   context: LayoutContext
@@ -73,9 +65,13 @@ export default async function* buildTextNodes(
     tabSize = 8,
     letterSpacing,
     _inheritedBackgroundClipTextPath,
-    _inheritedBackgroundClipTextHasBackground,
+    WebkitTextFillColor,
     flexShrink,
   } = parentStyle
+
+  const textFillColor = WebkitTextFillColor as string | undefined
+  const effectiveColor = textFillColor || parentStyle.color
+  const isTransparentText = isFullyTransparent(effectiveColor)
 
   const {
     words,
@@ -521,9 +517,7 @@ export default async function* buildTextNodes(
         shadowOffset: textShadowOffset,
         shadowRadius: textShadowRadius,
       },
-      isFullyTransparent(parentStyle.color) ||
-        (_inheritedBackgroundClipTextHasBackground &&
-          isOpaqueWhite(parentStyle.color))
+      isTransparentText
     )
 
     filter = buildXMLString('defs', {}, filter)
@@ -882,18 +876,15 @@ export default async function* buildTextNodes(
   // Embed the font as path.
   if (mergedPath) {
     const p =
-      (!isFullyTransparent(parentStyle.color) || filter) && opacity !== 0
+      (!isTransparentText || filter) && opacity !== 0
         ? `<g ${overflowMaskId ? `mask="url(#${overflowMaskId})"` : ''} ${
             clipPathId ? `clip-path="url(#${clipPathId})"` : ''
           }>` +
           buildXMLString('path', {
             fill:
-              filter &&
-              (isFullyTransparent(parentStyle.color) ||
-                (_inheritedBackgroundClipTextHasBackground &&
-                  isOpaqueWhite(parentStyle.color)))
+              filter && isTransparentText
                 ? 'black'
-                : parentStyle.color,
+                : textFillColor || parentStyle.color,
             d: mergedPath,
             transform: matrix ? matrix : undefined,
             opacity: opacity !== 1 ? opacity : undefined,
