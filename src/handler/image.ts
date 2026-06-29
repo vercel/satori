@@ -59,10 +59,23 @@ function parsePNG(buf: ArrayBuffer) {
 }
 
 import { createLRU, parseViewBox } from '../utils.js'
+import { assertSafeServerFetchUrl } from './url-safety.js'
 
 type ResolvedImageData = [string, number?, number?] | readonly []
 export const cache = createLRU<ResolvedImageData>(500)
 export const inflightRequests = new Map<string, Promise<ResolvedImageData>>()
+
+// Optional host-supplied fetch, set per-render by `satori()`. Lets a host
+// inject an SSRF-safe fetch (e.g. `@vercel/safe-fetch`, which DNS-resolves and
+// pins the connect-time IP) to cover hostnames that *resolve* to private IPs —
+// something the literal-host guard in `url-safety.ts` can't do portably.
+// ponytail: module-global, mirroring the per-render `cache` above; carries the
+// same concurrency caveat (overlapping renders share it). The built-in guard
+// still runs regardless, so this only ever adds protection.
+let imageFetcher: typeof fetch | undefined
+export function setImageFetcher(fetcher: typeof fetch | undefined): void {
+  imageFetcher = fetcher
+}
 
 const ALLOWED_IMAGE_TYPES = [PNG, APNG, JPEG, GIF, SVG]
 
@@ -233,7 +246,8 @@ export async function resolveImageData(
     }
   }
 
-  if (!globalThis.fetch) {
+  const fetcher = imageFetcher || globalThis.fetch
+  if (!fetcher) {
     throw new Error('`fetch` is required to be polyfilled to load images.')
   }
 
@@ -246,7 +260,14 @@ export async function resolveImageData(
   }
 
   const url = src
-  const promise = fetch(url)
+  // Block SSRF to private/loopback/link-local addresses before fetching.
+  // Server-only: in the browser, fetching localhost is the user's own machine,
+  // not a server-side request-forgery surface. Fails closed (throws), matching
+  // the absolute-URL validation above — the injected fetcher is never invoked.
+  if (typeof window === 'undefined') {
+    assertSafeServerFetchUrl(url)
+  }
+  const promise = fetcher(url)
     .then((res): Promise<string | ArrayBuffer> => {
       const type = res.headers.get('content-type')
 
