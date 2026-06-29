@@ -9,7 +9,7 @@ import { getYoga, TYoga } from './yoga.js'
 import { detectLanguageCode, LangCode, Locale } from './language.js'
 import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
-import { cache, inflightRequests, setImageFetcher } from './handler/image.js'
+import { cache, inflightRequests } from './handler/image.js'
 import { segment } from './utils.js'
 
 // We don't need to initialize the opentype instances every time.
@@ -38,13 +38,6 @@ export type SatoriOptions = (
   tailwindConfig?: TwConfig
   onNodeDetected?: (node: SatoriNode) => void
   pointScaleFactor?: number
-  /**
-   * Custom fetch used to load remote images (`<img src>`, SVG `<image href>`,
-   * CSS `background-image`). Defaults to `globalThis.fetch`. Pass an SSRF-safe
-   * implementation (e.g. `@vercel/safe-fetch`) to block requests to internal
-   * addresses, including hostnames that resolve to private IPs.
-   */
-  fetcher?: typeof fetch
 }
 export type { SatoriNode }
 
@@ -97,7 +90,6 @@ export default async function satori(
 
   cache.clear()
   inflightRequests.clear()
-  setImageFetcher(options.fetcher)
   await preProcessNode(element)
 
   const handler = layout(element, {
