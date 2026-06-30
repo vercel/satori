@@ -72,4 +72,4 @@ jobs:
         if: matrix.os == 'ubuntu-latest' && matrix.node == 22 && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm dlx semantic-release@24.2.3
+        run: pnpm dlx semantic-release@25.0.5
