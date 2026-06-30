@@ -59,6 +59,7 @@ function parsePNG(buf: ArrayBuffer) {
 }
 
 import { createLRU, parseViewBox } from '../utils.js'
+import { assertSafeServerFetchUrl } from './url-safety.js'
 
 type ResolvedImageData = [string, number?, number?] | readonly []
 export const cache = createLRU<ResolvedImageData>(500)
@@ -246,6 +247,13 @@ export async function resolveImageData(
   }
 
   const url = src
+  // Block SSRF to private/loopback/link-local addresses before fetching.
+  // Server-only: in the browser, fetching localhost is the user's own machine,
+  // not a server-side request-forgery surface. Fails closed (throws), matching
+  // the absolute-URL validation above.
+  if (typeof window === 'undefined') {
+    assertSafeServerFetchUrl(url)
+  }
   const promise = fetch(url)
     .then((res): Promise<string | ArrayBuffer> => {
       const type = res.headers.get('content-type')
