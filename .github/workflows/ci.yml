@@ -42,7 +42,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        node: [18, 22]
+        node: [18, 20, 22]
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write # to be able to publish a GitHub release
