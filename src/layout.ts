@@ -2,7 +2,6 @@
  * This module is used to calculate the layout of the current sub-tree.
  */
 
-import type { ReactNode } from 'react'
 import {
   isReactElement,
   isClass,
@@ -12,6 +11,7 @@ import {
   isReactComponent,
   isForwardRefComponent,
 } from './utils.js'
+import type { SatoriRenderable } from './utils.js'
 import { getYoga, YogaNode } from './yoga.js'
 import { SVGNodeToImage } from './handler/preprocess.js'
 import computeStyle from './handler/compute.js'
@@ -44,13 +44,13 @@ export interface SatoriNode {
   width: number
   height: number
   type: string
-  key?: string | number
+  key?: string | number | bigint
   props: Record<string, any>
   textContent?: string
 }
 
 export default async function* layout(
-  element: ReactNode,
+  element: SatoriRenderable,
   context: LayoutContext
 ): AsyncGenerator<
   { word: string; locale?: string }[],

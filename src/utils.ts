@@ -3,7 +3,17 @@ import LineBreaker from 'linebreak'
 
 import CssDimension from './vendor/parse-css-dimension/index.js'
 
-export function isReactElement(node: ReactNode): node is ReactElement {
+export interface SatoriElement {
+  type: string | Function
+  props: Record<string, any>
+  key?: string | number | bigint | null
+}
+
+export type SatoriRenderable = ReactNode | SatoriElement
+
+export function isReactElement(
+  node: SatoriRenderable
+): node is ReactElement | SatoriElement {
   const type = typeof node
   if (
     type === 'number' ||
