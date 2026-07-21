@@ -23,11 +23,12 @@ export default defineConfig({
     options.tsconfig = 'tsconfig.json'
     options.legalComments = 'external'
   },
-  env: isStandaloneBuild
-    ? {
-        SATORI_STANDALONE: '1',
-      }
-    : {},
+  // Always replace this flag at build time. Leaving it unresolved in the
+  // default build makes the browser bundle access the Node-only `process`
+  // global while selecting the Yoga loader.
+  env: {
+    SATORI_STANDALONE: isStandaloneBuild ? '1' : '0',
+  },
   esbuildPlugins: [
     {
       name: 'optimize tailwind',

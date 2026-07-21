@@ -76,7 +76,10 @@ export default async function satori(
   // Use a null-prototype object so that text matching Object.prototype property
   // names (e.g. "constructor", "toString") doesn't inherit truthy values from
   // the prototype chain when we look it up via `graphemeImages[text]`.
-  const graphemeImages = Object.assign(Object.create(null), options.graphemeImages)
+  const graphemeImages = Object.assign(
+    Object.create(null),
+    options.graphemeImages
+  )
   // Some Chinese characters have different glyphs in Chinese and
   // Japanese, but their Unicode is the same. If the user needs to display
   // the Chinese and Japanese characters simultaneously correctly, the user
