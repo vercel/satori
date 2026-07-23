@@ -45,6 +45,87 @@ function parseJPEG(buf: ArrayBuffer) {
   throw new TypeError('Invalid JPEG')
 }
 
+function parseWebP(arrayBuffer: ArrayBuffer) {
+  const view = new DataView(arrayBuffer)
+  const bytes = new Uint8Array(arrayBuffer)
+
+  if (
+    view.byteLength < 20 ||
+    view.getUint32(0) !== 0x52494646 || // RIFF
+    view.getUint32(8) !== 0x57454250 // WEBP
+  ) {
+    throw new TypeError('Invalid WebP')
+  }
+
+  const containerEnd = view.getUint32(4, true) + 8
+  if (containerEnd < 20 || containerEnd > view.byteLength) {
+    throw new TypeError('Invalid WebP')
+  }
+
+  let offset = 12
+  while (offset + 8 <= containerEnd) {
+    const chunkType = view.getUint32(offset)
+    const chunkSize = view.getUint32(offset + 4, true)
+    const dataOffset = offset + 8
+    const dataEnd = dataOffset + chunkSize
+
+    if (dataEnd > containerEnd) {
+      throw new TypeError('Invalid WebP')
+    }
+
+    if (chunkType === 0x56503820) {
+      // VP8
+      if (
+        chunkSize < 10 ||
+        bytes[dataOffset + 3] !== 0x9d ||
+        bytes[dataOffset + 4] !== 0x01 ||
+        bytes[dataOffset + 5] !== 0x2a
+      ) {
+        throw new TypeError('Invalid WebP')
+      }
+      const width = view.getUint16(dataOffset + 6, true) & 0x3fff
+      const height = view.getUint16(dataOffset + 8, true) & 0x3fff
+      if (!width || !height) {
+        throw new TypeError('Invalid WebP')
+      }
+      return [width, height] as [number, number]
+    }
+
+    if (chunkType === 0x5650384c) {
+      // VP8L
+      if (chunkSize < 5 || bytes[dataOffset] !== 0x2f) {
+        throw new TypeError('Invalid WebP')
+      }
+      const bits = view.getUint32(dataOffset + 1, true)
+      return [(bits & 0x3fff) + 1, ((bits >>> 14) & 0x3fff) + 1] as [
+        number,
+        number
+      ]
+    }
+
+    if (chunkType === 0x56503858) {
+      // VP8X
+      if (chunkSize < 10) {
+        throw new TypeError('Invalid WebP')
+      }
+      return [
+        bytes[dataOffset + 4] +
+          (bytes[dataOffset + 5] << 8) +
+          (bytes[dataOffset + 6] << 16) +
+          1,
+        bytes[dataOffset + 7] +
+          (bytes[dataOffset + 8] << 8) +
+          (bytes[dataOffset + 9] << 16) +
+          1,
+      ] as [number, number]
+    }
+
+    offset = dataEnd + (chunkSize % 2)
+  }
+
+  throw new TypeError('Invalid WebP')
+}
+
 function parseGIF(buf: ArrayBuffer) {
   const view = new Uint8Array(buf.slice(6, 10))
   return [view[0] | (view[1] << 8), view[2] | (view[3] << 8)] as [
@@ -65,7 +146,7 @@ type ResolvedImageData = [string, number?, number?] | readonly []
 export const cache = createLRU<ResolvedImageData>(500)
 export const inflightRequests = new Map<string, Promise<ResolvedImageData>>()
 
-const ALLOWED_IMAGE_TYPES = [PNG, APNG, JPEG, GIF, SVG]
+const ALLOWED_IMAGE_TYPES = [PNG, APNG, JPEG, GIF, SVG, WEBP]
 
 // Pre-compiled regex patterns for SVG parsing
 const SVG_ATTRS_REGEX = /<svg[^>]*>/i
@@ -145,6 +226,9 @@ function arrayBufferToDataUri(data: ArrayBuffer) {
     case JPEG:
       imageSize = parseJPEG(data)
       break
+    case WEBP:
+      imageSize = parseWebP(data)
+      break
   }
 
   if (!ALLOWED_IMAGE_TYPES.includes(imageType)) {
@@ -223,6 +307,9 @@ export async function resolveImageData(
           break
         case JPEG:
           imageSize = parseJPEG(data)
+          break
+        case WEBP:
+          imageSize = parseWebP(data)
           break
       }
       cache.set(src, [src, ...imageSize])
