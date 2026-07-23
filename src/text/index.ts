@@ -198,8 +198,21 @@ export default async function* buildTextNodes(
     isImage: boolean
   })[] = []
 
+  function getTextIndent(containerWidth: number) {
+    return typeof textIndent === 'string'
+      ? lengthToNumber(
+          textIndent,
+          fontSize,
+          containerWidth,
+          parentStyle,
+          true
+        ) || 0
+      : textIndent
+  }
+
   // With the given container width, compute the text layout.
   function flow(width: number) {
+    const textIndentNumber = getTextIndent(width)
     let lines = 0
     let maxWidth = 0
     let lineIndex = -1
@@ -221,6 +234,9 @@ export default async function* buildTextNodes(
     while (i < words.length && lines < lineLimit) {
       let word = words[i]
       const forceBreak = requiredBreaks[i]
+      const firstLineWidth = width - textIndentNumber
+      const lineWidth =
+        lines === 0 && firstLineWidth > 0 ? firstLineWidth : width
 
       let w = 0
 
@@ -252,7 +268,7 @@ export default async function* buildTextNodes(
         // When the break line happens at the end of the `bbb`, what we see looks like this
         // |aaa bbb|
         // |ccc    |
-        currentWidth + w > width + lineEndingSpacesWidth &&
+        currentWidth + w > lineWidth + lineEndingSpacesWidth &&
         allowSoftWrap
 
       // Need to break the word if:
@@ -260,7 +276,9 @@ export default async function* buildTextNodes(
       // - the word is wider than the container width
       // - the word will be put at the beginning of the line
       const needToBreakWord =
-        allowBreakWord && w > width && (!currentWidth || willWrap || forceBreak)
+        allowBreakWord &&
+        w > lineWidth &&
+        (!currentWidth || willWrap || forceBreak)
 
       if (needToBreakWord) {
         // Break the word into multiple segments and continue the loop.
@@ -472,17 +490,7 @@ export default async function* buildTextNodes(
     height: containerHeight,
   } = textContainer.getComputedLayout()
 
-  // Convert textIndent to number if it's a string (e.g., percentage)
-  const textIndentNumber =
-    typeof textIndent === 'string'
-      ? lengthToNumber(
-          textIndent,
-          fontSize,
-          containerWidth,
-          parentStyle,
-          true
-        ) || 0
-      : textIndent
+  const textIndentNumber = getTextIndent(containerWidth)
 
   const parentContainerInnerWidth =
     parent.getComputedWidth() -

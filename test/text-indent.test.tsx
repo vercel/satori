@@ -364,4 +364,23 @@ describe('Text Indent', () => {
     )
     expect(toImage(svg, 200)).toMatchImageSnapshot()
   })
+
+  it('Should make progress when the indent is at least the container width', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          textIndent: '100%',
+          wordBreak: 'break-all',
+        }}
+      >
+        This text must not loop forever.
+      </div>,
+      { width: 100, height: 100, fonts, embedFont: true }
+    )
+
+    expect(svg).toContain('<svg')
+  })
 })
