@@ -1,4 +1,9 @@
-import { createServer, type Server } from 'node:http'
+import {
+  createServer,
+  type IncomingMessage,
+  type Server,
+  type ServerResponse,
+} from 'node:http'
 import { it, describe, expect, afterEach } from 'vitest'
 
 import {
@@ -141,7 +146,7 @@ describe('safeServerFetch (redirects)', () => {
   })
 
   async function listen(
-    handler: Parameters<typeof createServer>[0]
+    handler: (req: IncomingMessage, res: ServerResponse) => void
   ): Promise<string> {
     server = createServer(handler)
     await new Promise<void>((resolve) =>
