@@ -124,7 +124,8 @@ export function createShapeParser(
         .split(',')
         .map((v) =>
           v
-            .split(' ')
+            .trim()
+            .split(/\s+/)
             .map((k, i) =>
               lengthToNumber(
                 k,

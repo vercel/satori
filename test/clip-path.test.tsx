@@ -104,6 +104,25 @@ describe('clipPath', () => {
     expect(toImage(svg)).toMatchImageSnapshot()
   })
 
+  it('should render polygon clip-path correctly on non-square elements', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          clipPath: 'polygon(100% 0, 81.844% 100%, 0 100%, 18.156% 0)',
+        }}
+      />,
+      { width: 180, height: 100, fonts }
+    )
+    const image = toImage(svg)
+    expect(image).toMatchImageSnapshot()
+  })
+
   it('should respect left and top', async () => {
     const svg = await satori(
       <div
