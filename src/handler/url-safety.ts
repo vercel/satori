@@ -237,7 +237,13 @@ async function getDnsLookup(): Promise<DnsLookup | null> {
     return null
   }
   try {
-    const dns = await import('node:dns/promises')
+    // Indirect import so Webpack/Next (playground) cannot statically resolve
+    // the `node:` builtin when bundling dist/ for the browser. esbuild also
+    // strips `/* webpackIgnore: true */`, so a literal import() is unsafe.
+    const load = new Function('s', 'return import(s)') as (
+      s: string
+    ) => Promise<typeof import('node:dns/promises')>
+    const dns = await load('node:dns/promises')
     dnsLookup = (hostname, options) => dns.lookup(hostname, options)
     return dnsLookup
   } catch {
