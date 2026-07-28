@@ -76,4 +76,23 @@ describe('Minimal JSX runtime', () => {
     })
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should accept JSX-like elements without a React key', async () => {
+    const svg = await satori(
+      {
+        type: 'div',
+        props: {
+          children: 'Hello from an object tree',
+          style: {
+            display: 'flex',
+            width: '100%',
+            height: '100%',
+          },
+        },
+      },
+      { width: 100, height: 100, fonts }
+    )
+
+    expect(svg).toContain('<svg')
+  })
 })

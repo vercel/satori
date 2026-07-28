@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode, Fragment } from 'react'
 import { Fragment as FragmentSymbol } from '../jsx/jsx-runtime.js'
 import { resolveImageData, cache } from './image.js'
 import { isReactElement, parseViewBox, midline } from '../utils.js'
+import type { SatoriElement, SatoriRenderable } from '../utils.js'
 
 // Based on
 // https://raw.githubusercontent.com/facebook/react/master/packages/react-dom/src/shared/possibleStandardNames.js
@@ -154,9 +155,9 @@ function translateSVGNodeToSVGString(
  * @param node ReactNode
  * @returns
  */
-export async function preProcessNode(node: ReactNode) {
+export async function preProcessNode(node: SatoriRenderable) {
   const set = new Set<string | Buffer | ArrayBuffer>()
-  const walk = (_node: ReactNode) => {
+  const walk = (_node: SatoriRenderable) => {
     if (!_node) return
     if (!isReactElement(_node)) return
 
@@ -195,7 +196,7 @@ export async function preProcessNode(node: ReactNode) {
 }
 
 export async function SVGNodeToImage(
-  node: ReactElement,
+  node: ReactElement | SatoriElement,
   inheritedColor: string
 ): Promise<string> {
   let {
