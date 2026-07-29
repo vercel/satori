@@ -176,7 +176,7 @@ function handleSpecialCase(
   if (name === 'background') {
     value = value.toString().trim()
     if (
-      /^(linear-gradient|radial-gradient|url|repeating-linear-gradient|repeating-radial-gradient)\(/.test(
+      /^(linear-gradient|radial-gradient|conic-gradient|url|repeating-linear-gradient|repeating-radial-gradient|repeating-conic-gradient)\(/.test(
         value
       )
     ) {

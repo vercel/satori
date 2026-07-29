@@ -4,6 +4,7 @@ import { buildXMLString } from '../utils.js'
 import { resolveImageData } from '../handler/image.js'
 import { buildLinearGradient } from './gradient/linear.js'
 import { buildRadialGradient } from './gradient/radial.js'
+import { buildConicGradient } from './gradient/conic.js'
 import cssColorParse from 'parse-css-color'
 
 interface Background {
@@ -147,7 +148,9 @@ export default async function backgroundImage(
     image.startsWith('linear-gradient(') ||
     image.startsWith('repeating-linear-gradient(') ||
     image.startsWith('radial-gradient(') ||
-    image.startsWith('repeating-radial-gradient(')
+    image.startsWith('repeating-radial-gradient(') ||
+    image.startsWith('conic-gradient(') ||
+    image.startsWith('repeating-conic-gradient(')
 
   const dimensions =
     isKeywordSize && isGradient
@@ -186,6 +189,20 @@ export default async function backgroundImage(
     image.startsWith('repeating-radial-gradient(')
   ) {
     return buildRadialGradient(
+      { id, width, height, repeatX, repeatY },
+      image,
+      dimensions,
+      offsets,
+      inheritableStyle,
+      from
+    )
+  }
+
+  if (
+    image.startsWith('conic-gradient(') ||
+    image.startsWith('repeating-conic-gradient(')
+  ) {
+    return buildConicGradient(
       { id, width, height, repeatX, repeatY },
       image,
       dimensions,
