@@ -21,10 +21,55 @@ import PanelResizeHandle from '../components/panel-resize-handle'
 import { languageFontMap } from '../utils/font'
 
 import playgroundTabs, { Tabs } from '../cards/playground-data'
+import objectExamples from '../cards/object-examples'
 import previewTabs from '../cards/preview-tabs'
 
 const cardNames = Object.keys(playgroundTabs)
 const editedCards: Tabs = { ...playgroundTabs }
+
+const objectCardNames = Object.keys(objectExamples)
+const editedObjectCards: Tabs = { ...objectExamples }
+
+// Convert a plain VNode object tree to a React element tree.
+// This enables object syntax in the playground without babel transpilation.
+function objectSyntaxToReact(node: any): React.ReactNode {
+  if (node === null || node === undefined || node === false) return null
+  if (typeof node === 'string' || typeof node === 'number') {
+    return String(node)
+  }
+  if (Array.isArray(node)) {
+    return React.Children.toArray(
+      node.map((child, i) => objectSyntaxToReact(child))
+    )
+  }
+  if (typeof node !== 'object' || !node.type) {
+    return String(node)
+  }
+
+  const { type, props = {} } = node
+  const { children, ...restProps } = props
+
+  let convertedChildren: any = undefined
+  if (children !== undefined) {
+    if (Array.isArray(children)) {
+      convertedChildren = children.map((c: any) => objectSyntaxToReact(c))
+    } else {
+      convertedChildren = objectSyntaxToReact(children)
+    }
+  }
+
+  return React.createElement(type, restProps, convertedChildren)
+}
+
+// Evaluate object syntax code string and convert to React element.
+function evalObjectSyntax(code: string): { element: React.ReactNode; error: string | null } {
+  try {
+    const obj = new Function('return ' + code)()
+    return { element: objectSyntaxToReact(obj), error: null }
+  } catch (e: any) {
+    return { element: null, error: e.message }
+  }
+}
 
 async function init() {
   if (typeof window === 'undefined') return []
@@ -412,8 +457,12 @@ let overrideOptions: any = null
 
 const LiveSatori = withLive(function ({
   live,
+  overrideElement,
+  overrideError,
 }: {
   live?: { element: React.ComponentType; error: string }
+  overrideElement?: React.ReactNode
+  overrideError?: string | null
 }) {
   const [options, setOptions] = useState<object | null>(null)
   const [debug, setDebug] = useState(false)
@@ -546,13 +595,21 @@ const LiveSatori = withLive(function ({
       let _result = ''
       let _renderedTimeSpent = 0
 
-      if (live?.element && options) {
+      // Determine the element to render: override for object mode, live.element for JSX
+      const renderElement =
+        overrideElement !== undefined
+          ? overrideElement
+          : live?.element
+            ? live.element.prototype.render()
+            : undefined
+
+      if (renderElement && options) {
         const start = (
           typeof performance !== 'undefined' ? performance : Date
         ).now()
         if (renderType !== 'html') {
           try {
-            _result = await satori(live.element.prototype.render(), {
+            _result = await satori(renderElement, {
               ...options,
               embedFont: fontEmbed,
               width,
@@ -634,6 +691,7 @@ const LiveSatori = withLive(function ({
     }
   }, [
     live?.element,
+    overrideElement,
     options,
     width,
     height,
@@ -655,9 +713,9 @@ const LiveSatori = withLive(function ({
           }}
         >
           <div className='preview-card'>
-            {live?.error || renderError ? (
+            {overrideError || live?.error || renderError ? (
               <div className='error'>
-                <pre>{live?.error || renderError}</pre>
+                <pre>{overrideError || live?.error || renderError}</pre>
               </div>
             ) : null}
             {loadingResources ? spinner : null}
@@ -690,7 +748,11 @@ const LiveSatori = withLive(function ({
                             __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');body{display:flex;height:100%;margin:0;tab-size:8;font-family:Inter,sans-serif;overflow:hidden}body>div,body>div *{box-sizing:border-box;display:flex}`,
                           }}
                         />
-                        {live?.element ? <live.element /> : null}
+                        {overrideElement !== undefined
+                          ? overrideElement
+                          : live?.element
+                            ? <live.element />
+                            : null}
                       </>,
                       iframeNode
                     )}
@@ -908,7 +970,13 @@ const LiveSatori = withLive(function ({
   )
 })
 
-function ResetCode({ activeCard }: { activeCard: string }) {
+function ResetCode({
+  activeCard,
+  syntaxMode,
+}: {
+  activeCard: string
+  syntaxMode: 'jsx' | 'object'
+}) {
   const { onChange } = useContext(LiveContext) as unknown as {
     onChange: (val: string) => void
   }
@@ -933,8 +1001,9 @@ function ResetCode({ activeCard }: { activeCard: string }) {
           card = decompressedData
         }
 
-        editedCards[tab] = card
-        onChange(editedCards[tab])
+        const cardSet = syntaxMode === 'object' ? editedObjectCards : editedCards
+        cardSet[tab] = card
+        onChange(cardSet[tab])
       } catch (e) {
         console.error('Failed to parse shared card:', e)
       }
@@ -944,8 +1013,10 @@ function ResetCode({ activeCard }: { activeCard: string }) {
   return (
     <button
       onClick={() => {
-        editedCards[activeCard] = playgroundTabs[activeCard]
-        onChange(editedCards[activeCard])
+        const cardSet = syntaxMode === 'object' ? editedObjectCards : editedCards
+        const sourceSet = syntaxMode === 'object' ? objectExamples : playgroundTabs
+        cardSet[activeCard] = sourceSet[activeCard]
+        onChange(cardSet[activeCard])
         window.history.replaceState(null, '', '/')
         toast.success('Content reset')
       }}
@@ -955,10 +1026,26 @@ function ResetCode({ activeCard }: { activeCard: string }) {
   )
 }
 
+// Renders object syntax code by evaluating it and passing to LiveSatori
+// via override props, bypassing the need for Babel transpilation.
+function ObjectSyntaxRenderer({ code }: { code: string }) {
+  const result = useMemo(() => evalObjectSyntax(code), [code])
+  return (
+    <LiveSatori
+      overrideElement={result.element ?? undefined}
+      overrideError={result.error}
+    />
+  )
+}
+
 export default function Playground() {
   const [activeCard, setActiveCard] = useState<string>('helloworld')
+  const [syntaxMode, setSyntaxMode] = useState<'jsx' | 'object'>('jsx')
   const [showIntroduction, setShowIntroduction] = useState(false)
   const [isMobileView, setIsMobileView] = useState(false)
+
+  const activeCardSet = syntaxMode === 'object' ? editedObjectCards : editedCards
+  const activeCardNames = syntaxMode === 'object' ? objectCardNames : cardNames
 
   // set isMobileView to true if the screen is less than 600px wide
   useEffect(() => {
@@ -989,17 +1076,17 @@ export default function Playground() {
   const editorPanel = (
     <Panel>
       <Tabs
-        options={cardNames}
+        options={activeCardNames}
         onChange={(name: string) => {
           setActiveCard(name)
         }}
       >
         <div className='editor'>
           <div className='editor-controls'>
-            <ResetCode activeCard={activeCard} />
+            <ResetCode activeCard={activeCard} syntaxMode={syntaxMode} />
             <button
               onClick={() => {
-                const code = editedCards[activeCard]
+                const code = activeCardSet[activeCard]
                 const compressed = Base64.fromUint8Array(
                   fflate.deflateSync(
                     fflate.strToU8(
@@ -1032,7 +1119,11 @@ export default function Playground() {
   const previewPanel = (
     <Panel>
       <PanelGroup direction='vertical'>
-        <LiveSatori />
+        {syntaxMode === 'object' ? (
+          <ObjectSyntaxRenderer code={activeCardSet[activeCard]} />
+        ) : (
+          <LiveSatori />
+        )}
       </PanelGroup>
     </Panel>
   )
@@ -1064,22 +1155,41 @@ export default function Playground() {
           </svg>
           OG Image Playground
         </h1>
-        <ul>
-          <li>
-            <a href='https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation'>
-              Docs
-            </a>
-          </li>
-          <li>
-            <a href='https://nextjs.org/discord'>Discord</a>
-          </li>
-          <li>
-            <a href='https://github.com/vercel/satori'>GitHub</a>
-          </li>
-        </ul>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button
+            onClick={() => {
+              const newMode = syntaxMode === 'jsx' ? 'object' : 'jsx'
+              setSyntaxMode(newMode)
+              setActiveCard('helloworld')
+            }}
+            style={{
+              padding: '4px 8px',
+              fontSize: '12px',
+              background: syntaxMode === 'jsx' ? '#f0f0f0' : '#e0e0e0',
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            {syntaxMode === 'jsx' ? 'JSX' : 'Object'}
+          </button>
+          <ul>
+            <li>
+              <a href='https://vercel.com/docs/concepts/functions/edge-functions/og-image-generation'>
+                Docs
+              </a>
+            </li>
+            <li>
+              <a href='https://nextjs.org/discord'>Discord</a>
+            </li>
+            <li>
+              <a href='https://github.com/vercel/satori'>GitHub</a>
+            </li>
+          </ul>
+        </div>
       </nav>
       <div className='container'>
-        <LiveProvider code={editedCards[activeCard]}>
+        <LiveProvider code={activeCardSet[activeCard]}>
           {hydrated ? (
             <PanelGroup
               autoSaveId='og-playground'
