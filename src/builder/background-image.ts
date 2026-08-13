@@ -4,6 +4,7 @@ import { buildXMLString } from '../utils.js'
 import { resolveImageData } from '../handler/image.js'
 import { buildLinearGradient } from './gradient/linear.js'
 import { buildRadialGradient } from './gradient/radial.js'
+import { normalizeWebkitGradient } from './gradient/webkit.js'
 import cssColorParse from 'parse-css-color'
 
 interface Background {
@@ -127,6 +128,7 @@ export default async function backgroundImage(
   // Default to `repeat`.
   repeat = repeat || 'repeat'
   from = from || 'background'
+  image = normalizeWebkitGradient(image)
 
   const repeatX = repeat === 'repeat-x' || repeat === 'repeat'
   const repeatY = repeat === 'repeat-y' || repeat === 'repeat'
