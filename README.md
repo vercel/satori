@@ -321,6 +321,12 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <td>Supported</td>
 <td></td>
 </tr>
+<tr>
+<td><code>WebkitTextFillColor</code></td>
+<td><code>WebkitTextFillColor</code></td>
+<td>Supported</td>
+<td></td>
+</tr>
 
 </tbody>
 </table>
