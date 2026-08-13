@@ -238,14 +238,12 @@ function getErrorHint(name: string) {
   return ''
 }
 
-const RGB_SLASH = /rgb\((\d+)\s+(\d+)\s+(\d+)\s*\/\s*([\.\d]+)\)/
 function normalizeColor(value: string | object) {
   if (typeof value === 'string') {
-    if (RGB_SLASH.test(value.trim())) {
-      // rgb(255 122 127 / .2) -> rgba(255, 122, 127, .2)
-      return value.trim().replace(RGB_SLASH, (_, r, g, b, a) => {
-        return `rgba(${r}, ${g}, ${b}, ${a})`
-      })
+    const parsed = cssColorParse(value.trim())
+    if (parsed && parsed.alpha !== 1 && parsed.type === 'rgb') {
+      const [r, g, b] = parsed.values
+      return `rgba(${r}, ${g}, ${b}, ${parsed.alpha})`
     }
   }
 
@@ -353,7 +351,7 @@ export default function expand(
       inheritedStyle.color
     )
 
-    serializedStyle.color = currentColor
+    serializedStyle.color = normalizeColor(currentColor) as string
 
     for (const prop in processableStyle) {
       // Internal properties.
