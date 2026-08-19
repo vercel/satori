@@ -140,7 +140,7 @@ function parsePNG(buf: ArrayBuffer) {
 }
 
 import { createLRU, parseViewBox } from '../utils.js'
-import { assertSafeServerFetchUrl } from './url-safety.js'
+import { safeServerFetch } from './url-safety.js'
 
 type ResolvedImageData = [string, number?, number?] | readonly []
 export const cache = createLRU<ResolvedImageData>(500)
@@ -334,14 +334,14 @@ export async function resolveImageData(
   }
 
   const url = src
-  // Block SSRF to private/loopback/link-local addresses before fetching.
-  // Server-only: in the browser, fetching localhost is the user's own machine,
-  // not a server-side request-forgery surface. Fails closed (throws), matching
-  // the absolute-URL validation above.
-  if (typeof window === 'undefined') {
-    assertSafeServerFetchUrl(url)
-  }
-  const promise = fetch(url)
+  // Server-only SSRF guard: literal host + DNS (when node:dns exists) +
+  // per-hop redirect validation. In the browser, fetching localhost is the
+  // user's own machine — not a server-side request-forgery surface.
+  const doFetch =
+    typeof window === 'undefined'
+      ? () => safeServerFetch(url)
+      : () => fetch(url)
+  const promise = doFetch()
     .then((res): Promise<string | ArrayBuffer> => {
       const type = res.headers.get('content-type')
 
@@ -372,6 +372,11 @@ export async function resolveImageData(
       return result
     })
     .catch((err) => {
+      // SSRF blocks must fail closed to the caller — do not cache an empty
+      // result that would mask a blocked internal URL as a missing image.
+      if (err instanceof Error && err.message.includes('SSRF protection')) {
+        throw err
+      }
       console.error(`Can't load image ${url}: ` + err.message)
       cache.set(url, [])
       return [] as const
