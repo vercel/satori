@@ -145,7 +145,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 <tr>
 <td colspan="2"><code>display</code></td>
-<td><code>flex</code>, <code>contents</code>, <code>none</code>, default to <code>flex</code></td>
+<td><code>flex</code>, <code>block</code>, <code>contents</code>, <code>none</code>, <code>-webkit-box</code>, default to <code>flex</code>. Use <code>flex</code>, <code>contents</code>, or <code>none</code> for <code>div</code> elements with multiple child nodes.</td>
 <td></td>
 </tr>
 
@@ -300,7 +300,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 <tr>
 <td colspan="2"><code>lineClamp</code></td>
-<td>Supported</td>
+<td>Supported when the text element uses <code>display: block</code>. For WebKit-style clamping, use <code>display: -webkit-box</code> with <code>WebkitLineClamp</code>.</td>
 <td><a href="https://og-playground.vercel.app/?share=5VPBbtQwEP2VkRFakNKSshxQBBwoXDhwaEFc9uLYk6xbx2PZk-6G1Up8DR_GlzDOkgr13FtPGb_xvPf8ojkoQxZVo95Zd7cJAJknj-8Ph1IDbNH1W25gdVHXz1fVCdw5y9sHmHU5ej0J2nncL2ipP7mEhh0F6Rny4xCWbtTWutA3cFH_Q1ptbvtEY7CX5CnJxLOu6-7ZKPC1-4kNrF_P0PG4CR9KsZh_aP9_X60nc7tQAXgX8NLrIQrbPTjo1LvwkZhpkJF1HferU69IAcxiAN8zWmgnyDQgUAe8RdhR8naVwQsFZgZDQ9TBYa7gK-75_CYDBt16zDDRCExgEmpG6EbvzzLLy-EHtqBj9M7oElguGjKLocQ0q3iZEPIr1Iahk_kxFQUdLLjA2CcZlKuRdpiEGK7GzGetLn6_6Dt9bZKLLOIkz-8l0DSzdjrPtO3ovM3nc6KvJNJHyHa1ho368-s3vDBihQb5fVayEa-BX27UE093-apKUZxNqeag5v1Szdu6rtRpAVXzphwstmOvmk77jJXCgW7ctymW7eXdfBKesiSfhxatajiNeKwU61ZubNF7mmNUx78">Example</a></td>
 </tr>
 
