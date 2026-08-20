@@ -298,6 +298,12 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 </tr>
 
 <tr>
+<td colspan="2"><code>backdropFilter</code></td>
+<td>Supports chained <code>blur()</code>, <code>brightness()</code>, <code>contrast()</code>, <code>drop-shadow()</code>, <code>grayscale()</code>, <code>hue-rotate()</code>, <code>invert()</code>, <code>opacity()</code>, <code>saturate()</code>, and <code>sepia()</code></td>
+<td></td>
+</tr>
+
+<tr>
 <td colspan="2"><code>clipPath</code></td>
 <td>Supports <code>circle()</code>, <code>ellipse()</code>, <code>inset()</code>, <code>polygon()</code>, <code>path()</code>, and <code>shape()</code>. <code>shape()</code> supports <code>move</code>, <code>line</code>, <code>hline</code>, <code>vline</code>, <code>curve</code>, <code>smooth</code>, <code>arc</code>, and <code>close</code> commands.</td>
 <td><a href="https://og-playground.vercel.app/?share=XVJNb9wgEP0rI6poW8lJnX6pstpe0h7aQ1UlrXLJBZvBZosZBDgbZ7X_PQMbZze5wPCGmXmPx1Z0pFA04osytzcOIKbZ4tftNscAA5p-SA2szuv6ZFXtwY1RaXiBKRO9lTOj2uLdgub4uwnYJUOOcx3ZaXRLVlrTu58Jx5hT6BKGJbWeYjJ6viAGXZ7_PN3K7n8faHLqgiwFzr_SWj9N5aorc48NvH93BF0_avlU1wXd7W7ctxws0l-KP8j_8FhypP4Y8lIp4_oGzg_YgSKzY6FDau2EC0WAzhr_R5Z39GTnntzrj_UJ1BU34Z3jKi_lVEGd4zerfXEmDlCoA_yLqKCdIdKIQBrSgLChYNUqgpWhx5igo9FLZzBW8Bvv0tk6AjrZWoww0wSJoAsoE4KerD2NianDNbYgvbemk9m8mGdwLbqstEyxXMHNL1F2CTTXTyFPkE6BYbP6wIV81dMGAzeGS_b0tJWZ7y95K6-6YHzi4WTzNU2hdNUylrbtZKyKZ8Wft2wQy112UQnyhZRotqL4IZrP7IfY-yWabI5Q2E69aLS0ESuBI63N39nnv5425cR98r_4MbaoRJPChLtKJNnyjQGtpfKMYvcA">Example</a></td>

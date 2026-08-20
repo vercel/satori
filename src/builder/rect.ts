@@ -9,6 +9,8 @@ import { buildXMLString } from '../utils.js'
 import border, { getBorderClipPath } from './border.js'
 import { genClipPath } from './clip-path.js'
 import buildMaskImage from './mask-image.js'
+import { backdropFilter } from './backdrop-filter.js'
+import type { BackdropFilter } from '../parser/backdrop-filter.js'
 import CssDimension from '../vendor/parse-css-dimension/index.js'
 
 /**
@@ -238,6 +240,21 @@ export default async function rect(
     style as Record<string, number>,
     inheritableStyle
   )
+
+  const [backdropDefinitions, backdropShape] = backdropFilter({
+    id,
+    left,
+    top,
+    width,
+    height,
+    path,
+    type,
+    matrix: matrix || undefined,
+    currentClipPath,
+    mask: maskId,
+    filters: (style._backdropFilters as unknown as BackdropFilter[]) || [],
+  })
+  defs += backdropDefinitions
 
   // Each background generates a new rectangle.
   // @TODO: Not sure if this is the best way to do it, maybe <pattern> with
@@ -527,6 +544,7 @@ export default async function rect(
           maskId ? ` mask="${maskId}"` : ''
         }>`
       : '') +
+    backdropShape +
     (backgroundShapes || shape) +
     (style.transform && (currentClipPath || maskId) ? '</g>' : '') +
     (opacity !== 1 ? `</g>` : '') +

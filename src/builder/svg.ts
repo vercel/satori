@@ -16,6 +16,9 @@ export default function svg({
       height,
       viewBox: `0 0 ${width} ${height}`,
       xmlns: 'http://www.w3.org/2000/svg',
+      'enable-background': content.includes('in="BackgroundImage"')
+        ? 'new'
+        : undefined,
     },
     content
   )
