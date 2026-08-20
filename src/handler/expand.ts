@@ -15,6 +15,7 @@ import parseTransformOrigin, {
 import { isString, lengthToNumber, v, splitEffects } from '../utils.js'
 import { MaskProperty, parseMask } from '../parser/mask.js'
 import { splitCornerShapeValues } from '../parser/corner-shape.js'
+import { parseBackdropFilter } from '../parser/backdrop-filter.js'
 import { FontWeight, FontStyle } from '../font.js'
 import {
   extractCustomProperties,
@@ -64,7 +65,8 @@ function purify(name: string, value?: string | number) {
 function handleSpecialCase(
   name: string,
   value: string | number,
-  currentColor: string
+  currentColor: string,
+  inheritedStyle: SerializedStyle
 ) {
   if (name === 'zIndex') {
     console.warn('`z-index` is currently not supported.')
@@ -196,6 +198,12 @@ function handleSpecialCase(
     }
     return {
       [name]: typeof value === 'string' ? parseBoxShadow(value) : value,
+    }
+  }
+
+  if (name === 'backdropFilter' || name === 'WebkitBackdropFilter') {
+    return {
+      _backdropFilterBlur: parseBackdropFilter(value, inheritedStyle),
     }
   }
 
@@ -423,7 +431,7 @@ export default function expand(
 
       try {
         const resolvedStyle =
-          handleSpecialCase(name, value, currentColor) ||
+          handleSpecialCase(name, value, currentColor, inheritedStyle) ||
           handleFallbackColor(
             name,
             getStylesForProperty(name, purify(name, value), true),
