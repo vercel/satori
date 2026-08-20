@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server'
 import { FontDetector, languageFontMap } from '../../utils/font'
 
 export const config = {
-  runtime: 'experimental-edge',
+  runtime: 'edge',
 }
 
 const detector = new FontDetector()

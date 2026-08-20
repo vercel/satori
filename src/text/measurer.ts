@@ -7,37 +7,57 @@ export function genMeasurer(
   style: {
     fontSize: number
     letterSpacing: number
+    fontFeatureSettings?: string
   }
 ): {
   measureGrapheme: (grapheme: string) => number
   measureGraphemeArray: (graphemes: string[]) => number
   measureText: (text: string) => number
 } {
-  const { fontSize, letterSpacing } = style
+  const { fontSize, letterSpacing, fontFeatureSettings } = style
 
   const cache = new Map<string, number>()
 
-  function measureGrapheme(grapheme: string): number {
-    let width = cache.get(grapheme)
+  function measureTextRun(text: string): number {
+    let width = cache.get(text)
 
     if (width === undefined) {
-      width = engine.measure(grapheme, { fontSize, letterSpacing })
-      cache.set(grapheme, width)
+      width = engine.measure(text, {
+        fontSize,
+        letterSpacing,
+        fontFeatureSettings,
+      })
+      cache.set(text, width)
     }
 
     return width
   }
 
+  function measureGrapheme(grapheme: string): number {
+    return measureTextRun(grapheme)
+  }
+
   function measureGraphemeArray(graphemes: string[]): number {
     let width = 0
+    let textRun = ''
+
+    const flushTextRun = () => {
+      if (textRun) {
+        width += measureTextRun(textRun)
+        textRun = ''
+      }
+    }
 
     for (const grapheme of graphemes) {
       if (isImage(grapheme)) {
+        flushTextRun()
         width += fontSize
       } else {
-        width += measureGrapheme(grapheme)
+        textRun += grapheme
       }
     }
+
+    flushTextRun()
 
     return width
   }
