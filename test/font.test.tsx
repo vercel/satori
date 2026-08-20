@@ -70,6 +70,37 @@ describe('Font', () => {
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it('should isolate cached measurements by text style', async () => {
+    const boldFontData = await readFile(
+      join(process.cwd(), 'test', 'assets', 'Roboto-Bold.ttf')
+    )
+    const cachedFonts = fonts.concat({
+      name: 'Roboto',
+      data: boldFontData,
+      weight: 700,
+      style: 'normal',
+    })
+    const content = (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <span style={{ fontWeight: 400 }}>Hello, World</span>
+        <span style={{ fontWeight: 400, letterSpacing: 3 }}>Hello, World</span>
+        <span style={{ fontWeight: 700 }}>Hello, World</span>
+      </div>
+    )
+    const render = (fontOptions) =>
+      satori(content, {
+        width: 200,
+        height: 100,
+        fonts: fontOptions,
+      })
+
+    const expected = await render(cachedFonts.slice())
+    await render(cachedFonts)
+    const actual = await render(cachedFonts)
+
+    expect(actual).toBe(expected)
+  })
+
   describe('font-size', () => {
     it('should allow font-size to be 0', async () => {
       const svg = await satori(<div style={{ fontSize: 0 }}>hi</div>, {

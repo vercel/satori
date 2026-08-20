@@ -52,7 +52,7 @@ const fonts = [
 // Simulated from a real world example:
 // https://gist.github.com/BurnedChris/616a72a6b41927b699de3564d4c51a12
 
-async function generateSVG() {
+async function generateSVG(fontOptions = fonts) {
   return await satori(
     {
       type: 'div',
@@ -246,7 +246,7 @@ async function generateSVG() {
     {
       width: 1200,
       height: 630,
-      fonts,
+      fonts: fontOptions,
     }
   )
 }
@@ -268,17 +268,29 @@ function generatePNGWithResvg(svg: string) {
 }
 
 async function generatePNGWithSharp(svg: string) {
-  await Sharp(Buffer.from(svg)).png({ compressionLevel: 2 }).toBuffer()
+  return await Sharp(Buffer.from(svg)).png({ compressionLevel: 2 }).toBuffer()
 }
+
+const cachedSVG = await generateSVG()
+const sharpOutput = await generatePNGWithSharp(cachedSVG)
+
+console.log(`SVG: ${(Buffer.byteLength(cachedSVG) / 1024).toFixed(1)} kB`)
+console.log(`sharp PNG: ${(sharpOutput.byteLength / 1024).toFixed(1)} kB`)
 
 summary(() => {
   bench('satori', () => generateSVG())
+  bench('satori (new font loader)', () => generateSVG(fonts.slice()))
+  bench('sharp', () => generatePNGWithSharp(cachedSVG))
   bench('satori + resvg', async () => {
     const svg = await generateSVG()
     return generatePNGWithResvg(svg)
   })
   bench('satori + sharp', async () => {
     const svg = await generateSVG()
+    return generatePNGWithSharp(svg)
+  })
+  bench('satori + sharp (new font loader)', async () => {
+    const svg = await generateSVG(fonts.slice())
     return generatePNGWithSharp(svg)
   })
 })

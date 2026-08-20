@@ -9,6 +9,8 @@ export type WeightName = 'normal' | 'bold'
 export type FontWeight = Weight | WeightName
 export type FontStyle = 'normal' | 'italic'
 const SUFFIX_WHEN_LANG_NOT_SET = 'unknown'
+const MAX_FONT_ENGINE_CACHE_SIZE = 100
+const MAX_MEASUREMENT_CACHE_SIZE = 500
 
 export interface FontOptions {
   data: Buffer | ArrayBuffer
@@ -297,6 +299,8 @@ const cachedParsedFont = new WeakMap<
 export default class FontLoader {
   defaultFont: opentype.Font
   fonts = new Map<string, [opentype.Font, Weight?, FontStyle?][]>()
+  private engineCache = new Map<string, FontEngine>()
+
   constructor(fontOptions: FontOptions[]) {
     this.addFonts(fontOptions)
   }
@@ -340,6 +344,11 @@ export default class FontLoader {
   }
 
   public addFonts(fontOptions: FontOptions[]) {
+    if (fontOptions.length) {
+      // Engines close over the available fallback fonts.
+      this.engineCache.clear()
+    }
+
     for (const fontOption of fontOptions) {
       const { name, data, lang } = fontOption
       if (lang && !isValidLocale(lang)) {
@@ -418,6 +427,19 @@ export default class FontLoader {
     fontFamily = (Array.isArray(fontFamily) ? fontFamily : [fontFamily]).map(
       (name) => name.toLowerCase()
     )
+    const cacheKey = JSON.stringify([
+      fontSize,
+      lineHeight,
+      fontFamily,
+      fontWeight,
+      fontStyle,
+      locale,
+    ])
+    const cachedEngine = this.engineCache.get(cacheKey)
+    if (cachedEngine) {
+      return cachedEngine
+    }
+
     const fonts = []
     fontFamily.forEach((face) => {
       const getNormal = this.get({
@@ -490,6 +512,7 @@ export default class FontLoader {
     }
 
     const cachedFontResolver = new Map<number, opentype.Font | undefined>()
+    const cachedMeasurements = new Map<string, number>()
     const resolveFont = (word: string, fallback = true) => {
       const _fonts = [
         ...fonts,
@@ -505,7 +528,7 @@ export default class FontLoader {
         return undefined
       }
 
-      const code = word.charCodeAt(0)
+      const code = word.codePointAt(0)
       if (cachedFontResolver.has(code)) return cachedFontResolver.get(code)
 
       const font = _fonts.find((_font, index) => {
@@ -588,7 +611,18 @@ export default class FontLoader {
           letterSpacing: number
         }
       ) => {
-        return this.measure(resolveFont, s, style)
+        const measurementKey = `${style.fontSize}\0${style.letterSpacing}\0${s}`
+        const cachedMeasurement = cachedMeasurements.get(measurementKey)
+        if (cachedMeasurement !== undefined) {
+          return cachedMeasurement
+        }
+
+        const measurement = this.measure(resolveFont, s, style)
+        if (cachedMeasurements.size >= MAX_MEASUREMENT_CACHE_SIZE) {
+          cachedMeasurements.delete(cachedMeasurements.keys().next().value)
+        }
+        cachedMeasurements.set(measurementKey, measurement)
+        return measurement
       },
       getSVG: (
         s: string,
@@ -603,6 +637,11 @@ export default class FontLoader {
         return this.getSVG(resolveFont, s, style, band)
       },
     }
+
+    if (this.engineCache.size >= MAX_FONT_ENGINE_CACHE_SIZE) {
+      this.engineCache.delete(this.engineCache.keys().next().value)
+    }
+    this.engineCache.set(cacheKey, engine)
 
     return engine
   }
