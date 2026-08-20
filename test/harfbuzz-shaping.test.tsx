@@ -9,6 +9,7 @@ describe('HarfBuzz Shaping', () => {
   let arabicFonts
   let hebrewFonts
   let mixedFonts
+  let latinCjkFonts
 
   beforeAll(async () => {
     const arabicFontPath = join(
@@ -29,10 +30,23 @@ describe('HarfBuzz Shaping', () => {
       'assets',
       'Roboto-Regular.ttf'
     )
+    const geistFontPath = join(
+      process.cwd(),
+      'test',
+      'assets',
+      'Geist-Regular.ttf'
+    )
+    const japaneseFontPath = join(process.cwd(), 'test', 'assets', 'こんにちは')
+    const chineseFontPath = join(process.cwd(), 'test', 'assets', '你好')
+    const koreanFontPath = join(process.cwd(), 'test', 'assets', '안녕')
 
     const arabicFontData = await readFile(arabicFontPath)
     const hebrewFontData = await readFile(hebrewFontPath)
     const latinFontData = await readFile(latinFontPath)
+    const geistFontData = await readFile(geistFontPath)
+    const japaneseFontData = await readFile(japaneseFontPath)
+    const chineseFontData = await readFile(chineseFontPath)
+    const koreanFontData = await readFile(koreanFontPath)
 
     arabicFonts = [
       {
@@ -66,6 +80,159 @@ describe('HarfBuzz Shaping', () => {
         style: 'normal',
       },
     ]
+
+    latinCjkFonts = [
+      {
+        name: 'Geist',
+        data: geistFontData,
+        weight: 400,
+        style: 'normal',
+      },
+      {
+        name: 'Noto Sans JP',
+        data: japaneseFontData,
+        weight: 400,
+        style: 'normal',
+        lang: 'ja-JP',
+      },
+      {
+        name: 'Noto Sans SC',
+        data: chineseFontData,
+        weight: 400,
+        style: 'normal',
+        lang: 'zh-CN',
+      },
+      {
+        name: 'Noto Sans KR',
+        data: koreanFontData,
+        weight: 400,
+        style: 'normal',
+        lang: 'ko-KR',
+      },
+    ]
+  })
+
+  describe('Latin and CJK shaping', () => {
+    it('should render Latin ligatures and kerning across English text', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            padding: 24,
+            backgroundColor: 'white',
+            color: '#111827',
+            fontFamily: 'Geist',
+            fontSize: 38,
+          }}
+        >
+          <div>office affinity · AVATAR Typography</div>
+          <div style={{ fontFeatureSettings: '"liga" off, "kern" off' }}>
+            office affinity · AVATAR Typography
+          </div>
+        </div>,
+        { width: 700, height: 140, fonts: latinCjkFonts, embedFont: true }
+      )
+
+      expect(toImage(svg, 700)).toMatchImageSnapshot()
+    })
+
+    it('should position combining marks over Latin glyphs', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            padding: 24,
+            backgroundColor: 'white',
+            color: '#c026d3',
+            fontFamily: 'Geist',
+            fontSize: 58,
+          }}
+        >
+          <div>x́ q̈</div>
+          <div style={{ fontFeatureSettings: '"mark" off, "mkmk" off' }}>
+            x́ q̈
+          </div>
+        </div>,
+        { width: 280, height: 180, fonts: latinCjkFonts, embedFont: true }
+      )
+
+      expect(toImage(svg, 280)).toMatchImageSnapshot()
+    })
+
+    it('should apply proportional alternates to Japanese glyphs', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            padding: 24,
+            backgroundColor: 'white',
+            color: '#7c3aed',
+            fontFamily: 'Geist',
+            fontSize: 44,
+          }}
+        >
+          <div>こんにちは</div>
+          <div style={{ fontFeatureSettings: '"palt"' }}>こんにちは</div>
+        </div>,
+        { width: 420, height: 170, fonts: latinCjkFonts, embedFont: true }
+      )
+
+      expect(toImage(svg, 420)).toMatchImageSnapshot()
+    })
+
+    it('should compose decomposed Hangul Jamo into syllable glyphs', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 32,
+            padding: 24,
+            backgroundColor: 'white',
+            color: '#0369a1',
+            fontFamily: 'Geist',
+            fontSize: 58,
+          }}
+        >
+          <div>안녕</div>
+          <div>안녕</div>
+        </div>,
+        { width: 360, height: 120, fonts: latinCjkFonts, embedFont: true }
+      )
+
+      expect(toImage(svg, 360)).toMatchImageSnapshot()
+    })
+
+    it('should preserve shaping across English and CJK font fallbacks', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+            padding: 20,
+            backgroundColor: 'white',
+            color: '#be123c',
+            fontFamily: 'Geist',
+            fontSize: 36,
+            letterSpacing: 4,
+          }}
+        >
+          <div>office こんにちは office</div>
+          <div>Type 你好 Type</div>
+          <div>Hello 안녕 Hello</div>
+        </div>,
+        { width: 560, height: 190, fonts: latinCjkFonts, embedFont: true }
+      )
+
+      expect(toImage(svg, 560)).toMatchImageSnapshot()
+    })
   })
 
   describe('Arabic Script Shaping', () => {
