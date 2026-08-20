@@ -14,6 +14,7 @@ import parseTransformOrigin, {
 } from '../transform-origin.js'
 import { isString, lengthToNumber, v, splitEffects } from '../utils.js'
 import { MaskProperty, parseMask } from '../parser/mask.js'
+import { splitCornerShapeValues } from '../parser/corner-shape.js'
 import { FontWeight, FontStyle } from '../font.js'
 import {
   extractCustomProperties,
@@ -98,6 +99,52 @@ function handleSpecialCase(
       vv[k] = purify(name, vh[k]) + ' ' + purify(name, vv[k])
     }
     return vv
+  }
+
+  if (name === 'cornerShape') {
+    if (typeof value !== 'string') {
+      throw new Error('Invalid `cornerShape` value: "' + value + '".')
+    }
+    const values = splitCornerShapeValues(value)
+    const topLeft = values[0]
+    const topRight = values[1] || topLeft
+    const bottomRight = values[2] || topLeft
+    const bottomLeft = values[3] || topRight
+
+    return {
+      cornerTopLeftShape: topLeft,
+      cornerTopRightShape: topRight,
+      cornerBottomRightShape: bottomRight,
+      cornerBottomLeftShape: bottomLeft,
+    }
+  }
+
+  if (/^corner(TopLeft|TopRight|BottomRight|BottomLeft)Shape$/.test(name)) {
+    if (
+      typeof value !== 'string' ||
+      splitCornerShapeValues(value, 1).length !== 1
+    ) {
+      throw new Error('Invalid `' + name + '` value: "' + value + '".')
+    }
+    return { [name]: value }
+  }
+
+  const cornerSide = name.match(/^corner(Top|Right|Bottom|Left)Shape$/)
+  if (cornerSide) {
+    if (typeof value !== 'string') {
+      throw new Error('Invalid `' + name + '` value: "' + value + '".')
+    }
+    const values = splitCornerShapeValues(value, 2)
+    const first = values[0]
+    const second = values[1] || first
+    const properties = {
+      Top: ['cornerTopLeftShape', 'cornerTopRightShape'],
+      Right: ['cornerTopRightShape', 'cornerBottomRightShape'],
+      Bottom: ['cornerBottomLeftShape', 'cornerBottomRightShape'],
+      Left: ['cornerTopLeftShape', 'cornerBottomLeftShape'],
+    }[cornerSide[1]]
+
+    return { [properties[0]]: first, [properties[1]]: second }
   }
 
   if (/^border(Top|Right|Bottom|Left)?$/.test(name)) {
