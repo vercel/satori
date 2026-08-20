@@ -12,7 +12,6 @@ import { Base64 } from 'js-base64'
 import PDFDocument from 'pdfkit/js/pdfkit.standalone'
 import SVGtoPDF from 'svg-to-pdfkit'
 import blobStream from 'blob-stream'
-import { createIntlSegmenterPolyfill } from 'intl-segmenter-polyfill'
 import { Panel, PanelGroup } from 'react-resizable-panels'
 
 import { loadEmoji, getIconCode, apis } from '../utils/twemoji'
@@ -20,11 +19,11 @@ import Introduction from '../components/introduction'
 import PanelResizeHandle from '../components/panel-resize-handle'
 import { languageFontMap } from '../utils/font'
 
-import playgroundTabs, { Tabs } from '../cards/playground-data'
+import playgroundTabs, { Tabs as TTabs } from '../cards/playground-data'
 import previewTabs from '../cards/preview-tabs'
 
 const cardNames = Object.keys(playgroundTabs)
-const editedCards: Tabs = { ...playgroundTabs }
+const editedCards: TTabs = { ...playgroundTabs }
 
 async function init() {
   if (typeof window === 'undefined') return []
@@ -41,16 +40,7 @@ async function init() {
       fetch('/material-icons-base-400-normal.woff').then((res) =>
         res.arrayBuffer()
       ),
-      !globalThis.Intl || !globalThis.Intl.Segmenter
-        ? createIntlSegmenterPolyfill(
-            fetch(
-              new URL(
-                'intl-segmenter-polyfill/dist/break_iterator.wasm',
-                import.meta.url
-              )
-            )
-          )
-        : null,
+      null,
     ]))
 
   if (Segmenter) {
@@ -928,7 +918,7 @@ function ResetCode({ activeCard }: { activeCard: string }) {
           const decoded = JSON.parse(decompressedData)
           card = decoded.code
           overrideOptions = decoded.options
-          tab = decoded.tab || 'helloworld'
+          tab = decoded.tab || 'Vercel'
         } catch (e) {
           card = decompressedData
         }
@@ -956,7 +946,7 @@ function ResetCode({ activeCard }: { activeCard: string }) {
 }
 
 export default function Playground() {
-  const [activeCard, setActiveCard] = useState<string>('helloworld')
+  const [activeCard, setActiveCard] = useState<string>('Vercel')
   const [showIntroduction, setShowIntroduction] = useState(false)
   const [isMobileView, setIsMobileView] = useState(false)
 

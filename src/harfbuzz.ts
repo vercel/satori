@@ -5,6 +5,7 @@
  */
 
 import opentype from '@shuding/opentype.js'
+import harfbuzzjsPromise from 'harfbuzzjs'
 
 // HarfBuzz types (will be populated when module loads)
 let hb: any = null
@@ -56,7 +57,6 @@ export async function initHarfBuzz(): Promise<void> {
 
   // Start initialization
   initPromise = (async () => {
-    const { default: harfbuzzjsPromise } = await import('harfbuzzjs')
     hb = await harfbuzzjsPromise
 
     if (!hb || typeof hb.createBlob !== 'function') {

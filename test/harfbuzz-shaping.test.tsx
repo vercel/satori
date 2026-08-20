@@ -36,6 +36,18 @@ describe('HarfBuzz Shaping', () => {
       'assets',
       'Geist-Regular.ttf'
     )
+    const geistMonoFontPath = join(
+      process.cwd(),
+      'test',
+      'assets',
+      'GeistMono-Regular.ttf'
+    )
+    const playfairFontPath = join(
+      process.cwd(),
+      'test',
+      'assets',
+      'playfair-display.ttf'
+    )
     const japaneseFontPath = join(process.cwd(), 'test', 'assets', 'こんにちは')
     const chineseFontPath = join(process.cwd(), 'test', 'assets', '你好')
     const koreanFontPath = join(process.cwd(), 'test', 'assets', '안녕')
@@ -44,6 +56,8 @@ describe('HarfBuzz Shaping', () => {
     const hebrewFontData = await readFile(hebrewFontPath)
     const latinFontData = await readFile(latinFontPath)
     const geistFontData = await readFile(geistFontPath)
+    const geistMonoFontData = await readFile(geistMonoFontPath)
+    const playfairFontData = await readFile(playfairFontPath)
     const japaneseFontData = await readFile(japaneseFontPath)
     const chineseFontData = await readFile(chineseFontPath)
     const koreanFontData = await readFile(koreanFontPath)
@@ -85,6 +99,18 @@ describe('HarfBuzz Shaping', () => {
       {
         name: 'Geist',
         data: geistFontData,
+        weight: 400,
+        style: 'normal',
+      },
+      {
+        name: 'Geist Mono',
+        data: geistMonoFontData,
+        weight: 400,
+        style: 'normal',
+      },
+      {
+        name: 'Playfair Display',
+        data: playfairFontData,
         weight: 400,
         style: 'normal',
       },
@@ -232,6 +258,389 @@ describe('HarfBuzz Shaping', () => {
       )
 
       expect(toImage(svg, 560)).toMatchImageSnapshot()
+    })
+
+    it('showcases HarfBuzz shaping features', async () => {
+      const annotationStyle = {
+        display: 'flex',
+        fontFamily: 'Geist Mono',
+        fontSize: 13,
+        lineHeight: 1.35,
+        color: '#687096',
+      } as const
+
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: 1200,
+            height: 630,
+            padding: '42px 46px 38px',
+            background: '#fdfdf9',
+            color: '#17204b',
+            fontFamily: 'Geist',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              paddingBottom: 30,
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: 10,
+                  fontSize: 42,
+                  lineHeight: 1,
+                }}
+              >
+                <span style={{ fontFamily: 'Geist Mono', fontSize: 40 }}>
+                  HarfBuzz
+                </span>
+                <span>shaping in Satori</span>
+              </div>
+              <div style={{ marginTop: 18, fontSize: 18, color: '#687096' }}>
+                Real OpenType substitutions, positioning, and script shaping
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flex: 1, gap: 18 }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                width: 524,
+                padding: '25px 28px 22px',
+                background: '#ff6652',
+                border: '1px solid #17204b',
+                borderRadius: 40,
+                cornerShape: 'squircle',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: 17,
+                }}
+              >
+                <span style={{ fontWeight: 700 }}>OpenType substitutions</span>
+                <span style={{ fontFamily: 'Geist Mono', fontSize: 13 }}>
+                  liga · kern · calt
+                </span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  marginTop: 25,
+                  fontFamily: 'Geist Mono',
+                  fontSize: 13,
+                  color: '#4d2944',
+                }}
+              >
+                Features ON
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  marginTop: 9,
+                  fontSize: 49,
+                  lineHeight: 1,
+                  justifyContent: 'center',
+                }}
+              >
+                office AVATAR
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  justifyContent: 'center',
+                  marginTop: 15,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'Geist Mono',
+                    fontSize: 29,
+                    lineHeight: 1,
+                  }}
+                >
+                  {'-> != ...'}
+                </span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  marginTop: 24,
+                  paddingTop: 24,
+                  borderTop: '1px solid rgba(23, 32, 75, 0.36)',
+                  color: '#3d2340',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    fontFamily: 'Geist Mono',
+                    fontSize: 13,
+                  }}
+                >
+                  Features OFF: &quot;liga&quot; off, &quot;kern&quot; off,
+                  &quot;calt&quot; off
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    marginTop: 18,
+                    fontFeatureSettings: '"liga" off, "kern" off, "calt" off',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 49,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    office AVATAR
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    marginTop: 15,
+                    fontFeatureSettings: '"liga" off, "kern" off, "calt" off',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: 'Geist Mono',
+                      fontSize: 29,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {'-> != ...'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                flex: 1,
+                gap: 18,
+              }}
+            >
+              <div style={{ display: 'flex', gap: 18, height: 205 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: 1,
+                    padding: '22px 24px',
+                    background: '#c6ef46',
+                    border: '1px solid #17204b',
+                    borderRadius: 40,
+                    cornerShape: 'squircle',
+                  }}
+                >
+                  <div style={{ fontSize: 17, fontWeight: 700 }}>
+                    Mark positioning
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: 18,
+                      marginTop: 17,
+                      fontSize: 64,
+                      lineHeight: 1,
+                    }}
+                  >
+                    <span>x́</span>
+                    <span>q̈</span>
+                  </div>
+                  <div
+                    style={{
+                      ...annotationStyle,
+                      color: '#354414',
+                      marginTop: 13,
+                    }}
+                  >
+                    mark · mkmk
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: 286,
+                    padding: '22px 24px',
+                    background: '#9e7bff',
+                    border: '1px solid #17204b',
+                    borderRadius: 40,
+                    cornerShape: 'squircle',
+                  }}
+                >
+                  <div style={{ fontSize: 17, fontWeight: 700 }}>
+                    RTL script shaping
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      alignSelf: 'stretch',
+                      marginTop: 13,
+                      fontFamily: 'Noto Sans Arabic',
+                      fontSize: 31,
+                      lineHeight: 1.25,
+                      textAlign: 'right',
+                      direction: 'rtl',
+                    }}
+                  >
+                    <span lang='ar'>السلام عليكم</span>
+                    <span lang='ar'>لا إله إلا الله</span>
+                  </div>
+                  <div
+                    style={{
+                      ...annotationStyle,
+                      color: '#40336c',
+                      justifyContent: 'flex-end',
+                      marginTop: 8,
+                    }}
+                  >
+                    direction: rtl · Arabic joining
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  flex: 1,
+                  padding: '23px 25px',
+                  background: '#3155ff',
+                  color: '#fdfdf9',
+                  border: '1px solid #17204b',
+                  borderRadius: 40,
+                  cornerShape: 'squircle',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: 284,
+                  }}
+                >
+                  <div style={{ fontSize: 17, fontWeight: 700 }}>
+                    Proportional kana
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      marginTop: 16,
+                      fontSize: 39,
+                      lineHeight: 1,
+                    }}
+                  >
+                    こんにちは
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      marginTop: 8,
+                      fontSize: 39,
+                      lineHeight: 1,
+                      fontFeatureSettings: '"palt"',
+                    }}
+                  >
+                    こんにちは
+                  </div>
+                  <div
+                    style={{
+                      ...annotationStyle,
+                      color: '#d9e0ff',
+                      marginTop: 11,
+                    }}
+                  >
+                    {'font-feature-settings: "palt";'}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: 1,
+                    paddingLeft: 28,
+                    borderLeft: '1px solid rgba(253, 253, 249, 0.38)',
+                  }}
+                >
+                  <div style={{ fontSize: 17, fontWeight: 700 }}>
+                    Fallback, without seams
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      marginTop: 17,
+                      fontSize: 25,
+                      lineHeight: 1.15,
+                      letterSpacing: 1.5,
+                    }}
+                  >
+                    Type 你好 Type
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      marginTop: 8,
+                      fontSize: 25,
+                      lineHeight: 1.15,
+                      letterSpacing: 1.5,
+                    }}
+                  >
+                    Hello 안녕 Hello
+                  </div>
+                  <div
+                    style={{
+                      ...annotationStyle,
+                      color: '#d9e0ff',
+                      marginTop: 12,
+                    }}
+                  >
+                    spacing crosses font boundaries
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        {
+          width: 1200,
+          height: 630,
+          fonts: [...latinCjkFonts, ...arabicFonts],
+          pointScaleFactor: 2,
+        }
+      )
+
+      expect(toImage(svg, 1200)).toMatchImageSnapshot()
     })
   })
 
