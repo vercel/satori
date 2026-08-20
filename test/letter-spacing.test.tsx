@@ -1,4 +1,6 @@
 import { it, describe, expect } from 'vitest'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
@@ -341,5 +343,39 @@ describe('Letter Spacing', () => {
       { width: 100, height: 100, fonts }
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should preserve letter-spacing across font fallbacks', async () => {
+    const japaneseFont = await readFile(
+      join(process.cwd(), 'test', 'assets', 'こんにちは')
+    )
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          fontFamily: 'Roboto',
+          fontSize: 48,
+          letterSpacing: 18,
+          padding: 20,
+          backgroundColor: 'white',
+          color: '#2563eb',
+        }}
+      >
+        A日A
+      </div>,
+      {
+        width: 260,
+        height: 100,
+        fonts: fonts.concat({
+          name: 'Noto Sans JP',
+          data: japaneseFont,
+          weight: 400,
+          style: 'normal',
+        }),
+      }
+    )
+
+    expect(toImage(svg, 260)).toMatchImageSnapshot()
   })
 })

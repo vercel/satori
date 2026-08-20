@@ -83,9 +83,7 @@ describe('HarfBuzz Shaping', () => {
             fontSize: 48,
           }}
         >
-          <div style={{ direction: 'rtl', color: 'black' }}>
-            لا إله إلا الله
-          </div>
+          <div style={{ color: 'black' }}>لا إله إلا الله</div>
         </div>,
         { width: 400, height: 150, fonts: arabicFonts, embedFont: true }
       )
@@ -106,7 +104,7 @@ describe('HarfBuzz Shaping', () => {
             fontSize: 48,
           }}
         >
-          <div style={{ direction: 'rtl', color: 'black' }}>السلام عليكم</div>
+          <div style={{ color: 'black' }}>السلام عليكم</div>
         </div>,
         { width: 400, height: 150, fonts: arabicFonts, embedFont: true }
       )
@@ -149,7 +147,7 @@ describe('HarfBuzz Shaping', () => {
             fontSize: 48,
           }}
         >
-          <div style={{ direction: 'rtl', color: 'black' }}>שלום עולם</div>
+          <div style={{ color: 'black' }}>שלום עולם</div>
         </div>,
         { width: 400, height: 150, fonts: hebrewFonts, embedFont: true }
       )
@@ -172,9 +170,7 @@ describe('HarfBuzz Shaping', () => {
             fontSize: 48,
           }}
         >
-          <div style={{ direction: 'rtl', color: 'black' }}>
-            السلام عليكم ورحمة الله
-          </div>
+          <div style={{ color: 'black' }}>السلام عليكم ورحمة الله</div>
         </div>,
         { width: 600, height: 150, fonts: arabicFonts, embedFont: true }
       )
@@ -194,7 +190,7 @@ describe('HarfBuzz Shaping', () => {
             fontSize: 48,
           }}
         >
-          <div style={{ direction: 'rtl', color: 'black' }}>مرحبا بالعالم</div>
+          <div style={{ color: 'black' }}>مرحبا بالعالم</div>
         </div>,
         { width: 400, height: 150, fonts: arabicFonts, embedFont: true }
       )
@@ -202,7 +198,7 @@ describe('HarfBuzz Shaping', () => {
     })
   })
 
-  describe('Mixed Scripts (BiDi)', () => {
+  describe('Mixed scripts', () => {
     it('should handle mixed Arabic and Latin text', async () => {
       const svg = await satori(
         <div
@@ -216,9 +212,7 @@ describe('HarfBuzz Shaping', () => {
             fontSize: 32,
           }}
         >
-          <div style={{ direction: 'rtl', color: 'black' }}>
-            مرحبا Hello مع World السلام
-          </div>
+          <div style={{ color: 'black' }}>مرحبا Hello مع World السلام</div>
         </div>,
         { width: 500, height: 150, fonts: mixedFonts, embedFont: true }
       )
@@ -260,7 +254,7 @@ describe('HarfBuzz Shaping', () => {
             fontSize: 32,
           }}
         >
-          <div style={{ direction: 'rtl', color: 'black' }}>Hello مرحبا</div>
+          <div style={{ color: 'black' }}>Hello مرحبا</div>
         </div>,
         { width: 300, height: 150, fonts: mixedFonts, embedFont: true }
       )

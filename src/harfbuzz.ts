@@ -5,7 +5,6 @@
  */
 
 import opentype from '@shuding/opentype.js'
-import harfbuzzjsPromise from 'harfbuzzjs'
 
 // HarfBuzz types (will be populated when module loads)
 let hb: any = null
@@ -36,6 +35,10 @@ export interface FontFeatures {
  * Internal cache for HarfBuzz font objects
  */
 const hbFontCache = new WeakMap<opentype.Font, any>()
+const hbFontFinalizer =
+  typeof FinalizationRegistry === 'function'
+    ? new FinalizationRegistry<any>((font) => font.destroy())
+    : null
 
 /**
  * Initialize HarfBuzz WASM module
@@ -53,8 +56,7 @@ export async function initHarfBuzz(): Promise<void> {
 
   // Start initialization
   initPromise = (async () => {
-    // harfbuzzjsPromise is statically imported at the top
-    // It's a Promise that resolves to the HarfBuzz instance
+    const { default: harfbuzzjsPromise } = await import('harfbuzzjs')
     hb = await harfbuzzjsPromise
 
     if (!hb || typeof hb.createBlob !== 'function') {
@@ -63,13 +65,6 @@ export async function initHarfBuzz(): Promise<void> {
   })()
 
   await initPromise
-}
-
-/**
- * Check if HarfBuzz is initialized
- */
-export function isHarfBuzzInitialized(): boolean {
-  return hb !== null
 }
 
 /**
@@ -100,6 +95,12 @@ function getHarfBuzzFont(font: opentype.Font): any {
   const face = hb.createFace(blob, 0)
   const hbFont = hb.createFont(face)
 
+  // The HarfBuzz font keeps the face alive, and the face keeps the blob alive.
+  // Release our temporary references immediately and destroy the font when the
+  // matching opentype.js font is collected.
+  face.destroy()
+  blob.destroy()
+
   // Set scale to unitsPerEm so advances are returned in font design units.
   // The caller scales by (fontSize / unitsPerEm) to convert to pixels.
   const upem = font.unitsPerEm
@@ -107,6 +108,7 @@ function getHarfBuzzFont(font: opentype.Font): any {
 
   // Cache the HarfBuzz font
   hbFontCache.set(font, hbFont)
+  hbFontFinalizer?.register(font, hbFont)
 
   return hbFont
 }
@@ -234,36 +236,4 @@ export function parseFontFeatureSettings(value: string): FontFeatures {
   }
 
   return features
-}
-
-/**
- * Cleanup HarfBuzz resources for a font
- */
-export function cleanupHarfBuzzFont(font: opentype.Font): void {
-  const cached = hbFontCache.get(font)
-  if (cached) {
-    cached.font.destroy()
-    cached.face.destroy()
-    cached.blob.destroy()
-    hbFontCache.delete(font)
-  }
-}
-
-/**
- * Get glyph advance width from shaped result
- * This accounts for kerning and other positioning adjustments
- */
-export function getShapedWidth(
-  shaped: ShapedGlyph[],
-  fontSize: number,
-  unitsPerEm: number
-): number {
-  let width = 0
-
-  for (const glyph of shaped) {
-    width += glyph.ax
-  }
-
-  // Convert from font units to pixels
-  return (width / unitsPerEm) * fontSize
 }

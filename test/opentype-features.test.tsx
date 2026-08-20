@@ -43,6 +43,27 @@ describe('OpenType Features', () => {
       )
       expect(toImage(svg, 400)).toMatchImageSnapshot()
     })
+
+    it('should wrap using the shaped ligature width', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            width: 76,
+            fontSize: 36,
+            fontFamily: 'Roboto',
+            lineHeight: 1,
+            backgroundColor: 'white',
+            color: '#db2777',
+          }}
+        >
+          office
+        </div>,
+        { width: 120, height: 100, fonts, embedFont: true }
+      )
+
+      expect(toImage(svg, 120)).toMatchImageSnapshot()
+    })
   })
 
   describe('Kerning (kern)', () => {

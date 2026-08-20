@@ -157,7 +157,6 @@ export type FontEngine = {
       fontSize: number
       letterSpacing: number
       fontFeatureSettings?: string
-      direction?: string
     }
   ) => number
   getSVG: (
@@ -168,7 +167,6 @@ export type FontEngine = {
       left: number
       letterSpacing: number
       fontFeatureSettings?: string
-      direction?: string
     },
     band?: SkipInkBand
   ) => { path: string; boxes: GlyphBox[] }
@@ -811,27 +809,21 @@ export default class FontLoader {
       fontSize,
       letterSpacing = 0,
       fontFeatureSettings,
-      direction,
     }: {
       fontSize: number
       letterSpacing: number
       fontFeatureSettings?: string
-      direction?: string
     }
   ) {
     const features = fontFeatureSettings
       ? parseFontFeatureSettings(fontFeatureSettings)
       : {}
 
-    // Note: We don't pass CSS direction to HarfBuzz for shaping.
-    // HarfBuzz auto-detects the script direction (Arabic shapes RTL,
-    // Devanagari shapes LTR, etc.). CSS direction only affects visual
-    // layout, not character shaping/joining.
-
     // Split content by font for proper font fallback
     const segments = splitByFont(content, resolveFont)
 
     let totalWidth = 0
+    let glyphCount = 0
     for (const [text, font] of segments) {
       const shaped = shapeText(font, text, {
         features,
@@ -843,22 +835,12 @@ export default class FontLoader {
       }
 
       totalWidth += (segmentWidth / font.unitsPerEm) * fontSize
+      glyphCount += shaped.length
     }
 
-    const spacingWidth = letterSpacing * (content.length - 1)
+    const spacingWidth = letterSpacing * Math.max(0, glyphCount - 1)
 
     return totalWidth + spacingWidth
-
-    // // Use opentype.js only if HarfBuzz not available
-    // const unpatch = this.patchFontFallbackResolver(font, resolveFont)
-
-    // try {
-    //   return font.getAdvanceWidth(content, fontSize, {
-    //     letterSpacing: letterSpacing / fontSize,
-    //   })
-    // } finally {
-    //   unpatch()
-    // }
   }
 
   private getSVG(
@@ -870,14 +852,12 @@ export default class FontLoader {
       left,
       letterSpacing = 0,
       fontFeatureSettings,
-      direction,
     }: {
       fontSize: number
       top: number
       left: number
       letterSpacing: number
       fontFeatureSettings?: string
-      direction?: string
     },
     band?: SkipInkBand
   ): { path: string; boxes: GlyphBox[] } {
@@ -897,14 +877,12 @@ export default class FontLoader {
 
     let cursorX = left
     const cursorY = top
+    let hasRenderedGlyph = false
 
     // Process each font segment
     for (const [text, font] of segments) {
       const scale = fontSize / font.unitsPerEm
 
-      // Let HarfBuzz auto-detect script and direction via guessSegmentProperties().
-      // We don't override direction because HarfBuzz needs to detect the correct
-      // script-specific direction for proper shaping (Arabic=RTL, Latin=LTR, etc.)
       const shaped = shapeText(font, text, {
         features,
       })
@@ -915,6 +893,11 @@ export default class FontLoader {
       // Process shaped glyphs for this segment
       for (let i = 0; i < shaped.length; i++) {
         const shapedGlyph = shaped[i]
+
+        if (hasRenderedGlyph) {
+          cursorX += letterSpacing
+        }
+
         // Get the glyph from opentype.js by ID
         const glyph = font.glyphs.get(shapedGlyph.g)
 
@@ -939,12 +922,10 @@ export default class FontLoader {
           fullPath.extend(glyphPath)
         }
 
-        // Advance cursor by the shaped advance.
-        // Add letterSpacing between glyphs (not after the last one).
+        // Advance cursor by the shaped advance. Letter spacing is added before
+        // every glyph after the first so it also crosses font fallbacks.
         cursorX += shapedGlyph.ax * scale
-        if (i < shaped.length - 1) {
-          cursorX += letterSpacing
-        }
+        hasRenderedGlyph = true
       }
     }
 
@@ -952,70 +933,6 @@ export default class FontLoader {
       path: fullPath.toPathData(1),
       boxes,
     }
-    // }
-
-    // Use opentype.js only if HarfBuzz not available
-    // const unpatch = this.patchFontFallbackResolver(font, resolveFont)
-
-    // try {
-    //   const fullPath = new opentype.Path()
-    //   const boxes: GlyphBox[] = []
-
-    //   const options = {
-    //     letterSpacing: letterSpacing / fontSize,
-    //   }
-
-    //   const cachedPath = new WeakMap<
-    //     opentype.Glyph,
-    //     [number, number, opentype.Path]
-    //   >()
-
-    //   font.forEachGlyph(
-    //     content.replace(/\n/g, ''),
-    //     left,
-    //     top,
-    //     fontSize,
-    //     options,
-    //     function (glyph, gX, gY, gFontSize) {
-    //       let glyphPath: opentype.Path
-    //       if (!cachedPath.has(glyph)) {
-    //         glyphPath = glyph.getPath(gX, gY, gFontSize, options)
-    //         cachedPath.set(glyph, [gX, gY, glyphPath])
-    //       } else {
-    //         const [_x, _y, _glyphPath] = cachedPath.get(glyph)
-    //         glyphPath = new opentype.Path()
-    //         glyphPath.commands = _glyphPath.commands.map((command) => {
-    //           const movedCommand = { ...command }
-    //           for (let k in movedCommand) {
-    //             if (typeof movedCommand[k] === 'number') {
-    //               if (k === 'x' || k === 'x1' || k === 'x2') {
-    //                 movedCommand[k] += gX - _x
-    //               }
-    //               if (k === 'y' || k === 'y1' || k === 'y2') {
-    //                 movedCommand[k] += gY - _y
-    //               }
-    //             }
-    //           }
-    //           return movedCommand
-    //         })
-    //       }
-
-    //       const bandBoxes = band ? computeBandBox(glyphPath.commands, band) : []
-    //       if (bandBoxes.length) {
-    //         boxes.push(...bandBoxes)
-    //       }
-
-    //       fullPath.extend(glyphPath)
-    //     }
-    //   )
-
-    //   return {
-    //     path: fullPath.toPathData(1),
-    //     boxes,
-    //   }
-    // } finally {
-    //   unpatch()
-    // }
   }
 }
 

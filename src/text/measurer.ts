@@ -8,50 +8,56 @@ export function genMeasurer(
     fontSize: number
     letterSpacing: number
     fontFeatureSettings?: string
-    direction?: string
   }
 ): {
   measureGrapheme: (grapheme: string) => number
   measureGraphemeArray: (graphemes: string[]) => number
   measureText: (text: string) => number
 } {
-  const { fontSize, letterSpacing, fontFeatureSettings, direction } = style
+  const { fontSize, letterSpacing, fontFeatureSettings } = style
 
   const cache = new Map<string, number>()
 
-  function measureGrapheme(grapheme: string): number {
-    let width = cache.get(grapheme)
+  function measureTextRun(text: string): number {
+    let width = cache.get(text)
 
     if (width === undefined) {
-      width = engine.measure(grapheme, {
+      width = engine.measure(text, {
         fontSize,
         letterSpacing,
         fontFeatureSettings,
-        direction,
       })
-      cache.set(grapheme, width)
+      cache.set(text, width)
     }
 
     return width
   }
 
+  function measureGrapheme(grapheme: string): number {
+    return measureTextRun(grapheme)
+  }
+
   function measureGraphemeArray(graphemes: string[]): number {
     let width = 0
+    let textRun = ''
 
-    for (const grapheme of graphemes) {
-      if (isImage(grapheme)) {
-        width += fontSize
-      } else {
-        width += measureGrapheme(grapheme)
+    const flushTextRun = () => {
+      if (textRun) {
+        width += measureTextRun(textRun)
+        textRun = ''
       }
     }
 
-    // Add letterSpacing between graphemes.
-    // Each measureGrapheme call returns glyph advances + intra-grapheme letterSpacing.
-    // We need to add inter-grapheme letterSpacing (between adjacent graphemes).
-    if (graphemes.length > 1 && letterSpacing) {
-      width += letterSpacing * (graphemes.length - 1)
+    for (const grapheme of graphemes) {
+      if (isImage(grapheme)) {
+        flushTextRun()
+        width += fontSize
+      } else {
+        textRun += grapheme
+      }
     }
+
+    flushTextRun()
 
     return width
   }
