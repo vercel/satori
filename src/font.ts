@@ -59,6 +59,48 @@ type LineSegment = {
   to: BandPoint
 }
 
+function isThaiCodePoint(codePoint: number): boolean {
+  return codePoint >= 0x0e00 && codePoint <= 0x0e7f
+}
+
+function isThaiCombiningMark(codePoint: number): boolean {
+  return (
+    (codePoint >= 0x0e31 && codePoint <= 0x0e3a) ||
+    (codePoint >= 0x0e47 && codePoint <= 0x0e4e)
+  )
+}
+
+function isThaiAboveMark(codePoint: number): boolean {
+  return (
+    codePoint === 0x0e31 ||
+    (codePoint >= 0x0e34 && codePoint <= 0x0e37) ||
+    (codePoint >= 0x0e47 && codePoint <= 0x0e4e)
+  )
+}
+
+function isThaiToneMark(codePoint: number): boolean {
+  return codePoint >= 0x0e48 && codePoint <= 0x0e4b
+}
+
+function translatePath(path: opentype.Path, dx: number, dy: number) {
+  if (!dx && !dy) return
+
+  path.commands = path.commands.map((command: opentype.PathCommand) => {
+    const movedCommand = { ...command }
+    for (let k in movedCommand) {
+      if (typeof movedCommand[k] === 'number') {
+        if (dx && (k === 'x' || k === 'x1' || k === 'x2')) {
+          movedCommand[k] += dx
+        }
+        if (dy && (k === 'y' || k === 'y1' || k === 'y2')) {
+          movedCommand[k] += dy
+        }
+      }
+    }
+    return movedCommand
+  })
+}
+
 function flattenPath(commands: opentype.Path['commands']): LineSegment[] {
   const segments: LineSegment[] = []
   let start: BandPoint = [0, 0]
@@ -722,6 +764,7 @@ export default class FontLoader {
         opentype.Glyph,
         [number, number, opentype.Path]
       >()
+      let thaiUpperStackTop: number | null = null
 
       font.forEachGlyph(
         content.replace(/\n/g, ''),
@@ -730,27 +773,53 @@ export default class FontLoader {
         fontSize,
         options,
         function (glyph, gX, gY, gFontSize) {
-          let glyphPath: opentype.Path
+          const unicode = glyph.unicode
+          const isThai = typeof unicode === 'number' && isThaiCodePoint(unicode)
+          const isThaiMark = isThai && isThaiCombiningMark(unicode)
+          const isThaiUpperMark = isThaiMark && isThaiAboveMark(unicode)
+          const isThaiTone = isThaiUpperMark && isThaiToneMark(unicode)
+
+          if (!isThaiMark) {
+            thaiUpperStackTop = null
+          }
+
+          let cached = cachedPath.get(glyph)
           if (!cachedPath.has(glyph)) {
-            glyphPath = glyph.getPath(gX, gY, gFontSize, options)
-            cachedPath.set(glyph, [gX, gY, glyphPath])
-          } else {
-            const [_x, _y, _glyphPath] = cachedPath.get(glyph)
-            glyphPath = new opentype.Path()
-            glyphPath.commands = _glyphPath.commands.map((command) => {
-              const movedCommand = { ...command }
-              for (let k in movedCommand) {
-                if (typeof movedCommand[k] === 'number') {
-                  if (k === 'x' || k === 'x1' || k === 'x2') {
-                    movedCommand[k] += gX - _x
-                  }
-                  if (k === 'y' || k === 'y1' || k === 'y2') {
-                    movedCommand[k] += gY - _y
-                  }
-                }
-              }
-              return movedCommand
-            })
+            const basePath = glyph.getPath(gX, gY, gFontSize, options)
+            cachedPath.set(glyph, [gX, gY, basePath])
+            cached = [gX, gY, basePath]
+          }
+
+          const [_x, _y, _glyphPath] = cached
+          const glyphPath = new opentype.Path()
+          glyphPath.commands = _glyphPath.commands.map((command) => ({
+            ...command,
+          }))
+          translatePath(glyphPath, gX - _x, gY - _y)
+
+          let thaiYOffset = 0
+          const glyphBox = isThaiUpperMark
+            ? computeBoundingBox(glyphPath.commands)
+            : null
+
+          if (isThaiTone && glyphBox && thaiUpperStackTop !== null) {
+            // Lift only as much as needed to avoid overlap with the current
+            // upper-mark stack, using font-size relative spacing.
+            const minGap = Math.max(1, gFontSize * 0.03)
+            const targetBottom = thaiUpperStackTop - minGap
+            if (glyphBox.y2 > targetBottom) {
+              thaiYOffset = targetBottom - glyphBox.y2
+            }
+          }
+
+          translatePath(glyphPath, 0, thaiYOffset)
+
+          if (isThaiUpperMark && glyphBox) {
+            const adjustedTop = glyphBox.y1 + thaiYOffset
+            thaiUpperStackTop =
+              thaiUpperStackTop === null
+                ? adjustedTop
+                : Math.min(thaiUpperStackTop, adjustedTop)
           }
 
           const bandBoxes = band ? computeBandBox(glyphPath.commands, band) : []
