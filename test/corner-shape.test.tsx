@@ -10,6 +10,29 @@ import {
 import satori from '../src/index.js'
 import { toImage } from './utils.js'
 
+type CornerShapeValue =
+  | 'round'
+  | 'squircle'
+  | 'square'
+  | 'bevel'
+  | 'scoop'
+  | 'notch'
+  | `superellipse(${string})`
+
+declare module 'react' {
+  interface CSSProperties {
+    cornerShape?: CornerShapeValue | string
+    cornerTopShape?: CornerShapeValue | string
+    cornerRightShape?: CornerShapeValue | string
+    cornerBottomShape?: CornerShapeValue | string
+    cornerLeftShape?: CornerShapeValue | string
+    cornerTopLeftShape?: CornerShapeValue | string
+    cornerTopRightShape?: CornerShapeValue | string
+    cornerBottomRightShape?: CornerShapeValue | string
+    cornerBottomLeftShape?: CornerShapeValue | string
+  }
+}
+
 const inheritedStyle = {
   color: 'black',
   fontSize: 16,
