@@ -198,6 +198,11 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>borderBottomRightRadius</code></td><td>Supported</td><td></td></tr>
 <tr><td>Shorthand</td><td>Supported, i.e. <code>5px</code>, <code>50% / 5px</code></td><td></td></tr>
 
+<tr><td rowspan="4"><code>cornerShape</code></td></tr>
+<tr><td>Values</td><td><code>round</code>, <code>squircle</code>, <code>square</code>, <code>bevel</code>, <code>scoop</code>, <code>notch</code>, and <code>superellipse()</code></td><td></td></tr>
+<tr><td>Corner longhands (<code>cornerTopLeftShape</code>, <code>cornerTopRightShape</code>, ...)</td><td>Supported</td><td></td></tr>
+<tr><td>Side shorthands (<code>cornerTopShape</code>, <code>cornerRightShape</code>, ...)</td><td>Supported. Corner shapes apply when the corresponding <code>borderRadius</code> is nonzero.</td><td></td></tr>
+
 <tr><td rowspan="11">Flex</td></tr>
 <tr><td><code>flexDirection</code></td><td><code>column</code>, <code>row</code>, <code>row-reverse</code>, <code>column-reverse</code>, default to <code>row</code></td><td></td></tr>
 <tr><td><code>flexWrap</code></td><td><code>wrap</code>, <code>nowrap</code>, <code>wrap-reverse</code>, default to <code>nowrap</code></td><td></td></tr>

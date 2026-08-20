@@ -6,6 +6,7 @@
 // https://developer.mozilla.org/en-US/docs/Web/CSS/border-radius
 
 import { buildXMLString, lengthToNumber } from '../utils.js'
+import { parseCornerShapeValue } from '../parser/corner-shape.js'
 
 // Getting the intersection of a 45deg ray with the elliptical arc x^2/rx^2 + y^2/ry^2 = 1.
 // Reference:
@@ -65,6 +66,159 @@ function resolveRadius(
 
 const radiusZeroOrNull = (_radius?: [number, number]) =>
   _radius && _radius[0] !== 0 && _radius[1] !== 0
+
+function resolveCornerShape(value: unknown) {
+  if (typeof value !== 'string') return 1
+  return parseCornerShapeValue(value)
+}
+
+type Point = [number, number]
+
+function cornerPoints(
+  start: Point,
+  end: Point,
+  outer: Point,
+  center: Point,
+  shape: number
+) {
+  if (shape === Infinity) return [start, outer, end]
+  if (shape === -Infinity) return [start, center, end]
+  if (shape === 0) {
+    return [
+      start,
+      [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2] as Point,
+      end,
+    ]
+  }
+
+  const curveCenter = shape < 0 ? outer : center
+  const exponent = Math.pow(2, 1 - Math.abs(shape))
+  if (exponent === 0)
+    return shape > 0 ? [start, outer, end] : [start, center, end]
+  const points: Point[] = []
+  const segments = 16
+
+  for (let i = 0; i <= segments; i++) {
+    const angle = (Math.PI * i) / segments / 2
+    const x = Math.pow(Math.sin(angle), exponent)
+    const y = Math.pow(Math.cos(angle), exponent)
+    points.push([
+      curveCenter[0] +
+        (end[0] - curveCenter[0]) * x +
+        (start[0] - curveCenter[0]) * y,
+      curveCenter[1] +
+        (end[1] - curveCenter[1]) * x +
+        (start[1] - curveCenter[1]) * y,
+    ])
+  }
+
+  return points
+}
+
+function pointString(point: Point) {
+  return `${Math.round(point[0] * 1000) / 1000},${
+    Math.round(point[1] * 1000) / 1000
+  }`
+}
+
+function oppositeRadiiScale(
+  first: [number, number],
+  second: [number, number],
+  width: number,
+  height: number
+) {
+  return Math.min(
+    1,
+    width / (first[0] + second[0] || width),
+    height / (first[1] + second[1] || height)
+  )
+}
+
+function shapedRadiusPath(
+  left: number,
+  top: number,
+  width: number,
+  height: number,
+  radii: [number, number][],
+  shapes: number[],
+  partialSides?: boolean[]
+) {
+  if (partialSides?.every(Boolean)) partialSides = undefined
+
+  const right = left + width
+  const bottom = top + height
+  const [topLeft, topRight, bottomRight, bottomLeft] = radii
+  const corners = [
+    cornerPoints(
+      [left, top + topLeft[1]],
+      [left + topLeft[0], top],
+      [left, top],
+      [left + topLeft[0], top + topLeft[1]],
+      shapes[0]
+    ),
+    cornerPoints(
+      [right - topRight[0], top],
+      [right, top + topRight[1]],
+      [right, top],
+      [right - topRight[0], top + topRight[1]],
+      shapes[1]
+    ),
+    cornerPoints(
+      [right, bottom - bottomRight[1]],
+      [right - bottomRight[0], bottom],
+      [right, bottom],
+      [right - bottomRight[0], bottom - bottomRight[1]],
+      shapes[2]
+    ),
+    cornerPoints(
+      [left + bottomLeft[0], bottom],
+      [left, bottom - bottomLeft[1]],
+      [left, bottom],
+      [left + bottomLeft[0], bottom - bottomLeft[1]],
+      shapes[3]
+    ),
+  ]
+
+  if (partialSides) {
+    let start = partialSides.indexOf(true)
+    if (start === -1) throw new Error('Invalid `partialSides`.')
+    while (partialSides[(start + 3) % 4]) start = (start + 3) % 4
+
+    const firstCorner = corners[start]
+    const firstMiddle = Math.floor(firstCorner.length / 2)
+    let path = `M${pointString(firstCorner[firstMiddle])}`
+    let side = start
+
+    do {
+      const currentCorner = corners[side]
+      const currentMiddle = Math.floor(currentCorner.length / 2)
+      for (let i = currentMiddle + 1; i < currentCorner.length; i++) {
+        path += ` L${pointString(currentCorner[i])}`
+      }
+
+      const nextCorner = corners[(side + 1) % 4]
+      path += ` L${pointString(nextCorner[0])}`
+      const nextMiddle = Math.floor(nextCorner.length / 2)
+      for (let i = 1; i <= nextMiddle; i++) {
+        path += ` L${pointString(nextCorner[i])}`
+      }
+
+      side = (side + 1) % 4
+    } while (partialSides[side] && side !== start)
+
+    return path
+  }
+
+  let path = `M${pointString(corners[0][corners[0].length - 1])}`
+  for (let side = 0; side < 4; side++) {
+    const nextCorner = corners[(side + 1) % 4]
+    path += ` L${pointString(nextCorner[0])}`
+    for (let i = 1; i < nextCorner.length; i++) {
+      path += ` L${pointString(nextCorner[i])}`
+    }
+  }
+  return path + ' Z'
+}
 
 export function getBorderRadiusClipPath(
   {
@@ -126,6 +280,12 @@ export default function radius(
     borderBottomRightRadius,
     fontSize,
   } = style
+  const cornerShapes = [
+    resolveCornerShape(style.cornerTopLeftShape),
+    resolveCornerShape(style.cornerTopRightShape),
+    resolveCornerShape(style.cornerBottomRightShape),
+    resolveCornerShape(style.cornerBottomLeftShape),
+  ]
 
   let singleAbsValueTopLeftCorner
   let singleAbsValueTopRightCorner
@@ -214,6 +374,51 @@ export default function radius(
   }
   if (singleAbsValueBottomRightCorner) {
     makeSmaller(borderBottomRightRadius)
+  }
+
+  if (cornerShapes.some((shape) => shape < 0)) {
+    const scale = Math.min(
+      oppositeRadiiScale(
+        borderTopLeftRadius,
+        borderBottomRightRadius,
+        width,
+        height
+      ),
+      oppositeRadiiScale(
+        borderTopRightRadius,
+        borderBottomLeftRadius,
+        width,
+        height
+      )
+    )
+    if (scale < 1) {
+      for (const corner of [
+        borderTopLeftRadius,
+        borderTopRightRadius,
+        borderBottomRightRadius,
+        borderBottomLeftRadius,
+      ]) {
+        corner[0] *= scale
+        corner[1] *= scale
+      }
+    }
+  }
+
+  if (cornerShapes.some((shape) => shape !== 1)) {
+    return shapedRadiusPath(
+      left,
+      top,
+      width,
+      height,
+      [
+        borderTopLeftRadius,
+        borderTopRightRadius,
+        borderBottomRightRadius,
+        borderBottomLeftRadius,
+      ],
+      cornerShapes,
+      partialSides
+    )
   }
 
   type Arc = [[number, number], [number, number]]
