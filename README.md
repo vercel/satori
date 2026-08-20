@@ -299,7 +299,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 <tr>
 <td colspan="2"><code>backdropFilter</code></td>
-<td>Supports <code>blur()</code></td>
+<td>Supports chained <code>blur()</code>, <code>brightness()</code>, <code>contrast()</code>, <code>drop-shadow()</code>, <code>grayscale()</code>, <code>hue-rotate()</code>, <code>invert()</code>, <code>opacity()</code>, <code>saturate()</code>, and <code>sepia()</code></td>
 <td></td>
 </tr>
 

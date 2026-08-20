@@ -9,7 +9,8 @@ import { buildXMLString } from '../utils.js'
 import border, { getBorderClipPath } from './border.js'
 import { genClipPath } from './clip-path.js'
 import buildMaskImage from './mask-image.js'
-import { backdropBlur } from './backdrop-filter.js'
+import { backdropFilter } from './backdrop-filter.js'
+import type { BackdropFilter } from '../parser/backdrop-filter.js'
 import CssDimension from '../vendor/parse-css-dimension/index.js'
 
 /**
@@ -240,7 +241,7 @@ export default async function rect(
     inheritableStyle
   )
 
-  const [backdropDefinitions, backdropShape] = backdropBlur({
+  const [backdropDefinitions, backdropShape] = backdropFilter({
     id,
     left,
     top,
@@ -251,7 +252,7 @@ export default async function rect(
     matrix: matrix || undefined,
     currentClipPath,
     mask: maskId,
-    radius: (style._backdropFilterBlur as number) || 0,
+    filters: (style._backdropFilters as unknown as BackdropFilter[]) || [],
   })
   defs += backdropDefinitions
 

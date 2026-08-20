@@ -13,8 +13,12 @@ const inheritedStyle = {
 }
 
 let fonts
+let balloonImage
 
 beforeAll(async () => {
+  balloonImage = `data:image/jpeg;base64,${(
+    await readFile(join(process.cwd(), 'test/assets/balloon.jpg'))
+  ).toString('base64')}`
   fonts = [
     {
       name: 'Geist',
@@ -42,23 +46,60 @@ beforeAll(async () => {
 })
 
 describe('backdrop-filter', () => {
-  it('parses blur()', () => {
-    expect(parseBackdropFilter('blur(12px)', inheritedStyle)).toBe(12)
-    expect(parseBackdropFilter('blur(0.5em)', inheritedStyle)).toBe(8)
-    expect(parseBackdropFilter('none', inheritedStyle)).toBe(0)
-    expect(() =>
-      parseBackdropFilter('brightness(50%)', inheritedStyle)
-    ).toThrow('Only `blur()` is supported')
+  it('parses filter functions and chains', () => {
+    expect(
+      parseBackdropFilter(
+        'blur(12px) brightness(125%) hue-rotate(0.5turn)',
+        inheritedStyle
+      )
+    ).toEqual([
+      { type: 'blur', value: 12 },
+      { type: 'brightness', value: 1.25 },
+      { type: 'hue-rotate', value: 180 },
+    ])
+    expect(parseBackdropFilter('grayscale()', inheritedStyle)).toEqual([
+      { type: 'grayscale', value: 1 },
+    ])
+    expect(
+      parseBackdropFilter(
+        'drop-shadow(4px 6px 12px rgba(0, 0, 0, .4))',
+        inheritedStyle
+      )
+    ).toEqual([
+      {
+        type: 'drop-shadow',
+        offsetX: 4,
+        offsetY: 6,
+        blurRadius: 12,
+        color: 'rgba(0, 0, 0, .4)',
+      },
+    ])
+    expect(parseBackdropFilter('none', inheritedStyle)).toEqual([])
     expect(() => parseBackdropFilter('blur(-2px)', inheritedStyle)).toThrow(
       'Invalid `blur()` radius'
     )
+    expect(() => parseBackdropFilter('url(#filter)', inheritedStyle)).toThrow(
+      'Unsupported `url()`'
+    )
   })
 
-  it('blurs the backdrop inside the element contour', async () => {
-    const panels = [
-      { label: 'Without blur', value: undefined },
-      { label: 'Backdrop blur', value: 'blur(18px)' },
+  it('compares all backdrop filter functions', async () => {
+    const specimens = [
+      {
+        label: 'Original',
+        value: 'none',
+      },
+      { label: 'Blur', value: 'blur(8px)' },
+      { label: 'Brightness', value: 'brightness(200%)' },
+      { label: 'Contrast', value: 'contrast(250%)' },
+      { label: 'Grayscale', value: 'grayscale(100%)' },
+      { label: 'Hue rotate', value: 'hue-rotate(120deg)' },
+      { label: 'Invert', value: 'invert(100%)' },
+      { label: 'Opacity', value: 'invert(100%) opacity(35%)' },
+      { label: 'Saturate', value: 'saturate(50%)' },
+      { label: 'Sepia', value: 'sepia(100%)' },
     ]
+    const rows = [specimens.slice(0, 5), specimens.slice(5)]
 
     const svg = await satori(
       <div
@@ -67,7 +108,7 @@ describe('backdrop-filter', () => {
           flexDirection: 'column',
           width: 1200,
           height: 630,
-          padding: '42px 46px 36px',
+          padding: '36px 46px 30px',
           background: '#fff',
           color: '#17204b',
           fontFamily: 'Geist',
@@ -80,120 +121,123 @@ describe('backdrop-filter', () => {
               gap: 10,
               alignItems: 'baseline',
               marginLeft: -4,
-              fontSize: 42,
+              fontSize: 38,
               lineHeight: 1,
               fontWeight: 400,
             }}
           >
-            <span style={{ fontFamily: 'Geist Mono', fontSize: 40 }}>
+            <span style={{ fontFamily: 'Geist Mono', fontSize: 36 }}>
               backdrop-filter
             </span>
             <span>support in Satori</span>
           </div>
-          <div style={{ marginTop: 20, fontSize: 18, color: '#5c6690' }}>
-            SVG-native blur over everything painted behind the element
+          <div style={{ marginTop: 16, fontSize: 17, color: '#5c6690' }}>
+            10 CSS filter functions, rendered with native SVG primitives
           </div>
         </div>
 
         <div
           style={{
             display: 'flex',
-            justifyContent: 'space-between',
+            flexDirection: 'column',
             flex: 1,
-            paddingTop: 42,
+            gap: 18,
+            paddingTop: 28,
           }}
         >
-          {panels.map((panel, index) => (
+          {rows.map((row, rowIndex) => (
             <div
-              key={panel.label}
+              key={rowIndex}
               style={{
                 display: 'flex',
-                flexDirection: 'column',
-                width: 530,
+                justifyContent: 'space-between',
               }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  width: 530,
-                  height: 300,
-                  position: 'relative',
-                  overflow: 'hidden',
-                  borderRadius: 28,
-                  background:
-                    index === 0
-                      ? 'linear-gradient(135deg, #3155ff 0%, #3155ff 48%, #ff5b45 48%, #ff5b45 100%)'
-                      : 'linear-gradient(135deg, #9e7bff 0%, #9e7bff 48%, #c6ef46 48%, #c6ef46 100%)',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    position: 'absolute',
-                    left: 34,
-                    top: 94,
-                    fontFamily: 'Geist Mono',
-                    fontSize: 62,
-                    lineHeight: 1,
-                    color: '#fff',
-                  }}
-                >
-                  SHARP
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    position: 'absolute',
-                    left: 178,
-                    top: 48,
-                    width: 272,
-                    height: 204,
-                    padding: '24px 26px',
-                    borderRadius: 24,
-                    background: 'rgba(255, 255, 255, 0.24)',
-                    ...(panel.value ? { backdropFilter: panel.value } : {}),
-                    border: '1px solid rgba(255, 255, 255, 0.72)',
-                    color: '#fff',
-                  }}
-                >
-                  <div style={{ fontSize: 17, opacity: 0.82 }}>SVG filter</div>
+              {row.map((specimen, columnIndex) => {
+                const index = rowIndex * 5 + columnIndex
+                return (
                   <div
+                    key={specimen.label}
                     style={{
-                      marginTop: 28,
-                      fontSize: 29,
-                      lineHeight: 1.05,
-                      fontWeight: 700,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      width: 204,
+                      marginTop: 20,
                     }}
                   >
-                    Soft glass, sharp type.
-                  </div>
-                </div>
-              </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        position: 'relative',
+                        width: 204,
+                        height: 126,
+                      }}
+                    >
+                      <img
+                        src={balloonImage}
+                        width={142}
+                        height={96}
+                        style={{
+                          position: 'absolute',
+                          left: 0,
+                          top: 0,
+                          width: 142,
+                          height: 96,
+                          borderRadius: 8,
+                          objectFit: 'cover',
+                          objectPosition: `${42 + (index % 3) * 8}% center`,
+                        }}
+                      />
+                      <div
+                        style={{
+                          display: 'flex',
+                          position: 'absolute',
+                          left: 24,
+                          top: 18,
+                          width: 142,
+                          height: 96,
+                          borderRadius: 16,
+                          background: 'rgba(255, 255, 255, 0.04)',
+                          backdropFilter: specimen.value,
+                          border: '1px solid rgba(155, 155, 155, 0.82)',
+                        }}
+                      />
+                    </div>
 
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                  marginTop: 18,
-                }}
-              >
-                <div style={{ fontSize: 25, fontWeight: 700 }}>
-                  {panel.label}
-                </div>
-                <div
-                  style={{
-                    fontFamily: 'Geist Mono',
-                    fontSize: 14,
-                    color: '#5c6690',
-                  }}
-                >
-                  {panel.value
-                    ? `backdrop-filter: ${panel.value};`
-                    : 'backdrop-filter: none;'}
-                </div>
-              </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'flex-start',
+                        alignItems: 'flex-start',
+                        gap: 8,
+                        marginTop: 8,
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 16,
+                          lineHeight: 1.1,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {specimen.label}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: 'Geist Mono',
+                          fontSize: 12,
+                          lineHeight: 1.35,
+                          color: '#5c6690',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {specimen.value}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           ))}
         </div>

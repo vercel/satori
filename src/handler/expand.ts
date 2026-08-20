@@ -203,7 +203,11 @@ function handleSpecialCase(
 
   if (name === 'backdropFilter' || name === 'WebkitBackdropFilter') {
     return {
-      _backdropFilterBlur: parseBackdropFilter(value, inheritedStyle),
+      _backdropFilters: parseBackdropFilter(
+        value,
+        inheritedStyle,
+        currentColor
+      ),
     }
   }
 
