@@ -1,6 +1,7 @@
 import { lengthToNumber } from '../utils.js'
 import { default as buildBorderRadius } from '../builder/border-radius.js'
 import { getStylesForProperty } from 'css-to-react-native'
+import { parseShapeFunction } from './shape-function.js'
 
 const regexMap = {
   circle: /circle\((.+)\)/,
@@ -8,6 +9,7 @@ const regexMap = {
   path: /path\((.+)\)/,
   polygon: /polygon\((.+)\)/,
   inset: /inset\((.+)\)/,
+  shape: /shape\((.+)\)/,
 }
 
 export function createShapeParser(
@@ -194,6 +196,10 @@ export function createShapeParser(
       height: h,
     }
   }
+  function parseShape(str: string) {
+    if (!regexMap.shape.test(str)) return null
+    return parseShapeFunction(str, width, height, inheritedStyle)
+  }
 
   return {
     parseCircle,
@@ -201,6 +207,7 @@ export function createShapeParser(
     parsePath,
     parsePolygon,
     parseInset,
+    parseShape,
   }
 }
 
