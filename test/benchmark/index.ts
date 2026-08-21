@@ -251,6 +251,75 @@ async function generateSVG() {
   )
 }
 
+async function generateGradientTextSVG() {
+  return await satori(
+    {
+      type: 'div',
+      props: {
+        style: {
+          display: 'flex',
+          height: '100%',
+          width: '100%',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          backgroundImage: 'linear-gradient(to bottom, #dbf4ff, #fff1f1)',
+          fontSize: 60,
+          letterSpacing: -2,
+          fontWeight: 700,
+          textAlign: 'center',
+        },
+        children: [
+          {
+            type: 'div',
+            props: {
+              style: {
+                backgroundImage:
+                  'linear-gradient(90deg, rgb(0, 124, 240), rgb(0, 223, 216))',
+                backgroundClip: 'text',
+                '-webkit-background-clip': 'text',
+                color: 'transparent',
+              },
+              children: 'Develop',
+            },
+          },
+          {
+            type: 'div',
+            props: {
+              style: {
+                backgroundImage:
+                  'linear-gradient(90deg, rgb(121, 40, 202), rgb(255, 0, 128))',
+                backgroundClip: 'text',
+                '-webkit-background-clip': 'text',
+                color: 'transparent',
+              },
+              children: 'Preview',
+            },
+          },
+          {
+            type: 'div',
+            props: {
+              style: {
+                backgroundImage:
+                  'linear-gradient(90deg, rgb(255, 77, 77), rgb(249, 203, 40))',
+                backgroundClip: 'text',
+                '-webkit-background-clip': 'text',
+                color: 'transparent',
+              },
+              children: 'Ship',
+            },
+          },
+        ],
+      },
+    },
+    {
+      width: 1200,
+      height: 630,
+      fonts,
+    }
+  )
+}
+
 function generatePNGWithResvg(svg: string) {
   const resvg = new Resvg(svg, {
     fitTo: {
@@ -279,6 +348,18 @@ summary(() => {
   })
   bench('satori + sharp', async () => {
     const svg = await generateSVG()
+    return generatePNGWithSharp(svg)
+  })
+})
+
+summary(() => {
+  bench('gradient text: satori', () => generateGradientTextSVG())
+  bench('gradient text: satori + resvg', async () => {
+    const svg = await generateGradientTextSVG()
+    return generatePNGWithResvg(svg)
+  })
+  bench('gradient text: satori + sharp', async () => {
+    const svg = await generateGradientTextSVG()
     return generatePNGWithSharp(svg)
   })
 })
