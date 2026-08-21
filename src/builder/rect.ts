@@ -256,6 +256,28 @@ export default async function rect(
   })
   defs += backdropDefinitions
 
+  // When the element is a single plain shape (one background fill, no border,
+  // box shadow, backdrop filter, mask or CSS filter), `opacity` is visually
+  // equivalent to `fill-opacity` since there is nothing to composite as an
+  // isolated group. Using `fill-opacity` avoids emitting a `<g opacity>`
+  // wrapper, which forces rasterizers such as librsvg and resvg to allocate
+  // and composite a temporary surface.
+  const useFillOpacity =
+    opacity !== 1 &&
+    !isImage &&
+    fills.length === 1 &&
+    !backdropShape &&
+    !backgroundShapes &&
+    !cssFilter &&
+    !maskId &&
+    !style.boxShadow &&
+    !(
+      style.borderTopWidth ||
+      style.borderRightWidth ||
+      style.borderBottomWidth ||
+      style.borderLeftWidth
+    )
+
   // Each background generates a new rectangle.
   // @TODO: Not sure if this is the best way to do it, maybe <pattern> with
   // multiple <image>s is better.
@@ -267,6 +289,7 @@ export default async function rect(
         width,
         height,
         fill,
+        'fill-opacity': useFillOpacity ? opacity : undefined,
         d: path ? path : undefined,
         transform: matrix ? matrix : undefined,
         'clip-path': style.transform ? undefined : currentClipPath,
@@ -538,7 +561,7 @@ export default async function rect(
     (shadow ? shadow[0] : '') +
     (imageBorderRadius ? imageBorderRadius[0] : '') +
     clip +
-    (opacity !== 1 ? `<g opacity="${opacity}">` : '') +
+    (opacity !== 1 && !useFillOpacity ? `<g opacity="${opacity}">` : '') +
     (style.transform && (currentClipPath || maskId)
       ? `<g${currentClipPath ? ` clip-path="${currentClipPath}"` : ''}${
           maskId ? ` mask="${maskId}"` : ''
@@ -547,7 +570,7 @@ export default async function rect(
     backdropShape +
     (backgroundShapes || shape) +
     (style.transform && (currentClipPath || maskId) ? '</g>' : '') +
-    (opacity !== 1 ? `</g>` : '') +
+    (opacity !== 1 && !useFillOpacity ? `</g>` : '') +
     (shadow ? shadow[1] : '') +
     extra
   )
