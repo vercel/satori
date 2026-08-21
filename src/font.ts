@@ -429,6 +429,10 @@ const cachedParsedFont = new WeakMap<
 export default class FontLoader {
   defaultFont: opentype.Font
   fonts = new Map<string, [opentype.Font, Weight?, FontStyle?][]>()
+  // Shaping results are cached on the loader (which persists across renders
+  // for the same font configuration) so repeated renders don't re-shape
+  // identical text runs with HarfBuzz.
+  private shapedRunCache = new Map<string, ShapedRun[]>()
   constructor(fontOptions: FontOptions[]) {
     this.addFonts(fontOptions)
   }
@@ -472,6 +476,11 @@ export default class FontLoader {
   }
 
   public addFonts(fontOptions: FontOptions[]) {
+    // Adding fonts can change how text resolves across the font list, so
+    // previously shaped runs may no longer be correct.
+    if (fontOptions.length && this.fonts.size) {
+      this.shapedRunCache.clear()
+    }
     for (const fontOption of fontOptions) {
       const { name, data, lang } = fontOption
       if (lang && !isValidLocale(lang)) {
@@ -701,11 +710,18 @@ export default class FontLoader {
       return resolveFont(s, false)
     }
 
-    // Text is shaped during both measurement and SVG generation. Keep the
-    // result on this render-local engine so the second pass can reuse it.
-    const shapedRunCache = new Map<string, ShapedRun[]>()
+    // Text is shaped during both measurement and SVG generation, and the same
+    // text is typically shaped again on subsequent renders. Cache the result
+    // on the loader (keyed by the resolved font configuration) so both the
+    // second pass of this render and future renders can reuse it.
+    // Shaped glyphs are in font units, so the key only needs the inputs that
+    // affect font resolution and shaping — not the font size.
+    const shapedRunCache = this.shapedRunCache
+    const engineKey = `${fontFamily.join(',')}|${fontWeight}|${fontStyle}|${
+      locale || ''
+    }`
     const getShapedRuns: GetShapedRuns = (content, fontFeatureSettings) => {
-      const key = `${fontFeatureSettings || ''}\0${content}`
+      const key = `${engineKey}\0${fontFeatureSettings || ''}\0${content}`
       const cached = shapedRunCache.get(key)
 
       if (cached !== undefined) {
@@ -905,12 +921,13 @@ export default class FontLoader {
       fontFeatureSettings
     )
 
-    const fullPath = new opentype.Path()
     const boxes: GlyphBox[] = []
 
     let cursorX = left
     const cursorY = top
     let hasRenderedGlyph = false
+
+    const fullPath = new opentype.Path()
 
     // Process each font segment
     for (const [, font, glyphs] of shapedRuns) {

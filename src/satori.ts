@@ -16,6 +16,52 @@ import { initHarfBuzz } from './harfbuzz.js'
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
 
+// Users often build the `fonts` array inline on every render while reusing
+// the same underlying font data buffers. Identify loaders by the identity of
+// each font's data buffer plus its metadata, so an equivalent inline array
+// still hits the cached FontLoader (and its shaping caches).
+const fontDataIds = new WeakMap<Buffer | ArrayBuffer, number>()
+let nextFontDataId = 0
+const MAX_FONT_LOADERS = 8
+const fontLoaderCache = new Map<string, FontLoader>()
+
+function getFontLoaderKey(fonts: FontOptions[]): string {
+  let key = ''
+  for (const font of fonts) {
+    let id = fontDataIds.get(font.data)
+    if (id === undefined) {
+      id = ++nextFontDataId
+      fontDataIds.set(font.data, id)
+    }
+    key += `${id}:${font.name}:${font.weight ?? ''}:${font.style ?? ''}:${
+      font.lang ?? ''
+    };`
+  }
+  return key
+}
+
+function getFontLoader(fonts: FontOptions[]): FontLoader {
+  // Fast path: the exact same array instance.
+  if (fontCache.has(fonts)) {
+    return fontCache.get(fonts)
+  }
+
+  const key = getFontLoaderKey(fonts)
+  let loader = fontLoaderCache.get(key)
+
+  if (!loader) {
+    loader = new FontLoader(fonts)
+    if (fontLoaderCache.size >= MAX_FONT_LOADERS) {
+      const oldestKey = fontLoaderCache.keys().next().value
+      if (oldestKey !== undefined) fontLoaderCache.delete(oldestKey)
+    }
+    fontLoaderCache.set(key, loader)
+  }
+
+  fontCache.set(fonts, loader)
+  return loader
+}
+
 export type SatoriOptions = (
   | {
       width: number
@@ -56,12 +102,7 @@ export default async function satori(
 
   options.fonts = options.fonts || []
 
-  let font: FontLoader
-  if (fontCache.has(options.fonts)) {
-    font = fontCache.get(options.fonts)
-  } else {
-    fontCache.set(options.fonts, (font = new FontLoader(options.fonts)))
-  }
+  const font = getFontLoader(options.fonts)
 
   const definedWidth = 'width' in options ? options.width : undefined
   const definedHeight = 'height' in options ? options.height : undefined
