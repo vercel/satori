@@ -906,7 +906,15 @@ export default async function* buildTextNodes(
                 : parentStyle.color,
             d: mergedPath,
             transform: matrix ? matrix : undefined,
-            opacity: opacity !== 1 ? opacity : undefined,
+            // A single path is one fill operation, so `fill-opacity` is
+            // visually identical to `opacity` when there is no stroke or
+            // filter, and avoids the isolated-group compositing surface in
+            // rasterizers. With a filter (e.g. text-shadow), `fill-opacity`
+            // applies before filtering while `opacity` applies after, so we
+            // must keep `opacity` there.
+            [inheritedStyle.WebkitTextStrokeWidth || cssFilter || filter
+              ? 'opacity'
+              : 'fill-opacity']: opacity !== 1 ? opacity : undefined,
             style: cssFilter ? `filter:${cssFilter}` : undefined,
             'stroke-width': inheritedStyle.WebkitTextStrokeWidth
               ? `${inheritedStyle.WebkitTextStrokeWidth}px`
