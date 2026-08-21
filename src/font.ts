@@ -4,8 +4,14 @@
 import opentype from '@shuding/opentype.js'
 import { inflateSync } from 'fflate'
 import { Locale, locales, isValidLocale } from './language.js'
-import { shapeText, parseFontFeatureSettings } from './harfbuzz.js'
+import {
+  shapeText,
+  parseFontFeatureSettings,
+  type ShapedGlyph,
+} from './harfbuzz.js'
 import { segment } from './utils.js'
+
+const MAX_SHAPED_RUN_CACHE_ENTRIES = 256
 
 /**
  * Check if a character is whitespace (space, tab, etc.)
@@ -171,6 +177,12 @@ export type FontEngine = {
     band?: SkipInkBand
   ) => { path: string; boxes: GlyphBox[] }
 }
+
+type ShapedRun = [text: string, font: opentype.Font, glyphs: ShapedGlyph[]]
+type GetShapedRuns = (
+  content: string,
+  fontFeatureSettings?: string
+) => ShapedRun[]
 
 type BandPoint = [number, number]
 
@@ -689,6 +701,38 @@ export default class FontLoader {
       return resolveFont(s, false)
     }
 
+    // Text is shaped during both measurement and SVG generation. Keep the
+    // result on this render-local engine so the second pass can reuse it.
+    const shapedRunCache = new Map<string, ShapedRun[]>()
+    const getShapedRuns: GetShapedRuns = (content, fontFeatureSettings) => {
+      const key = `${fontFeatureSettings || ''}\0${content}`
+      const cached = shapedRunCache.get(key)
+
+      if (cached !== undefined) {
+        shapedRunCache.delete(key)
+        shapedRunCache.set(key, cached)
+        return cached
+      }
+
+      const features = fontFeatureSettings
+        ? parseFontFeatureSettings(fontFeatureSettings)
+        : {}
+      const shapedRuns = splitByFont(content, resolveFont).map(
+        ([text, font]): ShapedRun => [
+          text,
+          font,
+          shapeText(font, text, { features }),
+        ]
+      )
+
+      if (shapedRunCache.size >= MAX_SHAPED_RUN_CACHE_ENTRIES) {
+        const oldestKey = shapedRunCache.keys().next().value
+        if (oldestKey !== undefined) shapedRunCache.delete(oldestKey)
+      }
+      shapedRunCache.set(key, shapedRuns)
+      return shapedRuns
+    }
+
     const engine = {
       has: (s: string) => {
         if (s === '\n') return true
@@ -726,7 +770,7 @@ export default class FontLoader {
           letterSpacing: number
         }
       ) => {
-        return this.measure(resolveFont, s, style)
+        return this.measure(s, style, getShapedRuns)
       },
       getSVG: (
         s: string,
@@ -738,7 +782,7 @@ export default class FontLoader {
         },
         band?: SkipInkBand
       ) => {
-        return this.getSVG(resolveFont, s, style, band)
+        return this.getSVG(s, style, getShapedRuns, band)
       },
     }
 
@@ -803,7 +847,6 @@ export default class FontLoader {
   }
 
   private measure(
-    resolveFont: (word: string, fallback?: boolean) => opentype.Font,
     content: string,
     {
       fontSize,
@@ -813,29 +856,21 @@ export default class FontLoader {
       fontSize: number
       letterSpacing: number
       fontFeatureSettings?: string
-    }
+    },
+    getShapedRuns: GetShapedRuns
   ) {
-    const features = fontFeatureSettings
-      ? parseFontFeatureSettings(fontFeatureSettings)
-      : {}
-
-    // Split content by font for proper font fallback
-    const segments = splitByFont(content, resolveFont)
+    const shapedRuns = getShapedRuns(content, fontFeatureSettings)
 
     let totalWidth = 0
     let glyphCount = 0
-    for (const [text, font] of segments) {
-      const shaped = shapeText(font, text, {
-        features,
-      })
-
+    for (const [, font, glyphs] of shapedRuns) {
       let segmentWidth = 0
-      for (const glyph of shaped) {
+      for (const glyph of glyphs) {
         segmentWidth += glyph.ax
       }
 
       totalWidth += (segmentWidth / font.unitsPerEm) * fontSize
-      glyphCount += shaped.length
+      glyphCount += glyphs.length
     }
 
     const spacingWidth = letterSpacing * Math.max(0, glyphCount - 1)
@@ -844,7 +879,6 @@ export default class FontLoader {
   }
 
   private getSVG(
-    resolveFont: (word: string, fallback?: boolean) => opentype.Font,
     content: string,
     {
       fontSize,
@@ -859,18 +893,17 @@ export default class FontLoader {
       letterSpacing: number
       fontFeatureSettings?: string
     },
+    getShapedRuns: GetShapedRuns,
     band?: SkipInkBand
   ): { path: string; boxes: GlyphBox[] } {
     if (fontSize === 0) {
       return { path: '', boxes: [] }
     }
 
-    const features = fontFeatureSettings
-      ? parseFontFeatureSettings(fontFeatureSettings)
-      : {}
-
-    // Split content by font for proper font fallback
-    const segments = splitByFont(content.replace(/\n/g, ''), resolveFont)
+    const shapedRuns = getShapedRuns(
+      content.replace(/\n/g, ''),
+      fontFeatureSettings
+    )
 
     const fullPath = new opentype.Path()
     const boxes: GlyphBox[] = []
@@ -880,19 +913,15 @@ export default class FontLoader {
     let hasRenderedGlyph = false
 
     // Process each font segment
-    for (const [text, font] of segments) {
+    for (const [, font, glyphs] of shapedRuns) {
       const scale = fontSize / font.unitsPerEm
-
-      const shaped = shapeText(font, text, {
-        features,
-      })
 
       // DEBUG: Uncomment to trace glyph positions
       // console.log(`getSVG segment: "${text}", fontSize=${fontSize}, letterSpacing=${letterSpacing}`)
 
       // Process shaped glyphs for this segment
-      for (let i = 0; i < shaped.length; i++) {
-        const shapedGlyph = shaped[i]
+      for (let i = 0; i < glyphs.length; i++) {
+        const shapedGlyph = glyphs[i]
 
         if (hasRenderedGlyph) {
           cursorX += letterSpacing
