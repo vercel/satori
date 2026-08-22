@@ -45,7 +45,15 @@ export default async function buildMaskImage(
       })
   }
 
-  mask = buildXMLString('mask', { id: miId }, mask)
+  const mode = maskImage[0]?.mode
+  const maskType =
+    mode === 'alpha' ? 'alpha' : mode === 'luminance' ? 'luminance' : undefined
+
+  mask = buildXMLString(
+    'mask',
+    { id: miId, ...(maskType ? { 'mask-type': maskType } : {}) },
+    mask
+  )
 
   return [miId, mask]
 }
