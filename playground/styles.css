@@ -1,9 +1,9 @@
 /* Fonts for the demo */
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Geist';
   font-style: normal;
   font-weight: 700;
-  src: url(/inter-latin-ext-700-normal.woff) format('woff2');
+  src: url(/geist-700-normal.ttf) format('truetype');
 }
 
 /* UI */

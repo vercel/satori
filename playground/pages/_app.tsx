@@ -46,13 +46,13 @@ export default function App({ Component, pageProps }: AppProps) {
         />
         <link
           rel='preload'
-          href='/inter-latin-ext-400-normal.woff'
+          href='/geist-400-normal.ttf'
           as='fetch'
           crossOrigin='anonymous'
         />
         <link
           rel='preload'
-          href='/inter-latin-ext-700-normal.woff'
+          href='/geist-700-normal.ttf'
           as='fetch'
           crossOrigin='anonymous'
         />

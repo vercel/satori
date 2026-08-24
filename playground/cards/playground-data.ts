@@ -254,7 +254,7 @@ const playgroundTabs: Tabs = {
         width: '100%',
         padding: '10px 20px',
         justifyContent: 'center',
-        fontFamily: 'Inter, "Material Icons"',
+        fontFamily: 'Geist, "Material Icons"',
         fontSize: 28,
         backgroundColor: 'white',
       }}

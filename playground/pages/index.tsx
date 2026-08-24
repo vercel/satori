@@ -31,12 +31,8 @@ async function init() {
   const [font, fontBold, fontIcon, Segmenter] =
     window.__resource ||
     (window.__resource = await Promise.all([
-      fetch('/inter-latin-ext-400-normal.woff').then((res) =>
-        res.arrayBuffer()
-      ),
-      fetch('/inter-latin-ext-700-normal.woff').then((res) =>
-        res.arrayBuffer()
-      ),
+      fetch('/geist-400-normal.ttf').then((res) => res.arrayBuffer()),
+      fetch('/geist-700-normal.ttf').then((res) => res.arrayBuffer()),
       fetch('/material-icons-base-400-normal.woff').then((res) =>
         res.arrayBuffer()
       ),
@@ -51,13 +47,13 @@ async function init() {
 
   return [
     {
-      name: 'Inter',
+      name: 'Geist',
       data: font,
       weight: 400,
       style: 'normal',
     },
     {
-      name: 'Inter',
+      name: 'Geist',
       data: fontBold,
       weight: 700,
       style: 'normal',
@@ -677,7 +673,7 @@ const LiveSatori = withLive(function ({
                       <>
                         <style
                           dangerouslySetInnerHTML={{
-                            __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Material+Icons');body{display:flex;height:100%;margin:0;tab-size:8;font-family:Inter,sans-serif;overflow:hidden}body>div,body>div *{box-sizing:border-box;display:flex}`,
+                            __html: `@import url('https://fonts.googleapis.com/css2?family=Material+Icons');@font-face{font-family:Geist;font-style:normal;font-weight:400;src:url('/geist-400-normal.ttf') format('truetype')}@font-face{font-family:Geist;font-style:normal;font-weight:700;src:url('/geist-700-normal.ttf') format('truetype')}body{display:flex;height:100%;margin:0;tab-size:8;font-family:Geist,sans-serif;overflow:hidden}body>div,body>div *{box-sizing:border-box;display:flex}`,
                           }}
                         />
                         {live?.element ? <live.element /> : null}
