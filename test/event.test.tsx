@@ -26,7 +26,9 @@ describe('Event', () => {
     expect(nodes).toMatchInlineSnapshot(`
       [
         {
+          "className": undefined,
           "height": 50,
+          "htmlId": undefined,
           "key": null,
           "left": 0,
           "props": {
@@ -42,7 +44,9 @@ describe('Event', () => {
           "width": 100,
         },
         {
+          "className": undefined,
           "height": 50,
+          "htmlId": undefined,
           "key": null,
           "left": 0,
           "props": {},
@@ -52,7 +56,9 @@ describe('Event', () => {
           "width": 37,
         },
         {
+          "className": undefined,
           "height": 50,
+          "htmlId": undefined,
           "key": null,
           "left": 37,
           "props": {},
