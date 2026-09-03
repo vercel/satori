@@ -8,6 +8,8 @@ import { parseElementStyle } from 'css-background-parser'
 import { parse as parseBoxShadow } from 'css-box-shadow'
 import cssColorParse from 'parse-css-color'
 
+import { normalizeModernColors } from '../parser/color.js'
+
 import CssDimension from '../vendor/parse-css-dimension/index.js'
 import parseTransformOrigin, {
   ParsedTransformOrigin,
@@ -300,6 +302,11 @@ function getErrorHint(name: string) {
 const RGB_SLASH = /rgb\((\d+)\s+(\d+)\s+(\d+)\s*\/\s*([\.\d]+)\)/
 function normalizeColor(value: string | object) {
   if (typeof value === 'string') {
+    // Convert modern CSS Color 4 syntaxes (oklch/oklab) that downstream SVG
+    // renderers don't understand into rgb(). Runs first so the result is then
+    // subject to the remaining normalizations below.
+    value = normalizeModernColors(value)
+
     if (RGB_SLASH.test(value.trim())) {
       // rgb(255 122 127 / .2) -> rgba(255, 122, 127, .2)
       return value.trim().replace(RGB_SLASH, (_, r, g, b, a) => {
