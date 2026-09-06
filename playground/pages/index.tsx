@@ -9,9 +9,6 @@ import copy from 'copy-to-clipboard'
 import packageJson from 'satori/package.json'
 import * as fflate from 'fflate'
 import { Base64 } from 'js-base64'
-import PDFDocument from 'pdfkit/js/pdfkit.standalone'
-import SVGtoPDF from 'svg-to-pdfkit'
-import blobStream from 'blob-stream'
 import { Panel, PanelGroup } from 'react-resizable-panels'
 
 import { loadEmoji, getIconCode, apis } from '../utils/twemoji'
@@ -574,21 +571,28 @@ const LiveSatori = withLive(function ({
               }
             }
             if (renderType === 'pdf') {
-              const doc = new PDFDocument({
-                compress: false,
-                size: [width, height],
+              const [{ jsPDF }, svg2pdfModule] = await Promise.all([
+                import('jspdf'),
+                import('svg2pdf.js'),
+              ])
+              const svg = new DOMParser().parseFromString(
+                _result,
+                'image/svg+xml'
+              ).documentElement as unknown as SVGSVGElement
+              const doc = new jsPDF({
+                unit: 'px',
+                format: [width, height],
+                orientation: width > height ? 'landscape' : 'portrait',
+                hotfixes: ['px_scaling'],
               })
-              SVGtoPDF(doc, _result, 0, 0, {
+              await svg2pdfModule.svg2pdf(svg, doc, {
+                x: 0,
+                y: 0,
                 width,
                 height,
-                preserveAspectRatio: `xMidYMid meet`,
               })
-              const stream = doc.pipe(blobStream())
-              stream.on('finish', () => {
-                const blob = stream.toBlob('application/pdf')
-                setObjectURL(URL.createObjectURL(blob))
-              })
-              doc.end()
+              const blob = doc.output('blob')
+              setObjectURL(URL.createObjectURL(blob))
             }
             setRenderError(null)
           } catch (e: any) {
@@ -700,7 +704,7 @@ const LiveSatori = withLive(function ({
                   height={height}
                   src={
                     objectURL +
-                    '#toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&scrollbar=0'
+                    '#zoom=page-width&view=FitH&toolbar=0&navpanes=0&scrollbar=0&statusbar=0&messages=0&scrollbar=0'
                   }
                   style={{
                     transform: `scale(${scaleRatio})`,
