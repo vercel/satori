@@ -3,7 +3,7 @@ import satori from 'satori'
 import { LiveProvider, LiveContext, withLive } from 'react-live'
 import { useEffect, useState, useRef, useContext, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { highlight } from 'sugar-high'
+import { Editor as CodeEditor } from '@sugar-high/react'
 import toast, { Toaster } from 'react-hot-toast'
 import copy from 'copy-to-clipboard'
 import packageJson from 'satori/package.json'
@@ -253,36 +253,30 @@ function LiveEditor({ id }: { id: string }) {
   const [code, setCode] = useState(editedCards[id])
 
   return (
-    <div className='code-editor'>
-      <pre aria-hidden>
-        <code
-          // Extra trailing '\n' keeps the highlighted layer the same height as
-          // the textarea when the code ends with a newline.
-          dangerouslySetInnerHTML={{ __html: highlight(code) + '\n' }}
-        />
-      </pre>
-      <textarea
-        value={code}
-        spellCheck={false}
-        autoCapitalize='off'
-        autoComplete='off'
-        autoCorrect='off'
-        onChange={(e) => {
-          const newCode = e.target.value
-          setCode(newCode)
-          // We also update the code in memory so switching tabs will preserve the
-          // edited code (until refreshing).
-          editedCards[id] = newCode
-          onChange(newCode)
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Tab') {
-            e.preventDefault()
-            document.execCommand('insertText', false, '  ')
-          }
-        }}
-      />
-    </div>
+    <CodeEditor
+      className='code-editor'
+      value={code}
+      lang='javascript'
+      controls={false}
+      lineNumbers
+      wrapLongLines
+      indent='  '
+      fontSize={14}
+      fontFamily='var(--font)'
+      onChange={(newCode) => {
+        setCode(newCode)
+        // We also update the code in memory so switching tabs will preserve the
+        // edited code (until refreshing).
+        editedCards[id] = newCode
+        onChange(newCode)
+      }}
+      textareaProps={{
+        spellCheck: false,
+        autoCapitalize: 'off',
+        autoComplete: 'off',
+        autoCorrect: 'off',
+      }}
+    />
   )
 }
 

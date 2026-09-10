@@ -122,10 +122,7 @@ code {
 }
 
 .code-editor {
-  display: grid;
   height: 100%;
-  overflow: auto;
-  background: #fff;
   /* Port of the previous Monaco "IDLE" theme colors to sugar-high tokens */
   --sh-identifier: #000000;
   --sh-sign: #999999;
@@ -136,27 +133,8 @@ code {
   --sh-property: #21439c;
   --sh-entity: #a535ae;
   --sh-jsxliterals: #000000;
-}
-.code-editor pre,
-.code-editor textarea {
-  grid-area: 1 / 1;
-  margin: 0;
-  padding: 12px 16px;
-  border: none;
-  font-size: 14px;
-  line-height: 1.5;
-  letter-spacing: -0.015em;
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow-wrap: break-word;
-  overflow: hidden;
-}
-.code-editor textarea {
-  background: transparent;
-  color: transparent;
-  caret-color: #000;
-  resize: none;
-  outline: none;
+  --sh-caret-color: #000000;
+  --sh-line-number-color: #bfbfbf;
 }
 .code-editor textarea::selection {
   background: #bad6fd;
