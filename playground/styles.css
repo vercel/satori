@@ -116,8 +116,28 @@ code {
   padding: 0px 4px;
   height: 20px;
 }
-.editor .monaco-container {
+.editor .code-editor-container {
   flex: 1;
+  min-height: 0;
+}
+
+.code-editor {
+  height: 100%;
+  /* Port of the previous Monaco "IDLE" theme colors to sugar-high tokens */
+  --sh-identifier: #000000;
+  --sh-sign: #999999;
+  --sh-string: #00a33f;
+  --sh-keyword: #ff5600;
+  --sh-comment: #919191;
+  --sh-class: #21439c;
+  --sh-property: #21439c;
+  --sh-entity: #a535ae;
+  --sh-jsxliterals: #000000;
+  --sh-caret-color: #000000;
+  --sh-line-number-color: #bfbfbf;
+}
+.code-editor textarea::selection {
+  background: #bad6fd;
 }
 
 .container {
