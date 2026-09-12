@@ -13,6 +13,7 @@ export interface MaskProperty {
   repeat: string
   origin: string
   clip: string
+  mode: string
 }
 
 export function parseMask(
@@ -26,6 +27,7 @@ export function parseMask(
     repeat: getMaskProperty(style, 'repeat') || 'repeat',
     origin: getMaskProperty(style, 'origin') || 'border-box',
     clip: getMaskProperty(style, 'origin') || 'border-box',
+    mode: getMaskProperty(style, 'mode') || 'match-source',
   }
 
   let maskImages = splitEffects(maskImage).filter((v) => v && v !== 'none')
