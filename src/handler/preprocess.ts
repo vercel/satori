@@ -182,11 +182,11 @@ export async function preProcessNode(node: ReactNode) {
       } else {
         // do nothing
       }
-    }
 
-    Array.isArray(_node.props.children)
-      ? _node.props.children.map((c) => walk(c))
-      : walk(_node.props.children)
+      Array.isArray(_node.props.children)
+        ? _node.props.children.map((c) => walk(c))
+        : walk(_node.props.children)
+    }
   }
 
   walk(node)
