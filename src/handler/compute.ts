@@ -194,6 +194,7 @@ export default async function compute(
         'flex-end': Yoga.ALIGN_FLEX_END,
         'space-between': Yoga.ALIGN_SPACE_BETWEEN,
         'space-around': Yoga.ALIGN_SPACE_AROUND,
+        'space-evenly': Yoga.ALIGN_SPACE_EVENLY,
         baseline: Yoga.ALIGN_BASELINE,
         normal: Yoga.ALIGN_AUTO,
       },
@@ -241,6 +242,7 @@ export default async function compute(
         'flex-end': Yoga.JUSTIFY_FLEX_END,
         'space-between': Yoga.JUSTIFY_SPACE_BETWEEN,
         'space-around': Yoga.JUSTIFY_SPACE_AROUND,
+        'space-evenly': Yoga.JUSTIFY_SPACE_EVENLY,
       },
       Yoga.JUSTIFY_FLEX_START,
       'justifyContent'
