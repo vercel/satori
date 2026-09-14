@@ -252,7 +252,7 @@ describe('Shadow', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
-    it('should support text shadows with backgroundClip text', async () => {
+    it('should render white text with shadow when backgroundClip is text', async () => {
       const svg = await satori(
         <div
           style={{
