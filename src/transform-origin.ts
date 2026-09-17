@@ -36,7 +36,8 @@ function parseUnit(word: string, baseFontSize: number): ParsedUnit {
       case '%':
         return { relative: parsed.value }
       default:
-        return {}
+        // A unitless length is only valid as `0` in CSS, which means 0px.
+        return parsed.value === 0 ? { absolute: 0 } : {}
     }
   } catch (e) {
     return {}
@@ -61,15 +62,19 @@ function handleWord(
       return {}
     default: {
       const parsedUnit = parseUnit(word, baseFontSize)
-      return parsedUnit.absolute
-        ? {
-            [unitIsHorizontal ? 'xAbsolute' : 'yAbsolute']: parsedUnit.absolute,
-          }
-        : parsedUnit.relative
-        ? {
-            [unitIsHorizontal ? 'xRelative' : 'yRelative']: parsedUnit.relative,
-          }
-        : {}
+      // `0` is a valid origin, so check for presence rather than truthiness --
+      // otherwise a zero component is dropped and the axis falls back to center.
+      if (parsedUnit.absolute !== undefined) {
+        return {
+          [unitIsHorizontal ? 'xAbsolute' : 'yAbsolute']: parsedUnit.absolute,
+        }
+      }
+      if (parsedUnit.relative !== undefined) {
+        return {
+          [unitIsHorizontal ? 'xRelative' : 'yRelative']: parsedUnit.relative,
+        }
+      }
+      return {}
     }
   }
 }
