@@ -264,9 +264,13 @@ export default async function* buildTextNodes(
       const needToBreakWord =
         allowBreakWord && w > width && (!currentWidth || willWrap || forceBreak)
 
-      if (needToBreakWord) {
+      // A single grapheme can't be broken any further. Splitting it would put
+      // the same word back in place and never advance, e.g. when the container
+      // is measured at zero width.
+      const chars = needToBreakWord ? segment(word, 'grapheme') : []
+
+      if (chars.length > 1) {
         // Break the word into multiple segments and continue the loop.
-        const chars = segment(word, 'grapheme')
         words.splice(i, 1, ...chars)
         if (currentWidth > 0) {
           // Start a new line, spaces can be ignored.
@@ -328,6 +332,8 @@ export default async function* buildTextNodes(
       let x = currentWidth - w
 
       if (w === 0) {
+        // Keep `texts` aligned with `wordPositionInLayout`.
+        texts.push(word)
         wordPositionInLayout.push({
           y: height,
           x,
