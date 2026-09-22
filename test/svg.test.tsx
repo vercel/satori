@@ -7,6 +7,35 @@ describe('SVG', () => {
   let fonts
   initFonts((f) => (fonts = f))
 
+  it.each([
+    { style: { width: 0 } },
+    { style: { height: 0 } },
+    { width: 0 },
+    { height: 0 },
+  ])('should preserve zero SVG dimensions: %o', async (props) => {
+    const background = {
+      width: 100,
+      height: 100,
+      display: 'flex',
+      backgroundColor: 'white',
+    } as const
+    const svg = await satori(
+      <div style={background}>
+        <svg width={20} height={15} viewBox='0 0 20 15' {...props}>
+          <rect width={20} height={15} fill='red' />
+        </svg>
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    const empty = await satori(<div style={background} />, {
+      width: 100,
+      height: 100,
+      fonts,
+    })
+
+    expect(toImage(svg)).toEqual(toImage(empty))
+  })
+
   it('should render svg nodes', async () => {
     const svg = await satori(
       <div

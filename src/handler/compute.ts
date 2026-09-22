@@ -67,8 +67,8 @@ export default async function compute(
       (style.paddingTop || 0) +
       (style.paddingBottom || 0)
 
-    let contentBoxWidth = style.width || props.width
-    let contentBoxHeight = style.height || props.height
+    let contentBoxWidth = style.width ?? props.width
+    let contentBoxHeight = style.height ?? props.height
 
     const isAbsoluteContentSize =
       typeof contentBoxWidth === 'number' &&
@@ -160,12 +160,13 @@ export default async function compute(
           lengthToNumber(height, inheritedStyle.fontSize, 1, inheritedStyle) ||
           height
       }
-      width ||= viewBoxSize?.[2]
-      height ||= viewBoxSize?.[3]
+      width ??= viewBoxSize?.[2]
+      height ??= viewBoxSize?.[3]
     }
 
-    if (!style.width && width) style.width = width
-    if (!style.height && height) style.height = height
+    if (style.width === undefined && width !== undefined) style.width = width
+    if (style.height === undefined && height !== undefined)
+      style.height = height
   }
 
   // Set properties for Yoga.
