@@ -26,6 +26,15 @@ for (const entry of [
         'the browser build must replace this flag at build time.'
     )
   }
+
+  if (/(?:require\(|from\s*)["']harfbuzzjs["']/.test(source)) {
+    throw new Error(
+      `${entry} imports harfbuzzjs at runtime; it must be bundled instead. ` +
+        'This repo patches harfbuzzjs to drop its Node fs branch and inline ' +
+        'hb.wasm, and that patch does not reach consumers, so leaving the ' +
+        'import external breaks every bundler.'
+    )
+  }
 }
 
 const outfile = new URL('../.tmp/browser-build.js', import.meta.url)
