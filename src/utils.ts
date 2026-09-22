@@ -1,4 +1,5 @@
 import type { ReactNode, ReactElement } from 'react'
+import escapeHTML from 'escape-html'
 import LineBreaker from 'linebreak'
 
 import CssDimension from './vendor/parse-css-dimension/index.js'
@@ -240,16 +241,19 @@ export function segment(
   return result
 }
 
+/** Build safe SVG markup from element names, attributes, and serialized children. */
 export function buildXMLString(
   type: string,
-  attrs: Record<string, string | number>,
+  attrs: Record<string, unknown>,
   children?: string
 ) {
+  assertValidXMLName(type, 'element')
   let attrString = ''
 
   for (const [k, _v] of Object.entries(attrs)) {
     if (typeof _v !== 'undefined') {
-      attrString += ` ${k}="${_v}"`
+      assertValidXMLName(k, 'attribute')
+      attrString += ` ${k}="${escapeXMLAttribute(_v)}"`
     }
   }
 
@@ -257,6 +261,51 @@ export function buildXMLString(
     return `<${type}${attrString}>${children}</${type}>`
   }
   return `<${type}${attrString}/>`
+}
+
+// Mirrors React's XML-compatible attribute-name validation. Names cannot be
+// escaped, so validate them before interpolating them into markup.
+const XML_NAME_START_CHAR =
+  ':A-Z_a-z\\u00C0-\\u00D6' +
+  '\\u00D8-\\u00F6\\u00F8-\\u02FF' +
+  '\\u0370-\\u037D\\u037F-\\u1FFF' +
+  '\\u200C-\\u200D\\u2070-\\u218F' +
+  '\\u2C00-\\u2FEF\\u3001-\\uD7FF' +
+  '\\uF900-\\uFDCF\\uFDF0-\\uFFFD'
+const XML_NAME_CHAR =
+  XML_NAME_START_CHAR + '\\-.0-9\\u00B7\\u0300-\\u036F\\u203F-\\u2040'
+// Combining marks are valid in XML names after the first character.
+// eslint-disable-next-line no-misleading-character-class
+const VALID_XML_NAME = new RegExp(
+  '^[' + XML_NAME_START_CHAR + '][' + XML_NAME_CHAR + ']*$',
+  'u'
+)
+const validatedXMLNames = new Set<string>()
+
+export function assertValidXMLName(
+  name: string,
+  kind: 'element' | 'attribute'
+) {
+  if (validatedXMLNames.has(name)) return
+  if (!VALID_XML_NAME.test(name)) {
+    throw new Error(`Invalid XML ${kind} name: ${JSON.stringify(name)}`)
+  }
+  validatedXMLNames.add(name)
+}
+
+export function escapeXMLAttribute(value: unknown): string {
+  if (
+    typeof value === 'number' ||
+    typeof value === 'bigint' ||
+    typeof value === 'boolean'
+  ) {
+    return '' + value
+  }
+  return escapeHTML(String(value))
+}
+
+export function escapeXMLText(value: unknown): string {
+  return escapeHTML(String(value))
 }
 
 export function createLRU<T>(max = 20) {

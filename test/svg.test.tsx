@@ -1,11 +1,99 @@
 import { it, describe, expect } from 'vitest'
+import { createElement } from 'react'
 
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
+import { SVGNodeToImage } from '../src/handler/preprocess.js'
 
 describe('SVG', () => {
   let fonts
   initFonts((f) => (fonts = f))
+
+  it('should escape values across SVG serialization boundaries', async () => {
+    const payload = 'A & B "><path data-pwned="true"/>'
+    const escapedPayload =
+      'A &amp; B &quot;&gt;&lt;path data-pwned=&quot;true&quot;/&gt;'
+
+    const dataUrl = await SVGNodeToImage(
+      <svg data-label={payload}>
+        <title data-label={payload} style={{ fontFamily: payload }}>
+          {payload}
+        </title>
+      </svg>,
+      'black'
+    )
+
+    expect(dataUrl).not.toContain('&')
+
+    const serializedSVG = decodeURIComponent(dataUrl.split(',', 2)[1])
+    expect(serializedSVG).toContain(`data-label="${escapedPayload}"`)
+    expect(serializedSVG).toContain(
+      `<title data-label="${escapedPayload}" style="font-family:${escapedPayload}">${escapedPayload}</title>`
+    )
+    expect(serializedSVG).not.toContain(payload)
+  })
+
+  it('should escape attributes generated outside inline SVG nodes', async () => {
+    const payload = 'red"/><path data-pwned="true"/><text fill="red'
+    const svg = await satori(<div style={{ color: payload }}>safe</div>, {
+      width: 100,
+      height: 100,
+      fonts,
+      embedFont: false,
+    })
+
+    expect(svg).not.toContain('<path data-pwned="true"')
+    expect(svg).toContain(
+      'fill="red&quot;/&gt;&lt;path data-pwned=&quot;true&quot;/&gt;&lt;text fill=&quot;red"'
+    )
+  })
+
+  it('should reject structural XML injection', async () => {
+    const invalidElement = createElement('path><path data-pwned="true"')
+    await expect(
+      SVGNodeToImage(createElement('svg', null, invalidElement), 'black')
+    ).rejects.toThrow('Invalid XML element name')
+
+    const invalidAttribute = createElement('path', {
+      'data-label" data-pwned': 'true',
+    })
+    await expect(
+      SVGNodeToImage(createElement('svg', null, invalidAttribute), 'black')
+    ).rejects.toThrow('Invalid XML attribute name')
+  })
+
+  it('should reject caller-supplied internal style fields', async () => {
+    await expect(
+      satori(
+        <div
+          style={
+            {
+              _inheritedBackgroundClipTextPath: {
+                value: '</clipPath><rect width="100" height="100"/><clipPath>',
+              },
+            } as any
+          }
+        />,
+        { width: 100, height: 100, fonts }
+      )
+    ).rejects.toThrow(
+      'Invalid style property: "_inheritedBackgroundClipTextPath"'
+    )
+
+    await expect(
+      satori(
+        <div
+          style={
+            {
+              _inheritedClipPathId:
+                'x)"/><rect width="100" height="100"/><g data-x="',
+            } as any
+          }
+        />,
+        { width: 100, height: 100, fonts }
+      )
+    ).rejects.toThrow('Invalid style property: "_inheritedClipPathId"')
+  })
 
   it('should render svg nodes', async () => {
     const svg = await satori(

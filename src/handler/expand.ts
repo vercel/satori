@@ -416,10 +416,8 @@ export default function expand(
     serializedStyle.color = currentColor
 
     for (const prop in processableStyle) {
-      // Internal properties.
       if (prop.startsWith('_')) {
-        serializedStyle[prop] = processableStyle[prop]
-        continue
+        throw new Error(`Invalid style property: ${JSON.stringify(prop)}`)
       }
 
       if (prop === 'color') {
