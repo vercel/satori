@@ -84,6 +84,31 @@ afterEach(() => {
 })
 
 describe('Image', () => {
+  it.each([{ width: 0 }, { height: 0 }])(
+    'should preserve zero image dimensions in CSS: %o',
+    async (style) => {
+      const background = {
+        width: 100,
+        height: 100,
+        display: 'flex',
+        backgroundColor: 'white',
+      } as const
+      const svg = await satori(
+        <div style={background}>
+          <img src={PNG_SAMPLE} width={20} height={15} style={style} />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      const empty = await satori(<div style={background} />, {
+        width: 100,
+        height: 100,
+        fonts,
+      })
+
+      expect(toImage(svg)).toEqual(toImage(empty))
+    }
+  )
+
   it('should resolve image data', async () => {
     const svg = await satori(
       <div
