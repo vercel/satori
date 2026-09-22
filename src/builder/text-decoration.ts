@@ -136,8 +136,7 @@ export default function buildDecoration(
           .join('')
       : ''
 
-  return (
-    (clipPathId ? `<g clip-path="url(#${clipPathId})">` : '') +
+  const content =
     segments
       .map(([x1, x2]) =>
         buildXMLString('line', {
@@ -153,8 +152,9 @@ export default function buildDecoration(
           transform: matrix,
         })
       )
-      .join('') +
-    extraLine +
-    (clipPathId ? '</g>' : '')
-  )
+      .join('') + extraLine
+
+  return clipPathId
+    ? buildXMLString('g', { 'clip-path': `url(#${clipPathId})` }, content)
+    : content
 }

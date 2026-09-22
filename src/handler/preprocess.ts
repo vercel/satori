@@ -1,7 +1,13 @@
 import type { ReactElement, ReactNode, Fragment } from 'react'
 import { Fragment as FragmentSymbol } from '../jsx/jsx-runtime.js'
 import { resolveImageData, cache } from './image.js'
-import { isReactElement, parseViewBox, midline } from '../utils.js'
+import {
+  buildXMLString,
+  escapeXMLText,
+  isReactElement,
+  parseViewBox,
+  midline,
+} from '../utils.js'
 
 // Based on
 // https://raw.githubusercontent.com/facebook/react/master/packages/react-dom/src/shared/possibleStandardNames.js
@@ -92,8 +98,9 @@ const ATTRIBUTE_MAPPING = {
   xmlnsXlink: 'xmlns:xlink',
 } as const
 
-// From https://github.com/yoksel/url-encoder/blob/master/src/js/script.js
-const SVGSymbols = /[\r\n%#()<>?[\\\]^`{|}"']/g
+// The original characters make SVG suitable for a data URL. Ampersands are
+// additionally encoded so inner XML entities survive the enclosing SVG parse.
+const EMBEDDED_SVG_DATA_URL_SYMBOLS = /[\r\n%#()<>?[\\\]^`{|}"'&]/g
 
 function translateSVGNodeToSVGString(
   node:
@@ -109,7 +116,7 @@ function translateSVGNodeToSVGString(
       .map((n) => translateSVGNodeToSVGString(n, inheritedColor))
       .join('')
   }
-  if (typeof node !== 'object') return String(node)
+  if (typeof node !== 'object') return escapeXMLText(node)
 
   const type = node.type
   if (type === 'text') {
@@ -121,33 +128,43 @@ function translateSVGNodeToSVGString(
   const { children, style, ...restProps } = node.props || {}
   const currentColor = style?.color || inheritedColor
 
-  const attrs = `${Object.entries(restProps)
-    .map(([k, _v]) => {
-      if (typeof _v === 'string' && _v.toLowerCase() === 'currentcolor') {
-        _v = currentColor
-      }
-
-      if ((k === 'href' || k === 'xlinkHref') && type === 'image') {
-        return ` ${ATTRIBUTE_MAPPING[k] || k}="${cache.get(_v as string)[0]}"`
-      }
-      return ` ${ATTRIBUTE_MAPPING[k] || k}="${_v}"`
-    })
-    .join('')}`
-
-  const styles = style
-    ? ` style="${Object.entries(style)
-        .map(([k, _v]) => `${midline(k)}:${_v}`)
-        .join(';')}"`
-    : ''
-
   if ((type as typeof node.type | typeof FragmentSymbol) === FragmentSymbol) {
     return translateSVGNodeToSVGString(children, currentColor)
   }
 
-  return `<${type}${attrs}${styles}>${translateSVGNodeToSVGString(
-    children,
-    currentColor
-  )}</${type}>`
+  if (typeof type !== 'string') {
+    throw new Error('Only intrinsic elements are supported inside <svg>')
+  }
+
+  const attrs: Record<string, unknown> = {}
+  for (const [k, value] of Object.entries(restProps)) {
+    let resolvedValue = value
+    if (
+      typeof resolvedValue === 'string' &&
+      resolvedValue.toLowerCase() === 'currentcolor'
+    ) {
+      resolvedValue = currentColor
+    }
+
+    if ((k === 'href' || k === 'xlinkHref') && type === 'image') {
+      resolvedValue = cache.get(resolvedValue as string)[0]
+    }
+
+    const name = ATTRIBUTE_MAPPING[k] || k
+    attrs[name] = resolvedValue
+  }
+
+  if (style) {
+    attrs.style = Object.entries(style)
+      .map(([k, value]) => `${midline(k)}:${value}`)
+      .join(';')
+  }
+
+  return buildXMLString(
+    type,
+    attrs,
+    translateSVGNodeToSVGString(children, currentColor)
+  )
 }
 /**
  * pre process node and resolve absolute link to img data for image element
@@ -226,15 +243,23 @@ export async function SVGNodeToImage(
   restProps.height = height
   if (viewBox) restProps.viewBox = viewBox
 
-  return `data:image/svg+xml;utf8,${`<svg ${Object.entries(restProps)
-    .map(([k, _v]) => {
-      if (typeof _v === 'string' && _v.toLowerCase() === 'currentcolor') {
-        _v = currentColor
-      }
-      return ` ${ATTRIBUTE_MAPPING[k] || k}="${_v}"`
-    })
-    .join('')}>${translateSVGNodeToSVGString(
-    children,
-    currentColor
-  )}</svg>`.replace(SVGSymbols, encodeURIComponent)}`
+  const attrs: Record<string, unknown> = {}
+  for (const [k, value] of Object.entries(restProps)) {
+    const name = ATTRIBUTE_MAPPING[k] || k
+    attrs[name] =
+      typeof value === 'string' && value.toLowerCase() === 'currentcolor'
+        ? currentColor
+        : value
+  }
+
+  const serializedSVG = buildXMLString(
+    'svg',
+    attrs,
+    translateSVGNodeToSVGString(children, currentColor)
+  )
+
+  return `data:image/svg+xml;utf8,${serializedSVG.replace(
+    EMBEDDED_SVG_DATA_URL_SYMBOLS,
+    encodeURIComponent
+  )}`
 }
