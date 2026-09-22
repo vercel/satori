@@ -290,7 +290,9 @@ export async function resolveImageData(
       const base64Src =
         encodingType === 'base64'
           ? src
-          : `data:image/svg+xml;base64,${btoa(utf8Src)}`
+          : `data:image/svg+xml;base64,${arrayBufferToBase64(
+              new TextEncoder().encode(utf8Src)
+            )}`
       let imageSize = parseSvgImageSize(src, utf8Src)
       cache.set(src, [base64Src, ...imageSize])
       return [base64Src, ...imageSize]
@@ -355,7 +357,9 @@ export async function resolveImageData(
     .then((data) => {
       if (typeof data === 'string') {
         try {
-          const newSrc = `data:image/svg+xml;base64,${btoa(data)}`
+          const newSrc = `data:image/svg+xml;base64,${arrayBufferToBase64(
+            new TextEncoder().encode(data)
+          )}`
           // Parse the SVG image size
           const imageSize = parseSvgImageSize(url, data)
           return [newSrc, ...imageSize] as ResolvedImageData
