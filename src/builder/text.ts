@@ -104,15 +104,16 @@ export default function buildText(
       'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
       style: style.filter ? `filter:${style.filter}` : undefined,
     }
+    const imageMarkup =
+      buildXMLString('image', {
+        ...shapeProps,
+        opacity: opacity !== 1 ? opacity : undefined,
+      }) + (decorationShape || '')
     return [
-      (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
-        buildXMLString('image', {
-          ...shapeProps,
-          opacity: opacity !== 1 ? opacity : undefined,
-        }) +
-        (decorationShape || '') +
-        (filter ? '</g>' : '') +
-        extra,
+      (filter
+        ? filter +
+          buildXMLString('g', { filter: `url(#satori_s-${id})` }, imageMarkup)
+        : imageMarkup) + extra,
       // SVG doesn't support `<image>` as the shape.
       '',
     ]
@@ -141,20 +142,21 @@ export default function buildText(
     'stroke-linejoin': style.WebkitTextStrokeWidth ? 'round' : undefined,
     'paint-order': style.WebkitTextStrokeWidth ? 'stroke' : undefined,
   }
+  const textMarkup =
+    buildXMLString(
+      'text',
+      {
+        ...shapeProps,
+        fill: style.color,
+        opacity: opacity !== 1 ? opacity : undefined,
+      },
+      escapeHTML(content)
+    ) + (decorationShape || '')
   return [
-    (filter ? `${filter}<g filter="url(#satori_s-${id})">` : '') +
-      buildXMLString(
-        'text',
-        {
-          ...shapeProps,
-          fill: style.color,
-          opacity: opacity !== 1 ? opacity : undefined,
-        },
-        escapeHTML(content)
-      ) +
-      (decorationShape || '') +
-      (filter ? '</g>' : '') +
-      extra,
+    (filter
+      ? filter +
+        buildXMLString('g', { filter: `url(#satori_s-${id})` }, textMarkup)
+      : textMarkup) + extra,
     shape ? buildXMLString('text', shapeProps, escapeHTML(content)) : '',
   ]
 }

@@ -891,12 +891,9 @@ export default async function* buildTextNodes(
 
   // Embed the font as path.
   if (mergedPath) {
-    const p =
+    const path =
       (!isFullyTransparent(parentStyle.color) || filter) && opacity !== 0
-        ? `<g ${overflowMaskId ? `mask="url(#${overflowMaskId})"` : ''} ${
-            clipPathId ? `clip-path="url(#${clipPathId})"` : ''
-          }>` +
-          buildXMLString('path', {
+        ? buildXMLString('path', {
             fill:
               filter &&
               (isFullyTransparent(parentStyle.color) ||
@@ -928,9 +925,18 @@ export default async function* buildTextNodes(
             'paint-order': inheritedStyle.WebkitTextStrokeWidth
               ? 'stroke'
               : undefined,
-          }) +
-          '</g>'
+          })
         : ''
+    const p = path
+      ? buildXMLString(
+          'g',
+          {
+            mask: overflowMaskId ? `url(#${overflowMaskId})` : undefined,
+            'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
+          },
+          path
+        )
+      : ''
 
     if (_inheritedBackgroundClipTextPath) {
       backgroundClipDef = buildXMLString('path', {

@@ -556,21 +556,29 @@ export default async function rect(
     style
   )
 
+  let content = backdropShape + (backgroundShapes || shape)
+
+  if (style.transform && (currentClipPath || maskId)) {
+    content = buildXMLString(
+      'g',
+      {
+        'clip-path': currentClipPath || undefined,
+        mask: maskId || undefined,
+      },
+      content
+    )
+  }
+
+  if (opacity !== 1 && !useFillOpacity) {
+    content = buildXMLString('g', { opacity }, content)
+  }
+
   return (
     (defs ? buildXMLString('defs', {}, defs) : '') +
     (shadow ? shadow[0] : '') +
     (imageBorderRadius ? imageBorderRadius[0] : '') +
     clip +
-    (opacity !== 1 && !useFillOpacity ? `<g opacity="${opacity}">` : '') +
-    (style.transform && (currentClipPath || maskId)
-      ? `<g${currentClipPath ? ` clip-path="${currentClipPath}"` : ''}${
-          maskId ? ` mask="${maskId}"` : ''
-        }>`
-      : '') +
-    backdropShape +
-    (backgroundShapes || shape) +
-    (style.transform && (currentClipPath || maskId) ? '</g>' : '') +
-    (opacity !== 1 && !useFillOpacity ? `</g>` : '') +
+    content +
     (shadow ? shadow[1] : '') +
     extra
   )
