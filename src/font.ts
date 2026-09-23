@@ -259,6 +259,182 @@ function evaluateBezier(points: BandPoint[], t: number): BandPoint {
   return working[0]
 }
 
+// Formats a coordinate exactly like opentype.js's `toPathData(1)`: integers
+// print without a decimal point, everything else as `toFixed(1)`. The common
+// case avoids `toFixed`, which dominated text rendering time. Values within a
+// hair of a rounding tie, non-finite values, and magnitudes where the
+// multiply could hide a tie are handed to `toFixed` so the output stays
+// byte-identical.
+function formatPathNumber(v: number): string {
+  if (Math.round(v) === v) return '' + Math.round(v)
+  const tenths = v * 10
+  const fraction = tenths - Math.floor(tenths)
+  if (!(Math.abs(fraction - 0.5) > 1e-7) || !(Math.abs(v) < 1e7)) {
+    return v.toFixed(1)
+  }
+  const rounded = Math.round(tenths)
+  const magnitude = Math.abs(rounded)
+  const whole = Math.floor(magnitude / 10)
+  const digit = magnitude - whole * 10
+  return (v < 0 ? '-' : '') + whole + '.' + digit
+}
+
+function pack2(a: number, b: number): string {
+  return formatPathNumber(a) + (b >= 0 ? ' ' : '') + formatPathNumber(b)
+}
+
+// Outline of one glyph scaled to a font size, in the order opentype.js emits
+// it: `types` holds the command letters and `coords` the scaled x/y pairs
+// (`x * scale`, `-y * scale`), so placing the glyph is one addition per value,
+// the same operation `Glyph#getPath` performs. Cached per glyph and font size.
+interface ScaledOutline {
+  types: Uint8Array
+  coords: Float64Array
+}
+
+const CMD_M = 77
+const CMD_L = 76
+const CMD_C = 67
+const CMD_Q = 81
+const CMD_Z = 90
+
+// Font sizes are few per document; keep the cache per glyph small so a long
+// running process with many sizes does not grow without bound.
+const MAX_SCALED_OUTLINES_PER_GLYPH = 8
+const scaledOutlineCache = new WeakMap<
+  opentype.Glyph,
+  Map<number, ScaledOutline>
+>()
+
+function getScaledOutline(
+  glyph: opentype.Glyph,
+  fontSize: number
+): ScaledOutline {
+  let bySize = scaledOutlineCache.get(glyph)
+  if (!bySize) {
+    bySize = new Map()
+    scaledOutlineCache.set(glyph, bySize)
+  }
+  const cached = bySize.get(fontSize)
+  if (cached) return cached
+
+  const path = glyph.path
+  const commands = path.commands
+  const scale = (1 / (path.unitsPerEm || 1000)) * fontSize
+  const types = new Uint8Array(commands.length)
+  let count = 0
+  for (let i = 0; i < commands.length; i++) {
+    const type = commands[i].type
+    if (type === 'C') count += 6
+    else if (type === 'Q') count += 4
+    else if (type === 'M' || type === 'L') count += 2
+  }
+  const coords = new Float64Array(count)
+  let k = 0
+  for (let i = 0; i < commands.length; i++) {
+    const cmd = commands[i]
+    types[i] = cmd.type.charCodeAt(0)
+    if (cmd.type === 'M' || cmd.type === 'L') {
+      coords[k++] = cmd.x * scale
+      coords[k++] = -cmd.y * scale
+    } else if (cmd.type === 'C') {
+      coords[k++] = cmd.x1 * scale
+      coords[k++] = -cmd.y1 * scale
+      coords[k++] = cmd.x2 * scale
+      coords[k++] = -cmd.y2 * scale
+      coords[k++] = cmd.x * scale
+      coords[k++] = -cmd.y * scale
+    } else if (cmd.type === 'Q') {
+      coords[k++] = cmd.x1 * scale
+      coords[k++] = -cmd.y1 * scale
+      coords[k++] = cmd.x * scale
+      coords[k++] = -cmd.y * scale
+    }
+  }
+
+  if (bySize.size >= MAX_SCALED_OUTLINES_PER_GLYPH) {
+    bySize.delete(bySize.keys().next().value)
+  }
+  const outline = { types, coords }
+  bySize.set(fontSize, outline)
+  return outline
+}
+
+// Path data for one glyph placed at (x, y), byte-identical to
+// `glyph.getPath(x, y, fontSize).toPathData(1)`.
+function glyphToPathData(
+  glyph: opentype.Glyph,
+  x: number,
+  y: number,
+  fontSize: number
+): string {
+  const { types, coords } = getScaledOutline(glyph, fontSize)
+  let d = ''
+  let k = 0
+  for (let i = 0; i < types.length; i++) {
+    const type = types[i]
+    if (type === CMD_M || type === CMD_L) {
+      d +=
+        (type === CMD_M ? 'M' : 'L') + pack2(x + coords[k], y + coords[k + 1])
+      k += 2
+    } else if (type === CMD_C) {
+      const x2 = x + coords[k + 2]
+      const x3 = x + coords[k + 4]
+      d +=
+        'C' +
+        pack2(x + coords[k], y + coords[k + 1]) +
+        (x2 >= 0 ? ' ' : '') +
+        pack2(x2, y + coords[k + 3]) +
+        (x3 >= 0 ? ' ' : '') +
+        pack2(x3, y + coords[k + 5])
+      k += 6
+    } else if (type === CMD_Q) {
+      const x2 = x + coords[k + 2]
+      d +=
+        'Q' +
+        pack2(x + coords[k], y + coords[k + 1]) +
+        (x2 >= 0 ? ' ' : '') +
+        pack2(x2, y + coords[k + 3])
+      k += 4
+    } else if (type === CMD_Z) {
+      d += 'Z'
+    }
+  }
+  return d
+}
+
+// Same output as `opentype.Path#toPathData(1)`, without the per-value
+// `arguments` walk and `toFixed` calls. Used when band boxes need the
+// command objects anyway.
+function commandsToPathData(commands: opentype.Path['commands']): string {
+  let d = ''
+  for (let i = 0; i < commands.length; i++) {
+    const cmd = commands[i]
+    if (cmd.type === 'M') {
+      d += 'M' + pack2(cmd.x, cmd.y)
+    } else if (cmd.type === 'L') {
+      d += 'L' + pack2(cmd.x, cmd.y)
+    } else if (cmd.type === 'C') {
+      d +=
+        'C' +
+        pack2(cmd.x1, cmd.y1) +
+        (cmd.x2 >= 0 ? ' ' : '') +
+        pack2(cmd.x2, cmd.y2) +
+        (cmd.x >= 0 ? ' ' : '') +
+        pack2(cmd.x, cmd.y)
+    } else if (cmd.type === 'Q') {
+      d +=
+        'Q' +
+        pack2(cmd.x1, cmd.y1) +
+        (cmd.x >= 0 ? ' ' : '') +
+        pack2(cmd.x, cmd.y)
+    } else if (cmd.type === 'Z') {
+      d += 'Z'
+    }
+  }
+  return d
+}
+
 function computeBandBox(
   commands: opentype.Path['commands'],
   band?: SkipInkBand
@@ -927,7 +1103,7 @@ export default class FontLoader {
     const cursorY = top
     let hasRenderedGlyph = false
 
-    const fullPath = new opentype.Path()
+    let path = ''
 
     // Process each font segment
     for (const [, font, glyphs] of shapedRuns) {
@@ -956,16 +1132,18 @@ export default class FontLoader {
           const gX = cursorX + shapedGlyph.dx * scale
           const gY = cursorY + shapedGlyph.dy * scale
 
-          // Get the glyph path and transform it
-          const glyphPath = glyph.getPath(gX, gY, fontSize, {})
-
-          // Compute band boxes for text decoration skip-ink
-          const bandBoxes = band ? computeBandBox(glyphPath.commands, band) : []
-          if (bandBoxes.length) {
-            boxes.push(...bandBoxes)
+          if (band) {
+            // Band boxes for text decoration skip-ink need the placed
+            // command objects, so take the general path here.
+            const glyphPath = glyph.getPath(gX, gY, fontSize, {})
+            const bandBoxes = computeBandBox(glyphPath.commands, band)
+            if (bandBoxes.length) {
+              boxes.push(...bandBoxes)
+            }
+            path += commandsToPathData(glyphPath.commands)
+          } else {
+            path += glyphToPathData(glyph, gX, gY, fontSize)
           }
-
-          fullPath.extend(glyphPath)
         }
 
         // Advance cursor by the shaped advance. Letter spacing is added before
@@ -975,10 +1153,7 @@ export default class FontLoader {
       }
     }
 
-    return {
-      path: fullPath.toPathData(1),
-      boxes,
-    }
+    return { path, boxes }
   }
 }
 

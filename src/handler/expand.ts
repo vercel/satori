@@ -578,6 +578,8 @@ function calcBaseFontSize(
   inheritedSize: number
 ): number {
   if (typeof size === 'number') return size
+  // Missing font size: inherit, without a parse attempt that only throws.
+  if (typeof size !== 'string') return inheritedSize
 
   try {
     const parsed = new CssDimension(size)
