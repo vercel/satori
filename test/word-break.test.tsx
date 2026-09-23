@@ -103,6 +103,49 @@ describe('word-break', () => {
 
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should not hang when a single grapheme is wider than the container', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            width: 10,
+            height: 100,
+            fontSize: 24,
+            color: 'red',
+            wordBreak: 'break-all',
+          }}
+        >
+          {'ab'}
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should not hang when the container is measured at zero width', async () => {
+      // Yoga first measures this flex item with a width of 0.
+      const svg = await satori(
+        <div style={{ display: 'flex', width: 100, height: 100 }}>
+          <div style={{ display: 'flex' }}>
+            <div style={{ flex: 1, fontSize: 24, wordBreak: 'break-all' }}>
+              {'A b'}
+            </div>
+          </div>
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 
   describe('break-word', () => {
