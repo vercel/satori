@@ -27,6 +27,28 @@ describe('Gradient', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
+    it('should support linear-gradient with oklch color stops', async () => {
+      // https://github.com/vercel/satori/issues/637
+      const svg = await satori(
+        <div
+          style={{
+            backgroundColor: 'white',
+            backgroundImage:
+              'linear-gradient(15deg, oklch(65.69% 0.196 275.75), oklch(74.8% 0.26 342.55), oklch(74.51% 0.167 183.61))',
+            height: '100%',
+            width: '100%',
+          }}
+        ></div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(svg).not.toContain('oklch')
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
     it('should support repeating linear-gradient', async () => {
       const svg = await satori(
         <div
