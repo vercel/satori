@@ -219,28 +219,24 @@ function resolveFillRule(str: string) {
 }
 
 function resolvePosition(position: string, xDelta: number, yDelta: number) {
-  const pos = position.split(' ')
-  const res: { x: number | string; y: number | string } = {
-    x: pos[0] || '50%',
-    y: pos[1] || '50%',
+  const pos = position.trim().split(/\s+/)
+  if (pos.length === 1) pos.push('center')
+  if (
+    ['top', 'bottom'].includes(pos[0]) ||
+    ['left', 'right'].includes(pos[1])
+  ) {
+    pos.reverse()
   }
 
-  pos.forEach((v) => {
-    if (v === 'top') {
-      res.y = 0
-    } else if (v === 'bottom') {
-      res.y = yDelta
-    } else if (v === 'left') {
-      res.x = 0
-    } else if (v === 'right') {
-      res.x = xDelta
-    } else if (v === 'center') {
-      res.x = xDelta / 2
-      res.y = yDelta / 2
-    } else {
-      // do nothing
-    }
-  })
+  const resolveValue = (value: string, delta: number) => {
+    if (value === 'left' || value === 'top') return 0
+    if (value === 'right' || value === 'bottom') return delta
+    if (value === 'center') return delta / 2
+    return value || '50%'
+  }
 
-  return res
+  return {
+    x: resolveValue(pos[0], xDelta),
+    y: resolveValue(pos[1], yDelta),
+  }
 }
