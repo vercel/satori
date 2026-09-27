@@ -236,8 +236,10 @@ export async function SVGNodeToImage(
 
   // ratio = height / width
   const ratio = viewBoxSize ? viewBoxSize[3] / viewBoxSize[2] : null
-  width = width || (ratio && height) ? height / ratio : null
-  height = height || (ratio && width) ? width * ratio : null
+  width = width || (ratio && height ? height / ratio : null)
+  height = height || (ratio && width ? width * ratio : null)
+  // Sizes with units such as `5em` can't be resolved here, use the viewBox.
+  if (isNaN(width) || isNaN(height)) width = height = null
 
   restProps.width = width
   restProps.height = height
