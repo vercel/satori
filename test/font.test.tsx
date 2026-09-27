@@ -166,4 +166,22 @@ describe('Font', () => {
 
     expect(await toImage(svg)).toMatchImageSnapshot()
   })
+
+  it('should render WOFF fonts the same as the TTF they were built from', async () => {
+    const render = async (file: string) =>
+      satori(<div style={{ fontSize: 32 }}>Hello</div>, {
+        width: 200,
+        height: 50,
+        fonts: [
+          {
+            name: 'Habbo',
+            data: await readFile(join(process.cwd(), 'test', 'assets', file)),
+            weight: 400,
+            style: 'normal',
+          },
+        ],
+      })
+
+    expect(await render('Habbo.woff')).toBe(await render('Habbo.ttf'))
+  })
 })
