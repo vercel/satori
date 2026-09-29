@@ -216,11 +216,18 @@ function handleSpecialCase(
     // To support percentages in transform (which is not supported in RN), we
     // replace them with random symbols and then replace them back after parsing.
     const symbols = {}
-    const replaced = value.replace(/(-?[\d.]+%)/g, (_, _v) => {
-      const symbol = ~~(Math.random() * 1e9)
-      symbols[symbol] = _v
-      return symbol + 'px'
-    })
+    const replaced = value
+      // `css-to-react-native` only accepts `deg` and `rad`, so convert the
+      // other angle units to degrees.
+      .replace(/(-?(?:\d+\.?\d*|\.\d+))(turn|grad)\b/gi, (_, n, unit) => {
+        const degrees = unit.toLowerCase() === 'turn' ? 360 : 0.9
+        return parseFloat(n) * degrees + 'deg'
+      })
+      .replace(/(-?[\d.]+%)/g, (_, _v) => {
+        const symbol = ~~(Math.random() * 1e9)
+        symbols[symbol] = _v
+        return symbol + 'px'
+      })
     const parsed = getStylesForProperty('transform', replaced, true)
     for (const t of parsed.transform) {
       for (const k in t) {

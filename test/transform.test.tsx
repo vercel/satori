@@ -227,4 +227,41 @@ describe('transform', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
+
+  describe('angle units', () => {
+    const render = (transform: string) =>
+      satori(
+        <div
+          style={{
+            width: 10,
+            height: 10,
+            backgroundColor: 'red',
+            transform,
+          }}
+        />,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+
+    it('should support `turn` in rotate', async () => {
+      expect(await render('rotate(0.25turn)')).toBe(
+        await render('rotate(90deg)')
+      )
+    })
+
+    it('should support `grad` in rotate', async () => {
+      expect(await render('rotate(100grad)')).toBe(
+        await render('rotate(90deg)')
+      )
+    })
+
+    it('should support `turn` and `grad` in skew', async () => {
+      expect(await render('skewX(-.1turn) skewY(50grad)')).toBe(
+        await render('skewX(-36deg) skewY(45deg)')
+      )
+    })
+  })
 })
