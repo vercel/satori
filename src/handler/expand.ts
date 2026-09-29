@@ -213,6 +213,9 @@ function handleSpecialCase(
 
   if (name === 'transform') {
     if (typeof value !== 'string') throw new Error('Invalid `transform` value.')
+    if (value.trim().toLowerCase() === 'none') {
+      return {}
+    }
     // To support percentages in transform (which is not supported in RN), we
     // replace them with random symbols and then replace them back after parsing.
     const symbols = {}

@@ -227,4 +227,27 @@ describe('transform', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
+
+  describe('none', () => {
+    it('should render `transform: none` like an element without a transform', async () => {
+      const render = (transform?: string) =>
+        satori(
+          <div
+            style={{
+              width: 10,
+              height: 10,
+              backgroundColor: 'red',
+              ...(transform ? { transform } : {}),
+            }}
+          />,
+          {
+            width: 100,
+            height: 100,
+            fonts,
+          }
+        )
+
+      expect(await render('none')).toBe(await render())
+    })
+  })
 })
