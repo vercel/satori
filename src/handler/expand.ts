@@ -267,14 +267,17 @@ function handleSpecialCase(
 
   if (name === 'WebkitTextStroke') {
     value = value.toString().trim()
-    const values = value.split(' ')
-    if (values.length !== 2) {
+    // Split on whitespace outside parentheses so `rgba(0, 0, 0, 0.5)` stays
+    // one value. The width and the color can come in either order.
+    const values = splitEffects(value, /\s/).filter(Boolean)
+    const widthIndex = values.findIndex((_v) => /^[-+]?[\d.]/.test(_v))
+    if (values.length !== 2 || widthIndex === -1) {
       throw new Error('Invalid `WebkitTextStroke` value.')
     }
 
     return {
-      WebkitTextStrokeWidth: purify(name, values[0]),
-      WebkitTextStrokeColor: purify(name, values[1]),
+      WebkitTextStrokeWidth: purify(name, values[widthIndex]),
+      WebkitTextStrokeColor: purify(name, values[1 - widthIndex]),
     }
   }
 
