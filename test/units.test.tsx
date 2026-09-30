@@ -101,6 +101,21 @@ describe('Units', () => {
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it('should resolve vw, vh and % font sizes', async () => {
+    const render = (fontSize: number | string) =>
+      satori(
+        <div style={{ display: 'flex', fontSize: 20 }}>
+          <div style={{ fontSize }}>Hello</div>
+        </div>,
+        { width: 200, height: 100, fonts }
+      )
+
+    expect(await render('5vw')).toBe(await render(10))
+    expect(await render('10vh')).toBe(await render(10))
+    expect(await render('150%')).toBe(await render(30))
+    expect(await render('150%')).not.toContain('NaN')
+  })
+
   it('should support rgb syntaxs', async () => {
     const svg = await satori(
       <div style={{ display: 'flex' }}>
