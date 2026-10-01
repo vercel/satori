@@ -13,6 +13,7 @@ coverage
 
 playground/public/yoga.wasm
 playground/tsconfig.tsbuildinfo
+playground/.webgl-libs
 
 # Vendor files
 # yoga.wasm
