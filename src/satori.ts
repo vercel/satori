@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { TwConfig } from 'twrnc'
 import type { SatoriNode } from './layout.js'
+import type { CreateWebGLContext } from './handler/canvas.js'
 
 import layout from './layout.js'
 import FontLoader, { FontOptions } from './font.js'
@@ -85,8 +86,18 @@ export type SatoriOptions = (
   tailwindConfig?: TwConfig
   onNodeDetected?: (node: SatoriNode) => void
   pointScaleFactor?: number
+  /**
+   * Creates the WebGL2 context used to render `<canvas webgl={...}>` elements,
+   * sized to the canvas `width` and `height` attributes.
+   */
+  createWebGLContext?: CreateWebGLContext
 }
 export type { SatoriNode }
+export type {
+  CreateWebGLContext,
+  WebGLCanvasInfo,
+  WebGLCanvasRenderer,
+} from './handler/canvas.js'
 
 export default async function satori(
   element: ReactNode,
@@ -166,6 +177,7 @@ export default async function satori(
     graphemeImages,
     canLoadAdditionalAssets: !!options.loadAdditionalAsset,
     onNodeDetected: options.onNodeDetected,
+    createWebGLContext: options.createWebGLContext,
     getTwStyles: (tw, style) => {
       const twToStyles = getTw({
         width: definedWidth,

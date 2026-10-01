@@ -110,6 +110,7 @@
     "eslint": "^8.25.0",
     "eslint-plugin-react": "^7.31.10",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "gl": "github:encharm/headless-gl#8c5723171c7081fffb3ef4cea3b05f9220d55ed0",
     "husky": "8.0.3",
     "jest-image-snapshot": "^6.1.0",
     "lint-staged": "13.1.0",

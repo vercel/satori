@@ -37,12 +37,14 @@ jobs:
     # prevents this action from running on forks
     if: github.repository_owner == 'vercel'
     name: Node.js ${{ matrix.node }} on ${{ matrix.os }}
-    timeout-minutes: 5
+    # Installing compiles the headless-gl dev dependency used by the canvas tests.
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        node: [18, 20, 22]
+        # The headless-gl dev dependency requires Node.js 20+.
+        node: [20, 22]
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write # to be able to publish a GitHub release

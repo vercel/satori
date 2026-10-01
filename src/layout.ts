@@ -20,6 +20,7 @@ import buildTextNodes from './text/index.js'
 import rect from './builder/rect.js'
 import { Locale, normalizeLocale } from './language.js'
 import { SerializedStyle } from './handler/expand.js'
+import type { CreateWebGLContext } from './handler/canvas.js'
 
 export interface LayoutContext {
   id: string
@@ -35,6 +36,7 @@ export interface LayoutContext {
   locale?: Locale
   getTwStyles: (tw: string, style: any) => any
   onNodeDetected?: (node: SatoriNode) => void
+  createWebGLContext?: CreateWebGLContext
 }
 
 export interface SatoriNode {
@@ -141,7 +143,8 @@ export default async function* layout(
     type,
     inheritedStyle,
     style,
-    props
+    props,
+    { createWebGLContext: context.createWebGLContext }
   )
   // Post-process styles to attach inheritable properties for Satori.
 
@@ -181,7 +184,9 @@ export default async function* layout(
   }
 
   // 2. Do layout recursively for its children.
-  const normalizedChildren = normalizeChildren(children)
+  // Children of <canvas> are fallback content and are never rendered.
+  const normalizedChildren =
+    type === 'canvas' ? [] : normalizeChildren(children)
   const iterators: ReturnType<typeof layout>[] = []
 
   let i = 0
@@ -201,6 +206,7 @@ export default async function* layout(
       locale: newLocale,
       getTwStyles,
       onNodeDetected: context.onNodeDetected,
+      createWebGLContext: context.createWebGLContext,
     })
     if (canLoadAdditionalAssets) {
       segmentsMissingFont.push(...(((await iter.next()).value as any) || []))
@@ -239,8 +245,9 @@ export default async function* layout(
   })
 
   // Generate the rendered markup for the current node.
-  if (type === 'img') {
-    const src = computedStyle.__src as string
+  if (type === 'img' || type === 'canvas') {
+    // A <canvas> without rendered content has no `src` and is drawn as a box.
+    const src = computedStyle.__src as string | undefined
     baseRenderResult = await rect(
       {
         id,

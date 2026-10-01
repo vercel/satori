@@ -122,6 +122,50 @@ await satori(
 )
 ```
 
+#### Canvas (WebGL)
+
+You can draw the content of a `<canvas>` with WebGL2 via the `webgl` prop. Satori calls it with a WebGL2 context sized to the canvas, then embeds what you drew as an image. This requires the `createWebGLContext` option, which returns a WebGL2 context for the given size:
+
+```jsx
+await satori(
+  <canvas
+    width={1200}
+    height={630}
+    style={{ width: '100%', height: '100%' }}
+    webgl={(gl, { width, height }) => {
+      gl.clearColor(0, 0.5, 1, 1)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      // Compile shaders, draw, etc.
+    }}
+  />,
+  {
+    ...options,
+    // In browsers and Web Workers:
+    createWebGLContext: (width, height) =>
+      new OffscreenCanvas(width, height).getContext('webgl2'),
+  }
+)
+```
+
+In Node.js, use a headless WebGL2 implementation instead, such as an ANGLE + SwiftShader build of [headless-gl](https://github.com/stackgl/headless-gl), which runs shaders on the CPU. Satori doesn't destroy contexts, so `createWebGLContext` controls their lifetime, e.g. to reuse them across renders.
+
+- The `width` and `height` attributes set the drawing buffer size (300×150 by default), like in browsers. The canvas is displayed at its CSS size, keeping that aspect ratio unless both CSS dimensions are set.
+- Before calling `webgl`, Satori binds the default framebuffer and sets the viewport to the whole drawing buffer. Afterwards, it reads the default framebuffer. The `webgl` callback can be async.
+- The drawing buffer is treated as premultiplied alpha unless the context was created with `premultipliedAlpha: false`.
+- Children of `<canvas>` are fallback content and are not rendered.
+
+If you use React's JSX types, add the `webgl` prop to them:
+
+```ts
+import type { WebGLCanvasRenderer } from 'satori'
+
+declare module 'react' {
+  interface CanvasHTMLAttributes<T> {
+    webgl?: WebGLCanvasRenderer
+  }
+}
+```
+
 ### CSS
 
 Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Native, and it’s **not** a complete CSS implementation. However, it supports a subset of the spec that covers most common CSS features:
