@@ -1,7 +1,7 @@
 /**
- * Support for `<canvas webgl={...}>`: Satori asks the user-provided
- * `createWebGLContext` for a context, runs the element's `webgl` callback, and
- * embeds the resulting drawing buffer as an image.
+ * Support for `<canvas webgl={...}>`: Satori gets a WebGL2 context (from
+ * `createWebGLContext`, or a default one), runs the element's `webgl`
+ * callback, and embeds the resulting drawing buffer as an image.
  */
 
 import {
@@ -10,6 +10,7 @@ import {
 } from '../handler/compute.js'
 import { arrayBufferToBase64 } from '../handler/image.js'
 import { encodePNG } from './png.js'
+import { withDefaultContext } from './webgl.js'
 
 export interface WebGLCanvasInfo {
   /** Width of the canvas drawing buffer, from the `width` attribute. */
@@ -97,11 +98,29 @@ export async function renderWebGLCanvas(
   height: number,
   createContext: CreateWebGLContext | undefined
 ): Promise<string> {
-  if (!createContext) {
-    throw new Error(
-      'Rendering `<canvas webgl={...}>` requires the `createWebGLContext` option. Provide a function that returns a WebGL2 context for the given size, e.g. `(width, height) => new OffscreenCanvas(width, height).getContext("webgl2")` in browsers, or a headless WebGL implementation in Node.js.'
-    )
+  const draw = async (gl: WebGL2RenderingContext) => {
+    // Start like a new canvas: the default framebuffer, cleared to
+    // transparent, with a viewport covering the whole drawing buffer. This
+    // matters when contexts are reused, and because headless-gl doesn't clear
+    // the drawing buffer of new contexts, which could otherwise show what an
+    // earlier context drew. The state set here is a new context's default.
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
+    gl.disable(gl.SCISSOR_TEST)
+    gl.colorMask(true, true, true, true)
+    gl.depthMask(true)
+    gl.stencilMask(0xffffffff)
+    gl.clearColor(0, 0, 0, 0)
+    gl.clearDepth(1)
+    gl.clearStencil(0)
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT)
+
+    await renderer(gl, { width, height })
+
+    return readDrawingBuffer(gl)
   }
+
+  if (!createContext) return withDefaultContext(width, height, draw)
 
   const gl = await createContext(width, height)
   if (!gl) {
@@ -109,16 +128,7 @@ export async function renderWebGLCanvas(
       `Failed to create a ${width}x${height} WebGL context for <canvas>: \`createWebGLContext\` returned ${gl}.`
     )
   }
-
-  // Start from the state of a freshly created canvas: the default framebuffer
-  // with a viewport covering the whole drawing buffer. This matters when
-  // `createWebGLContext` reuses and resizes one context for many canvases.
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-  gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight)
-
-  await renderer(gl, { width, height })
-
-  return readDrawingBuffer(gl)
+  return draw(gl)
 }
 
 function readDrawingBuffer(gl: WebGL2RenderingContext): string {

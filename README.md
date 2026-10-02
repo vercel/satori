@@ -126,7 +126,7 @@ await satori(
 
 > **Note:** This is experimental and may change or be removed in any release. It's only available from `satori/experimental`, so it doesn't add to the size of the `satori` import.
 
-With `satori/experimental`, you can draw the content of a `<canvas>` with WebGL2 via the `webgl` prop. Satori calls it with a WebGL2 context sized to the canvas, then embeds what you drew as an image. This requires the `createWebGLContext` option, which returns a WebGL2 context for the given size:
+With `satori/experimental`, you can draw the content of a `<canvas>` with WebGL2 via the `webgl` prop. Satori calls it with a WebGL2 context sized to the canvas, then embeds what you drew as an image:
 
 ```jsx
 import satori from 'satori/experimental'
@@ -142,19 +142,19 @@ await satori(
       // Compile shaders, draw, etc.
     }}
   />,
-  {
-    ...options,
-    // In browsers and Web Workers:
-    createWebGLContext: (width, height) =>
-      new OffscreenCanvas(width, height).getContext('webgl2'),
-  }
+  options
 )
 ```
 
-In Node.js, use a headless WebGL2 implementation instead, such as an ANGLE + SwiftShader build of [headless-gl](https://github.com/stackgl/headless-gl), which runs shaders on the CPU. Satori doesn't destroy contexts, so `createWebGLContext` controls their lifetime, e.g. to reuse them across renders.
+Each canvas gets a new WebGL2 context, which is destroyed with everything drawn into it afterwards:
+
+- In browsers and Web Workers, Satori uses `OffscreenCanvas`.
+- In Node.js 20.16+, Satori loads the `gl` package from your project, which must be a WebGL2 build of [headless-gl](https://github.com/stackgl/headless-gl) such as an ANGLE + SwiftShader one (e.g. `github:encharm/headless-gl`). It runs shaders on the CPU. If you bundle your server code, keep `gl` external and include its files in the deployment.
+
+To provide contexts yourself, e.g. to reuse them across renders, pass a `createWebGLContext(width, height)` option that returns a WebGL2 context. Satori doesn't destroy the contexts it returns.
 
 - The `width` and `height` attributes set the drawing buffer size (300×150 by default), like in browsers. The canvas is displayed at its CSS size, keeping that aspect ratio unless both CSS dimensions are set.
-- Before calling `webgl`, Satori binds the default framebuffer and sets the viewport to the whole drawing buffer. Afterwards, it reads the default framebuffer. The `webgl` callback can be async.
+- Before calling `webgl`, Satori binds the default framebuffer, sets the viewport to the whole drawing buffer, and clears it to transparent, like a new canvas. Afterwards, it reads the default framebuffer. The `webgl` callback can be async.
 - The drawing buffer is treated as premultiplied alpha unless the context was created with `premultipliedAlpha: false`.
 - Children of `<canvas>` are fallback content and are not rendered.
 - The `satori` import ignores the `webgl` prop and draws `<canvas>` like any other element.

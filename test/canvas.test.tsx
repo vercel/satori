@@ -25,6 +25,8 @@ class FakeWebGL2 {
   RGBA = 0x1908
   UNSIGNED_BYTE = 0x1401
   COLOR_BUFFER_BIT = 0x4000
+  DEPTH_BUFFER_BIT = 0x0100
+  STENCIL_BUFFER_BIT = 0x0400
   SCISSOR_TEST = 0x0c11
   VIEWPORT = 0x0ba2
 
@@ -57,6 +59,10 @@ class FakeWebGL2 {
 
   getContextAttributes() {
     return { alpha: true, premultipliedAlpha: true, ...this.attributes }
+  }
+
+  getExtension() {
+    return null
   }
 
   getParameter(name: number) {
@@ -98,6 +104,26 @@ class FakeWebGL2 {
 
   clearColor(r: number, g: number, b: number, a: number) {
     this.color = [r, g, b, a]
+  }
+
+  colorMask() {
+    // Only writing all color channels is emulated.
+  }
+
+  depthMask() {
+    // Depth buffers are not emulated.
+  }
+
+  clearDepth() {
+    // Depth buffers are not emulated.
+  }
+
+  stencilMask() {
+    // Stencil buffers are not emulated.
+  }
+
+  clearStencil() {
+    // Stencil buffers are not emulated.
   }
 
   clear() {
@@ -810,5 +836,133 @@ describe('Canvas shaders', () => {
       { width: 200, height: 100, fonts, createWebGLContext }
     )
     expect(toImage(svg, 200)).toMatchImageSnapshot()
+  })
+})
+
+describe('Default WebGL contexts', () => {
+  let fonts
+  initFonts((f) => (fonts = f))
+
+  // The first context initializes SwiftShader, which can be slow.
+  beforeAll(() => {
+    createGL(1, 1, {
+      createWebGL2Context: true,
+      useSwiftShader: true,
+    })
+      .getExtension('STACKGL_destroy_context')
+      .destroy()
+  }, 30_000)
+
+  it('should load headless-gl in Node.js', async () => {
+    // No `createWebGLContext`, so Satori loads the `gl` package itself.
+    // Bottom-left blue, bottom-right red, top-left cyan, top-right yellow.
+    const svg = await satori(
+      <canvas
+        width={100}
+        height={100}
+        webgl={(gl) =>
+          drawShader(
+            gl,
+            `#version 300 es
+            precision highp float;
+            uniform vec2 resolution;
+            out vec4 fragColor;
+            void main() {
+              vec2 uv = gl_FragCoord.xy / resolution;
+              fragColor = vec4(uv.x, uv.y, 1.0 - uv.x, 1.0);
+            }`
+          )
+        }
+      />,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should give each canvas a fresh context', async () => {
+    // The second canvas only draws a small blue square. Neither the red from
+    // the first canvas nor its leftover state may carry over.
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'white',
+        }}
+      >
+        <canvas
+          width={50}
+          height={50}
+          webgl={(gl) => {
+            fillRect(gl, [0, 0, 50, 50], RED)
+            gl.enable(gl.SCISSOR_TEST)
+            gl.scissor(0, 0, 1, 1)
+            gl.bindFramebuffer(gl.FRAMEBUFFER, gl.createFramebuffer())
+          }}
+        />
+        <canvas
+          width={50}
+          height={50}
+          webgl={(gl) => {
+            gl.scissor(15, 15, 20, 20)
+            gl.enable(gl.SCISSOR_TEST)
+            gl.clearColor(0, 0, 1, 1)
+            gl.clear(gl.COLOR_BUFFER_BIT)
+          }}
+        />
+      </div>,
+      { width: 100, height: 50, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should keep concurrent renders separate', async () => {
+    // Both renders wait halfway through drawing, so they interleave.
+    const card = (background: number[], half: number[]) => (
+      <canvas
+        width={50}
+        height={50}
+        webgl={async (gl) => {
+          fillRect(gl, [0, 0, 50, 50], background)
+          await new Promise((resolve) => setTimeout(resolve, 20))
+          fillRect(gl, [0, 0, 25, 50], half)
+        }}
+      />
+    )
+    const [first, second] = await Promise.all([
+      satori(card(RED, [1, 1, 1, 1]), { width: 50, height: 50, fonts }),
+      satori(card(BLUE, [0, 0, 0, 1]), { width: 50, height: 50, fonts }),
+    ])
+    expect(toImage(first, 50)).toMatchImageSnapshot()
+    expect(toImage(second, 50)).toMatchImageSnapshot()
+  })
+
+  it('should use OffscreenCanvas when available', async () => {
+    // Green if the renderer gets a context from this stub, red otherwise.
+    const globals = globalThis as { OffscreenCanvas?: unknown }
+    const original = globals.OffscreenCanvas
+    globals.OffscreenCanvas = class {
+      constructor(private width: number, private height: number) {}
+      getContext() {
+        return new FakeWebGL2(this.width, this.height)
+      }
+    }
+
+    try {
+      const svg = await satori(
+        <canvas
+          width={100}
+          height={50}
+          webgl={(gl) =>
+            fillRect(gl, [0, 0, 50, 50], gl instanceof FakeWebGL2 ? GREEN : RED)
+          }
+        />,
+        { width: 100, height: 50, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    } finally {
+      globals.OffscreenCanvas = original
+    }
   })
 })
