@@ -80,4 +80,21 @@ describe('webkit-text-stroke', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should parse functional colors and either value order', async () => {
+    const render = (WebkitTextStroke: string) =>
+      satori(<div style={{ fontSize: 30, WebkitTextStroke }}>Hello</div>, {
+        width: 100,
+        height: 100,
+        fonts,
+      })
+
+    expect(await render('2px rgba(0, 0, 0, 0.5)')).toContain(
+      'stroke-width="2px" stroke="rgba(0, 0, 0, 0.5)"'
+    )
+    expect(await render('rgba(0, 0, 0, 0.5) 2px')).toBe(
+      await render('2px rgba(0, 0, 0, 0.5)')
+    )
+    expect(await render('red 2px')).toBe(await render('2px red'))
+  })
 })
