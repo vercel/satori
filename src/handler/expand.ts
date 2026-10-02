@@ -469,7 +469,8 @@ export default function expand(
   // Calculate the base font size.
   const baseFontSize = calcBaseFontSize(
     serializedStyle.fontSize,
-    inheritedStyle.fontSize
+    inheritedStyle.fontSize,
+    inheritedStyle
   )
   if (typeof serializedStyle.fontSize !== 'undefined') {
     serializedStyle.fontSize = baseFontSize
@@ -575,7 +576,8 @@ export default function expand(
 
 function calcBaseFontSize(
   size: number | string,
-  inheritedSize: number
+  inheritedSize: number,
+  inheritedStyle: SerializedStyle
 ): number {
   if (typeof size === 'number') return size
 
@@ -590,6 +592,12 @@ function calcBaseFontSize(
   } catch (err) {
     return inheritedSize
   }
+
+  // Other units such as `vw`, `vh` and `%` (relative to the inherited size).
+  return (
+    lengthToNumber(size, inheritedSize, inheritedSize, inheritedStyle, true) ??
+    inheritedSize
+  )
 }
 
 /**
