@@ -293,14 +293,40 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 <tr><td><code>backgroundClip</code></td><td><code>border-box</code>, <code>text</code></td><td></td></tr>
 <tr><td><code>backgroundRepeat</code></td><td><code>repeat</code>, <code>repeat-x</code>, <code>repeat-y</code>, <code>no-repeat</code>, defaults to <code>repeat</code></td><td></td></tr>
 
-<tr><td rowspan="5"><code>transform</code></td></tr>
-<tr><td>Translate (<code>translate</code>, <code>translateX</code>, <code>translateY</code>)</td><td>Supported</td><td></td></tr>
-<tr><td>Rotate</td><td>Supported</td><td></td></tr>
-<tr><td>Scale (<code>scale</code>, <code>scaleX</code>, <code>scaleY</code>)</td><td>Supported</td><td></td></tr>
+<tr><td rowspan="7"><code>transform</code></td></tr>
+<tr><td>Translate (<code>translate</code>, <code>translateX</code>, <code>translateY</code>, <code>translateZ</code>, <code>translate3d</code>)</td><td>Supported, with <code>px</code>, <code>em</code>, <code>rem</code>, <code>vw</code> and <code>vh</code> lengths, and percentages of the element's size along X and Y</td><td></td></tr>
+<tr><td>Rotate (<code>rotate</code>, <code>rotateX</code>, <code>rotateY</code>, <code>rotateZ</code>, <code>rotate3d</code>)</td><td>Supported, with <code>deg</code>, <code>rad</code>, <code>grad</code> and <code>turn</code> angles</td><td></td></tr>
+<tr><td>Scale (<code>scale</code>, <code>scaleX</code>, <code>scaleY</code>, <code>scaleZ</code>, <code>scale3d</code>)</td><td>Supported, including percentages</td><td></td></tr>
 <tr><td>Skew (<code>skew</code>, <code>skewX</code>, <code>skewY</code>)</td><td>Supported</td><td></td></tr>
+<tr><td>Matrix (<code>matrix</code>, <code>matrix3d</code>)</td><td>Supported</td><td></td></tr>
+<tr><td>Perspective (<code>perspective</code>)</td><td>Approximated, see the notes below</td><td></td></tr>
 
 <tr>
 <td colspan="2"><code>transformOrigin</code></td>
+<td>Support one-value, two-value and three-value syntax (both relative and absolute values, the third value is a depth)</td>
+<td></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>transformStyle</code></td>
+<td><code>flat</code>, <code>preserve-3d</code>, defaults to <code>flat</code></td>
+<td></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>backfaceVisibility</code></td>
+<td><code>visible</code>, <code>hidden</code>, defaults to <code>visible</code></td>
+<td></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>perspective</code></td>
+<td>Length or <code>none</code>. Approximated, see the notes below</td>
+<td></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>perspectiveOrigin</code></td>
 <td>Support one-value and two-value syntax (both relative and absolute values)</td>
 <td></td>
 </tr>
@@ -388,11 +414,30 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 Note:
 
-1. Three-dimensional transforms are not supported.
+1. 3D transforms are drawn like in browsers, with two differences. Elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
 2. There is no `z-index` support in SVG. Elements that come later in the document will be painted on top.
 3. `calc` isn't supported.
 4. `currentColor` support is only available for the `color` property.
 5. CSS variables (custom properties) are supported, including inheritance, fallback values, and nested variables.
+
+#### Perspective (experimental)
+
+> **Note:** This is experimental and may change or be removed in any release. It's only available from `satori/experimental`, so it doesn't add to the size of the `satori` import.
+
+With `satori/experimental`, perspective from the `perspective` property and the `perspective()` function is drawn exactly:
+
+```jsx
+import satori from 'satori/experimental'
+
+await satori(
+  <div style={{ display: 'flex', perspective: 600 }}>
+    <div style={{ display: 'flex', transform: 'rotateY(35deg)' }}>Hello</div>
+  </div>,
+  options
+)
+```
+
+SVG has no perspective transforms, so each element with perspective is split into triangles that are each drawn with an affine transform, within 0.5px of the exact position. This makes the SVG larger and slower to render: depending on the angle, an element is drawn up to a few hundred times.
 
 ### Language and Typography
 

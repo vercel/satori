@@ -4,11 +4,14 @@
  * they don't add to its size.
  *
  * - `<canvas webgl={(gl, { width, height }) => ...}>`, drawn with WebGL2.
+ * - Perspective in CSS transforms (the `perspective` property and the
+ *   `perspective()` function), drawn exactly. The root entry approximates it.
  */
 
 import type { ReactNode } from 'react'
 import { render, type SatoriOptions as BaseSatoriOptions } from '../satori.js'
 import { canvas, type CreateWebGLContext } from './canvas.js'
+import { projectPlane } from './perspective.js'
 
 export type {
   FontOptions as Font,
@@ -42,6 +45,7 @@ export default function satori(
   options: SatoriOptions
 ): Promise<string> {
   return render(element, options, {
-    canvas: canvas(options.createWebGLContext),
+    replacedElements: { canvas: canvas(options.createWebGLContext) },
+    projectPlane,
   })
 }
