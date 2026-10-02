@@ -14,6 +14,8 @@ export interface ParsedTransformOrigin {
   xAbsolute?: number
   /** Absolute horizontal transform origin in pixels */
   yAbsolute?: number
+  /** Depth of the transform origin in pixels, 0 by default */
+  zAbsolute?: number
 }
 
 interface ParsedUnit {
@@ -95,7 +97,12 @@ export default function parseTransformOrigin(
     // If it's a single value and a number, then it's horizontal, so
     // pass `true` to `unitIsHorizontal`
     return handleWord(words[0], baseFontSize, true)
-  } else if (words.length === 2) {
+  } else if (words.length === 2 || words.length === 3) {
+    // The optional third value is the depth, which must be a length.
+    const z = words.length === 3 ? parseUnit(words.pop(), baseFontSize) : {}
+    if (z.relative !== undefined) return {}
+    const depth = z.absolute ? { zAbsolute: z.absolute } : {}
+
     // Make words to be [horizontal, vertical]
     if (
       words[0] === 'top' ||
@@ -109,6 +116,7 @@ export default function parseTransformOrigin(
     return {
       ...handleWord(words[0], baseFontSize, true),
       ...handleWord(words[1], baseFontSize, false),
+      ...depth,
     }
   } else {
     return {}

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { TwConfig } from 'twrnc'
 import type { SatoriNode } from './layout.js'
 import type { ReplacedElementHandlers } from './handler/compute.js'
+import type { ProjectPlane } from './builder/transform.js'
 
 import layout from './layout.js'
 import FontLoader, { FontOptions } from './font.js'
@@ -94,13 +95,22 @@ const satori: (element: ReactNode, options: SatoriOptions) => Promise<string> =
 export default satori
 
 /**
- * @internal Render with extensions, e.g. the replaced elements of
- * `satori/experimental`. Not exported from the root entry.
+ * @internal Extensions provided by `satori/experimental`.
+ */
+export interface RenderExtensions {
+  /** Elements such as `<canvas>` that are drawn as images. */
+  replacedElements?: ReplacedElementHandlers
+  /** Draws elements with perspective. */
+  projectPlane?: ProjectPlane
+}
+
+/**
+ * @internal Render with extensions. Not exported from the root entry.
  */
 export async function render(
   element: ReactNode,
   options: SatoriOptions,
-  replacedElements?: ReplacedElementHandlers
+  { replacedElements, projectPlane }: RenderExtensions = {}
 ): Promise<string> {
   // Initialize the layout and shaping engines together.
   const [Yoga] = await Promise.all([getYoga(), initHarfBuzz()])
@@ -177,6 +187,7 @@ export async function render(
     canLoadAdditionalAssets: !!options.loadAdditionalAsset,
     onNodeDetected: options.onNodeDetected,
     replacedElements,
+    projectPlane,
     getTwStyles: (tw, style) => {
       const twToStyles = getTw({
         width: definedWidth,

@@ -21,6 +21,27 @@ import rect from './builder/rect.js'
 import { Locale, normalizeLocale } from './language.js'
 import { SerializedStyle } from './handler/expand.js'
 import type { ReplacedElementHandlers } from './handler/compute.js'
+import type { ParsedTransformOrigin } from './transform-origin.js'
+import type { TransformFunction } from './parser/transform.js'
+import {
+  getDepth,
+  isBackFacing,
+  resolveTransformState,
+  ROOT_TRANSFORM_STATE,
+  type ProjectPlane,
+  type TransformState,
+} from './builder/transform.js'
+
+/** An element drawn in a 3D rendering context, sorted by depth. */
+interface Plane {
+  depth: number
+  svg: string
+}
+
+type TransformList = TransformFunction[] & {
+  __parent?: TransformList
+  __state?: TransformState
+}
 
 export interface LayoutContext {
   id: string
@@ -37,6 +58,10 @@ export interface LayoutContext {
   getTwStyles: (tw: string, style: any) => any
   onNodeDetected?: (node: SatoriNode) => void
   replacedElements?: ReplacedElementHandlers
+  /** Draws elements with perspective, see `satori/experimental`. */
+  projectPlane?: ProjectPlane
+  /** Collects the planes of the 3D rendering context the element is in. */
+  planes?: Plane[]
 }
 
 export interface SatoriNode {
@@ -148,13 +173,36 @@ export default async function* layout(
   )
   // Post-process styles to attach inheritable properties for Satori.
 
+  // Elements that affect how their children are transformed, and children of
+  // those, need their own transform state even without a `transform`.
+  const preserve3d = computedStyle.transformStyle === 'preserve-3d'
+  const perspective =
+    typeof computedStyle.perspective === 'number'
+      ? computedStyle.perspective
+      : undefined
+  if (
+    computedStyle.transform === inheritedStyle.transform &&
+    (preserve3d ||
+      perspective !== undefined ||
+      context.parentStyle.transformStyle === 'preserve-3d' ||
+      typeof context.parentStyle.perspective === 'number')
+  ) {
+    computedStyle.transform = [] as any
+    newInheritableStyle.transform = computedStyle.transform
+  }
+
   // If the element is inheriting the parent `transform`, or applying its own.
   // This affects the coordinate system.
   const isInheritingTransform =
     computedStyle.transform === inheritedStyle.transform
   if (!isInheritingTransform) {
-    ;(computedStyle.transform as any).__parent = inheritedStyle.transform
+    ;(computedStyle.transform as unknown as TransformList).__parent =
+      inheritedStyle.transform as unknown as TransformList
   }
+
+  // A `preserve-3d` element establishes a 3D rendering context, or extends
+  // the one it's in. Its children are drawn sorted by depth.
+  const planes = preserve3d ? context.planes || [] : undefined
 
   // If the element has `overflow` set to `hidden` or clip-path is set, we need to create a clip
   // path and use it in all its children.
@@ -208,6 +256,8 @@ export default async function* layout(
       getTwStyles,
       onNodeDetected: context.onNodeDetected,
       replacedElements: context.replacedElements,
+      projectPlane: context.projectPlane,
+      planes,
     })
     if (canLoadAdditionalAssets) {
       segmentsMissingFont.push(...(((await iter.next()).value as any) || []))
@@ -244,6 +294,44 @@ export default async function* layout(
     key: element.key,
     textContent: isReactElement(childrenNode) ? undefined : childrenNode,
   })
+
+  // Resolve transforms now that the layout is known. Children read the state
+  // from their parent's transform list.
+  const transformList = computedStyle.transform as unknown as
+    | TransformList
+    | undefined
+  if (transformList && !isInheritingTransform) {
+    transformList.__state = resolveTransformState({
+      functions: transformList,
+      box: { left, top, width, height },
+      origin: computedStyle.transformOrigin as ParsedTransformOrigin,
+      parent: transformList.__parent?.__state || ROOT_TRANSFORM_STATE,
+      preserve3d,
+      perspectiveDistance: perspective,
+      perspectiveOrigin:
+        computedStyle.perspectiveOrigin as unknown as ParsedTransformOrigin,
+      canProject: !!context.projectPlane,
+    })
+  }
+  const transformState = transformList?.__state || ROOT_TRANSFORM_STATE
+  const isHidden =
+    transformState.behindViewer ||
+    (computedStyle.backfaceVisibility === 'hidden' &&
+      isBackFacing(transformState))
+
+  // Planes of a 3D rendering context are drawn back to front. Equal depths
+  // keep the document order, so an element is added before its children.
+  let plane: Plane | undefined
+  const contextPlanes = context.planes || planes
+  if (contextPlanes) {
+    const depth = getDepth(transformState, left + width / 2, top + height / 2)
+    // Round off floating point errors, so planes at the same depth are equal.
+    plane = {
+      depth: Number.isFinite(depth) ? Math.round(depth * 1e6) / 1e6 : 0,
+      svg: '',
+    }
+    contextPlanes.push(plane)
+  }
 
   // Generate the rendered markup for the current node.
   if (type === 'img' || isReplaced) {
@@ -324,5 +412,33 @@ export default async function* layout(
     )
   }
 
-  return depsRenderResult + baseRenderResult + childrenRenderResult
+  // Children in the same 3D rendering context were added to `planes` and
+  // returned nothing, so this is the element's own plane, including the
+  // descendants flattened onto it.
+  let result = isHidden
+    ? ''
+    : depsRenderResult + baseRenderResult + childrenRenderResult
+
+  if (result && transformState.projection && !isInheritingTransform) {
+    result = context.projectPlane(result, {
+      matrix: transformState.projection,
+      node,
+      left,
+      top,
+      style: computedStyle,
+      id,
+    })
+  }
+
+  if (plane) {
+    plane.svg = result
+    // The element establishing the 3D rendering context draws all of them.
+    if (context.planes) return ''
+    return planes
+      .sort((a, b) => a.depth - b.depth)
+      .map(({ svg }) => svg)
+      .join('')
+  }
+
+  return result
 }
