@@ -13,9 +13,9 @@ import { readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { Resvg } from '@resvg/resvg-js'
-import satori from 'satori'
+import satori from 'satori/experimental'
 
-// The playground declares `satori` as an untyped module, so mirror its type.
+// The playground declares Satori as an untyped module, so mirror its type.
 type WebGLCanvasRenderer = (
   gl: WebGL2RenderingContext,
   info: { width: number; height: number }

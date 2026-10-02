@@ -16,19 +16,28 @@ import {
 } from '../utils.js'
 import { getYoga, YogaNode } from '../yoga.js'
 import { resolveImageData } from './image.js'
-import {
-  CreateWebGLContext,
-  getCanvasSize,
-  renderWebGLCanvas,
-} from './canvas.js'
 
 type SatoriElement = keyof typeof presets
 
 /**
- * Size a replaced element (`<img>`, `<canvas>`) from its CSS size, falling back
- * to its `width`/`height` attributes and natural aspect ratio.
+ * Handles a replaced element provided by an extension, such as `<canvas>` in
+ * `satori/experimental`: it sizes the node through `style`, and can set
+ * `style.__src` to embed its content as an image. Its children aren't
+ * rendered.
  */
-function setReplacedElementSize(
+export type ReplacedElementHandler = (
+  node: YogaNode,
+  style: SerializedStyle,
+  props: Record<string, any>
+) => Promise<void>
+
+export type ReplacedElementHandlers = Record<string, ReplacedElementHandler>
+
+/**
+ * Size a replaced element from its CSS size, falling back to its
+ * `width`/`height` attributes and natural aspect ratio.
+ */
+export function setReplacedElementSize(
   node: YogaNode,
   style: SerializedStyle,
   naturalWidth: number,
@@ -104,7 +113,7 @@ export default async function compute(
   inheritedStyle: SerializedStyle,
   definedStyle: Record<string, string | number>,
   props: Record<string, any>,
-  options: { createWebGLContext?: CreateWebGLContext } = {}
+  replacedElements?: ReplacedElementHandlers
 ): Promise<[SerializedStyle, SerializedStyle]> {
   const Yoga = await getYoga()
 
@@ -143,37 +152,7 @@ export default async function compute(
     style.__src = resolvedSrc
   }
 
-  if (type === 'canvas') {
-    const [canvasWidth, canvasHeight] = getCanvasSize(props)
-
-    if (canvasWidth && canvasHeight) {
-      // Unlike <img>, the width and height attributes of a <canvas> are not
-      // CSS size hints: they set the drawing buffer size, which is also the
-      // intrinsic size. So a CSS width alone keeps the aspect ratio.
-      const useIntrinsicSize =
-        style.width === undefined && style.height === undefined
-      setReplacedElementSize(
-        node,
-        style,
-        canvasWidth,
-        canvasHeight,
-        useIntrinsicSize ? canvasWidth : undefined,
-        useIntrinsicSize ? canvasHeight : undefined
-      )
-
-      if (typeof props.webgl === 'function' && style.display !== 'none') {
-        style.__src = await renderWebGLCanvas(
-          props.webgl,
-          canvasWidth,
-          canvasHeight,
-          options.createWebGLContext
-        )
-      }
-    } else {
-      if (style.width === undefined) style.width = canvasWidth
-      if (style.height === undefined) style.height = canvasHeight
-    }
-  }
+  await replacedElements?.[type]?.(node, style, props)
 
   if (type === 'svg') {
     const viewBox = props.viewBox || props.viewbox

@@ -122,11 +122,15 @@ await satori(
 )
 ```
 
-#### Canvas (WebGL)
+#### Canvas (WebGL, experimental)
 
-You can draw the content of a `<canvas>` with WebGL2 via the `webgl` prop. Satori calls it with a WebGL2 context sized to the canvas, then embeds what you drew as an image. This requires the `createWebGLContext` option, which returns a WebGL2 context for the given size:
+> **Note:** This is experimental and may change or be removed in any release. It's only available from `satori/experimental`, so it doesn't add to the size of the `satori` import.
+
+With `satori/experimental`, you can draw the content of a `<canvas>` with WebGL2 via the `webgl` prop. Satori calls it with a WebGL2 context sized to the canvas, then embeds what you drew as an image. This requires the `createWebGLContext` option, which returns a WebGL2 context for the given size:
 
 ```jsx
+import satori from 'satori/experimental'
+
 await satori(
   <canvas
     width={1200}
@@ -153,11 +157,12 @@ In Node.js, use a headless WebGL2 implementation instead, such as an ANGLE + Swi
 - Before calling `webgl`, Satori binds the default framebuffer and sets the viewport to the whole drawing buffer. Afterwards, it reads the default framebuffer. The `webgl` callback can be async.
 - The drawing buffer is treated as premultiplied alpha unless the context was created with `premultipliedAlpha: false`.
 - Children of `<canvas>` are fallback content and are not rendered.
+- The `satori` import ignores the `webgl` prop and draws `<canvas>` like any other element.
 
 If you use React's JSX types, add the `webgl` prop to them:
 
 ```ts
-import type { WebGLCanvasRenderer } from 'satori'
+import type { WebGLCanvasRenderer } from 'satori/experimental'
 
 declare module 'react' {
   interface CanvasHTMLAttributes<T> {

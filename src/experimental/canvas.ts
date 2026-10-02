@@ -4,8 +4,12 @@
  * embeds the resulting drawing buffer as an image.
  */
 
-import { encodePNG } from '../png.js'
-import { arrayBufferToBase64 } from './image.js'
+import {
+  setReplacedElementSize,
+  type ReplacedElementHandler,
+} from '../handler/compute.js'
+import { arrayBufferToBase64 } from '../handler/image.js'
+import { encodePNG } from './png.js'
 
 export interface WebGLCanvasInfo {
   /** Width of the canvas drawing buffer, from the `width` attribute. */
@@ -43,14 +47,45 @@ function parseCanvasDimension(value: unknown, fallback: number): number {
 }
 
 /**
- * Get the drawing buffer size of a `<canvas>` from its `width` and `height`
- * attributes, following the HTML defaults of 300×150.
+ * Handle `<canvas>` elements. Like browsers, the `width` and `height`
+ * attributes (300×150 by default) set the drawing buffer size, which is also
+ * the intrinsic size.
  */
-export function getCanvasSize(props: Record<string, any>): [number, number] {
-  return [
-    parseCanvasDimension(props.width, DEFAULT_CANVAS_WIDTH),
-    parseCanvasDimension(props.height, DEFAULT_CANVAS_HEIGHT),
-  ]
+export function canvas(
+  createContext: CreateWebGLContext | undefined
+): ReplacedElementHandler {
+  return async (node, style, props) => {
+    const width = parseCanvasDimension(props.width, DEFAULT_CANVAS_WIDTH)
+    const height = parseCanvasDimension(props.height, DEFAULT_CANVAS_HEIGHT)
+
+    if (!width || !height) {
+      if (style.width === undefined) style.width = width
+      if (style.height === undefined) style.height = height
+      return
+    }
+
+    // Unlike <img>, the width and height attributes of a <canvas> are not CSS
+    // size hints, so a CSS width alone keeps the aspect ratio.
+    const useIntrinsicSize =
+      style.width === undefined && style.height === undefined
+    setReplacedElementSize(
+      node,
+      style,
+      width,
+      height,
+      useIntrinsicSize ? width : undefined,
+      useIntrinsicSize ? height : undefined
+    )
+
+    if (typeof props.webgl === 'function' && style.display !== 'none') {
+      style.__src = await renderWebGLCanvas(
+        props.webgl,
+        width,
+        height,
+        createContext
+      )
+    }
+  }
 }
 
 /**

@@ -3,7 +3,8 @@ import { it, describe, expect, beforeAll, afterEach } from 'vitest'
 import createGL from 'gl'
 
 import { initFonts, toImage } from './utils.js'
-import satori, { type WebGLCanvasRenderer } from '../src/index.js'
+import satori, { type WebGLCanvasRenderer } from '../src/experimental/index.js'
+import stableSatori from '../src/index.js'
 
 declare module 'react' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -430,6 +431,35 @@ describe('Canvas', () => {
           width={50}
           height={25}
           style={{ backgroundColor: 'red', borderRadius: 10 }}
+        />
+      </div>,
+      { width: 100, height: 50, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should not render WebGL content from the root entry', async () => {
+    // Only `satori/experimental` renders `webgl`. The root entry draws the
+    // canvas as a plain box and never calls the renderer.
+    const svg = await stableSatori(
+      <div
+        style={{
+          display: 'flex',
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'white',
+        }}
+      >
+        <canvas
+          style={{
+            width: 50,
+            height: 25,
+            backgroundColor: 'red',
+            borderRadius: 10,
+          }}
+          webgl={() => {
+            throw new Error('The root entry should not render WebGL.')
+          }}
         />
       </div>,
       { width: 100, height: 50, fonts }

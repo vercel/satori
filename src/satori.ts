@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { TwConfig } from 'twrnc'
 import type { SatoriNode } from './layout.js'
-import type { CreateWebGLContext } from './handler/canvas.js'
+import type { ReplacedElementHandlers } from './handler/compute.js'
 
 import layout from './layout.js'
 import FontLoader, { FontOptions } from './font.js'
@@ -86,22 +86,21 @@ export type SatoriOptions = (
   tailwindConfig?: TwConfig
   onNodeDetected?: (node: SatoriNode) => void
   pointScaleFactor?: number
-  /**
-   * Creates the WebGL2 context used to render `<canvas webgl={...}>` elements,
-   * sized to the canvas `width` and `height` attributes.
-   */
-  createWebGLContext?: CreateWebGLContext
 }
 export type { SatoriNode }
-export type {
-  CreateWebGLContext,
-  WebGLCanvasInfo,
-  WebGLCanvasRenderer,
-} from './handler/canvas.js'
 
-export default async function satori(
+const satori: (element: ReactNode, options: SatoriOptions) => Promise<string> =
+  render
+export default satori
+
+/**
+ * @internal Render with extensions, e.g. the replaced elements of
+ * `satori/experimental`. Not exported from the root entry.
+ */
+export async function render(
   element: ReactNode,
-  options: SatoriOptions
+  options: SatoriOptions,
+  replacedElements?: ReplacedElementHandlers
 ): Promise<string> {
   // Initialize the layout and shaping engines together.
   const [Yoga] = await Promise.all([getYoga(), initHarfBuzz()])
@@ -177,7 +176,7 @@ export default async function satori(
     graphemeImages,
     canLoadAdditionalAssets: !!options.loadAdditionalAsset,
     onNodeDetected: options.onNodeDetected,
-    createWebGLContext: options.createWebGLContext,
+    replacedElements,
     getTwStyles: (tw, style) => {
       const twToStyles = getTw({
         width: definedWidth,

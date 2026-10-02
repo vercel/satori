@@ -39,6 +39,16 @@
         "default": "./dist/standalone.cjs"
       }
     },
+    "./experimental": {
+      "import": {
+        "types": "./dist/experimental.d.ts",
+        "default": "./dist/experimental.js"
+      },
+      "require": {
+        "types": "./dist/experimental.d.cts",
+        "default": "./dist/experimental.cjs"
+      }
+    },
     "./jsx": {
       "types": "./dist/jsx/index.d.ts",
       "import": "./dist/jsx/index.js",
