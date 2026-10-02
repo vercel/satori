@@ -334,6 +334,98 @@ describe('Color Models', () => {
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it('should support oklch', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          backgroundColor: 'oklch(0.7 0.15 200)',
+          color: 'oklch(0.3 0.05 260)',
+          height: '100%',
+          width: '100%',
+        }}
+      >
+        OKLCH
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should support oklch with transparency', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          backgroundColor: 'oklch(70% 0.15 200 / 0.5)',
+          color: 'oklch(30% 0.05 260 / 0.6)',
+          height: '100%',
+          width: '100%',
+        }}
+      >
+        OKLCH alpha
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should support oklab', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          backgroundColor: 'oklab(0.7 -0.1 -0.05)',
+          color: 'oklab(0.3 0.05 0.1)',
+          height: '100%',
+          width: '100%',
+        }}
+      >
+        OKLAB
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should convert oklch/oklab to rgb in the output SVG', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          backgroundColor: 'oklch(0.7 0.15 200)',
+          color: 'oklab(0.3 0.05 0.1)',
+          height: '100%',
+          width: '100%',
+        }}
+      >
+        Modern colors
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    // Modern color syntaxes must be normalized so downstream SVG renderers
+    // (e.g. resvg) that don't understand them still render correctly.
+    // https://github.com/vercel/satori/issues/637
+    expect(svg).not.toContain('oklch')
+    expect(svg).not.toContain('oklab')
+  })
+
   // Borders: shorthand, border-bottom-color, border-color, border-left-color, border-right-color, border-top-color
 
   // Box shadow
