@@ -130,5 +130,8 @@ export default function transform(
     matrix.splice(0, 6, ...result)
   }
 
-  return `matrix(${result.map((v) => v.toFixed(2)).join(',')})`
+  // Keep 6 decimals: with only 2, `scale(1.005)` rendered as a plain shift and
+  // `rotate(0.25deg)` as no rotation at all. 6 keep the error below 0.01px up
+  // to 10,000px from the origin. Trailing zeros are dropped.
+  return `matrix(${result.map((v) => +v.toFixed(6)).join(',')})`
 }
