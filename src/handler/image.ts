@@ -154,7 +154,7 @@ const VIEWBOX_REGEX = /viewBox=['"]([^'"]+)['"]/
 const WIDTH_REGEX = /width=['"](\d*\.?\d+)['"]/
 const HEIGHT_REGEX = /height=['"](\d*\.?\d+)['"]/
 
-function arrayBufferToBase64(buffer) {
+export function arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array) {
   const bytes = new Uint8Array(buffer)
   const CHUNK_SIZE = 0x8000 // 32KB chunks
   let binary = ''

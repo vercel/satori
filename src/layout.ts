@@ -20,6 +20,7 @@ import buildTextNodes from './text/index.js'
 import rect from './builder/rect.js'
 import { Locale, normalizeLocale } from './language.js'
 import { SerializedStyle } from './handler/expand.js'
+import type { ReplacedElementHandlers } from './handler/compute.js'
 
 export interface LayoutContext {
   id: string
@@ -35,6 +36,7 @@ export interface LayoutContext {
   locale?: Locale
   getTwStyles: (tw: string, style: any) => any
   onNodeDetected?: (node: SatoriNode) => void
+  replacedElements?: ReplacedElementHandlers
 }
 
 export interface SatoriNode {
@@ -141,7 +143,8 @@ export default async function* layout(
     type,
     inheritedStyle,
     style,
-    props
+    props,
+    context.replacedElements
   )
   // Post-process styles to attach inheritable properties for Satori.
 
@@ -181,7 +184,10 @@ export default async function* layout(
   }
 
   // 2. Do layout recursively for its children.
-  const normalizedChildren = normalizeChildren(children)
+  // Children of replaced elements, e.g. the fallback content of a <canvas>,
+  // are never rendered.
+  const isReplaced = !!context.replacedElements?.[type]
+  const normalizedChildren = isReplaced ? [] : normalizeChildren(children)
   const iterators: ReturnType<typeof layout>[] = []
 
   let i = 0
@@ -201,6 +207,7 @@ export default async function* layout(
       locale: newLocale,
       getTwStyles,
       onNodeDetected: context.onNodeDetected,
+      replacedElements: context.replacedElements,
     })
     if (canLoadAdditionalAssets) {
       segmentsMissingFont.push(...(((await iter.next()).value as any) || []))
@@ -239,8 +246,10 @@ export default async function* layout(
   })
 
   // Generate the rendered markup for the current node.
-  if (type === 'img') {
-    const src = computedStyle.__src as string
+  if (type === 'img' || isReplaced) {
+    // A replaced element without rendered content has no `src`, so it's drawn
+    // as a box.
+    const src = computedStyle.__src as string | undefined
     baseRenderResult = await rect(
       {
         id,

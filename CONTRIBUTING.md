@@ -26,6 +26,8 @@ This project uses [pnpm](https://pnpm.io). To install dependencies, run:
 pnpm install
 ```
 
+This requires Node.js 20+, Python 3 and a C++ toolchain, because it compiles [headless-gl](https://github.com/encharm/headless-gl) (WebGL2 with SwiftShader), which the `<canvas>` tests use to run real shaders on the CPU.
+
 To start the playground together with Satori locally, run:
 
 ```bash

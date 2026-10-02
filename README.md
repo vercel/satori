@@ -122,6 +122,55 @@ await satori(
 )
 ```
 
+#### Canvas (WebGL, experimental)
+
+> **Note:** This is experimental and may change or be removed in any release. It's only available from `satori/experimental`, so it doesn't add to the size of the `satori` import.
+
+With `satori/experimental`, you can draw the content of a `<canvas>` with WebGL2 via the `webgl` prop. Satori calls it with a WebGL2 context sized to the canvas, then embeds what you drew as an image:
+
+```jsx
+import satori from 'satori/experimental'
+
+await satori(
+  <canvas
+    width={1200}
+    height={630}
+    style={{ width: '100%', height: '100%' }}
+    webgl={(gl, { width, height }) => {
+      gl.clearColor(0, 0.5, 1, 1)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      // Compile shaders, draw, etc.
+    }}
+  />,
+  options
+)
+```
+
+Each canvas gets a new WebGL2 context, which is destroyed with everything drawn into it afterwards:
+
+- In browsers and Web Workers, Satori uses `OffscreenCanvas`.
+- In Node.js 20.16+, Satori loads the `gl` package from your project, which must be a WebGL2 build of [headless-gl](https://github.com/stackgl/headless-gl) such as an ANGLE + SwiftShader one (e.g. `github:encharm/headless-gl`). It runs shaders on the CPU. If you bundle your server code, keep `gl` external and include its files in the deployment.
+
+To provide contexts yourself, e.g. to reuse them across renders, pass a `createWebGLContext(width, height)` option that returns a WebGL2 context. Satori doesn't destroy the contexts it returns.
+
+- The `width` and `height` attributes set the drawing buffer size (300×150 by default), like in browsers. The canvas is displayed at its CSS size, keeping that aspect ratio unless both CSS dimensions are set.
+- Before calling `webgl`, Satori binds the default framebuffer, sets the viewport to the whole drawing buffer, and clears it to transparent, like a new canvas. Afterwards, it reads the default framebuffer. The `webgl` callback can be async.
+- The drawing buffer is treated as premultiplied alpha unless the context was created with `premultipliedAlpha: false`.
+- Children of `<canvas>` are fallback content and are not rendered.
+- The `satori` import ignores the `webgl` prop and draws `<canvas>` like any other element.
+
+If you use React's JSX types, add the `webgl` prop to them:
+
+```ts
+import type { WebGLCanvasRenderer } from 'satori/experimental'
+
+declare module 'react' {
+  interface CanvasHTMLAttributes<T> {
+    webgl?: WebGLCanvasRenderer
+  }
+}
+```
+
 ### CSS
 
 Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Native, and it’s **not** a complete CSS implementation. However, it supports a subset of the spec that covers most common CSS features:
