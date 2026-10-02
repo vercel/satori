@@ -115,9 +115,7 @@ function woffToSfnt(woff: ArrayBuffer): ArrayBuffer {
     // Decompress or copy table data
     if (compLen < origLen) {
       const compressed = new Uint8Array(woff, offset + 2, compLen - 2)
-      const decompressed = new Uint8Array(origLen)
-      inflateSync(compressed, decompressed)
-      outBytes.set(decompressed, tableOffset)
+      outBytes.set(inflateSync(compressed), tableOffset)
     } else {
       outBytes.set(new Uint8Array(woff, offset, origLen), tableOffset)
     }
