@@ -62,6 +62,16 @@ describe('SVG', () => {
     ).rejects.toThrow('Invalid XML attribute name')
   })
 
+  it('should keep explicit width and height when serializing svg nodes', async () => {
+    for (const viewBox of ['0 0 10 10', undefined]) {
+      const dataUrl = await SVGNodeToImage(
+        <svg width='100' height='50' viewBox={viewBox} />,
+        'black'
+      )
+      expect(decodeURIComponent(dataUrl)).toContain('width="100" height="50"')
+    }
+  })
+
   it('should reject caller-supplied internal style fields', async () => {
     await expect(
       satori(
