@@ -482,6 +482,50 @@ describe('Flexbox Advanced', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should render alignContent space-evenly', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            alignContent: 'space-evenly',
+            width: 100,
+            height: 100,
+            background: 'lightgray',
+          }}
+        >
+          <div style={{ width: 60, height: 20, background: 'red' }} />
+          <div style={{ width: 60, height: 20, background: 'blue' }} />
+          <div style={{ width: 60, height: 20, background: 'green' }} />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
+  })
+
+  describe('justify-content', () => {
+    it('should render justifyContent space-evenly', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-evenly',
+            width: 100,
+            height: 40,
+            background: 'lightgray',
+          }}
+        >
+          <div style={{ width: 20, height: 20, background: 'red' }} />
+          <div style={{ width: 20, height: 20, background: 'blue' }} />
+          <div style={{ width: 20, height: 20, background: 'green' }} />
+        </div>,
+        { width: 100, height: 40, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 
   describe('complex layouts', () => {
