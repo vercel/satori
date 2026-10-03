@@ -63,6 +63,11 @@ export function normalizeChildren(children: any) {
   return res
 }
 
+// A CSS dimension starts with a digit, a dot, a sign, or `Infinity` (which
+// `parseFloat` accepts); anything else fails to parse as a number and would
+// be rejected.
+const DIMENSION_START = /^[\d.+I-]/
+
 export function lengthToNumber(
   length: string | number,
   baseFontSize: number,
@@ -81,6 +86,11 @@ export function lengthToNumber(
 
     // Just a number as string: '100'
     if (length === String(+length)) return +length
+
+    // Not a dimension unless it starts like a number. Keywords and colors
+    // (`solid`, `flex`, `#ccc`) reach here from shorthand expansion and used
+    // to be rejected by the parser throwing, which is costly.
+    if (!DIMENSION_START.test(length)) return
 
     const parsed = new CssDimension(length)
     if (parsed.type === 'length') {
