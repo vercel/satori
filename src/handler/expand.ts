@@ -218,7 +218,11 @@ function handleSpecialCase(
   if (name === 'transform') {
     if (typeof value !== 'string') throw new Error('Invalid `transform` value.')
     // Lengths are resolved later, once the font size is known.
-    return { transform: parseTransform(value) }
+    // `none` parses to an empty list; treat it as unset so we do not emit an
+    // identity SVG matrix for an element that has no transform.
+    const functions = parseTransform(value)
+    if (!functions.length) return {}
+    return { transform: functions }
   }
 
   if (name === 'background') {
