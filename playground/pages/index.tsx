@@ -250,7 +250,12 @@ function LiveEditor({ id }: { id: string }) {
   const { onChange } = useContext(LiveContext) as unknown as {
     onChange: (val: string) => void
   }
-  const [code, setCode] = useState(editedCards[id])
+  const cardCode = editedCards[id]
+  const [code, setCode] = useState(cardCode)
+
+  useEffect(() => {
+    setCode(cardCode)
+  }, [cardCode])
 
   return (
     <CodeEditor
