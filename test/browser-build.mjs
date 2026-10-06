@@ -14,6 +14,8 @@ for (const entry of [
   'index.cjs',
   'standalone.js',
   'standalone.cjs',
+  'experimental.js',
+  'experimental.cjs',
 ]) {
   const source = readFileSync(
     new URL(`../dist/${entry}`, import.meta.url),

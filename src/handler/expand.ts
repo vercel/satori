@@ -16,6 +16,10 @@ import { isString, lengthToNumber, v, splitEffects } from '../utils.js'
 import { MaskProperty, parseMask } from '../parser/mask.js'
 import { splitCornerShapeValues } from '../parser/corner-shape.js'
 import { parseBackdropFilter } from '../parser/backdrop-filter.js'
+import parseTransform, {
+  resolveTransform,
+  type TransformFunction,
+} from '../parser/transform.js'
 import { FontWeight, FontStyle } from '../font.js'
 import {
   extractCustomProperties,
@@ -213,23 +217,8 @@ function handleSpecialCase(
 
   if (name === 'transform') {
     if (typeof value !== 'string') throw new Error('Invalid `transform` value.')
-    // To support percentages in transform (which is not supported in RN), we
-    // replace them with random symbols and then replace them back after parsing.
-    const symbols = {}
-    const replaced = value.replace(/(-?[\d.]+%)/g, (_, _v) => {
-      const symbol = ~~(Math.random() * 1e9)
-      symbols[symbol] = _v
-      return symbol + 'px'
-    })
-    const parsed = getStylesForProperty('transform', replaced, true)
-    for (const t of parsed.transform) {
-      for (const k in t) {
-        if (symbols[t[k]]) {
-          t[k] = symbols[t[k]]
-        }
-      }
-    }
-    return parsed
+    // Lengths are resolved later, once the font size is known.
+    return { transform: parseTransform(value) }
   }
 
   if (name === 'background') {
@@ -292,7 +281,7 @@ function handleSpecialCase(
 
 function getErrorHint(name: string) {
   if (name === 'transform') {
-    return ' Only absolute lengths such as `10px` are supported.'
+    return ' `calc()` is not supported in transform functions.'
   }
   return ''
 }
@@ -482,6 +471,13 @@ export default function expand(
     )
   }
 
+  if (serializedStyle.perspectiveOrigin) {
+    serializedStyle.perspectiveOrigin = parseTransformOrigin(
+      serializedStyle.perspectiveOrigin as any,
+      baseFontSize
+    ) as any
+  }
+
   for (const prop in serializedStyle) {
     let value = serializedStyle[prop]
 
@@ -525,20 +521,12 @@ export default function expand(
     }
 
     if (prop === 'transform') {
-      const transforms = value as any as { [type: string]: number | string }[]
-
-      for (const transform of transforms) {
-        const type = Object.keys(transform)[0]
-        const _v = transform[type]
-
-        // Convert em, rem, vw, vh values to px (number), but keep % values.
-        const len =
-          typeof _v === 'string'
-            ? lengthToNumber(_v, baseFontSize, baseFontSize, inheritedStyle) ??
-              _v
-            : _v
-        transform[type] = len
-      }
+      // Convert em, rem, vw, vh values to px (number), but keep % values.
+      serializedStyle.transform = resolveTransform(
+        value as unknown as TransformFunction[],
+        (length) =>
+          lengthToNumber(length, baseFontSize, baseFontSize, inheritedStyle)
+      ) as any
     }
 
     if (prop === 'textShadowRadius') {

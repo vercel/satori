@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next",
     "debug": "node --inspect node_modules/next/dist/bin/next",
-    "build": "next build",
+    "build": "node scripts/bundle-webgl-libs.mjs && next build",
     "start": "next start"
   },
   "engines": {
@@ -14,10 +14,12 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.19.0",
+    "@resvg/resvg-js": "^2.1.0",
     "@resvg/resvg-wasm": "^2.3.1",
     "@sugar-high/react": "^2.4.0",
     "copy-to-clipboard": "^4.0.2",
     "fflate": "^0.8.3",
+    "gl": "github:encharm/headless-gl#8c5723171c7081fffb3ef4cea3b05f9220d55ed0",
     "js-base64": "^3.9.3",
     "jspdf": "^4.2.1",
     "next": "^16.3.1",

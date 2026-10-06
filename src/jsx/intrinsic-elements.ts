@@ -11,6 +11,7 @@
  * @see {@link https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/index.d.ts React typings `@types/react`}
  */
 import type { JSXNode } from './types.js'
+import type { WebGLCanvasRenderer } from '../experimental/canvas.js'
 
 /**
  * Subset of CSS properties that Satori supports.
@@ -724,6 +725,11 @@ interface ButtonHTMLAttributes<T> extends HTMLAttributes<T> {
 interface CanvasHTMLAttributes<T> extends HTMLAttributes<T> {
   height?: number | string | undefined
   width?: number | string | undefined
+  /**
+   * Experimental, Satori-specific: draws the canvas content with WebGL2. Only
+   * rendered by `satori/experimental`, with its `createWebGLContext` option.
+   */
+  webgl?: WebGLCanvasRenderer | undefined
 }
 
 interface ColHTMLAttributes<T> extends HTMLAttributes<T> {

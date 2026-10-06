@@ -227,4 +227,47 @@ describe('transform', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
+
+  it('should keep small scales and rotations precise', async () => {
+    // The red bar grows by 2px on each side, and the blue one slopes by ~3.5px.
+    // With only 2 decimals in the matrix, the red bar was shifted left instead
+    // of scaled, and the blue one stayed level.
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-around',
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'white',
+        }}
+      >
+        <div
+          style={{
+            marginLeft: 100,
+            width: 800,
+            height: 20,
+            backgroundColor: 'red',
+            transform: 'scale(1.005)',
+          }}
+        />
+        <div
+          style={{
+            marginLeft: 100,
+            width: 800,
+            height: 20,
+            backgroundColor: 'blue',
+            transform: 'rotate(0.25deg)',
+          }}
+        />
+      </div>,
+      {
+        width: 1000,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg, 1000)).toMatchImageSnapshot()
+  })
 })

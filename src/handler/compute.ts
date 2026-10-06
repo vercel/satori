@@ -19,12 +19,101 @@ import { resolveImageData } from './image.js'
 
 type SatoriElement = keyof typeof presets
 
+/**
+ * Handles a replaced element provided by an extension, such as `<canvas>` in
+ * `satori/experimental`: it sizes the node through `style`, and can set
+ * `style.__src` to embed its content as an image. Its children aren't
+ * rendered.
+ */
+export type ReplacedElementHandler = (
+  node: YogaNode,
+  style: SerializedStyle,
+  props: Record<string, any>
+) => Promise<void>
+
+export type ReplacedElementHandlers = Record<string, ReplacedElementHandler>
+
+/**
+ * Size a replaced element from its CSS size, falling back to its
+ * `width`/`height` attributes and natural aspect ratio.
+ */
+export function setReplacedElementSize(
+  node: YogaNode,
+  style: SerializedStyle,
+  naturalWidth: number,
+  naturalHeight: number,
+  attributeWidth: number | string | undefined,
+  attributeHeight: number | string | undefined
+) {
+  const r = naturalHeight / naturalWidth
+
+  // Before calculating the missing width or height based on the image ratio,
+  // we must subtract the padding and border due to how box model works.
+  // TODO: Ensure these are absolute length values, not relative values.
+  let extraHorizontal =
+    (style.borderLeftWidth || 0) +
+    (style.borderRightWidth || 0) +
+    (style.paddingLeft || 0) +
+    (style.paddingRight || 0)
+  let extraVertical =
+    (style.borderTopWidth || 0) +
+    (style.borderBottomWidth || 0) +
+    (style.paddingTop || 0) +
+    (style.paddingBottom || 0)
+
+  let contentBoxWidth = style.width || attributeWidth
+  let contentBoxHeight = style.height || attributeHeight
+
+  const isAbsoluteContentSize =
+    typeof contentBoxWidth === 'number' && typeof contentBoxHeight === 'number'
+
+  if (isAbsoluteContentSize) {
+    contentBoxWidth = (contentBoxWidth as number) - extraHorizontal
+    contentBoxHeight = (contentBoxHeight as number) - extraVertical
+  }
+
+  // When no content size is defined, we use the image size as the content size.
+  if (contentBoxWidth === undefined && contentBoxHeight === undefined) {
+    contentBoxWidth = '100%'
+    node.setAspectRatio(1 / r)
+  } else {
+    // If only one sisde is not defined, we can calculate the other one.
+    if (contentBoxWidth === undefined) {
+      if (typeof contentBoxHeight === 'number') {
+        contentBoxWidth = contentBoxHeight / r
+      } else {
+        // If it uses a relative value (e.g. 50%), we can rely on aspect ratio.
+        // Note: this doesn't work well if there are paddings or borders.
+        node.setAspectRatio(1 / r)
+      }
+    } else if (contentBoxHeight === undefined) {
+      if (typeof contentBoxWidth === 'number') {
+        contentBoxHeight = contentBoxWidth * r
+      } else {
+        // If it uses a relative value (e.g. 50%), we can rely on aspect ratio.
+        // Note: this doesn't work well if there are paddings or borders.
+        node.setAspectRatio(1 / r)
+      }
+    }
+  }
+
+  style.width = isAbsoluteContentSize
+    ? (contentBoxWidth as number) + extraHorizontal
+    : contentBoxWidth
+  style.height = isAbsoluteContentSize
+    ? (contentBoxHeight as number) + extraVertical
+    : contentBoxHeight
+  style.__naturalWidth = naturalWidth
+  style.__naturalHeight = naturalHeight
+}
+
 export default async function compute(
   node: YogaNode,
   type: SatoriElement | string,
   inheritedStyle: SerializedStyle,
   definedStyle: Record<string, string | number>,
-  props: Record<string, any>
+  props: Record<string, any>,
+  replacedElements?: ReplacedElementHandlers
 ): Promise<[SerializedStyle, SerializedStyle]> {
   const Yoga = await getYoga()
 
@@ -51,69 +140,19 @@ export default async function compute(
       imageWidth = parseInt(props.width)
       imageHeight = parseInt(props.height)
     }
-    const r = imageHeight / imageWidth
 
-    // Before calculating the missing width or height based on the image ratio,
-    // we must subtract the padding and border due to how box model works.
-    // TODO: Ensure these are absolute length values, not relative values.
-    let extraHorizontal =
-      (style.borderLeftWidth || 0) +
-      (style.borderRightWidth || 0) +
-      (style.paddingLeft || 0) +
-      (style.paddingRight || 0)
-    let extraVertical =
-      (style.borderTopWidth || 0) +
-      (style.borderBottomWidth || 0) +
-      (style.paddingTop || 0) +
-      (style.paddingBottom || 0)
-
-    let contentBoxWidth = style.width || props.width
-    let contentBoxHeight = style.height || props.height
-
-    const isAbsoluteContentSize =
-      typeof contentBoxWidth === 'number' &&
-      typeof contentBoxHeight === 'number'
-
-    if (isAbsoluteContentSize) {
-      contentBoxWidth -= extraHorizontal
-      contentBoxHeight -= extraVertical
-    }
-
-    // When no content size is defined, we use the image size as the content size.
-    if (contentBoxWidth === undefined && contentBoxHeight === undefined) {
-      contentBoxWidth = '100%'
-      node.setAspectRatio(1 / r)
-    } else {
-      // If only one sisde is not defined, we can calculate the other one.
-      if (contentBoxWidth === undefined) {
-        if (typeof contentBoxHeight === 'number') {
-          contentBoxWidth = contentBoxHeight / r
-        } else {
-          // If it uses a relative value (e.g. 50%), we can rely on aspect ratio.
-          // Note: this doesn't work well if there are paddings or borders.
-          node.setAspectRatio(1 / r)
-        }
-      } else if (contentBoxHeight === undefined) {
-        if (typeof contentBoxWidth === 'number') {
-          contentBoxHeight = contentBoxWidth * r
-        } else {
-          // If it uses a relative value (e.g. 50%), we can rely on aspect ratio.
-          // Note: this doesn't work well if there are paddings or borders.
-          node.setAspectRatio(1 / r)
-        }
-      }
-    }
-
-    style.width = isAbsoluteContentSize
-      ? (contentBoxWidth as number) + extraHorizontal
-      : contentBoxWidth
-    style.height = isAbsoluteContentSize
-      ? (contentBoxHeight as number) + extraVertical
-      : contentBoxHeight
+    setReplacedElementSize(
+      node,
+      style,
+      imageWidth,
+      imageHeight,
+      props.width,
+      props.height
+    )
     style.__src = resolvedSrc
-    style.__naturalWidth = imageWidth
-    style.__naturalHeight = imageHeight
   }
+
+  await replacedElements?.[type]?.(node, style, props)
 
   if (type === 'svg') {
     const viewBox = props.viewBox || props.viewbox

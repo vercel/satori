@@ -5,6 +5,6 @@ export type {
 } from './font.js'
 export type { Locale } from './language.js'
 
-export * from './satori.js'
+export type { SatoriOptions, SatoriNode } from './satori.js'
 export { default } from './satori.js'
 export { init } from './yoga.js'

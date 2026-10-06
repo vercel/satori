@@ -3,6 +3,7 @@ node_modules
 **/.next/**
 **/_next/**
 **/dist/**
+playground/.webgl-libs/
 src/vendor/
 pnpm-lock.yaml
 *.md
