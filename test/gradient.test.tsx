@@ -8,6 +8,28 @@ describe('Gradient', () => {
   initFonts((f) => (fonts = f))
 
   describe('linear-gradient', () => {
+    it.each(['em', 'rem'])(
+      'should resolve repeating gradient stop lengths in %s',
+      async (unit) => {
+        const render = (middle: string, end: string) =>
+          satori(
+            <div
+              style={{
+                width: 128,
+                height: 64,
+                fontSize: 16,
+                backgroundImage: `repeating-linear-gradient(to right, red 0px, green ${middle}, blue ${end})`,
+              }}
+            />,
+            { width: 128, height: 64, fonts }
+          )
+
+        const actual = await render(`1${unit}`, `2${unit}`)
+        const expected = await render('16px', '32px')
+        expect(toImage(actual)).toEqual(toImage(expected))
+      }
+    )
+
     it('should support linear-gradient', async () => {
       const svg = await satori(
         <div
