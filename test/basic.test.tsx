@@ -147,6 +147,39 @@ describe('Basic', () => {
     expect(toImage(svg2, 100)).toMatchImageSnapshot()
   })
 
+  it('should support a function as `children` invoked by the custom component', async () => {
+    // https://github.com/vercel/satori/issues/519
+    function Test(props: { children: () => JSX.Element }) {
+      return (
+        <div style={{ display: 'flex' }}>
+          {typeof props.children === 'function'
+            ? props.children()
+            : props.children}
+        </div>
+      )
+    }
+
+    const svg = await satori(
+      <div
+        style={{
+          backgroundColor: '#ff0',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+        }}
+      >
+        {/* @ts-ignore */}
+        <Test>{() => <h1 style={{ fontSize: 16 }}>Hello</h1>}</Test>
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+      }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
   it('should combine textNodes correctly', async () => {
     const svg = await satori(
       <div
