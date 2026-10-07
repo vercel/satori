@@ -1,4 +1,4 @@
-import { it, describe, expect, beforeEach, afterEach } from 'vitest'
+import { it, describe, expect, beforeEach, afterEach, vi } from 'vitest'
 
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
@@ -1229,5 +1229,59 @@ describe('objectFit and objectPosition', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+  })
+})
+
+describe('Image error reporting', () => {
+  async function renderRemoteImage() {
+    const errors: string[] = []
+    const spy = vi
+      .spyOn(console, 'error')
+      .mockImplementation((msg) => errors.push(String(msg)))
+    try {
+      await satori(
+        <div style={{ display: 'flex' }}>
+          <img
+            src={`https://example.com/${Math.random()}.png`}
+            width={10}
+            height={10}
+          />
+        </div>,
+        { width: 50, height: 50, fonts }
+      )
+    } finally {
+      spy.mockRestore()
+    }
+    return errors.join('\n')
+  }
+
+  it('should report the status code when the server does not return the image', async () => {
+    ;(globalThis as any).fetch = async () => ({
+      ok: false,
+      status: 404,
+      statusText: 'Not Found',
+      headers: { get: () => 'text/html' },
+      arrayBuffer: async () => new Uint8Array([60, 33, 100]).buffer,
+    })
+
+    const output = await renderRemoteImage()
+    expect(output).toContain('404')
+    expect(output).toContain('Not Found')
+    expect(output).not.toContain('Unsupported image type')
+  })
+
+  it('should report the content type when the response is not a decodable image', async () => {
+    ;(globalThis as any).fetch = async () => ({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      headers: { get: () => 'text/html' },
+      arrayBuffer: async () =>
+        new Uint8Array([0x3c, 0x21, 0x64, 0x6f, 0x63, 0x74]).buffer,
+    })
+
+    const output = await renderRemoteImage()
+    expect(output).toContain('Unsupported image type')
+    expect(output).toContain('text/html')
   })
 })

@@ -210,7 +210,7 @@ function parseSvgImageSize(src: string, data: string) {
   return imageSize
 }
 
-function arrayBufferToDataUri(data: ArrayBuffer) {
+function arrayBufferToDataUri(data: ArrayBuffer, responseType?: string) {
   let imageSize: [number, number]
 
   const imageType = detectContentType(new Uint8Array(data))
@@ -232,7 +232,13 @@ function arrayBufferToDataUri(data: ArrayBuffer) {
   }
 
   if (!ALLOWED_IMAGE_TYPES.includes(imageType)) {
-    throw new Error(`Unsupported image type: ${imageType || 'unknown'}`)
+    const detail =
+      !imageType && responseType
+        ? `. The server sent Content-Type "${responseType}", which is not an image format Satori can decode.`
+        : ''
+    throw new Error(
+      `Unsupported image type: ${imageType || 'unknown'}${detail}`
+    )
   }
   return [
     `data:${imageType};base64,${arrayBufferToBase64(data)}`,
@@ -341,9 +347,19 @@ export async function resolveImageData(
     typeof window === 'undefined'
       ? () => safeServerFetch(url)
       : () => fetch(url)
+  let responseType: string | null = null
   const promise = doFetch()
     .then((res): Promise<string | ArrayBuffer> => {
       const type = res.headers.get('content-type')
+      responseType = type
+
+      if (res.ok === false) {
+        throw new Error(
+          `the server responded with ${res.status}${
+            res.statusText ? ` ${res.statusText}` : ''
+          }${type ? ` (Content-Type: "${type}")` : ''}`
+        )
+      }
 
       // Handle SVG specially
       if (type === 'image/svg+xml' || type === 'application/svg+xml') {
@@ -364,7 +380,7 @@ export async function resolveImageData(
         }
       }
 
-      const [newSrc, imageSize] = arrayBufferToDataUri(data)
+      const [newSrc, imageSize] = arrayBufferToDataUri(data, responseType)
       return [newSrc, ...imageSize] as ResolvedImageData
     })
     .then((result) => {
