@@ -227,6 +227,138 @@ const playgroundTabs: Tabs = {
     </div>
   </div>
 </div>`,
+  'Block Layout': `// Children of a block container stack vertically and fill its width, and
+// the vertical margins between them collapse, like in browsers.
+
+<div
+  style={{
+    display: 'block',
+    height: '100%',
+    width: '100%',
+    padding: '40px 56px',
+    backgroundImage: 'linear-gradient(to bottom right, #fff 50%, #e0f2fe)',
+    color: '#0f172a',
+  }}
+>
+  <div
+    style={{
+      fontSize: 16,
+      fontWeight: 700,
+      letterSpacing: 2,
+      textTransform: 'uppercase',
+      color: '#0284c7',
+      marginBottom: 24,
+    }}
+  >
+    Changelog
+  </div>
+  {/* The 24px margins above and below collapse into one. */}
+  <h1
+    style={{
+      fontSize: 44,
+      lineHeight: 1.1,
+      letterSpacing: -1.5,
+      margin: '24px 0 16px',
+    }}
+  >
+    Block layout, with margins that collapse
+  </h1>
+  <p
+    style={{
+      fontSize: 20,
+      lineHeight: 1.5,
+      color: '#475569',
+      margin: '16px 0 32px',
+    }}
+  >
+    Lay out content like a document, without flexDirection or fixed widths.
+    Text wraps to the width of its container.
+  </p>
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      fontSize: 18,
+      color: '#64748b',
+    }}
+  >
+    <div
+      style={{
+        width: 32,
+        height: 32,
+        marginRight: 12,
+        borderRadius: 16,
+        backgroundImage: 'linear-gradient(135deg, #38bdf8, #6366f1)',
+      }}
+    />
+    Satori Team · October 2026
+  </div>
+</div>
+`,
+  Flexbox: `// Flex items shrink to fit their container by default, like in browsers,
+// so nested text wraps without a fixed width.
+
+() => {
+  function Stat({ value, label }) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ fontSize: 44, fontWeight: 700, letterSpacing: -1 }}>
+          {value}
+        </div>
+        <div style={{ fontSize: 16, color: '#94a3b8' }}>{label}</div>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        height: '100%',
+        width: '100%',
+        padding: '0 48px',
+        backgroundColor: '#0f172a',
+        color: 'white',
+      }}
+    >
+      {/* The free space is distributed evenly around the items. */}
+      <div style={{ display: 'flex', justifyContent: 'space-evenly' }}>
+        <Stat value="1.2s" label="Build time" />
+        <Stat value="99.9%" label="Uptime" />
+        <Stat value="42" label="Regions" />
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          marginTop: 48,
+          padding: 24,
+          borderRadius: 16,
+          backgroundColor: '#1e293b',
+        }}
+      >
+        <div
+          style={{
+            flexShrink: 0,
+            width: 56,
+            height: 56,
+            marginRight: 20,
+            borderRadius: 28,
+            backgroundImage: 'linear-gradient(135deg, #38bdf8, #a855f7)',
+          }}
+        />
+        {/* This item shrinks to the remaining space, so the quote wraps. */}
+        <div style={{ fontSize: 20, lineHeight: 1.4, color: '#e2e8f0' }}>
+          “We moved our social cards to Satori, and they finally look the
+          same as in the browser.”
+        </div>
+      </div>
+    </div>
+  )
+}
+`,
   Advanced: `// Fallback fonts and Emoji are dynamically loaded
 // from Google Fonts and CDNs in this demo.
 
