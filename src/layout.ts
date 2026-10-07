@@ -31,11 +31,41 @@ import {
   type ProjectPlane,
   type TransformState,
 } from './builder/transform.js'
+import {
+  getFixedElementPosition,
+  insertFixedNode,
+  type FixedContainingBlock,
+  type FixedElement,
+} from './fixed-position.js'
 
 /** An element drawn in a 3D rendering context, sorted by depth. */
 interface Plane {
   depth: number
   svg: string
+}
+
+/**
+ * Positioned elements and stacking contexts are painted by the stacking
+ * context they're in, ordered by `z-index`:
+ * https://www.w3.org/TR/CSS22/zindex.html
+ */
+interface StackingLayer {
+  zIndex: number
+  svg: string
+}
+
+/**
+ * Paint a stacking context's layers around its in-flow content. Layers are
+ * added in tree order, which the sort keeps for equal `z-index` values.
+ */
+function paintStackingContext(layers: StackingLayer[], content: string) {
+  layers.sort((a, b) => a.zIndex - b.zIndex)
+  let svg = ''
+  let i = 0
+  for (; i < layers.length && layers[i].zIndex < 0; i++) svg += layers[i].svg
+  svg += content
+  for (; i < layers.length; i++) svg += layers[i].svg
+  return svg
 }
 
 type TransformList = TransformFunction[] & {
@@ -62,6 +92,18 @@ export interface LayoutContext {
   projectPlane?: ProjectPlane
   /** Collects the planes of the 3D rendering context the element is in. */
   planes?: Plane[]
+  /**
+   * The containing block of `position: fixed` descendants, if they're
+   * displayed.
+   */
+  fixedContainingBlock?: FixedContainingBlock
+  /** Collects the fixed elements laid out in their containing block. */
+  fixedElements: FixedElement[]
+  /**
+   * Collects the layers of the stacking context the element is in. The root
+   * element has none, and establishes the root stacking context.
+   */
+  stackingContext?: StackingLayer[]
 }
 
 export interface SatoriNode {
@@ -161,7 +203,6 @@ export default async function* layout(
   }
 
   const node = Yoga.Node.create()
-  parent.insertChild(node, parent.getChildCount())
 
   const [computedStyle, newInheritableStyle] = await computeStyle(
     node,
@@ -171,6 +212,32 @@ export default async function* layout(
     props,
     context.replacedElements
   )
+
+  // A fixed element is laid out in its containing block. Without a box, it's
+  // not positioned.
+  const fixedElement =
+    computedStyle.position === 'fixed' &&
+    node.getDisplay() === Yoga.DISPLAY_FLEX
+      ? insertFixedNode(
+          Yoga,
+          node,
+          parent,
+          context.fixedContainingBlock,
+          context.fixedElements
+        )
+      : undefined
+  if (fixedElement) {
+    // `overflow: hidden` of elements between it and its containing block
+    // doesn't clip it.
+    const { clipPathId, maskId } = fixedElement.containingBlock
+    for (const s of [computedStyle, newInheritableStyle]) {
+      s._inheritedClipPathId = clipPathId
+      s._inheritedMaskId = maskId
+    }
+  } else {
+    parent.insertChild(node, parent.getChildCount())
+  }
+
   // Post-process styles to attach inheritable properties for Satori.
 
   // Elements that affect how their children are transformed, and children of
@@ -180,6 +247,20 @@ export default async function* layout(
     typeof computedStyle.perspective === 'number'
       ? computedStyle.perspective
       : undefined
+
+  // These properties make the element the containing block of its fixed
+  // descendants.
+  const isFixedContainingBlock =
+    preserve3d ||
+    perspective !== undefined ||
+    (computedStyle.transform !== inheritedStyle.transform &&
+      (computedStyle.transform as unknown as TransformList).length > 0) ||
+    (!!computedStyle.filter &&
+      computedStyle.filter !== 'none' &&
+      computedStyle.filter !== inheritedStyle.filter) ||
+    (computedStyle._backdropFilters as unknown as unknown[] | undefined)
+      ?.length > 0
+
   if (
     computedStyle.transform === inheritedStyle.transform &&
     (preserve3d ||
@@ -206,10 +287,9 @@ export default async function* layout(
 
   // If the element has `overflow` set to `hidden` or clip-path is set, we need to create a clip
   // path and use it in all its children.
-  if (
-    computedStyle.overflow === 'hidden' ||
-    (computedStyle.clipPath && computedStyle.clipPath !== 'none')
-  ) {
+  const hasClipPath =
+    computedStyle.clipPath && computedStyle.clipPath !== 'none'
+  if (computedStyle.overflow === 'hidden' || hasClipPath) {
     newInheritableStyle._inheritedClipPathId = `satori_cp-${id}`
     newInheritableStyle._inheritedMaskId = `satori_om-${id}`
   }
@@ -217,6 +297,43 @@ export default async function* layout(
   if (computedStyle.maskImage) {
     newInheritableStyle._inheritedMaskId = `satori_mi-${id}`
   }
+
+  // Fixed descendants are clipped by their containing block, and by the
+  // `clip-path` and `mask-image` of elements in between. Descendants of an
+  // element that isn't displayed aren't displayed either.
+  let fixedContainingBlock = context.fixedContainingBlock
+  const fixedClip = {
+    clipPathId: newInheritableStyle._inheritedClipPathId as string | undefined,
+    maskId: newInheritableStyle._inheritedMaskId as string | undefined,
+  }
+  if (node.getDisplay() === Yoga.DISPLAY_NONE) {
+    fixedContainingBlock = undefined
+  } else if (isFixedContainingBlock) {
+    fixedContainingBlock = { node, offset: { left: 0, top: 0 }, ...fixedClip }
+  } else if (fixedContainingBlock && (hasClipPath || computedStyle.maskImage)) {
+    fixedContainingBlock = { ...fixedContainingBlock, ...fixedClip }
+  }
+
+  // A stacking context paints its descendants together. Elements of a 3D
+  // rendering context, elements projected by the `perspective` of their parent,
+  // and elements hidden by `backface-visibility` are drawn with their
+  // descendants too. All elements are flex items, so `z-index` applies even to
+  // static ones.
+  const zIndex =
+    typeof computedStyle.zIndex === 'number' ? computedStyle.zIndex : undefined
+  const isPositioned = computedStyle.position !== 'static'
+  const isStackingContext =
+    !context.stackingContext ||
+    zIndex !== undefined ||
+    computedStyle.position === 'fixed' ||
+    isFixedContainingBlock ||
+    (computedStyle.opacity as number) < (inheritedStyle.opacity as number) ||
+    !!hasClipPath ||
+    !!computedStyle.maskImage ||
+    !!context.planes ||
+    typeof context.parentStyle.perspective === 'number' ||
+    computedStyle.backfaceVisibility === 'hidden'
+  const stackingContext = isStackingContext ? [] : context.stackingContext
 
   // If the element has `background-clip: text` set, we need to create a clip
   // path and use it in all its children.
@@ -258,6 +375,9 @@ export default async function* layout(
       replacedElements: context.replacedElements,
       projectPlane: context.projectPlane,
       planes,
+      fixedContainingBlock,
+      fixedElements: context.fixedElements,
+      stackingContext,
     })
     if (canLoadAdditionalAssets) {
       segmentsMissingFont.push(...(((await iter.next()).value as any) || []))
@@ -272,9 +392,29 @@ export default async function* layout(
   // 3. Post-process the node.
   const [x, y] = yield
   let { left, top, width, height } = node.getComputedLayout()
-  // Attach offset to the current node.
-  left += x
-  top += y
+  if (fixedElement) {
+    ;[left, top] = getFixedElementPosition(fixedElement, x, y)
+  } else {
+    // Attach offset to the current node.
+    left += x
+    top += y
+  }
+  if (fixedContainingBlock?.node === node) {
+    fixedContainingBlock.offset.left = left
+    fixedContainingBlock.offset.top = top
+  }
+
+  // Add the layer before the descendants add theirs, to keep the tree order.
+  // Elements of a 3D rendering context are drawn by depth instead.
+  let layer: StackingLayer | undefined
+  if (
+    context.stackingContext &&
+    !context.planes &&
+    (isPositioned || isStackingContext)
+  ) {
+    layer = { zIndex: zIndex ?? 0, svg: '' }
+    context.stackingContext.push(layer)
+  }
 
   let childrenRenderResult = ''
   let baseRenderResult = ''
@@ -417,7 +557,11 @@ export default async function* layout(
   // descendants flattened onto it.
   let result = isHidden
     ? ''
-    : depsRenderResult + baseRenderResult + childrenRenderResult
+    : depsRenderResult +
+      baseRenderResult +
+      (isStackingContext
+        ? paintStackingContext(stackingContext, childrenRenderResult)
+        : childrenRenderResult)
 
   if (result && transformState.projection && !isInheritingTransform) {
     result = context.projectPlane(result, {
@@ -434,11 +578,15 @@ export default async function* layout(
     plane.svg = result
     // The element establishing the 3D rendering context draws all of them.
     if (context.planes) return ''
-    return planes
+    result = planes
       .sort((a, b) => a.depth - b.depth)
       .map(({ svg }) => svg)
       .join('')
   }
 
+  if (layer) {
+    layer.svg = result
+    return ''
+  }
   return result
 }

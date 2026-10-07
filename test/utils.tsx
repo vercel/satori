@@ -58,6 +58,15 @@ export function toImage(svg: string, width = 100) {
   return pngData.asPng()
 }
 
+/**
+ * Format an SVG for inline snapshots, with one element per line. Attribute
+ * values are escaped, so double quotes can be swapped to avoid escaping them
+ * in snapshots.
+ */
+export function formatSVG(svg: string) {
+  return svg.replace(/></g, '>\n<').replace(/"/g, "'")
+}
+
 export async function toImageWithSharp(svg: string, width = 100) {
   const webpDataUris = svg.match(/data:image\/webp;base64,[^"']+/g) || []
 

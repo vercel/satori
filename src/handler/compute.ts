@@ -406,6 +406,8 @@ export default async function compute(
         absolute: Yoga.POSITION_TYPE_ABSOLUTE,
         relative: Yoga.POSITION_TYPE_RELATIVE,
         static: Yoga.POSITION_TYPE_STATIC,
+        // Laid out in its containing block, see `fixed-position.ts`.
+        fixed: Yoga.POSITION_TYPE_ABSOLUTE,
       },
       Yoga.POSITION_TYPE_RELATIVE,
       'position'

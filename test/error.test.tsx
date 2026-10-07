@@ -45,17 +45,13 @@ describe('Error', () => {
   })
 
   it('should throw if using invalid values', async () => {
-    const result = satori(
-      // @ts-expect-error
-      <div style={{ position: 'fixed ' }}>Test</div>,
-      {
-        width: 10,
-        height: 10,
-        fonts,
-      }
-    )
-    expect(result).rejects.toThrowError(
-      `Invalid value for CSS property "position". Allowed values: "absolute" | "relative" | "static". Received: "fixed".`
+    const result = satori(<div style={{ position: 'sticky' }}>Test</div>, {
+      width: 10,
+      height: 10,
+      fonts,
+    })
+    await expect(result).rejects.toThrowError(
+      `Invalid value for CSS property "position". Allowed values: "absolute" | "relative" | "static" | "fixed". Received: "sticky".`
     )
   })
 

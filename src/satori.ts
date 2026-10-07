@@ -14,6 +14,10 @@ import { preProcessNode } from './handler/preprocess.js'
 import { cache, inflightRequests } from './handler/image.js'
 import { segment } from './utils.js'
 import { initHarfBuzz } from './harfbuzz.js'
+import {
+  sizeStaticPositionPlaceholders,
+  type FixedElement,
+} from './fixed-position.js'
 
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
@@ -162,6 +166,7 @@ export async function render(
   inflightRequests.clear()
   await preProcessNode(element)
 
+  const fixedElements: FixedElement[] = []
   const handler = layout(element, {
     id: 'id',
     parentStyle: {},
@@ -188,6 +193,9 @@ export async function render(
     onNodeDetected: options.onNodeDetected,
     replacedElements,
     projectPlane,
+    // Fixed elements are positioned relative to the viewport by default.
+    fixedContainingBlock: { node: root, offset: { left: 0, top: 0 } },
+    fixedElements,
     getTwStyles: (tw, style) => {
       const twToStyles = getTw({
         width: definedWidth,
@@ -254,6 +262,10 @@ export async function render(
 
   await handler.next()
   root.calculateLayout(definedWidth, definedHeight, Yoga.DIRECTION_LTR)
+  // The static position of a fixed element depends on its size.
+  if (sizeStaticPositionPlaceholders(Yoga, fixedElements)) {
+    root.calculateLayout(definedWidth, definedHeight, Yoga.DIRECTION_LTR)
+  }
 
   const content = (await handler.next([0, 0])).value as string
 

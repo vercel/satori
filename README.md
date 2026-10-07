@@ -200,7 +200,13 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 <tr>
 <td colspan="2"><code>position</code></td>
-<td><code>relative</code>, <code>static</code> and <code>absolute</code>, default to <code>relative</code></td>
+<td><code>relative</code>, <code>static</code>, <code>absolute</code> and <code>fixed</code>, default to <code>relative</code>. Fixed elements are positioned relative to the image, or to the nearest ancestor with <code>transform</code>, <code>perspective</code>, <code>filter</code>, <code>backdropFilter</code> or <code>transformStyle: preserve-3d</code></td>
+<td></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>zIndex</code></td>
+<td>Integers and <code>auto</code>, default to <code>auto</code>. Elements are painted in <a href="https://www.w3.org/TR/CSS22/zindex.html">stacking order</a>: positioned elements are painted above static ones, and all elements are flex items, so <code>zIndex</code> applies to static elements too</td>
 <td></td>
 </tr>
 
