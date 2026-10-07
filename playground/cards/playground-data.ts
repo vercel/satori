@@ -295,66 +295,89 @@ const playgroundTabs: Tabs = {
   </div>
 </div>
 `,
-  Flexbox: `// Flex items shrink to fit their container by default, like in browsers,
-// so nested text wraps without a fixed width.
+  Grid: `// Place items in named grid areas, and size tracks with fr, minmax()
+// and repeat(), like in browsers.
 
 () => {
-  function Stat({ value, label }) {
+  function Tile({ area, children, style }) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ fontSize: 44, fontWeight: 700, letterSpacing: -1 }}>
-          {value}
-        </div>
-        <div style={{ fontSize: 16, color: '#94a3b8' }}>{label}</div>
+      <div
+        style={{
+          gridArea: area,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: 20,
+          borderRadius: 16,
+          backgroundColor: '#1e293b',
+          ...style,
+        }}
+      >
+        {children}
       </div>
     )
+  }
+
+  function Label({ children }) {
+    return <div style={{ fontSize: 16, color: '#94a3b8' }}>{children}</div>
   }
 
   return (
     <div
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateRows: 'repeat(2, 1fr)',
+        gridTemplateAreas: '"hero hero builds uptime" "hero hero regions regions"',
+        gap: 16,
         height: '100%',
         width: '100%',
-        padding: '0 48px',
+        padding: 32,
         backgroundColor: '#0f172a',
         color: 'white',
       }}
     >
-      {/* The free space is distributed evenly around the items. */}
-      <div style={{ display: 'flex', justifyContent: 'space-evenly' }}>
-        <Stat value="1.2s" label="Build time" />
-        <Stat value="99.9%" label="Uptime" />
-        <Stat value="42" label="Regions" />
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          marginTop: 48,
-          padding: 24,
-          borderRadius: 16,
-          backgroundColor: '#1e293b',
-        }}
+      <Tile
+        area="hero"
+        style={{ backgroundImage: 'linear-gradient(135deg, #6366f1, #a855f7)' }}
       >
+        <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>
+          Satori
+        </div>
+        <div style={{ fontSize: 44, fontWeight: 700, lineHeight: 1.1, letterSpacing: -1.5 }}>
+          CSS Grid, with named areas
+        </div>
+      </Tile>
+      <Tile area="builds">
+        <Label>Build time</Label>
+        <div style={{ fontSize: 40, fontWeight: 700 }}>1.2s</div>
+      </Tile>
+      <Tile area="uptime">
+        <Label>Uptime</Label>
+        <div style={{ fontSize: 40, fontWeight: 700 }}>99.9%</div>
+      </Tile>
+      <Tile area="regions">
+        <Label>42 regions</Label>
+        {/* As many 14px columns as fit, stretched to fill the row. */}
         <div
           style={{
-            flexShrink: 0,
-            width: 56,
-            height: 56,
-            marginRight: 20,
-            borderRadius: 28,
-            backgroundImage: 'linear-gradient(135deg, #38bdf8, #a855f7)',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(14px, 1fr))',
+            gap: 6,
           }}
-        />
-        {/* This item shrinks to the remaining space, so the quote wraps. */}
-        <div style={{ fontSize: 20, lineHeight: 1.4, color: '#e2e8f0' }}>
-          “We moved our social cards to Satori, and they finally look the
-          same as in the browser.”
+        >
+          {Array.from({ length: 42 }, (_, i) => (
+            <div
+              key={i}
+              style={{
+                height: 14,
+                borderRadius: 4,
+                backgroundColor: i % 5 === 2 ? '#a855f7' : '#334155',
+              }}
+            />
+          ))}
         </div>
-      </div>
+      </Tile>
     </div>
   )
 }
