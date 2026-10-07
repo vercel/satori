@@ -715,6 +715,35 @@ describe('background-image: url()', () => {
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it.each([
+    'auto 30px',
+    '40px auto',
+    'auto 1.875rem',
+    '2.5em auto',
+    'auto 30%',
+    '40% auto',
+  ])(
+    'should preserve the aspect ratio for background-size: %s',
+    async (backgroundSize) => {
+      const svg = await satori(
+        <div
+          style={{
+            width: 100,
+            height: 100,
+            fontSize: 16,
+            backgroundImage: `url(${PNG_SAMPLE})`,
+            backgroundSize,
+            backgroundRepeat: 'no-repeat',
+          }}
+        />,
+        { width: 100, height: 100, fonts }
+      )
+
+      expect(svg).toMatch(/<image[^>]*width="40" height="30"/)
+      expect(svg).not.toContain('NaN')
+    }
+  )
+
   it('should support background-size: cover with non-square container', async () => {
     const svg = await satori(
       <div

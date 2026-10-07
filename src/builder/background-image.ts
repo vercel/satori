@@ -1,5 +1,5 @@
 import CssDimension from '../vendor/parse-css-dimension/index.js'
-import { buildXMLString } from '../utils.js'
+import { buildXMLString, lengthToNumber } from '../utils.js'
 
 import { resolveImageData } from '../handler/image.js'
 import { buildLinearGradient } from './gradient/linear.js'
@@ -29,7 +29,8 @@ function calculateKeywordSize(
   containerWidth: number,
   containerHeight: number,
   imageWidth: number,
-  imageHeight: number
+  imageHeight: number,
+  inheritableStyle: Record<string, number | string>
 ): [number, number] {
   if (!imageWidth || !imageHeight) {
     return [containerWidth, containerHeight]
@@ -53,7 +54,7 @@ function calculateKeywordSize(
 
   // For 'auto' or other values, handle auto
   if (keyword === 'auto' || keyword.includes('auto')) {
-    const parts = keyword.split(' ')
+    const parts = keyword.trim().split(/\s+/)
     const widthPart = parts[0] || 'auto'
     const heightPart = parts[1] || parts[0] || 'auto'
 
@@ -62,12 +63,26 @@ function calculateKeywordSize(
 
     if (widthPart === 'auto' && heightPart !== 'auto') {
       // Width is auto, height is specified
-      const parsedHeight = toAbsoluteValue(heightPart, containerHeight)
+      const parsedHeight =
+        lengthToNumber(
+          heightPart,
+          inheritableStyle.fontSize as number,
+          containerHeight,
+          inheritableStyle,
+          true
+        ) || 0
       finalHeight = parsedHeight
       finalWidth = (imageWidth / imageHeight) * parsedHeight
     } else if (heightPart === 'auto' && widthPart !== 'auto') {
       // Height is auto, width is specified
-      const parsedWidth = toAbsoluteValue(widthPart, containerWidth)
+      const parsedWidth =
+        lengthToNumber(
+          widthPart,
+          inheritableStyle.fontSize as number,
+          containerWidth,
+          inheritableStyle,
+          true
+        ) || 0
       finalWidth = parsedWidth
       finalHeight = (imageHeight / imageWidth) * parsedWidth
     }
@@ -210,7 +225,8 @@ export default async function backgroundImage(
         width,
         height,
         imageWidth,
-        imageHeight
+        imageHeight,
+        inheritableStyle
       )
       resolvedWidth = calcWidth
       resolvedHeight = calcHeight
