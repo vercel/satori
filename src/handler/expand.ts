@@ -73,8 +73,16 @@ function handleSpecialCase(
   inheritedStyle: SerializedStyle
 ) {
   if (name === 'zIndex') {
-    console.warn('`z-index` is currently not supported.')
-    return { [name]: value }
+    const normalized = String(value).trim().toLowerCase()
+    if (normalized === 'auto') return { zIndex: 'auto' }
+    if (!/^[+-]?\d+$/.test(normalized)) {
+      throw new Error(
+        'Invalid `zIndex` value: "' +
+          value +
+          '". Expected an integer or "auto".'
+      )
+    }
+    return { zIndex: Number(normalized) }
   }
 
   if (name === 'lineHeight') {
