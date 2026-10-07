@@ -12,7 +12,7 @@ import {
   isReactComponent,
   isForwardRefComponent,
 } from './utils.js'
-import { getYoga, YogaNode } from './yoga.js'
+import { LayoutNode } from './layout-engine/index.js'
 import { SVGNodeToImage } from './handler/preprocess.js'
 import computeStyle from './handler/compute.js'
 import FontLoader from './font.js'
@@ -78,7 +78,7 @@ export interface LayoutContext {
   parentStyle: SerializedStyle
   inheritedStyle: SerializedStyle
   isInheritingTransform?: boolean
-  parent: YogaNode
+  parent: LayoutNode
   font: FontLoader
   embedFont: boolean
   debug?: boolean
@@ -126,7 +126,6 @@ export default async function* layout(
   string,
   [number, number]
 > {
-  const Yoga = await getYoga()
   const {
     id,
     inheritedStyle,
@@ -202,7 +201,7 @@ export default async function* layout(
     style = Object.assign(twStyles, style)
   }
 
-  const node = Yoga.Node.create()
+  const node = new LayoutNode()
 
   const [computedStyle, newInheritableStyle] = await computeStyle(
     node,
@@ -217,9 +216,9 @@ export default async function* layout(
   // not positioned.
   const fixedElement =
     computedStyle.position === 'fixed' &&
-    node.getDisplay() === Yoga.DISPLAY_FLEX
+    node.style.display !== 'none' &&
+    node.style.display !== 'contents'
       ? insertFixedNode(
-          Yoga,
           node,
           parent,
           context.fixedContainingBlock,
@@ -235,7 +234,7 @@ export default async function* layout(
       s._inheritedMaskId = maskId
     }
   } else {
-    parent.insertChild(node, parent.getChildCount())
+    parent.insertChild(node)
   }
 
   // Post-process styles to attach inheritable properties for Satori.
@@ -306,7 +305,7 @@ export default async function* layout(
     clipPathId: newInheritableStyle._inheritedClipPathId as string | undefined,
     maskId: newInheritableStyle._inheritedMaskId as string | undefined,
   }
-  if (node.getDisplay() === Yoga.DISPLAY_NONE) {
+  if (node.style.display === 'none') {
     fixedContainingBlock = undefined
   } else if (isFixedContainingBlock) {
     fixedContainingBlock = { node, offset: { left: 0, top: 0 }, ...fixedClip }
@@ -391,7 +390,7 @@ export default async function* layout(
 
   // 3. Post-process the node.
   const [x, y] = yield
-  let { left, top, width, height } = node.getComputedLayout()
+  let { left, top, width, height } = node.layout
   if (fixedElement) {
     ;[left, top] = getFixedElementPosition(fixedElement, x, y)
   } else {
@@ -518,11 +517,12 @@ export default async function* layout(
       children &&
       typeof children !== 'string' &&
       display !== 'flex' &&
+      display !== 'block' &&
       display !== 'none' &&
       display !== 'contents'
     ) {
       throw new Error(
-        `Expected <div> to have explicit "display: flex", "display: contents", or "display: none" if it has more than one child node.`
+        `Expected <div> to have explicit "display: flex", "display: block", "display: contents", or "display: none" if it has more than one child node.`
       )
     }
     baseRenderResult = await rect(

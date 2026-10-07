@@ -173,7 +173,7 @@ declare module 'react' {
 
 ### CSS
 
-Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Native, and it’s **not** a complete CSS implementation. However, it supports a subset of the spec that covers most common CSS features:
+Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox and block layouts, and it’s **not** a complete CSS implementation. However, it supports a subset of the spec that covers most common CSS features:
 
 <table>
 <thead>
@@ -194,7 +194,7 @@ Satori uses the same Flexbox [layout engine](https://yogalayout.com) as React Na
 
 <tr>
 <td colspan="2"><code>display</code></td>
-<td><code>flex</code>, <code>block</code>, <code>contents</code>, <code>none</code>, <code>-webkit-box</code>, default to <code>flex</code>. Use <code>flex</code>, <code>contents</code>, or <code>none</code> for <code>div</code> elements with multiple child nodes.</td>
+<td><code>flex</code>, <code>block</code>, <code>contents</code>, <code>none</code>, <code>-webkit-box</code>, default to <code>flex</code>. Use <code>flex</code>, <code>block</code>, <code>contents</code>, or <code>none</code> for <code>div</code> elements with multiple child nodes. Children of <code>block</code> elements are stacked vertically, including text, and margins collapse like in CSS.</td>
 <td></td>
 </tr>
 
@@ -562,23 +562,23 @@ If there is a limitation on dynamically loading WASM (e.g. Cloudflare Workers), 
 
 #### Standalone Build of Satori
 
-Satori's standalone build doesn't include Yoga's WASM binary by default, and you need to load it manually before using Satori.
+Satori's standalone build doesn't include the WASM binary of its layout engine by default, and you need to load it manually before using Satori.
 
-First, you need to download the `yoga.wasm` binary from [Satori build](https://unpkg.com/satori/) and provide it yourself. Let's use `fetch` to load it directly from the CDN as an example:
+First, you need to download the `layout.wasm` binary from [Satori build](https://unpkg.com/satori/) and provide it yourself. Let's use `fetch` to load it directly from the CDN as an example:
 
 ```jsx
 import satori, { init } from 'satori/standalone'
 
-const res = await fetch('https://unpkg.com/satori/yoga.wasm')
-const yogaWasm = await res.arrayBuffer()
+const res = await fetch('https://unpkg.com/satori/layout.wasm')
+const layoutWasm = await res.arrayBuffer()
 
-await init(yogaWasm)
+await init(layoutWasm)
 
 // Now you can use satori as usual
 const svg = await satori(...)
 ```
 
-Of course, you can also load the `yoga.wasm` file from your local disk via `fs.readFile` in Node.js or other methods.
+Of course, you can also load the `layout.wasm` file from your local disk via `fs.readFile` in Node.js or other methods.
 
 ### Font Embedding
 
@@ -598,7 +598,7 @@ const svg = await satori(
 
 ### Pixel Grid Rounding
 
-Set `pointScaleFactor` to control how layout values are rounded to the pixel grid. This parameter is passed directly to [Yoga’s `pointScaleFactor`](https://www.yogalayout.dev/docs/getting-started/configuring-yoga#point-scale-factor) and improves rendering precision on high-DPI displays.
+Set `pointScaleFactor` to control how layout values are rounded to the pixel grid: they are rounded to multiples of `1 / pointScaleFactor` px, or not rounded with `0`. It defaults to `1`, and higher values improve rendering precision on high-DPI displays.
 
 ```jsx
 const svg = await satori(

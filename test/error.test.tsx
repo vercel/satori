@@ -24,7 +24,7 @@ describe('Error', () => {
       error = err
     }
     expect(error?.message).toBe(
-      'Expected <div> to have explicit "display: flex", "display: contents", or "display: none" if it has more than one child node.'
+      'Expected <div> to have explicit "display: flex", "display: block", "display: contents", or "display: none" if it has more than one child node.'
     )
   })
 

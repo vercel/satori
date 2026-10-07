@@ -4,14 +4,14 @@
  * for it, e.g. with a `transform`:
  * https://drafts.csswg.org/css-position/#fixed-positioning-containing-block
  *
- * Yoga positions an absolute node relative to its parent, so the node of a
- * fixed element is moved into the node of its containing block.
+ * The layout engine positions an absolute node relative to its parent, so the
+ * node of a fixed element is moved into the node of its containing block.
  */
 
-import type { TYoga, YogaNode } from './yoga.js'
+import { LayoutNode } from './layout-engine/index.js'
 
 export interface FixedContainingBlock {
-  node: YogaNode
+  node: LayoutNode
   /** Where the containing block is drawn, set once it's laid out. */
   offset: { left: number; top: number }
   /**
@@ -24,19 +24,17 @@ export interface FixedContainingBlock {
 }
 
 export interface FixedElement {
-  node: YogaNode
+  node: LayoutNode
   containingBlock: FixedContainingBlock
   /**
    * On an axis without insets, the element stays at its static position:
    * where it would be as an absolute child of its parent. The placeholder is a
    * node in the parent with the element's margins, alignment and size.
    */
-  placeholder?: YogaNode
+  placeholder?: LayoutNode
   staticX: boolean
   staticY: boolean
 }
-
-const EDGES = ['EDGE_TOP', 'EDGE_RIGHT', 'EDGE_BOTTOM', 'EDGE_LEFT'] as const
 
 /**
  * Insert the node of a fixed element into the node of its containing block.
@@ -45,28 +43,27 @@ const EDGES = ['EDGE_TOP', 'EDGE_RIGHT', 'EDGE_BOTTOM', 'EDGE_LEFT'] as const
  * block, or when there is none because an ancestor isn't displayed.
  */
 export function insertFixedNode(
-  Yoga: TYoga,
-  node: YogaNode,
-  parent: YogaNode,
+  node: LayoutNode,
+  parent: LayoutNode,
   containingBlock: FixedContainingBlock | undefined,
   fixedElements: FixedElement[]
 ): FixedElement | undefined {
   if (!containingBlock || containingBlock.node === parent) return
 
   const container = containingBlock.node
-  container.insertChild(node, container.getChildCount())
+  container.insertChild(node)
 
-  const isAuto = (edge: number) =>
-    node.getPosition(edge).unit === Yoga.UNIT_UNDEFINED
-  const staticX = isAuto(Yoga.EDGE_LEFT) && isAuto(Yoga.EDGE_RIGHT)
-  const staticY = isAuto(Yoga.EDGE_TOP) && isAuto(Yoga.EDGE_BOTTOM)
+  const { left, right, top, bottom } = node.style
+  const staticX = left === undefined && right === undefined
+  const staticY = top === undefined && bottom === undefined
 
-  let placeholder: YogaNode | undefined
+  let placeholder: LayoutNode | undefined
   if (staticX || staticY) {
-    placeholder = Yoga.Node.create()
-    placeholder.setPositionType(Yoga.POSITION_TYPE_ABSOLUTE)
-    placeholder.setAlignSelf(node.getAlignSelf())
-    parent.insertChild(placeholder, parent.getChildCount())
+    placeholder = new LayoutNode({
+      position: 'absolute',
+      alignSelf: node.style.alignSelf,
+    })
+    parent.insertChild(placeholder)
   }
 
   const element = { node, containingBlock, placeholder, staticX, staticY }
@@ -80,18 +77,21 @@ export function insertFixedNode(
  * be calculated again.
  */
 export function sizeStaticPositionPlaceholders(
-  Yoga: TYoga,
   fixedElements: FixedElement[]
 ): boolean {
   let resized = false
   for (const { node, placeholder } of fixedElements) {
     if (!placeholder) continue
-    placeholder.setWidth(node.getComputedWidth())
-    placeholder.setHeight(node.getComputedHeight())
+    const { width, height, margin } = node.layout
     // Percentages resolve against the containing block, not the parent.
-    for (const edge of EDGES) {
-      placeholder.setMargin(Yoga[edge], node.getComputedMargin(Yoga[edge]))
-    }
+    Object.assign(placeholder.style, {
+      width,
+      height,
+      marginTop: margin.top,
+      marginRight: margin.right,
+      marginBottom: margin.bottom,
+      marginLeft: margin.left,
+    })
     resized = true
   }
   return resized
@@ -113,10 +113,8 @@ export function getFixedElementPosition(
 ): [left: number, top: number] {
   return [
     staticX
-      ? parentLeft + placeholder.getComputedLeft()
-      : offset.left + node.getComputedLeft(),
-    staticY
-      ? parentTop + placeholder.getComputedTop()
-      : offset.top + node.getComputedTop(),
+      ? parentLeft + placeholder.layout.left
+      : offset.left + node.layout.left,
+    staticY ? parentTop + placeholder.layout.top : offset.top + node.layout.top,
   ]
 }

@@ -8,3 +8,4 @@ src/vendor/
 pnpm-lock.yaml
 *.md
 coverage/
+crates/layout/target/

@@ -17,3 +17,6 @@ playground/.webgl-libs
 
 # Vendor files
 # yoga.wasm
+
+# Rust build output
+crates/layout/target
