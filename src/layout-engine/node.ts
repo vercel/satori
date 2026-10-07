@@ -26,6 +26,62 @@ export type ContentAlignment =
   | 'space-evenly'
   | 'space-around'
 
+/**
+ * A limit of a grid track's size: a length in px, a percentage, a flex
+ * fraction (only as the maximum), a keyword, or `fit-content()` (only as the
+ * maximum).
+ */
+export type GridTrackBreadth =
+  | number
+  | `${number}%`
+  | `${number}fr`
+  | 'auto'
+  | 'min-content'
+  | 'max-content'
+  | { fitContent: number | `${number}%` }
+
+export interface GridTrackSize {
+  min: GridTrackBreadth
+  max: GridTrackBreadth
+}
+
+export interface GridRepeat {
+  count: number | 'auto-fill' | 'auto-fit'
+  tracks: GridTrackSize[]
+  /** The names of each line of a repetition, none or one more than tracks. */
+  lineNames: string[][]
+}
+
+export interface GridTrackList {
+  tracks: (GridTrackSize | GridRepeat)[]
+  /** The names of the lines between tracks, none or one more than tracks. */
+  lineNames: string[][]
+}
+
+export interface GridTemplateArea {
+  name: string
+  /** Lines, starting at 1. */
+  rowStart: number
+  rowEnd: number
+  columnStart: number
+  columnEnd: number
+}
+
+export interface GridTemplateAreas {
+  rowCount: number
+  columnCount: number
+  areas: GridTemplateArea[]
+}
+
+/**
+ * The line a grid item starts or ends at: `auto`, a line number, a span, or
+ * the nth line with a name (the first with an index of 0), or a span to it.
+ */
+export type GridLine =
+  | 'auto'
+  | { line: number; name?: string }
+  | { span: number; name?: string }
+
 export interface LayoutStyle {
   display?: 'flex' | 'block' | 'flow-root' | 'grid' | 'none' | 'contents'
   position?: 'relative' | 'absolute'
@@ -67,6 +123,16 @@ export interface LayoutStyle {
   flexBasis?: Length
   flexGrow?: number
   flexShrink?: number
+  gridTemplateColumns?: GridTrackList
+  gridTemplateRows?: GridTrackList
+  gridAutoColumns?: GridTrackSize[]
+  gridAutoRows?: GridTrackSize[]
+  gridAutoFlow?: 'row' | 'column' | 'row dense' | 'column dense'
+  gridTemplateAreas?: GridTemplateAreas
+  gridRowStart?: GridLine
+  gridRowEnd?: GridLine
+  gridColumnStart?: GridLine
+  gridColumnEnd?: GridLine
   /** Replaced elements, e.g. images, are sized differently in block layout. */
   replaced?: boolean
 }

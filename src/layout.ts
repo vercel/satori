@@ -518,11 +518,12 @@ export default async function* layout(
       typeof children !== 'string' &&
       display !== 'flex' &&
       display !== 'block' &&
+      display !== 'grid' &&
       display !== 'none' &&
       display !== 'contents'
     ) {
       throw new Error(
-        `Expected <div> to have explicit "display: flex", "display: block", "display: contents", or "display: none" if it has more than one child node.`
+        `Expected <div> to have explicit "display: flex", "display: block", "display: grid", "display: contents", or "display: none" if it has more than one child node.`
       )
     }
     baseRenderResult = await rect(

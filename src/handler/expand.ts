@@ -16,6 +16,7 @@ import { isString, lengthToNumber, v, splitEffects } from '../utils.js'
 import { MaskProperty, parseMask } from '../parser/mask.js'
 import { splitCornerShapeValues } from '../parser/corner-shape.js'
 import { parseBackdropFilter } from '../parser/backdrop-filter.js'
+import { expandGridPlacement } from '../parser/grid.js'
 import parseTransform, {
   resolveTransform,
   type TransformFunction,
@@ -273,6 +274,40 @@ function handleSpecialCase(
       WebkitTextStrokeWidth: purify(name, values[0]),
       WebkitTextStrokeColor: purify(name, values[1]),
     }
+  }
+
+  if (name === 'gap') {
+    // `<row-gap> <column-gap>?`
+    const [rowGap, columnGap = rowGap, ...rest] = String(value)
+      .trim()
+      .split(/\s+/)
+    if (rest.length) throw new Error('Invalid `gap` value.')
+    return {
+      rowGap: purify('rowGap', rowGap),
+      columnGap: purify('columnGap', columnGap),
+    }
+  }
+
+  if (name === 'gridRow' || name === 'gridColumn' || name === 'gridArea') {
+    return expandGridPlacement(name, value)
+  }
+
+  // Parsed by `compute()`, which resolves lengths in track lists.
+  if (
+    [
+      'gridTemplateColumns',
+      'gridTemplateRows',
+      'gridTemplateAreas',
+      'gridAutoColumns',
+      'gridAutoRows',
+      'gridAutoFlow',
+      'gridRowStart',
+      'gridRowEnd',
+      'gridColumnStart',
+      'gridColumnEnd',
+    ].includes(name)
+  ) {
+    return { [name]: value }
   }
 
   if (name === 'textDecorationSkipInk') {

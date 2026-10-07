@@ -7,7 +7,15 @@
  * of its children. The root is the first node.
  */
 
-import type { Length, LayoutNode, LayoutStyle } from './node.js'
+import type {
+  GridLine,
+  GridTrackBreadth,
+  GridTrackList,
+  GridTrackSize,
+  Length,
+  LayoutNode,
+  LayoutStyle,
+} from './node.js'
 
 const DISPLAY = {
   none: 0,
@@ -108,6 +116,150 @@ function encodeStyle(data: number[], style: LayoutStyle, scale: number) {
   data.push(style.flexGrow ?? 0, style.flexShrink ?? 1)
   // `text-align` for block layout, which Satori doesn't use.
   data.push(0, style.replaced ? 1 : 0)
+  encodeGridStyle(data, style, scale)
+}
+
+/** A length, then UTF-16 code units. */
+function pushString(data: number[], string: string) {
+  data.push(string.length)
+  for (let i = 0; i < string.length; i++) data.push(string.charCodeAt(i))
+}
+
+/** A count, then each set: a count, then each name. */
+function pushLineNames(data: number[], lineNames: string[][]) {
+  data.push(lineNames.length)
+  for (const names of lineNames) {
+    data.push(names.length)
+    for (const name of names) pushString(data, name)
+  }
+}
+
+/**
+ * Kinds: 0 is auto, 1 a length, 2 a percentage, 3 min-content, 4
+ * max-content, 5 a flex fraction, 6 `fit-content()` with a length and 7 with
+ * a percentage.
+ */
+function pushTrackBreadth(
+  data: number[],
+  breadth: GridTrackBreadth,
+  scale: number
+) {
+  if (typeof breadth === 'number') {
+    data.push(1, breadth * scale)
+  } else if (typeof breadth === 'object') {
+    const limit = breadth.fitContent
+    if (typeof limit === 'number') data.push(6, limit * scale)
+    else data.push(7, parseFloat(limit) / 100)
+  } else if (breadth.endsWith('%')) {
+    data.push(2, parseFloat(breadth) / 100)
+  } else if (breadth.endsWith('fr')) {
+    data.push(5, parseFloat(breadth))
+  } else {
+    data.push(
+      breadth === 'min-content' ? 3 : breadth === 'max-content' ? 4 : 0,
+      0
+    )
+  }
+}
+
+function pushTrackSizes(
+  data: number[],
+  tracks: GridTrackSize[],
+  scale: number
+) {
+  data.push(tracks.length)
+  for (const { min, max } of tracks) {
+    pushTrackBreadth(data, min, scale)
+    pushTrackBreadth(data, max, scale)
+  }
+}
+
+/**
+ * A count, then each track: 0 and its size, or 1 for `repeat()` followed by
+ * its count (0 and the number, 1 for `auto-fill`, 2 for `auto-fit`), track
+ * sizes and line names. Then the line names.
+ */
+function pushTrackList(
+  data: number[],
+  list: GridTrackList | undefined,
+  scale: number
+) {
+  const tracks = list?.tracks ?? []
+  data.push(tracks.length)
+  for (const track of tracks) {
+    if ('count' in track) {
+      data.push(1)
+      if (typeof track.count === 'number') data.push(0, track.count)
+      else data.push(track.count === 'auto-fill' ? 1 : 2, 0)
+      pushTrackSizes(data, track.tracks, scale)
+      pushLineNames(data, track.lineNames)
+    } else {
+      data.push(0)
+      pushTrackSizes(data, [track], scale)
+    }
+  }
+  pushLineNames(data, list?.lineNames ?? [])
+}
+
+/**
+ * Kinds: 0 is auto, 1 a line, 2 a span, 3 a named line and 4 a span to a
+ * named line. Followed by the number and the name.
+ */
+function pushGridLine(data: number[], line: GridLine | undefined) {
+  if (!line || line === 'auto') {
+    data.push(0, 0, 0)
+  } else if ('line' in line) {
+    data.push(line.name ? 3 : 1, line.line)
+    pushString(data, line.name ?? '')
+  } else {
+    data.push(line.name ? 4 : 2, line.span)
+    pushString(data, line.name ?? '')
+  }
+}
+
+const GRID_AUTO_FLOW = {
+  row: 0,
+  column: 1,
+  'row dense': 2,
+  'column dense': 3,
+}
+
+/**
+ * Whether it's a grid container, then its properties. Whether it's placed
+ * in a grid, then its lines: row start, row end, column start and end.
+ */
+function encodeGridStyle(data: number[], style: LayoutStyle, scale: number) {
+  if (style.display === 'grid') {
+    data.push(1)
+    pushTrackList(data, style.gridTemplateColumns, scale)
+    pushTrackList(data, style.gridTemplateRows, scale)
+    pushTrackSizes(data, style.gridAutoColumns ?? [], scale)
+    pushTrackSizes(data, style.gridAutoRows ?? [], scale)
+    data.push(GRID_AUTO_FLOW[style.gridAutoFlow] ?? 0)
+    // The row and column counts, then each area: its name and lines.
+    const areas = style.gridTemplateAreas
+    data.push(areas?.rowCount ?? 0, areas?.columnCount ?? 0)
+    data.push(areas?.areas.length ?? 0)
+    for (const area of areas?.areas ?? []) {
+      pushString(data, area.name)
+      data.push(area.rowStart, area.rowEnd, area.columnStart, area.columnEnd)
+    }
+  } else {
+    data.push(0)
+  }
+
+  const lines = [
+    style.gridRowStart,
+    style.gridRowEnd,
+    style.gridColumnStart,
+    style.gridColumnEnd,
+  ]
+  if (lines.some((line) => line && line !== 'auto')) {
+    data.push(1)
+    for (const line of lines) pushGridLine(data, line)
+  } else {
+    data.push(0)
+  }
 }
 
 export interface EncodedTree {

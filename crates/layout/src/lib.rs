@@ -10,6 +10,7 @@
 use std::cell::RefCell;
 
 use taffy::prelude::*;
+use taffy::style::{GridTemplateArea, GridTemplateAreas, GridTemplateRepetition};
 use taffy::{
     compute_leaf_layout, AlignContent, AlignItems, Baselines, BoxSizing, LayoutInput, LayoutOutput,
     Overflow, Point, TextAlign,
@@ -153,6 +154,93 @@ impl<'a> Reader<'a> {
         })
     }
 
+    /// A length, then UTF-16 code units.
+    fn string(&mut self) -> String {
+        let len = self.int() as usize;
+        let units: Vec<u16> = (0..len).map(|_| self.int() as u16).collect();
+        String::from_utf16_lossy(&units)
+    }
+
+    /// A count, then each set: a count, then each name.
+    fn line_names(&mut self) -> Vec<Vec<String>> {
+        let count = self.int() as usize;
+        (0..count)
+            .map(|_| {
+                let names = self.int() as usize;
+                (0..names).map(|_| self.string()).collect()
+            })
+            .collect()
+    }
+
+    /// A kind (see `pushTrackBreadth` in `encode.ts`) and a value.
+    fn track_size(&mut self) -> TrackSizingFunction {
+        let (min_kind, min_value) = (self.int(), self.next());
+        let (max_kind, max_value) = (self.int(), self.next());
+        let min = match min_kind {
+            1 => MinTrackSizingFunction::length(min_value),
+            2 => MinTrackSizingFunction::percent(min_value),
+            3 => MinTrackSizingFunction::min_content(),
+            4 => MinTrackSizingFunction::max_content(),
+            _ => MinTrackSizingFunction::auto(),
+        };
+        let max = match max_kind {
+            1 => MaxTrackSizingFunction::length(max_value),
+            2 => MaxTrackSizingFunction::percent(max_value),
+            3 => MaxTrackSizingFunction::min_content(),
+            4 => MaxTrackSizingFunction::max_content(),
+            5 => MaxTrackSizingFunction::fr(max_value),
+            6 => MaxTrackSizingFunction::fit_content_px(max_value),
+            7 => MaxTrackSizingFunction::fit_content_percent(max_value),
+            _ => MaxTrackSizingFunction::auto(),
+        };
+        TrackSizingFunction { min, max }
+    }
+
+    fn track_sizes(&mut self) -> Vec<TrackSizingFunction> {
+        let count = self.int() as usize;
+        (0..count).map(|_| self.track_size()).collect()
+    }
+
+    /// See `pushTrackList` in `encode.ts`.
+    fn track_list(&mut self) -> (Vec<GridTemplateComponent<String>>, Vec<Vec<String>>) {
+        let count = self.int() as usize;
+        let tracks = (0..count)
+            .map(|_| {
+                if self.int() == 0 {
+                    let mut sizes = self.track_sizes();
+                    return GridTemplateComponent::Single(sizes.remove(0));
+                }
+                let count = match (self.int(), self.next()) {
+                    (1, _) => RepetitionCount::AutoFill,
+                    (2, _) => RepetitionCount::AutoFit,
+                    (_, count) => RepetitionCount::Count(count as u16),
+                };
+                let tracks = self.track_sizes();
+                let line_names = self.line_names();
+                GridTemplateComponent::Repeat(GridTemplateRepetition {
+                    count,
+                    tracks,
+                    line_names,
+                })
+            })
+            .collect();
+        (tracks, self.line_names())
+    }
+
+    /// A kind (see `pushGridLine` in `encode.ts`), a number and a name.
+    fn grid_line(&mut self) -> GridPlacement<String> {
+        let kind = self.int();
+        let value = self.int();
+        let name = self.string();
+        match kind {
+            1 => GridPlacement::Line((value as i16).into()),
+            2 => GridPlacement::Span(value.max(1) as u16),
+            3 => GridPlacement::NamedLine(name, value as i16),
+            4 => GridPlacement::NamedSpan(name, value.max(1) as u16),
+            _ => GridPlacement::Auto,
+        }
+    }
+
     fn overflow(&mut self) -> Overflow {
         match self.int() {
             1 => Overflow::Hidden,
@@ -218,6 +306,52 @@ impl<'a> Reader<'a> {
         };
         let item_is_replaced = self.int() != 0;
 
+        let mut style = Style::default();
+        if self.int() != 0 {
+            (
+                style.grid_template_columns,
+                style.grid_template_column_names,
+            ) = self.track_list();
+            (style.grid_template_rows, style.grid_template_row_names) = self.track_list();
+            style.grid_auto_columns = self.track_sizes();
+            style.grid_auto_rows = self.track_sizes();
+            style.grid_auto_flow = match self.int() {
+                1 => GridAutoFlow::Column,
+                2 => GridAutoFlow::RowDense,
+                3 => GridAutoFlow::ColumnDense,
+                _ => GridAutoFlow::Row,
+            };
+            let row_count = self.int() as u16;
+            let column_count = self.int() as u16;
+            let area_count = self.int() as usize;
+            let areas: Vec<GridTemplateArea<String>> = (0..area_count)
+                .map(|_| GridTemplateArea {
+                    name: self.string(),
+                    row_start: self.int() as u16,
+                    row_end: self.int() as u16,
+                    column_start: self.int() as u16,
+                    column_end: self.int() as u16,
+                })
+                .collect();
+            if row_count > 0 && column_count > 0 {
+                style.grid_template_areas = Some(GridTemplateAreas {
+                    areas,
+                    row_count,
+                    column_count,
+                });
+            }
+        }
+        if self.int() != 0 {
+            style.grid_row = Line {
+                start: self.grid_line(),
+                end: self.grid_line(),
+            };
+            style.grid_column = Line {
+                start: self.grid_line(),
+                end: self.grid_line(),
+            };
+        }
+
         Style {
             display,
             position,
@@ -245,7 +379,7 @@ impl<'a> Reader<'a> {
             flex_shrink,
             text_align,
             item_is_replaced,
-            ..Style::default()
+            ..style
         }
     }
 }

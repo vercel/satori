@@ -16,6 +16,13 @@ import {
 } from '../utils.js'
 import type { LayoutNode, LayoutStyle, Length } from '../layout-engine/index.js'
 import { resolveImageData } from './image.js'
+import {
+  parseGridAutoFlow,
+  parseGridAutoTracks,
+  parseGridLine,
+  parseGridTemplateAreas,
+  parseGridTrackList,
+} from '../parser/grid.js'
 
 type SatoriElement = keyof typeof presets
 
@@ -106,6 +113,19 @@ export function setReplacedElementSize(
   style.__naturalWidth = naturalWidth
   style.__naturalHeight = naturalHeight
 }
+
+// Values of `align-items`, `align-self`, `justify-items` and `justify-self`.
+const ITEM_ALIGNMENT = {
+  stretch: 'stretch',
+  center: 'center',
+  start: 'start',
+  end: 'end',
+  'self-start': 'start',
+  'self-end': 'end',
+  'flex-start': 'flex-start',
+  'flex-end': 'flex-end',
+  baseline: 'baseline',
+} as const
 
 export default async function compute(
   node: LayoutNode,
@@ -213,6 +233,7 @@ export default async function compute(
     {
       flex: 'flex',
       block: 'block',
+      grid: 'grid',
       contents: 'contents',
       none: 'none',
       '-webkit-box': 'flex',
@@ -229,6 +250,8 @@ export default async function compute(
       {
         stretch: 'stretch',
         center: 'center',
+        start: 'start',
+        end: 'end',
         'flex-start': 'flex-start',
         'flex-end': 'flex-end',
         'space-between': 'space-between',
@@ -245,11 +268,7 @@ export default async function compute(
     v(
       style.alignItems,
       {
-        stretch: 'stretch',
-        center: 'center',
-        'flex-start': 'flex-start',
-        'flex-end': 'flex-end',
-        baseline: 'baseline',
+        ...ITEM_ALIGNMENT,
         normal: null,
       },
       'stretch',
@@ -259,30 +278,98 @@ export default async function compute(
     v(
       style.alignSelf,
       {
-        stretch: 'stretch',
-        center: 'center',
-        'flex-start': 'flex-start',
-        'flex-end': 'flex-end',
-        baseline: 'baseline',
+        ...ITEM_ALIGNMENT,
         normal: null,
         auto: null,
       },
       undefined,
       'alignSelf'
     ) ?? undefined
-  layout.justifyContent = v(
-    style.justifyContent,
-    {
-      center: 'center',
-      'flex-start': 'flex-start',
-      'flex-end': 'flex-end',
-      'space-between': 'space-between',
-      'space-around': 'space-around',
-      'space-evenly': 'space-evenly',
-    },
-    'flex-start',
-    'justifyContent'
-  )
+  // Unlike CSS, `justify-content` defaults to `flex-start` in flex containers.
+  layout.justifyContent =
+    v(
+      style.justifyContent,
+      {
+        center: 'center',
+        start: 'start',
+        end: 'end',
+        left: 'start',
+        right: 'end',
+        'flex-start': 'flex-start',
+        'flex-end': 'flex-end',
+        stretch: 'stretch',
+        'space-between': 'space-between',
+        'space-around': 'space-around',
+        'space-evenly': 'space-evenly',
+        normal: null,
+      },
+      layout.display === 'flex' ? 'flex-start' : null,
+      'justifyContent'
+    ) ?? undefined
+  layout.justifyItems =
+    v(
+      style.justifyItems,
+      {
+        ...ITEM_ALIGNMENT,
+        left: 'start',
+        right: 'end',
+        normal: null,
+        legacy: null,
+      },
+      undefined,
+      'justifyItems'
+    ) ?? undefined
+  layout.justifySelf =
+    v(
+      style.justifySelf,
+      {
+        ...ITEM_ALIGNMENT,
+        left: 'start',
+        right: 'end',
+        normal: null,
+        auto: null,
+      },
+      undefined,
+      'justifySelf'
+    ) ?? undefined
+
+  if (layout.display === 'grid') {
+    const fontSize = (style.fontSize ?? inheritedStyle.fontSize) as number
+    const resolveLength = (length: string) =>
+      lengthToNumber(length, fontSize, 0, inheritedStyle)
+    layout.gridTemplateColumns = parseGridTrackList(
+      style.gridTemplateColumns,
+      resolveLength,
+      'gridTemplateColumns'
+    )
+    layout.gridTemplateRows = parseGridTrackList(
+      style.gridTemplateRows,
+      resolveLength,
+      'gridTemplateRows'
+    )
+    layout.gridAutoColumns = parseGridAutoTracks(
+      style.gridAutoColumns,
+      resolveLength,
+      'gridAutoColumns'
+    )
+    layout.gridAutoRows = parseGridAutoTracks(
+      style.gridAutoRows,
+      resolveLength,
+      'gridAutoRows'
+    )
+    layout.gridAutoFlow = parseGridAutoFlow(style.gridAutoFlow as string)
+    layout.gridTemplateAreas = parseGridTemplateAreas(
+      style.gridTemplateAreas as string
+    )
+  }
+  for (const line of [
+    'gridRowStart',
+    'gridRowEnd',
+    'gridColumnStart',
+    'gridColumnEnd',
+  ] as const) {
+    layout[line] = parseGridLine(style[line], line)
+  }
 
   layout.flexDirection = v(
     style.flexDirection,
