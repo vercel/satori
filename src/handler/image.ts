@@ -150,9 +150,9 @@ const ALLOWED_IMAGE_TYPES = [PNG, APNG, JPEG, GIF, SVG, WEBP]
 
 // Pre-compiled regex patterns for SVG parsing
 const SVG_ATTRS_REGEX = /<svg[^>]*>/i
-const VIEWBOX_REGEX = /viewBox=['"]([^'"]+)['"]/
-const WIDTH_REGEX = /width=['"](\d*\.?\d+)['"]/
-const HEIGHT_REGEX = /height=['"](\d*\.?\d+)['"]/
+const VIEWBOX_REGEX = /\sviewBox\s*=\s*['"]([^'"]+)['"]/
+const WIDTH_REGEX = /\swidth\s*=\s*['"](\d*\.?\d+)(?:px)?['"]/
+const HEIGHT_REGEX = /\sheight\s*=\s*['"](\d*\.?\d+)(?:px)?['"]/
 
 export function arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array) {
   const bytes = new Uint8Array(buffer)
