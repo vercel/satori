@@ -1,6 +1,6 @@
 import { it, describe, expect } from 'vitest'
 
-import { initFonts, formatSVG } from './utils.js'
+import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
 
 describe('z-index', () => {
@@ -45,25 +45,7 @@ describe('z-index', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(formatSVG(svg)).toMatchInlineSnapshot(`
-      "<svg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
-      <mask id='satori_om-id'>
-      <rect x='0' y='0' width='100' height='100' fill='#fff'/>
-      </mask>
-      <mask id='satori_om-id-2'>
-      <rect x='50' y='50' width='50' height='50' fill='#fff'/>
-      </mask>
-      <rect x='50' y='50' width='50' height='50' fill='green'/>
-      <mask id='satori_om-id-1'>
-      <rect x='30' y='30' width='50' height='50' fill='#fff'/>
-      </mask>
-      <rect x='30' y='30' width='50' height='50' fill='blue'/>
-      <mask id='satori_om-id-0'>
-      <rect x='10' y='10' width='50' height='50' fill='#fff'/>
-      </mask>
-      <rect x='10' y='10' width='50' height='50' fill='red'/>
-      </svg>"
-    `)
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should paint negative z-index above the background of the stacking context', async () => {
@@ -91,22 +73,7 @@ describe('z-index', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(formatSVG(svg)).toMatchInlineSnapshot(`
-      "<svg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
-      <mask id='satori_om-id'>
-      <rect x='0' y='0' width='100' height='100' fill='#fff'/>
-      </mask>
-      <rect x='0' y='0' width='100' height='100' fill='white'/>
-      <mask id='satori_om-id-1'>
-      <rect x='25' y='25' width='50' height='50' fill='#fff'/>
-      </mask>
-      <rect x='25' y='25' width='50' height='50' fill='red'/>
-      <mask id='satori_om-id-0'>
-      <rect x='0' y='0' width='50' height='50' fill='#fff'/>
-      </mask>
-      <rect x='0' y='0' width='50' height='50' fill='blue'/>
-      </svg>"
-    `)
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should paint positioned elements above static ones', async () => {
@@ -131,21 +98,7 @@ describe('z-index', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(formatSVG(svg)).toMatchInlineSnapshot(`
-      "<svg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
-      <mask id='satori_om-id'>
-      <rect x='0' y='0' width='100' height='100' fill='#fff'/>
-      </mask>
-      <mask id='satori_om-id-1'>
-      <rect x='25' y='0' width='50' height='50' fill='#fff'/>
-      </mask>
-      <rect x='25' y='0' width='50' height='50' fill='red'/>
-      <mask id='satori_om-id-0'>
-      <rect x='0' y='0' width='50' height='50' fill='#fff'/>
-      </mask>
-      <rect x='0' y='0' width='50' height='50' fill='blue'/>
-      </svg>"
-    `)
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support z-index on static elements', async () => {
@@ -165,21 +118,7 @@ describe('z-index', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(formatSVG(svg)).toMatchInlineSnapshot(`
-      "<svg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
-      <mask id='satori_om-id'>
-      <rect x='0' y='0' width='100' height='100' fill='#fff'/>
-      </mask>
-      <mask id='satori_om-id-1'>
-      <rect x='25' y='0' width='50' height='50' fill='#fff'/>
-      </mask>
-      <rect x='25' y='0' width='50' height='50' fill='red'/>
-      <mask id='satori_om-id-0'>
-      <rect x='0' y='0' width='50' height='50' fill='#fff'/>
-      </mask>
-      <rect x='0' y='0' width='50' height='50' fill='blue'/>
-      </svg>"
-    `)
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should keep z-index within its stacking context', async () => {
@@ -221,8 +160,7 @@ describe('z-index', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      const fills = svg.match(/fill="(red|green|blue)"/g)
-      expect(fills).toEqual(['fill="blue"', 'fill="red"', 'fill="green"'])
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     }
   })
 
@@ -244,21 +182,7 @@ describe('z-index', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(formatSVG(svg)).toMatchInlineSnapshot(`
-      "<svg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
-      <mask id='satori_om-id'>
-      <rect x='0' y='0' width='100' height='100' fill='#fff'/>
-      </mask>
-      <mask id='satori_om-id-1'>
-      <rect x='0' y='0' width='80' height='80' fill='#fff'/>
-      </mask>
-      <rect x='0' y='0' width='80' height='80' fill='blue'/>
-      <mask id='satori_om-id-0'>
-      <rect x='50' y='50' width='50' height='50' fill='#fff'/>
-      </mask>
-      <rect x='50' y='50' width='50' height='50' fill='red'/>
-      </svg>"
-    `)
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should throw for invalid values', async () => {

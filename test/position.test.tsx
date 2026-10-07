@@ -1,7 +1,7 @@
 import { it, describe, expect } from 'vitest'
 import type { ReactNode } from 'react'
 
-import { initFonts, toImage, formatSVG } from './utils.js'
+import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
 
 describe('Position', () => {
@@ -146,22 +146,7 @@ describe('Position', () => {
       expect(await getLayout(element)).toEqual({ fixed: [75, 85, 20, 10] })
 
       const svg = await satori(element, { width: 100, height: 100, fonts })
-      expect(formatSVG(svg)).toMatchInlineSnapshot(`
-        "<svg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
-        <mask id='satori_om-id'>
-        <rect x='0' y='0' width='100' height='100' fill='#fff'/>
-        </mask>
-        <rect x='0' y='0' width='100' height='100' fill='red'/>
-        <mask id='satori_om-id-0'>
-        <rect x='20' y='20' width='50' height='50' fill='#fff'/>
-        </mask>
-        <rect x='20' y='20' width='50' height='50' fill='blue'/>
-        <mask id='satori_om-id-0-0'>
-        <rect x='75' y='85' width='20' height='10' fill='#fff'/>
-        </mask>
-        <rect x='75' y='85' width='20' height='10' fill='black'/>
-        </svg>"
-      `)
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support fixed root and nested fixed elements', async () => {
@@ -356,24 +341,7 @@ describe('Position', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(formatSVG(svg)).toMatchInlineSnapshot(`
-        "<svg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
-        <mask id='satori_om-id'>
-        <rect x='0' y='0' width='100' height='100' fill='#fff'/>
-        </mask>
-        <clipPath id='satori_cp-id-0'>
-        <path x='0' y='0' width='50' height='50' d='M10,0 h30 a10,10 0 0 1 10,10 v30 a10,10 0 0 1 -10,10 h-30 a10,10 0 0 1 -10,-10 v-30 a10,10 0 0 1 10,-10'/>
-        </clipPath>
-        <mask id='satori_om-id-0'>
-        <rect x='0' y='0' width='50' height='50' fill='#fff'/>
-        </mask>
-        <path x='0' y='0' width='50' height='50' fill='blue' d='M10,0 h30 a10,10 0 0 1 10,10 v30 a10,10 0 0 1 -10,10 h-30 a10,10 0 0 1 -10,-10 v-30 a10,10 0 0 1 10,-10'/>
-        <mask id='satori_om-id-0-0'>
-        <rect x='40' y='40' width='50' height='50' fill='#fff'/>
-        </mask>
-        <rect x='40' y='40' width='50' height='50' fill='black'/>
-        </svg>"
-      `)
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should be clipped by the clip-path of ancestors', async () => {
@@ -402,24 +370,7 @@ describe('Position', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(formatSVG(svg)).toMatchInlineSnapshot(`
-        "<svg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'>
-        <clipPath id='satori_cp-id' clip-path='url(#satori_cp-id)' transform='translate(0, 0)'>
-        <circle r='40' cx='50' cy='50'/>
-        </clipPath>
-        <mask id='satori_om-id'>
-        <rect x='0' y='0' width='100' height='100' fill='#fff'/>
-        </mask>
-        <rect x='0' y='0' width='100' height='100' fill='red' clip-path='url(#satori_cp-id)'/>
-        <mask id='satori_om-id-0'>
-        <rect x='0' y='0' width='10' height='10' fill='#fff' mask='url(#satori_om-id)'/>
-        </mask>
-        <mask id='satori_om-id-0-0'>
-        <rect x='0' y='0' width='100' height='100' fill='#fff' mask='url(#satori_om-id)'/>
-        </mask>
-        <rect x='0' y='0' width='100' height='100' fill='black' clip-path='url(#satori_cp-id)' mask='url(#satori_om-id)'/>
-        </svg>"
-      `)
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should not display inside elements with display: none', async () => {
