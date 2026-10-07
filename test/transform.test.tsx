@@ -2,10 +2,49 @@ import { it, describe, expect } from 'vitest'
 
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
+import parseTransformOrigin from '../src/transform-origin.js'
 
 describe('transform', () => {
   let fonts
   initFonts((f) => (fonts = f))
+
+  describe('transform-origin', () => {
+    const matrixOf = async (transformOrigin) =>
+      (
+        await satori(
+          <div
+            style={{
+              width: 20,
+              height: 20,
+              backgroundColor: 'red',
+              transform: 'rotate(90deg)',
+              transformOrigin,
+            }}
+          />,
+          { width: 100, height: 100, fonts }
+        )
+      ).match(/matrix\([^)]*\)/)[0]
+
+    it('treats a zero origin as the corner, like the keyword form', async () => {
+      // `0 0` / `0% 0%` are the top-left corner, identical to `left top`; a zero
+      // component must not be dropped so the axis falls back to center.
+      const corner = await matrixOf('left top')
+      expect(await matrixOf('0 0')).toBe(corner)
+      expect(await matrixOf('0px 0px')).toBe(corner)
+      expect(await matrixOf('0% 0%')).toBe(corner)
+    })
+
+    it('keeps a zero component in the two-value form', () => {
+      expect(parseTransformOrigin('left 0', 16)).toEqual({
+        xRelative: 0,
+        yAbsolute: 0,
+      })
+      expect(parseTransformOrigin('50% 0', 16)).toEqual({
+        xRelative: 50,
+        yAbsolute: 0,
+      })
+    })
+  })
 
   describe('translate', () => {
     it('should translate shape', async () => {
