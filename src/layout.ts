@@ -14,6 +14,7 @@ import {
 } from './utils.js'
 import { LayoutNode } from './layout-engine/index.js'
 import { SVGNodeToImage } from './handler/preprocess.js'
+import { svgTransformToCSS } from './parser/svg-transform.js'
 import computeStyle from './handler/compute.js'
 import FontLoader from './font.js'
 import buildTextNodes from './text/index.js'
@@ -52,6 +53,15 @@ interface Plane {
 interface StackingLayer {
   zIndex: number
   svg: string
+}
+
+interface StackingContext {
+  layers: StackingLayer[]
+  /**
+   * Whether an element in it has `mix-blend-mode`. They blend with the content
+   * of the stacking context only, so it's drawn as an isolated group.
+   */
+  hasBlending?: boolean
 }
 
 /**
@@ -103,7 +113,7 @@ export interface LayoutContext {
    * Collects the layers of the stacking context the element is in. The root
    * element has none, and establishes the root stacking context.
    */
-  stackingContext?: StackingLayer[]
+  stackingContext?: StackingContext
 }
 
 export interface SatoriNode {
@@ -199,6 +209,17 @@ export default async function* layout(
   if (tw) {
     const twStyles = getTwStyles(tw, style)
     style = Object.assign(twStyles, style)
+  }
+
+  // The `transform` attribute of an inline SVG transforms its box, unless the
+  // `transform` property is set.
+  if (
+    type === 'svg' &&
+    typeof props.transform === 'string' &&
+    style?.transform === undefined
+  ) {
+    const transform = svgTransformToCSS(props.transform)
+    if (transform) style = { ...style, transform }
   }
 
   const node = new LayoutNode()
@@ -321,8 +342,14 @@ export default async function* layout(
   const zIndex =
     typeof computedStyle.zIndex === 'number' ? computedStyle.zIndex : undefined
   const isPositioned = computedStyle.position !== 'static'
+  const mixBlendMode =
+    computedStyle.mixBlendMode && computedStyle.mixBlendMode !== 'normal'
+      ? computedStyle.mixBlendMode
+      : undefined
   const isStackingContext =
     !context.stackingContext ||
+    !!mixBlendMode ||
+    computedStyle.isolation === 'isolate' ||
     zIndex !== undefined ||
     computedStyle.position === 'fixed' ||
     isFixedContainingBlock ||
@@ -332,7 +359,12 @@ export default async function* layout(
     !!context.planes ||
     typeof context.parentStyle.perspective === 'number' ||
     computedStyle.backfaceVisibility === 'hidden'
-  const stackingContext = isStackingContext ? [] : context.stackingContext
+  const stackingContext: StackingContext = isStackingContext
+    ? { layers: [] }
+    : context.stackingContext
+  if (mixBlendMode && context.stackingContext) {
+    context.stackingContext.hasBlending = true
+  }
 
   // If the element has `background-clip: text` set, we need to create a clip
   // path and use it in all its children.
@@ -412,7 +444,7 @@ export default async function* layout(
     (isPositioned || isStackingContext)
   ) {
     layer = { zIndex: zIndex ?? 0, svg: '' }
-    context.stackingContext.push(layer)
+    context.stackingContext.layers.push(layer)
   }
 
   let childrenRenderResult = ''
@@ -561,7 +593,7 @@ export default async function* layout(
     : depsRenderResult +
       baseRenderResult +
       (isStackingContext
-        ? paintStackingContext(stackingContext, childrenRenderResult)
+        ? paintStackingContext(stackingContext.layers, childrenRenderResult)
         : childrenRenderResult)
 
   if (result && transformState.projection && !isInheritingTransform) {
@@ -573,6 +605,26 @@ export default async function* layout(
       style: computedStyle,
       id,
     })
+  }
+
+  // The root stacking context is isolated by the SVG itself.
+  const isolate =
+    isStackingContext &&
+    stackingContext.hasBlending &&
+    !!context.stackingContext
+  if (result && (mixBlendMode || isolate)) {
+    result = buildXMLString(
+      'g',
+      {
+        style: [
+          mixBlendMode && `mix-blend-mode:${mixBlendMode}`,
+          isolate && 'isolation:isolate',
+        ]
+          .filter(Boolean)
+          .join(';'),
+      },
+      result
+    )
   }
 
   if (plane) {

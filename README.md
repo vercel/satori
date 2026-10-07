@@ -305,16 +305,17 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>backgroundImage</code></td><td><code>linear-gradient</code>, <code>repeating-linear-gradient</code>, <code>radial-gradient</code>, <code>repeating-radial-gradient</code>, <code>url</code>, single value</td><td></td></tr>
 <tr><td><code>backgroundPosition</code></td><td>Support single value</td><td></td></tr>
 <tr><td><code>backgroundSize</code></td><td>Support <code>cover</code>, <code>contain</code>, <code>auto</code>, and two-value sizes i.e. <code>10px 20%</code></td><td><a href="https://og-playground.vercel.app/?share=ZZXXjqNIFIZfpeWb2RW9Itik3tmRwAQDJgeDNTfkHEwwYdTvvnhGWq003HDOqZ8fDlX11Y9D2Ebx4ePwNcqf35u3t2Fcq_ifHz9e8dtbFudpNn68wRD0_qsy59GY_b8Q-GGZ9u3UREbcxf4u_tK0f_U_4y-_acx8i3dF2Dajnze_jwu1n74EU1_9Efmj_5G_CmDXpH8H_hBjp_fcoVVjhiQ-ban9Ukw7Y-10j3j9ldtnyttvND6LubMHTABVrO4YJypeXGSdBtuwwCRWANMRpy7W49jmUFvuyU0fnmZeduAiZ6ZZaueUXM0V5VDBNs2OtfX6MimW0iTTBD0JeYbFeSOrpLGR5_iMkrHGYSAGEFJl77xRCsjNDC_MmIHV8KDOdsboszJAXchEZifrokEtSyrT5cUkbkifODIuyKC2oblXy8yAqyt-VLcJr8UhYJc2PGoWrW4dppebvMnexThypKZD-IRPx2dFjjnj3eAxqMU1XLTipNKFhrv-1Te3ZWE41aKHtHUogVtC98ZlniyqI9lkcOS5xQnRSlTV0-tKaHckalSGADnQlda0i12YNG7wcO3J-IrGTiWLXtviZ6tc1LDpTrmyhe5uybE1CSYwMHinsikaLkdSepmcxdufvxhlwGcYZFBUF9yqXt9fIT5MC0L3H99JUi4UOqz4PPHkFsq72zM8WjYnYGqRWukUlGh4gcFkBi7zyiOuA0c-D4-VW-zWoSnBLSFHV2qkeLMWcwGd7jWpWVCi5AgElPbN7TB1vJpQbagUW4USzTgmUwZs5ckWiKtbeoovGVYKVZYplg37_NjrsGiWVdUBSYO2HADFotULPEJ1kl-3_QMDRpkEjjNQJkq5rpYMXk6gMN14z9Nh9lIhURHsoqlSm5QUTb2sFTs1ag4JjyqDx8eRoJY24GdbW3E7mrfC2jYpulOIfsX9q8znWkYJIU1Lpl3RHbd1jvHq2hVJ27w8Hu0DQtHereC9qSlsH2pBzdY8HbMclOVBaxkCNQPbCS280YnTjDj1vRVdXk2GTcHUtcLIC2kuZmc-F0CjT5O0bxLguUZX0-46gocAOemyO9ud16EQRYoEzoUHKbUT2c6Z6iVo8ikGz_c28GlfMMZFXId-3ndkk55Y6pEpLu00ERw5DiE5ibPw6Jg0pxiXMCDPY5Xv0ooyy07SOY2ItUJA0GcAc95NKKS17ERr91XBFBjo7kTiSi-nM-MjY9_WyXH_6BRO6OxOPK9k9bA925tNd9HmcmRzKI6YXmAFWWNmoOixTTtukLU1GRFeZIuaqTM24QNH063N0Ubq86kAJkdSfl7B89Dt0_KkVXVtMRYgb4Wsogggys-O-89XYZGtuDtasBrKY6ZmsIg42314VQNix3wBqQC70a0ODgxY3BbqKvgnxsscyioJTTAUoJHSrXUiwWwtLqtAakcVCILGBrn4C1p0-WKUzlCXhIAKTFUJTXzV9zXLWaU56fX5_OfvsDy3VdvvsJyzfIy_vEY_P783376CO8u_fW8O74e2G_O2GQ4fPw4_wX34IHZwH35h_fBxeiVRHEzp4SPxqyF-P8R1W-TW2r3OhHH-me0-yc5rtg7i6PAx9lP8-X4Y_WBXZHFVtXPbV9Hh818">Example</a></td></tr>
-<tr><td><code>backgroundClip</code></td><td><code>border-box</code>, <code>text</code></td><td></td></tr>
+<tr><td><code>backgroundClip</code></td><td><code>border-box</code>, <code>padding-box</code>, <code>content-box</code>, <code>text</code>, also as <code>WebkitBackgroundClip</code></td><td></td></tr>
 <tr><td><code>backgroundRepeat</code></td><td><code>repeat</code>, <code>repeat-x</code>, <code>repeat-y</code>, <code>no-repeat</code>, defaults to <code>repeat</code></td><td></td></tr>
 
-<tr><td rowspan="7"><code>transform</code></td></tr>
+<tr><td rowspan="8"><code>transform</code></td></tr>
 <tr><td>Translate (<code>translate</code>, <code>translateX</code>, <code>translateY</code>, <code>translateZ</code>, <code>translate3d</code>)</td><td>Supported, with <code>px</code>, <code>em</code>, <code>rem</code>, <code>vw</code> and <code>vh</code> lengths, and percentages of the element's size along X and Y</td><td></td></tr>
 <tr><td>Rotate (<code>rotate</code>, <code>rotateX</code>, <code>rotateY</code>, <code>rotateZ</code>, <code>rotate3d</code>)</td><td>Supported, with <code>deg</code>, <code>rad</code>, <code>grad</code> and <code>turn</code> angles</td><td></td></tr>
 <tr><td>Scale (<code>scale</code>, <code>scaleX</code>, <code>scaleY</code>, <code>scaleZ</code>, <code>scale3d</code>)</td><td>Supported, including percentages</td><td></td></tr>
 <tr><td>Skew (<code>skew</code>, <code>skewX</code>, <code>skewY</code>)</td><td>Supported</td><td></td></tr>
 <tr><td>Matrix (<code>matrix</code>, <code>matrix3d</code>)</td><td>Supported</td><td></td></tr>
 <tr><td>Perspective (<code>perspective</code>)</td><td>Approximated, see the notes below</td><td></td></tr>
+<tr><td>The <code>transform</code> attribute of inline <code>&lt;svg&gt;</code></td><td>Transforms the element like the property, which takes precedence</td><td></td></tr>
 
 <tr>
 <td colspan="2"><code>transformOrigin</code></td>
@@ -361,6 +362,18 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr>
 <td colspan="2"><code>opacity</code></td>
 <td>Supported</td>
+<td></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>mixBlendMode</code></td>
+<td>All blend modes. Elements blend with what's painted below them in their stacking context</td>
+<td></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>isolation</code></td>
+<td><code>auto</code>, <code>isolate</code>, defaults to <code>auto</code></td>
 <td></td>
 </tr>
 
@@ -413,14 +426,26 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>maskRepeat</code></td><td><code>repeat</code>, <code>repeat-x</code>, <code>repeat-y</code>, <code>no-repeat</code>, defaults to <code>repeat</code></td><td><a href="https://og-playground.vercel.app/?share=nVbpjqNIEn6VkqXVzMg1AhtjQ-3MStwGA-Ywl9U_hssJ5jSHAbf63TdxdfXUzh4_FhllHF8cGZkm4usirKJ48bb4LUrvX8qXl7ab8vj3r19n-uUliVOQdG8vP61Q9G8_vb4LhzTqkr_IorStc3-C0ksejx_SmWbTJg67tCqhLqzyvig_tH6eglLs4qKdVXHZxc2H6tq3XXqZmAoKyzn-v6ovUG6mj_jtBVt_Ejnfs92i6Hdp4IcZaKq-jKCPvsl_jvzOf0sLH8RIXYK_B34bbzevqU0fjQE9CKCi4KOaVsJZAFK0PvMaQ3lwYbPiSNqzgHJV00BFqmk34XaGiEbucHlxslDqMNtRAJpyJkUpM0NTFAcXzqco6ztPUSbggs-8BTgY_AMvwl9UU9Qz_lPvPP0-WaiEz6zinkKoPwLIs9_lkGcATGEO-o6jTUANn3iKeJJ2F-6CJ58PJp8_ICFzA7QeFZqSbqHwBOW1zSeow62UY6HeAxNPzgKZnk18E7jfU2LHzbFMulBY5ZHAgVhYtUGpbGMWTT3HuHuFtZ35wLFRzyRScQ-2EDNEQkuKeaJaDM0GmJSLrNcrzGYQr5uDyFBA20vZ-VqbBuf98BkWRqGZUhXtjeGYEvcIizC5DB9yQU7niRiPpwyXH9QkP8RJdqF9unrEDo56Luig_fXD9yf_3NlVr2GRw3zye5DS01nwtp4j3SNXJ8VU_IH_eD9ygfjifEVTf2-gIVvd5TUO8-CzYC3l8rNWJOo750J-cHBfRKqB6rMf4t2-1mDsPCiN5Bn_uhk15t3umJGT79h9JPCQJ_tP9oSM_YfcP-rGwFrAPViZIUAbiH2v97P-p81BsHcJDc-ZWvGSwfHWkRZUm-8UDuWsMsJM7ITXvl8YYxpVaWIcDFuQMp-lDYZXUyUzNVLX4KYTMBgGNxwFaEUoF84QWe6mXMYz13GVeU91ISF0sPF8oDNpbYtxHVWOmSxRzOXLyHCzEenHcHk5as7liJUdRl2SjhWUE3PZ2gdM43nDPrEUGwnJxHISvL6WuHksd8qjuK66bTDEQyKKHu5qIGNFxvAo5byyizvKZ1y7x28hf-CjZXAw2EGzWn_bP04b2lbtMx3Y0jpXaDNktVtXbPH7o8A3k8q5jhVNxsBWhe0F8jqqYqJnr17XAO9o1UZrAcDRo3tY7Zc5wGhikM4Wilz3YTH1akMOy1XMMGOVEZokexWWlo7HMrJ4mBzVqM7u8aSyN7SWb870cAKdUCqJ6c2z3xr6gV61QqrD22-O_pRosq3iHQHGzFRQ5Yisjo61Tseq0VByWxKmdVrHa9fRk122bBpiUHnDCTG_OR28OudwcW0E4qGozUaOdnHZRLesiUbXkbg1bku7lGdSrNTYBlHqgxtVdr9RjvZyd8xXd4BUYBvou7VvXLoxGkldoSrXdvmzRHnurQiLi9WfDPsgi_dJE5cB4pIZG6gaVm1qkrxQVSUqZU3d0bDMtxfdU3kSiVwJKVrPXy8HaWAJzNBDjq4entTprFOeWL32HNwX1u2dXVfSQJQeeyMecFNHn6ezUUmaO9md4uaKL3twybpTNuQ1QYGym8gitAjRu7DoFaQkWHI7miNzZ2UUsuEE2LlmjNrpp5XTh3mM-eXt_mi2O1kor9tBsfwbxgILhzkJ68PRPh25nlhRkxTTuWQq6dWVpp3BVPWq6ree34P7ivDPAljuwsQbB8fxjnTSn-lsx7sPMdwQe48zB3lI0rI02Vgz2kBmsColkI3M3QuwOSUEzZuCd99fNIykkP0YINFwL6LNUiQmKiAPoo5PqkVFGc1fEaQtxrW6psdO4C5IhRxC1916J3mrxeDerWKcRC_0etLjCiR7IexI2eG0w57VB4S0zd53hq0xZI7sNuqZ2ka4KhmHvBQke2sbO_gn013TtlADlAmPyZEcSqsdVrqFl8IbmAgqnY9pFukjifCFN1mcGPOEFPsIAi-V0rgqfdMZSlIkpEGa4ua3J44SQ4thMqQRr8ujjuxUKgCIq3Iaheg6fbOvF2qN895725IMC-eaTAIA_P77Lx_NvfDbTJw79NvLH3laxn7zK2j8KIUTwM9d9dLMPf71Jcj7-PWla_yyrf0G6n7545P9-3AwTyj1-LJaz8tn90Zcx_48VjRP4tcfSicOsrRTPmXwl6GhvYPlWOQfg4O2V9fnicZ8x0B92OyOLDWIKV2dnbz097B5XMGgMCKICnsK1_MHGk0VczNCzBp-2DG9IDeaKQ4iSwHlJEIsNSrXp49N4Ix9-PjUXGCjiyYcUyb8HhbhfcYpDPmIijDVruPguUYlCjBmho4KMzxUk6Yhpn2-zDDILNeqJ0g_LKDDWDI7v0_dKLMZpJWVyHM45NeqOazgikMfhgJt1KvVzuts66QiOBd5G8D9RuukjgQrFRliCZvOnMvyx0H8ezH_n-P808v_ONQ_Qf_laL99-1L-40v5GwLHXLguXhdVPQ-l7eLt6-I50C7eZpevi_eRd_E2D5GLKA56sHi7-Hkbvy7iorqmp6me5-VueHLQ0Tx5ckUQR4u3runjb6-Lzg8gIonzvBqqJo8W3_4J">Example</a></td></tr>
 
 <tr>
-<td rowspan="2"><code>WebkitTextStroke</code>
+<td rowspan="2"><code>WebkitTextStroke</code></td>
 <td><code>WebkitTextStrokeWidth</code></td>
-<td>Supported</td>
+<td>Lengths, <code>thin</code>, <code>medium</code> and <code>thick</code>. The shorthand takes the width and color in any order</td>
 <td></td>
 </tr>
 <tr>
 <td><code>WebkitTextStrokeColor</code></td>
-<td>Supported</td>
+<td>Supported, defaults to <code>currentColor</code></td>
+<td></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>WebkitTextFillColor</code></td>
+<td>Supported, defaults to <code>currentColor</code></td>
+<td></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>paintOrder</code></td>
+<td><code>normal</code>, or <code>fill</code>, <code>stroke</code> and <code>markers</code> in any order. Like browsers, text strokes are painted above the fill by default</td>
 <td></td>
 </tr>
 
@@ -430,7 +455,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 Note:
 
 1. 3D transforms are drawn like in browsers, with two differences. Elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
-2. There is no `z-index` support in SVG. Elements that come later in the document will be painted on top.
+2. Elements are painted in stacking order, see `zIndex`. Unlike browsers, `opacity` applies to each shape of an element instead of the element as a group.
 3. `calc` isn't supported.
 4. `currentColor` support is only available for the `color` property.
 5. CSS variables (custom properties) are supported, including inheritance, fallback values, and nested variables.

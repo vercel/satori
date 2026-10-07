@@ -7,6 +7,7 @@ import { getPropertyName, getStylesForProperty } from 'css-to-react-native'
 import { parseElementStyle } from 'css-background-parser'
 import { parse as parseBoxShadow } from 'css-box-shadow'
 import cssColorParse from 'parse-css-color'
+import valueParser from 'postcss-value-parser'
 
 import CssDimension from '../vendor/parse-css-dimension/index.js'
 import parseTransformOrigin, {
@@ -57,6 +58,18 @@ function handleFallbackColor(
     parsed.textDecorationColor = currentColor
   }
   return parsed
+}
+
+const LINE_WIDTH_KEYWORDS = { thin: '1px', medium: '3px', thick: '5px' }
+
+/** Parses a `<line-width>`, or returns `undefined` if it isn't one. */
+function parseLineWidth(value: string) {
+  const normalized = value.toLowerCase()
+  if (normalized in LINE_WIDTH_KEYWORDS) return LINE_WIDTH_KEYWORDS[normalized]
+  if (/^\+?(\d+\.?\d*|\.\d+)$/.test(normalized)) return normalized + 'px'
+  if (/^\+?(\d+\.?\d*|\.\d+)(px|em|rem|vw|vh|vmin|vmax)$/.test(normalized)) {
+    return normalized
+  }
 }
 
 function purify(name: string, value?: string | number) {
@@ -264,15 +277,101 @@ function handleSpecialCase(
   }
 
   if (name === 'WebkitTextStroke') {
-    value = value.toString().trim()
-    const values = value.split(' ')
-    if (values.length !== 2) {
-      throw new Error('Invalid `WebkitTextStroke` value.')
+    // `<line-width> || <color>` in any order. Like other shorthands, omitted
+    // values are reset to their initial values.
+    const parts = valueParser(String(value))
+      .nodes.filter((node) => node.type !== 'space')
+      .map((node) => valueParser.stringify(node))
+    let width: string | undefined
+    let color: string | undefined
+    for (const part of parts) {
+      const lineWidth = parseLineWidth(part)
+      if (lineWidth !== undefined && width === undefined) {
+        width = lineWidth
+      } else if (lineWidth === undefined && color === undefined) {
+        color = part
+      } else {
+        throw new Error('Invalid `WebkitTextStroke` value.')
+      }
     }
+    if (!parts.length) throw new Error('Invalid `WebkitTextStroke` value.')
 
     return {
-      WebkitTextStrokeWidth: purify(name, values[0]),
-      WebkitTextStrokeColor: purify(name, values[1]),
+      WebkitTextStrokeWidth: width ?? 0,
+      WebkitTextStrokeColor: color ?? currentColor,
+    }
+  }
+
+  if (name === 'WebkitTextStrokeWidth') {
+    const width = parseLineWidth(String(value).trim())
+    if (width === undefined) {
+      throw new Error('Invalid `WebkitTextStrokeWidth` value.')
+    }
+    return { WebkitTextStrokeWidth: width }
+  }
+
+  if (name === 'WebkitBackgroundClip') {
+    return { backgroundClip: value }
+  }
+
+  if (name === 'paintOrder') {
+    // `normal | [ fill || stroke || markers ]`
+    const normalized = String(value).trim().toLowerCase()
+    const keywords = normalized.split(/\s+/)
+    if (
+      normalized !== 'normal' &&
+      (keywords.length > 3 ||
+        new Set(keywords).size !== keywords.length ||
+        keywords.some((k) => !['fill', 'stroke', 'markers'].includes(k)))
+    ) {
+      throw new Error('Invalid `paintOrder` value.')
+    }
+    // Omitted keywords are painted after the others, in the default order.
+    const order = [...keywords, 'fill', 'stroke', 'markers'].filter(
+      (k, i, all) => all.indexOf(k) === i
+    )
+    const isNormal =
+      normalized === 'normal' || order.join(' ') === 'fill stroke markers'
+    return { paintOrder: isNormal ? 'normal' : keywords.join(' ') }
+  }
+
+  if (name === 'mixBlendMode') {
+    return {
+      mixBlendMode: v(
+        String(value).trim(),
+        {
+          normal: 'normal',
+          multiply: 'multiply',
+          screen: 'screen',
+          overlay: 'overlay',
+          darken: 'darken',
+          lighten: 'lighten',
+          'color-dodge': 'color-dodge',
+          'color-burn': 'color-burn',
+          'hard-light': 'hard-light',
+          'soft-light': 'soft-light',
+          difference: 'difference',
+          exclusion: 'exclusion',
+          hue: 'hue',
+          saturation: 'saturation',
+          color: 'color',
+          luminosity: 'luminosity',
+          'plus-lighter': 'plus-lighter',
+        },
+        'normal',
+        'mixBlendMode'
+      ),
+    }
+  }
+
+  if (name === 'isolation') {
+    return {
+      isolation: v(
+        String(value).trim(),
+        { auto: 'auto', isolate: 'isolate' },
+        'auto',
+        'isolation'
+      ),
     }
   }
 
@@ -395,6 +494,8 @@ type MainStyle = {
   textShadowRadius: number[]
   WebkitTextStrokeWidth: number
   WebkitTextStrokeColor: string
+  WebkitTextFillColor: string
+  paintOrder: string
   textDecorationSkipInk: 'auto' | 'none' | 'all'
 }
 

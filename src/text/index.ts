@@ -13,7 +13,11 @@ import {
   lengthToNumber,
 } from '../utils.js'
 import { LayoutNode } from '../layout-engine/index.js'
-import buildText, { container } from '../builder/text.js'
+import buildText, {
+  container,
+  getTextFillColor,
+  getTextStrokeAttributes,
+} from '../builder/text.js'
 import { buildDropShadow } from '../builder/shadow.js'
 import buildDecoration from '../builder/text-decoration.js'
 import type { GlyphBox } from '../font.js'
@@ -492,6 +496,7 @@ export default async function* buildTextNodes(
 
   const clipPathId = inheritedStyle._inheritedClipPathId as string | undefined
   const overflowMaskId = inheritedStyle._inheritedMaskId as number | undefined
+  const fillColor = getTextFillColor(parentStyle)
 
   const {
     left: containerLeft,
@@ -548,9 +553,8 @@ export default async function* buildTextNodes(
         shadowOffset: textShadowOffset,
         shadowRadius: textShadowRadius,
       },
-      isFullyTransparent(parentStyle.color) ||
-        (_inheritedBackgroundClipTextHasBackground &&
-          isOpaqueWhite(parentStyle.color))
+      isFullyTransparent(fillColor) ||
+        (_inheritedBackgroundClipTextHasBackground && isOpaqueWhite(fillColor))
     )
 
     filter = buildXMLString('defs', {}, filter)
@@ -910,16 +914,18 @@ export default async function* buildTextNodes(
 
   // Embed the font as path.
   if (mergedPath) {
+    const strokeAttributes = getTextStrokeAttributes(parentStyle)
     const path =
-      (!isFullyTransparent(parentStyle.color) || filter) && opacity !== 0
+      (!isFullyTransparent(fillColor) || strokeAttributes.stroke || filter) &&
+      opacity !== 0
         ? buildXMLString('path', {
             fill:
               filter &&
-              (isFullyTransparent(parentStyle.color) ||
+              (isFullyTransparent(fillColor) ||
                 (_inheritedBackgroundClipTextHasBackground &&
-                  isOpaqueWhite(parentStyle.color)))
+                  isOpaqueWhite(fillColor)))
                 ? 'black'
-                : parentStyle.color,
+                : fillColor,
             d: mergedPath,
             transform: matrix ? matrix : undefined,
             // A single path is one fill operation, so `fill-opacity` is
@@ -928,22 +934,11 @@ export default async function* buildTextNodes(
             // rasterizers. With a filter (e.g. text-shadow), `fill-opacity`
             // applies before filtering while `opacity` applies after, so we
             // must keep `opacity` there.
-            [inheritedStyle.WebkitTextStrokeWidth || cssFilter || filter
+            [strokeAttributes.stroke || cssFilter || filter
               ? 'opacity'
               : 'fill-opacity']: opacity !== 1 ? opacity : undefined,
             style: cssFilter ? `filter:${cssFilter}` : undefined,
-            'stroke-width': inheritedStyle.WebkitTextStrokeWidth
-              ? `${inheritedStyle.WebkitTextStrokeWidth}px`
-              : undefined,
-            stroke: inheritedStyle.WebkitTextStrokeWidth
-              ? inheritedStyle.WebkitTextStrokeColor
-              : undefined,
-            'stroke-linejoin': inheritedStyle.WebkitTextStrokeWidth
-              ? 'round'
-              : undefined,
-            'paint-order': inheritedStyle.WebkitTextStrokeWidth
-              ? 'stroke'
-              : undefined,
+            ...strokeAttributes,
           })
         : ''
     const p = path
