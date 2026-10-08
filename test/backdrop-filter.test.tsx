@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 
 import { parseBackdropFilter } from '../src/parser/backdrop-filter.js'
 import satori from '../src/index.js'
-import { toImageWithSharp } from './utils.js'
+import { toImage } from './utils.js'
 
 const inheritedStyle = {
   fontSize: 16,
@@ -245,6 +245,6 @@ describe('backdrop-filter', () => {
       { width: 1200, height: 630, fonts, pointScaleFactor: 2 }
     )
 
-    expect(await toImageWithSharp(svg, 1200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 1200)).toMatchImageSnapshot()
   })
 })

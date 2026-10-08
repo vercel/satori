@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import satori from '../src/index.js'
 import { resolveImageData } from '../src/handler/image.js'
-import { toImageWithSharp } from './utils.js'
+import { toImage } from './utils.js'
 
 const WEBP_CASES = [
   [
@@ -36,7 +36,7 @@ describe('WebP images', () => {
       height,
       fonts: [],
     })
-    expect(await toImageWithSharp(svg, width * 10)).toMatchImageSnapshot()
+    expect(await toImage(svg, width * 10)).toMatchImageSnapshot()
   })
 
   it.each(WEBP_CASES)(

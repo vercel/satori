@@ -82,6 +82,6 @@ describe('Pixel Font Alignment', () => {
     )
 
     expect(integerPathCoordinates).toBe(true)
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 })

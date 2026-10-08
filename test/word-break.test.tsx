@@ -28,7 +28,7 @@ describe('word-break', () => {
         }
       )
 
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should not break long word', async () => {
@@ -51,7 +51,7 @@ describe('word-break', () => {
         }
       )
 
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -77,7 +77,7 @@ describe('word-break', () => {
       }
     )
 
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   describe('break-all', () => {
@@ -101,7 +101,7 @@ describe('word-break', () => {
         }
       )
 
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -126,7 +126,7 @@ describe('word-break', () => {
         }
       )
 
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should break words if cannot fit into one line', async () => {
@@ -149,7 +149,7 @@ describe('word-break', () => {
         }
       )
 
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should wrap first and then break long words', async () => {
@@ -172,7 +172,7 @@ describe('word-break', () => {
         }
       )
 
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should not break CJK with word-break: keep-all', async () => {
@@ -204,7 +204,7 @@ describe('word-break', () => {
         }
       )
 
-      expect(toImage(svg, 200)).toMatchImageSnapshot()
+      expect(await toImage(svg, 200)).toMatchImageSnapshot()
     })
   })
 })

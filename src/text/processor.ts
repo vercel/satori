@@ -46,7 +46,7 @@ export function preprocess(
   }
 }
 
-function processTextTransform(
+export function processTextTransform(
   content: string,
   textTransform: string,
   locale?: Locale

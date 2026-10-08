@@ -15,7 +15,7 @@ describe('Dynamic size', () => {
       </div>,
       { width: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render image with dynamic width', async () => {
@@ -29,6 +29,6 @@ describe('Dynamic size', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 })

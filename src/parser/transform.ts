@@ -6,15 +6,18 @@
 import valueParser from 'postcss-value-parser'
 import CssDimension from '../vendor/parse-css-dimension/index.js'
 import { calcDegree } from '../utils.js'
+import type { CalcLength } from '../layout-engine/node.js'
+import { MATH_FUNCTION, parseMath } from './math.js'
 
 export interface TransformFunction {
   name: string
   /**
    * After `resolveTransform`: lengths in px, angles in degrees, and plain
    * numbers. Percentages of the element's size, only allowed for the X and Y
-   * translations, are kept as strings such as `'50%'`.
+   * translations, are kept as strings such as `'50%'`, or as `calc()`
+   * expressions.
    */
-  args: (number | string)[]
+  args: (number | string | CalcLength)[]
 }
 
 type ArgumentKind =
@@ -96,8 +99,13 @@ export default function parseTransform(value: string): TransformFunction[] {
       if (arg.type === 'space' || arg.type === 'comment') continue
       if (arg.type === 'div' && arg.value === ',' && !expectsArgument) {
         expectsArgument = true
-      } else if (arg.type === 'word' && expectsArgument) {
-        args.push(arg.value)
+      } else if (
+        expectsArgument &&
+        (arg.type === 'word' ||
+          (arg.type === 'function' &&
+            MATH_FUNCTION.test(valueParser.stringify(arg))))
+      ) {
+        args.push(valueParser.stringify(arg))
         expectsArgument = false
       } else {
         throw new Error(
@@ -125,7 +133,20 @@ function resolveArgument(
   arg: string,
   kind: ArgumentKind,
   toPixels: (length: string) => number | undefined
-): number | string | undefined {
+): number | string | CalcLength | undefined {
+  if (MATH_FUNCTION.test(arg)) {
+    const math = parseMath(arg, toPixels)
+    if (!math) return
+    // Percentages are of the element's size.
+    if (math.percentage) {
+      return kind === 'lengthOrPercentage' ? { calc: math.evaluate } : undefined
+    }
+    const expected = kind === 'number' || kind === 'scale' ? 'number' : 'length'
+    return math.type === expected || kind === 'angle'
+      ? math.evaluate(0)
+      : undefined
+  }
+
   let dimension: { type: string; value: number; unit?: string }
   try {
     dimension = new CssDimension(arg)
@@ -173,7 +194,7 @@ export function resolveTransform(
     return {
       name,
       args: args.map((arg, i) => {
-        if (typeof arg === 'number') return arg
+        if (typeof arg !== 'string') return arg
         // `perspective(none)` is the identity transform.
         if (name === 'perspective' && arg.toLowerCase() === 'none') {
           return Infinity

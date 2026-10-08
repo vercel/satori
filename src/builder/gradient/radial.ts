@@ -5,21 +5,24 @@ import {
   ColorStop,
 } from 'css-gradient-parser'
 import { buildXMLString, lengthToNumber } from '../../utils.js'
-import { normalizeStops } from './utils.js'
+import {
+  expandColorStops,
+  extractInterpolationMethod,
+  normalizeStops,
+} from './utils.js'
 
 export function buildRadialGradient(
   {
     id,
     width,
     height,
-    repeatX,
-    repeatY,
+    tiles,
   }: {
     id: string
     width: number
     height: number
-    repeatX: boolean
-    repeatY: boolean
+    /** The distance between repeated images. */
+    tiles: [number, number]
   },
   image: string,
   dimensions: number[],
@@ -27,13 +30,14 @@ export function buildRadialGradient(
   inheritableStyle: Record<string, number | string>,
   from?: 'background' | 'mask'
 ) {
+  const [gradient, method] = extractInterpolationMethod(image)
   const {
     shape,
     stops: colorStops,
     position,
     size,
     repeating,
-  } = parseRadialGradient(image)
+  } = parseRadialGradient(expandColorStops(gradient))
   const [xDelta, yDelta] = dimensions
 
   let cx: number = xDelta / 2
@@ -62,7 +66,8 @@ export function buildRadialGradient(
     colorStops,
     inheritableStyle,
     repeating,
-    from
+    from,
+    method
   )
 
   const gradientId = `satori_radial_${id}`
@@ -97,8 +102,8 @@ export function buildRadialGradient(
       id: patternId,
       x: offsets[0] / width,
       y: offsets[1] / height,
-      width: repeatX ? xDelta / width : '1',
-      height: repeatY ? yDelta / height : '1',
+      width: tiles[0] / width,
+      height: tiles[1] / height,
       patternUnits: 'objectBoundingBox',
     },
     buildXMLString(

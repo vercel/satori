@@ -9,7 +9,7 @@ describe('Basic', () => {
 
   it('should render empty div', async () => {
     const svg = await satori(<div></div>, { width: 100, height: 100, fonts })
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render basic div with text', async () => {
@@ -18,7 +18,7 @@ describe('Basic', () => {
       height: 100,
       fonts,
     })
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render basic div with background color', async () => {
@@ -32,7 +32,7 @@ describe('Basic', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render basic div with text and background color', async () => {
@@ -46,7 +46,7 @@ describe('Basic', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support skipping embedded fonts', async () => {
@@ -56,7 +56,7 @@ describe('Basic', () => {
       fonts,
       embedFont: false,
     })
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support hex colors', async () => {
@@ -70,7 +70,7 @@ describe('Basic', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support array in JSX children', async () => {
@@ -95,7 +95,7 @@ describe('Basic', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support custom components', async () => {
@@ -120,7 +120,7 @@ describe('Basic', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
 
     async function MyAsyncComponent() {
       await new Promise((resolve) => setTimeout(resolve, 0))
@@ -144,7 +144,7 @@ describe('Basic', () => {
         fonts,
       }
     )
-    expect(toImage(svg2, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg2, 100)).toMatchImageSnapshot()
   })
 
   it('should combine textNodes correctly', async () => {
@@ -166,7 +166,7 @@ describe('Basic', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should respect points scale factor', async () => {
@@ -193,6 +193,7 @@ describe('Basic', () => {
               height: '100px',
               backgroundColor: 'red',
               borderWidth: '0.5px',
+              borderStyle: 'solid',
               borderColor: 'blue',
             }}
           ></div>
@@ -202,6 +203,7 @@ describe('Basic', () => {
               height: '100px',
               backgroundColor: 'red',
               borderWidth: '0.5px',
+              borderStyle: 'solid',
               borderColor: 'blue',
             }}
           ></div>
@@ -214,7 +216,7 @@ describe('Basic', () => {
         pointScaleFactor: 2,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   // https://github.com/vercel/satori/issues/746
@@ -234,5 +236,19 @@ describe('Basic', () => {
       expect(svg).not.toMatch(/<image\b/)
       expect(svg).toMatch(/<path\b/)
     }
+  })
+
+  it('should ignore undefined and null style values', async () => {
+    const style = { width: 10, height: 10, background: 'red' }
+    const expected = await satori(<div style={style} />, {
+      width: 10,
+      height: 10,
+      fonts,
+    })
+    const svg = await satori(
+      <div style={{ ...style, color: undefined, margin: null as any }} />,
+      { width: 10, height: 10, fonts }
+    )
+    expect(svg).toBe(expected)
   })
 })

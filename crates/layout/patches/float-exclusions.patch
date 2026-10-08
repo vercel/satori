@@ -1,0 +1,93 @@
+--- a/src/compute/block.rs
++++ b/src/compute/block.rs
+@@ -133,6 +133,11 @@
+         self.content_box_insets[1] = self.insets[1] + content_box_x_insets[1];
+     }
+ 
++    /// The floats that intersect the content box of the block, see [`FloatContext::exclusions`]
++    pub fn float_exclusions(&self) -> Vec<[f32; 4]> {
++        self.bfc.float_context.exclusions(self.y_offset, self.content_box_insets)
++    }
++
+     /// Whether the float context contains any floats
+     #[inline(always)]
+     pub fn has_floats(&self) -> bool {
+--- a/src/compute/float.rs
++++ b/src/compute/float.rs
+@@ -30,6 +30,13 @@
+ 
+ use crate::{debug::debug_log, sys::Vec, AvailableSpace, Clear, Direction, FloatDirection, Point, Size};
+ 
++std::thread_local! {
++    /// The floats that intersect the leaf being measured, see [`FloatContext::exclusions`].
++    /// Leaves in a Block Formatting Context with floats are measured without caching, since
++    /// their content depends on their position.
++    pub static LEAF_FLOAT_EXCLUSIONS: core::cell::RefCell<Vec<[f32; 4]>> = const { core::cell::RefCell::new(Vec::new()) };
++}
++
+ /// An empty "slot" that avoids floats that is suitable for non-floated content
+ /// to be laid out into
+ #[derive(Debug, Clone, Copy, Default)]
+@@ -256,6 +263,22 @@
+         self.has_floats
+     }
+ 
++    /// The floats that intersect a box below its top at `y_offset`, with the passed insets from
++    /// the edges of the Block Formatting Context: `[top, bottom, left, right]`, where `top` and
++    /// `bottom` are relative to the top of the box, and `left` and `right` are how far floats
++    /// extend into the box from each side
++    pub fn exclusions(&self, y_offset: f32, insets: [f32; 2]) -> Vec<[f32; 4]> {
++        self.segments
++            .iter()
++            .filter(|segment| segment.y.end > y_offset)
++            .filter_map(|segment| {
++                let left = if segment.has_float[0] { (segment.insets[0] - insets[0]).max(0.0) } else { 0.0 };
++                let right = if segment.has_float[1] { (segment.insets[1] - insets[1]).max(0.0) } else { 0.0 };
++                (left > 0.0 || right > 0.0).then(|| [segment.y.start - y_offset, segment.y.end - y_offset, left, right])
++            })
++            .collect()
++    }
++
+     /// Whether the float context contains any floats that extend to or below min_y
+     #[inline(always)]
+     pub fn has_active_floats(&self, min_y: f32) -> bool {
+--- a/src/compute/mod.rs
++++ b/src/compute/mod.rs
+@@ -48,7 +48,7 @@
+ pub use self::grid::compute_grid_layout;
+ 
+ #[cfg(feature = "float_layout")]
+-pub use self::float::{BfcSlot, ContentSlot, FloatContext, FloatIntrinsicWidthCalculator};
++pub use self::float::{BfcSlot, ContentSlot, FloatContext, FloatIntrinsicWidthCalculator, LEAF_FLOAT_EXCLUSIONS};
+ 
+ use crate::geometry::{Line, Point, Size};
+ use crate::style::{AvailableSpace, CoreStyle, Overflow};
+--- a/src/tree/taffy_tree.rs
++++ b/src/tree/taffy_tree.rs
+@@ -299,6 +299,26 @@
+         if inputs.run_mode == RunMode::PerformHiddenLayout {
+             debug_log!("HIDDEN");
+             return compute_hidden_layout(self, node_id);
++        }
++
++        // A leaf in a Block Formatting Context with floats is measured with the floats that
++        // intersect it, which depend on its position, so it isn't cached
++        #[cfg(all(feature = "block_layout", feature = "float_layout"))]
++        if let Some(block_ctx) = block_ctx.as_ref() {
++            let node_key = node_id.into();
++            if block_ctx.has_floats()
++                && self.child_count(node_id) == 0
++                && self.taffy.nodes[node_key].style.display != Display::None
++            {
++                crate::compute::LEAF_FLOAT_EXCLUSIONS
++                    .with(|exclusions| *exclusions.borrow_mut() = block_ctx.float_exclusions());
++                let style = &self.taffy.nodes[node_key].style;
++                let has_context = self.taffy.nodes[node_key].has_context;
++                let node_context = has_context.then(|| self.taffy.node_context_data.get_mut(node_key)).flatten();
++                let output = (self.measure_function)(inputs, node_id, node_context, style);
++                crate::compute::LEAF_FLOAT_EXCLUSIONS.with(|exclusions| exclusions.borrow_mut().clear());
++                return output;
++            }
+         }
+ 
+         // We run the following wrapped in "compute_cached_layout", which will check the cache for an entry matching the node and inputs and:

@@ -37,7 +37,7 @@ describe('Text Indent', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly with negative indent (hanging indent)', async () => {
@@ -70,7 +70,7 @@ describe('Text Indent', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly with percentage value', async () => {
@@ -102,7 +102,7 @@ describe('Text Indent', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly with em units', async () => {
@@ -134,7 +134,7 @@ describe('Text Indent', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly with text-align: center', async () => {
@@ -167,7 +167,7 @@ describe('Text Indent', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly with text-align: right', async () => {
@@ -200,7 +200,7 @@ describe('Text Indent', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly with text-align: justify', async () => {
@@ -233,7 +233,7 @@ describe('Text Indent', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly with single line text', async () => {
@@ -265,7 +265,7 @@ describe('Text Indent', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should inherit from parent', async () => {
@@ -297,7 +297,7 @@ describe('Text Indent', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should override inherited value', async () => {
@@ -330,7 +330,7 @@ describe('Text Indent', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly with zero indent', async () => {
@@ -362,6 +362,6 @@ describe('Text Indent', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 })
