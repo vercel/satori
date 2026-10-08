@@ -474,7 +474,10 @@ function handleSpecialCase(
       }
     }
     return {
-      textDecorationLine: parseTextDecorationLine(lines),
+      // Without a line, e.g. `red` or `wavy blue`, it's reset to `none`.
+      textDecorationLine: lines.length
+        ? parseTextDecorationLine(lines)
+        : 'none',
       textDecorationStyle: decorationStyle ?? 'solid',
       textDecorationColor: color ?? currentColor,
       textDecorationThickness: thickness ?? 'auto',

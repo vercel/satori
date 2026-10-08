@@ -370,6 +370,57 @@ describe('Text Decoration', () => {
       expect(svg).not.toContain('<path fill="none"')
     })
 
+    it('should reset the line when the shorthand omits it', async () => {
+      for (const textDecoration of [
+        'red',
+        'wavy blue',
+        '2px',
+        'dotted',
+        'wavy blue 3px',
+      ]) {
+        const svg = await satori(
+          <div style={{ textDecorationLine: 'underline', textDecoration }}>
+            Text
+          </div>,
+          { width: 100, height: 100, fonts }
+        )
+        expect(svg, textDecoration).not.toContain('stroke')
+      }
+    })
+
+    it('should combine the shorthand without a line with the longhand', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            fontSize: 28,
+            gap: 8,
+            padding: 8,
+          }}
+        >
+          <div
+            style={{
+              textDecoration: 'wavy blue 2px',
+              textDecorationLine: 'underline',
+            }}
+          >
+            Wavy
+          </div>
+          <div
+            style={{
+              textDecoration: 'dotted red',
+              textDecorationLine: 'line-through overline',
+            }}
+          >
+            Dotted
+          </div>
+        </div>,
+        { width: 120, height: 110, fonts }
+      )
+      expect(toImage(svg, 120)).toMatchImageSnapshot()
+    })
+
     it('should throw for invalid values', async () => {
       for (const style of [
         { textDecoration: 'underline underline' },
