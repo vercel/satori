@@ -50,6 +50,10 @@ const FLEX_WRAP = { nowrap: 0, wrap: 1, 'wrap-reverse': 2 }
 
 const OVERFLOW = { visible: 0, hidden: 1, clip: 2 }
 
+const FLOAT = { none: 0, left: 1, right: 2 }
+
+const CLEAR = { none: 0, left: 1, right: 2, both: 3 }
+
 /**
  * Unit codes: 0 is auto, 1 is a length, 2 is a percentage, 3 is a `calc()`
  * expression, by its index in `calcs`.
@@ -128,6 +132,7 @@ function encodeStyle(
   data.push(style.flexGrow ?? 0, style.flexShrink ?? 1)
   // `text-align` for block layout, which Satori doesn't use.
   data.push(0, style.replaced ? 1 : 0)
+  data.push(FLOAT[style.float] ?? 0, CLEAR[style.clear] ?? 0)
   encodeGridStyle(data, style, scale)
 }
 

@@ -143,6 +143,8 @@ export interface LayoutStyle {
   gridColumnEnd?: GridLine
   /** Replaced elements, e.g. images, are sized differently in block layout. */
   replaced?: boolean
+  float?: 'none' | 'left' | 'right'
+  clear?: 'none' | 'left' | 'right' | 'both'
 }
 
 export interface Edges {
@@ -172,11 +174,27 @@ export interface MeasureResult {
 }
 
 /**
+ * A float that intersects a measured leaf: its top and bottom relative to the
+ * leaf, and how far it extends into the leaf from the left and the right.
+ */
+export interface FloatExclusion {
+  top: number
+  bottom: number
+  left: number
+  right: number
+}
+
+/**
  * Measures a leaf, e.g. text. `width` is the known width, or the available
  * width: 0 for the min-content size and `Infinity` for the max-content size.
- * `height` is the known or available height, `NaN` if it's not known.
+ * `height` is the known or available height, `NaN` if it's not known. Text
+ * wraps around the `exclusions` of floats.
  */
-export type MeasureFunction = (width: number, height: number) => MeasureResult
+export type MeasureFunction = (
+  width: number,
+  height: number,
+  exclusions: FloatExclusion[]
+) => MeasureResult
 
 const zeroEdges = (): Edges => ({ left: 0, right: 0, top: 0, bottom: 0 })
 

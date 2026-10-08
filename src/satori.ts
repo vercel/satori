@@ -202,6 +202,7 @@ export async function render(
     // Fixed elements are positioned relative to the viewport by default.
     fixedContainingBlock: { node: root, offset: { left: 0, top: 0 } },
     fixedElements,
+    floats: { found: false },
     formattingContext: 'root',
     computeLayout: (node, { width }) =>
       layoutEngine.computeLayout(node, {

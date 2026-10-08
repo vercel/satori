@@ -12,7 +12,7 @@ import type { SerializedStyle } from '../handler/expand.js'
 import type { FontEngine, GlyphBox } from '../font.js'
 import type FontLoader from '../font.js'
 import type { Locale } from '../language.js'
-import { LayoutNode } from '../layout-engine/index.js'
+import { LayoutNode, type FloatExclusion } from '../layout-engine/index.js'
 import {
   buildXMLString,
   lengthToNumber,
@@ -115,6 +115,10 @@ interface Line {
   width: number
   trailing: number
   top: number
+  /** Where the line starts, beside floats on the left. */
+  left: number
+  /** The width for the content of the line, beside floats and the indent. */
+  available: number
   /** The distance of the baseline from the top. */
   baseline: number
   height: number
@@ -224,6 +228,18 @@ export class InlineFormatting {
     this.current().items.push({ kind: 'break' })
   }
 
+  /**
+   * A float is laid out before the paragraph it's in, so the paragraph wraps
+   * around it.
+   */
+  addFloat(node: LayoutNode) {
+    if (this.paragraph) this.paragraph.nearFloats = true
+    const index = this.paragraph
+      ? this.container.children.indexOf(this.paragraph.node)
+      : -1
+    this.container.insertChild(node, index === -1 ? undefined : index)
+  }
+
   /** A block-level element ends the paragraph. */
   breakForBlock() {
     if (!this.paragraph) return
@@ -239,7 +255,8 @@ export class InlineFormatting {
 }
 
 export class Paragraph {
-  readonly node = new LayoutNode()
+  // An anonymous block box of the lines, which wraps around floats.
+  readonly node = new LayoutNode({ display: 'block' })
   readonly items: Item[] = []
   private words: Word[] | null = null
   private lines: Line[] = []
@@ -247,6 +264,10 @@ export class Paragraph {
   private atomicLayouts = new Map<AtomicInline, AtomicLayout>()
   private atomicWidth = NaN
   private finalized = false
+  /** The floats of the last measurement, which is the final one. */
+  private exclusions: FloatExclusion[] = []
+  /** Whether a float is in the paragraph or before it, which it may wrap around. */
+  nearFloats = false
   /** The pieces of each run, set by `finalize()`. */
   private pieces = new Map<
     TextRun,
@@ -259,7 +280,8 @@ export class Paragraph {
   } | null
 
   constructor(readonly style: SerializedStyle, readonly env: InlineEnv) {
-    this.node.measure = (width) => this.measure(width)
+    this.node.measure = (width, _height, exclusions) =>
+      this.measure(width, exclusions)
     this.node.lastBaseline = (width) => {
       this.flow(width)
       const last = this.lines[this.lines.length - 1]
@@ -510,8 +532,8 @@ export class Paragraph {
     return result
   }
 
-  /** Breaks the paragraph into lines that fit the width. */
-  private flow(width: number) {
+  /** Breaks the paragraph into lines that fit the width, beside floats. */
+  private flow(width: number, exclusions: FloatExclusion[] = []) {
     const words = this.prepare().slice()
     if (this.atomicWidth !== width) {
       this.atomicLayouts.clear()
@@ -562,58 +584,6 @@ export class Paragraph {
     const allowBreakWord = ['break-all', 'break-word'].includes(wordBreak)
     // The first line is shorter by the indent.
     const indent = toNumber(this.style.textIndent, this.style, containerWidth)
-    const available = () => (lines.length === 1 ? width - indent : width)
-
-    const lines: Line[] = []
-    let line: Line | undefined
-    let wrapped = false
-    let canBreak = false
-    const newLine = (): Line => {
-      const created: Line = {
-        words: [],
-        width: 0,
-        trailing: 0,
-        top: 0,
-        baseline: 0,
-        height: 0,
-      }
-      lines.push(created)
-      return created
-    }
-
-    for (let i = 0; i < words.length; i++) {
-      const word = words[i]
-      if (!line || (i > 0 && word.forceBreak)) {
-        line = newLine()
-      } else if (
-        line.words.length &&
-        canBreak &&
-        line.width + word.width - word.trailing > available() + 1e-3
-      ) {
-        line = newLine()
-        wrapped = true
-      }
-
-      // Break a word that doesn't fit on a line between its characters.
-      if (
-        allowBreakWord &&
-        !line.words.length &&
-        word.width - word.trailing > available() + 1e-3
-      ) {
-        const parts = splitWord(word)
-        if (parts.length > 1) {
-          parts.forEach(measureWord)
-          words.splice(i, 1, ...parts)
-          i--
-          continue
-        }
-      }
-
-      line.words.push(word)
-      line.width += word.width
-      line.trailing = word.trailing
-      canBreak = word.canBreakAfter
-    }
 
     // Line heights include the strut of the container.
     const strut = this.engine(this.style)
@@ -621,9 +591,41 @@ export class Paragraph {
     const strutDescent = Math.round(strut.height(STRUT)) - strutAscent
     const textAlign = this.style.textAlign as string
 
+    // Lines are shortened by the floats beside them. A line that is at least
+    // as tall as the strut is beside the floats from its top to there.
+    const placeLine = (line: Line, top: number) => {
+      let left = 0
+      let right = 0
+      for (const exclusion of exclusions) {
+        if (
+          exclusion.top < top + strutAscent + strutDescent &&
+          exclusion.bottom > top
+        ) {
+          left = Math.max(left, exclusion.left)
+          right = Math.max(right, exclusion.right)
+        }
+      }
+      line.top = top
+      line.left = left
+      line.available = width - left - right - (lines.length === 1 ? indent : 0)
+    }
+    // The next position below `top` where floats end.
+    const nextFloatBottom = (top: number) => {
+      let next = Infinity
+      for (const { bottom } of exclusions) {
+        if (bottom > top) next = Math.min(next, bottom)
+      }
+      return next
+    }
+
+    const lines: Line[] = []
+    let line: Line | undefined
     let top = 0
-    let maxWidth = 0
-    lines.forEach((current, index) => {
+    let wrapped = false
+    let canBreak = false
+
+    // Lays out the words of a line vertically, and moves below it.
+    const finishLine = (current: Line) => {
       let ascent = strutAscent
       let descent = strutDescent
       // Atomic inlines aligned to the top or bottom of the line box.
@@ -659,19 +661,82 @@ export class Paragraph {
           else ascent = aligned.height - descent
         }
       }
-
-      current.top = top
       current.baseline = ascent
       current.height = ascent + descent
-      top += current.height
+      top = current.top + current.height
+    }
 
+    const newLine = (): Line => {
+      if (line) finishLine(line)
+      const created: Line = {
+        words: [],
+        width: 0,
+        trailing: 0,
+        top: 0,
+        left: 0,
+        available: width,
+        baseline: 0,
+        height: 0,
+      }
+      lines.push(created)
+      placeLine(created, top)
+      return created
+    }
+
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i]
+      if (!line || (i > 0 && word.forceBreak)) {
+        line = newLine()
+      } else if (
+        line.words.length &&
+        canBreak &&
+        line.width + word.width - word.trailing > line.available + 1e-3
+      ) {
+        line = newLine()
+        wrapped = true
+      }
+
+      // A line that doesn't fit beside floats moves down until it does.
+      while (
+        !line.words.length &&
+        word.width - word.trailing > line.available + 1e-3 &&
+        nextFloatBottom(line.top) < Infinity
+      ) {
+        placeLine(line, nextFloatBottom(line.top))
+      }
+
+      // Break a word that doesn't fit on a line between its characters.
+      if (
+        allowBreakWord &&
+        !line.words.length &&
+        word.width - word.trailing > line.available + 1e-3
+      ) {
+        const parts = splitWord(word)
+        if (parts.length > 1) {
+          parts.forEach(measureWord)
+          words.splice(i, 1, ...parts)
+          i--
+          continue
+        }
+      }
+
+      line.words.push(word)
+      line.width += word.width
+      line.trailing = word.trailing
+      canBreak = word.canBreakAfter
+    }
+    if (line) finishLine(line)
+
+    let maxWidth = 0
+    lines.forEach((current, index) => {
       // Align the line.
       const lineWidth = current.width - current.trailing
-      maxWidth = Math.max(maxWidth, lineWidth + (index === 0 ? indent : 0))
-      let x = index === 0 ? indent : 0
+      const lineIndent = index === 0 ? indent : 0
+      maxWidth = Math.max(maxWidth, current.left + lineWidth + lineIndent)
+      let x = current.left + lineIndent
       let gap = 0
       if (Number.isFinite(width)) {
-        const remaining = width - lineWidth - x
+        const remaining = current.available - lineWidth
         if (textAlign === 'right' || textAlign === 'end') {
           x += remaining
         } else if (textAlign === 'center') {
@@ -738,12 +803,13 @@ export class Paragraph {
     }
   }
 
-  measure(width: number) {
+  measure(width: number, exclusions: FloatExclusion[] = []) {
     if (this.simple?.delegate) {
       // Measured by the delegate.
       return { width: 0, height: 0 }
     }
-    const { width: measuredWidth, height } = this.flow(width)
+    this.exclusions = exclusions
+    const { width: measuredWidth, height } = this.flow(width, exclusions)
     const first = this.lines[0]
     const last = this.lines[this.lines.length - 1]
     return {
@@ -764,7 +830,7 @@ export class Paragraph {
     this.finalized = true
 
     const { width } = this.node.layout
-    this.flow(width)
+    this.flow(width, this.exclusions)
     this.pieces.clear()
 
     const open: InlineBox[] = []
@@ -1248,6 +1314,7 @@ export async function* buildInlineText(
     boxes: [],
   }
   const paragraph = context.inline.addText(run)
+  if (context.floats?.found) paragraph.nearFloats = true
 
   // Yield segments that are missing a font.
   const engine = font.getEngine(
@@ -1263,9 +1330,14 @@ export async function* buildInlineText(
         .map((word) => ({ word, locale }))
     : []
 
-  // A paragraph of the container's text only is laid out by the text engine.
+  // A paragraph of the container's text only is laid out by the text engine,
+  // which doesn't wrap text around floats.
   let delegate: ReturnType<typeof buildTextNodes> | undefined
-  if (paragraph.isSimple() && paragraph.simple.first === run) {
+  if (
+    paragraph.isSimple() &&
+    paragraph.simple.first === run &&
+    !paragraph.nearFloats
+  ) {
     delegate = buildTextNodes(paragraph.text, {
       ...context,
       parent: context.inline.container,
@@ -1278,7 +1350,7 @@ export async function* buildInlineText(
   }
 
   const [x, y] = yield
-  if (paragraph.isSimple()) {
+  if (paragraph.simple?.delegate) {
     return delegate ? ((await delegate.next([x, y])).value as string) : ''
   }
   return paragraph.renderRun(run, x, y)

@@ -12,23 +12,27 @@ use std::cell::RefCell;
 use taffy::prelude::*;
 use taffy::style::{GridTemplateArea, GridTemplateAreas, GridTemplateRepetition};
 use taffy::{
-    compute_leaf_layout, AlignContent, AlignItems, Baselines, BoxSizing, LayoutInput, LayoutOutput,
-    Overflow, Point, TextAlign,
+    compute_leaf_layout, AlignContent, AlignItems, Baselines, BoxSizing, Clear, Float, LayoutInput,
+    LayoutOutput, Overflow, Point, TextAlign, LEAF_FLOAT_EXCLUSIONS,
 };
 
 #[link(wasm_import_module = "env")]
 extern "C" {
     /// Measures a leaf. `NaN` known dimensions are unknown, negative
-    /// available sizes are min-content, infinite ones are max-content. Writes
-    /// the width, height, and first and last baselines from the top of the
-    /// leaf (`NaN` without them) to `out`. Measured leaves have no padding or
-    /// border.
+    /// available sizes are min-content, infinite ones are max-content.
+    /// `exclusions` points to 4 `f32`s for each float that intersects the leaf:
+    /// the top and bottom relative to the leaf, and how far it extends into the
+    /// leaf from the left and the right. Writes the width, height, and first
+    /// and last baselines from the top of the leaf (`NaN` without them) to
+    /// `out`. Measured leaves have no padding or border.
     fn measure(
         node: u32,
         known_width: f32,
         known_height: f32,
         available_width: f32,
         available_height: f32,
+        exclusions: *const f32,
+        exclusion_count: u32,
         out: *mut f32,
     );
 }
@@ -315,6 +319,17 @@ impl<'a> Reader<'a> {
             _ => TextAlign::Auto,
         };
         let item_is_replaced = self.int() != 0;
+        let float = match self.int() {
+            1 => Float::Left,
+            2 => Float::Right,
+            _ => Float::None,
+        };
+        let clear = match self.int() {
+            1 => Clear::Left,
+            2 => Clear::Right,
+            3 => Clear::Both,
+            _ => Clear::None,
+        };
 
         let mut style = Style::default();
         if self.int() != 0 {
@@ -389,6 +404,8 @@ impl<'a> Reader<'a> {
             flex_shrink,
             text_align,
             item_is_replaced,
+            float,
+            clear,
             ..style
         }
     }
@@ -483,12 +500,16 @@ pub unsafe extern "C" fn compute(
                 |_, _| 0.0,
                 |known, available| {
                     let mut out = [0.0f32; 4];
+                    let exclusions: Vec<f32> = LEAF_FLOAT_EXCLUSIONS
+                        .with(|exclusions| exclusions.borrow().iter().flatten().copied().collect());
                     measure(
                         index,
                         known.width.unwrap_or(f32::NAN),
                         known.height.unwrap_or(f32::NAN),
                         available_space_to_f32(available.width),
                         available_space_to_f32(available.height),
+                        exclusions.as_ptr(),
+                        (exclusions.len() / 4) as u32,
                         out.as_mut_ptr(),
                     );
                     baselines.first = Some(out[2]).filter(|value| value.is_finite());

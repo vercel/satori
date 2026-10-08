@@ -142,6 +142,8 @@ export interface LayoutContext {
   computeLayout?: InlineEnv['computeLayout']
   /** The node of a paragraph to lay out text in, see `buildInlineText()`. */
   textNode?: LayoutNode
+  /** Whether there are floats, which text wraps around. */
+  floats?: { found: boolean }
   /** Whether the text fills the width of a block container. */
   blockParagraph?: boolean
 }
@@ -296,9 +298,23 @@ export default async function* layout(
   const isOutOfFlow =
     computedStyle.position === 'absolute' || computedStyle.position === 'fixed'
   let outerDisplay = computedStyle.__outerDisplay as OuterDisplay
+  // Floats only apply in block containers, and are blockified too.
+  if (
+    node.style.float &&
+    (context.formattingContext !== 'block' ||
+      !context.inline ||
+      outerDisplay === 'contents' ||
+      node.style.display === 'none')
+  ) {
+    node.style.float = undefined
+  }
+  const isFloat = !!node.style.float
   if (
     outerDisplay === 'inline' &&
-    (context.formattingContext !== 'block' || isOutOfFlow || !context.inline)
+    (context.formattingContext !== 'block' ||
+      isOutOfFlow ||
+      isFloat ||
+      !context.inline)
   ) {
     outerDisplay = 'block'
   }
@@ -348,6 +364,9 @@ export default async function* layout(
     context.inline.openBox(inlineBox)
   } else if (atomicInline) {
     context.inline.addAtomic(atomicInline)
+  } else if (isFloat) {
+    context.inline.addFloat(node)
+    if (context.floats) context.floats.found = true
   } else if (!isContents) {
     // A block-level box ends the paragraph before it.
     if (outerDisplay === 'block' && !isOutOfFlow) {
@@ -546,6 +565,7 @@ export default async function* layout(
       planes,
       fixedContainingBlock,
       fixedElements: context.fixedElements,
+      floats: context.floats,
       stackingContext,
       formattingContext: childFormattingContext,
       inline: childInline,
@@ -582,12 +602,13 @@ export default async function* layout(
   }
 
   // Add the layer before the descendants add theirs, to keep the tree order.
-  // Elements of a 3D rendering context are drawn by depth instead.
+  // Elements of a 3D rendering context are drawn by depth instead. Floats
+  // are drawn over the in-flow blocks around them.
   let layer: StackingLayer | undefined
   if (
     context.stackingContext &&
     !context.planes &&
-    (isPositioned || isStackingContext)
+    (isPositioned || isStackingContext || isFloat)
   ) {
     layer = { zIndex: zIndex ?? 0, svg: '' }
     context.stackingContext.layers.push(layer)

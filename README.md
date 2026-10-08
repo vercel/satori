@@ -205,6 +205,12 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 </tr>
 
 <tr>
+<td colspan="2"><code>float</code>, <code>clear</code></td>
+<td>A float in the middle of a paragraph is placed at the start of the paragraph, instead of on the line it's in. Each line is shortened by the floats beside its top, so a line that is taller than its text can overlap a float that starts lower. Since elements default to <code>position: relative</code>, blocks after a float are painted over it. <code>lineClamp</code>, <code>textOverflow: ellipsis</code> and <code>textWrap</code> don't apply to text after a float.</td>
+<td></td>
+</tr>
+
+<tr>
 <td colspan="2"><code>zIndex</code></td>
 <td>Also applies to elements with <code>position: static</code>.</td>
 <td></td>
@@ -477,7 +483,7 @@ Note:
 
 1. In 3D transforms, elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
 2. Percentages in `calc()`, `min()`, `max()` and `clamp()` only work in sizes, margins, paddings, insets, gaps, `flexBasis` and translations. Elsewhere, values with them are ignored.
-3. Properties that aren't listed are ignored, for example `float`, `columns`, `direction`, `writingMode`, `wordSpacing`, `fontVariant`, `fontStretch` and `fontKerning`.
+3. Properties that aren't listed are ignored, for example `columns`, `direction`, `writingMode`, `wordSpacing`, `fontVariant`, `fontStretch` and `fontKerning`.
 4. Invalid values throw an error, which fails the whole render, unless they're ignored with [`onStyleError`](#invalid-styles).
 
 #### Perspective (experimental)

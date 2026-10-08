@@ -8,6 +8,7 @@ import {
   emptyLayout,
   type CalcLength,
   type Edges,
+  type FloatExclusion,
   type LayoutNode,
 } from './node.js'
 
@@ -111,8 +112,24 @@ export function createLayoutEngine(): LayoutEngine {
         knownHeight: number,
         availableWidth: number,
         availableHeight: number,
+        exclusionsPointer: number,
+        exclusionCount: number,
         out: number
       ) {
+        const values = new Float32Array(
+          exports.memory.buffer,
+          exclusionsPointer,
+          exclusionCount * 4
+        )
+        const exclusions: FloatExclusion[] = []
+        for (let i = 0; i < values.length; i += 4) {
+          exclusions.push({
+            top: values[i] / scale,
+            bottom: values[i + 1] / scale,
+            left: values[i + 2] / scale,
+            right: values[i + 3] / scale,
+          })
+        }
         const width = Number.isNaN(knownWidth)
           ? availableWidth < 0
             ? 0
@@ -123,7 +140,11 @@ export function createLayoutEngine(): LayoutEngine {
             ? NaN
             : availableHeight
           : knownHeight
-        const result = nodes[index].measure(width / scale, height / scale)
+        const result = nodes[index].measure(
+          width / scale,
+          height / scale,
+          exclusions
+        )
         // Measuring may have grown the memory, so create the view now.
         new Float32Array(exports.memory.buffer, out, 4).set([
           result.width * scale,
