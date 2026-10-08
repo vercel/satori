@@ -292,6 +292,40 @@ function handleSpecialCase(
     return parseAspectRatio(value)
   }
 
+  // `overflow: <x> <y>`.
+  if (name === 'overflow') {
+    const values = splitValues(String(value))
+    const keywords = { visible: 1, hidden: 1, clip: 1, scroll: 1, auto: 1 }
+    if (values.length > 2) throw new Error(`Invalid value: "${value}".`)
+    for (const keyword of values) v(keyword, keywords, '', 'overflow')
+    const [x, y = x] = values
+    return { overflowX: x, overflowY: y }
+  }
+
+  // `overflow-clip-margin: <visual-box> || <length>`.
+  if (name === 'overflowClipMargin') {
+    let box: string | undefined
+    let margin: string | number | undefined
+    for (const token of typeof value === 'number'
+      ? [value]
+      : splitValues(value)) {
+      if (
+        box === undefined &&
+        ['content-box', 'padding-box', 'border-box'].includes(String(token))
+      ) {
+        box = String(token)
+      } else if (margin === undefined) {
+        margin = token
+      } else {
+        throw new Error(`Invalid value: "${value}".`)
+      }
+    }
+    return {
+      overflowClipMargin: margin ?? 0,
+      _overflowClipBox: box ?? 'padding-box',
+    }
+  }
+
   // Shorthands with math functions, which aren't parsed by
   // css-to-react-native.
   if (typeof value === 'string' && value.includes('(')) {

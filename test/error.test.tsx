@@ -115,7 +115,7 @@ describe('Error', () => {
             display: 'table',
             transform: 'wobble(3)',
             backgroundImage: 'foo(1)',
-            overflow: 'scroll',
+            overflow: 'sideways',
             width: 50,
             height: 50,
             backgroundColor: 'red',
@@ -131,9 +131,9 @@ describe('Error', () => {
     )
     expect(errors).toEqual([
       expect.stringContaining('Invalid transform function: "wobble(3)"'),
+      expect.stringContaining('Invalid value for CSS property "overflow"'),
       expect.stringContaining('Invalid background image: "foo(1)"'),
       expect.stringContaining('Invalid value for CSS property "display"'),
-      expect.stringContaining('Invalid value for CSS property "overflow"'),
     ])
     // The other declarations still apply.
     expect(svg).toContain('width="50" height="50" fill="red"')

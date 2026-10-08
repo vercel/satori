@@ -518,15 +518,39 @@ export default async function compute(
     layout.minWidth = asPointPercentageLength(style.minWidth, 'minWidth')
   }
 
-  layout.overflow = v(
-    style.overflow,
-    {
-      visible: 'visible',
-      hidden: 'hidden',
-    },
-    'visible',
-    'overflow'
-  )
+  // `visible` and `clip` don't make the box a scroll container, so with a
+  // value that does on the other axis, they're `auto` and `hidden`.
+  // https://drafts.csswg.org/css-overflow-3/#overflow-control
+  const OVERFLOW = {
+    visible: 'visible',
+    hidden: 'hidden',
+    clip: 'clip',
+    scroll: 'scroll',
+    auto: 'auto',
+  } as const
+  let overflowX = v(style.overflowX, OVERFLOW, 'visible', 'overflowX')
+  let overflowY = v(style.overflowY, OVERFLOW, 'visible', 'overflowY')
+  const isScrolling = (value: string) => value !== 'visible' && value !== 'clip'
+  if (isScrolling(overflowX) !== isScrolling(overflowY)) {
+    const toScrolling = (value: string) =>
+      value === 'visible' ? 'auto' : value === 'clip' ? 'hidden' : value
+    overflowX = toScrolling(overflowX)
+    overflowY = toScrolling(overflowY)
+  }
+  style.overflowX = overflowX
+  style.overflowY = overflowY
+  // Whether the content is clipped on any axis.
+  style.overflow =
+    overflowX === 'visible' && overflowY === 'visible' ? 'visible' : 'hidden'
+  const LAYOUT_OVERFLOW = {
+    visible: 'visible',
+    clip: 'clip',
+    hidden: 'hidden',
+    auto: 'hidden',
+    scroll: 'scroll',
+  } as const
+  layout.overflowX = LAYOUT_OVERFLOW[overflowX]
+  layout.overflowY = LAYOUT_OVERFLOW[overflowY]
 
   layout.marginTop = asPointAutoPercentageLength(style.marginTop || 0)
   layout.marginBottom = asPointAutoPercentageLength(style.marginBottom || 0)
