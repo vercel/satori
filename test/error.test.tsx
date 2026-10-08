@@ -94,4 +94,37 @@ describe('Error', () => {
       'disallow setting negative values to the size of the shape. Check https://w3c.github.io/csswg-drafts/css-images/#valdef-rg-size-length-0'
     )
   })
+
+  it('should ignore invalid styles with onStyleError', async () => {
+    const errors: string[] = []
+    const svg = await satori(
+      <div style={{ display: 'flex', width: 100, height: 100 }}>
+        <div
+          style={{
+            display: 'table',
+            transform: 'wobble(3)',
+            backgroundImage: 'foo(1)',
+            overflow: 'scroll',
+            width: 50,
+            height: 50,
+            backgroundColor: 'red',
+          }}
+        />
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+        onStyleError: (error) => errors.push(error.message),
+      }
+    )
+    expect(errors).toEqual([
+      expect.stringContaining('Invalid transform function: "wobble(3)"'),
+      expect.stringContaining('Invalid background image: "foo(1)"'),
+      expect.stringContaining('Invalid value for CSS property "display"'),
+      expect.stringContaining('Invalid value for CSS property "overflow"'),
+    ])
+    // The other declarations still apply.
+    expect(svg).toContain('width="50" height="50" fill="red"')
+  })
 })

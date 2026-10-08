@@ -91,6 +91,12 @@ export type SatoriOptions = (
   ) => Promise<string | Array<FontOptions>>
   tailwindConfig?: TwConfig
   onNodeDetected?: (node: SatoriNode) => void
+  /**
+   * Called with the error of each invalid or unsupported style declaration.
+   * The declaration is ignored, like browsers do, instead of failing the
+   * render.
+   */
+  onStyleError?: (error: Error) => void
   pointScaleFactor?: number
 }
 export type { SatoriNode }
@@ -191,6 +197,7 @@ export async function render(
     graphemeImages,
     canLoadAdditionalAssets: !!options.loadAdditionalAsset,
     onNodeDetected: options.onNodeDetected,
+    onStyleError: options.onStyleError,
     replacedElements,
     projectPlane,
     // Fixed elements are positioned relative to the viewport by default.

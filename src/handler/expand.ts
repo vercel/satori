@@ -619,9 +619,13 @@ type OtherStyle = Exclude<Record<PropertyKey, string | number>, keyof MainStyle>
 
 export type SerializedStyle = Partial<MainStyle & OtherStyle>
 
+const VALID_IMAGE =
+  /^(none|url\(.*\)|(repeating-)?(linear|radial|conic)-gradient\(.*\))$/is
+
 export default function expand(
   style: Record<string, string | number> | undefined,
-  inheritedStyle: SerializedStyle
+  inheritedStyle: SerializedStyle,
+  onStyleError?: (error: Error) => void
 ): SerializedStyle {
   const serializedStyle: SerializedStyle = {}
 
@@ -666,7 +670,12 @@ export default function expand(
 
     for (const prop in processableStyle) {
       if (prop.startsWith('_')) {
-        throw new Error(`Invalid style property: ${JSON.stringify(prop)}`)
+        const error = new Error(
+          `Invalid style property: ${JSON.stringify(prop)}`
+        )
+        if (!onStyleError) throw error
+        onStyleError(error)
+        continue
       }
 
       if (prop === 'color') {
@@ -696,7 +705,7 @@ export default function expand(
 
         Object.assign(serializedStyle, resolvedStyle)
       } catch (err) {
-        throw new Error(
+        const error = new Error(
           err.message +
             // Attach the extra information of the rule itself if it's not included in
             // the error message.
@@ -704,18 +713,37 @@ export default function expand(
               ? '\n  ' + getErrorHint(name)
               : `\n  in CSS rule \`${name}: ${value}\`.${getErrorHint(name)}`)
         )
+        if (!onStyleError) throw error
+        onStyleError(error)
       }
     }
   }
 
-  // Parse background images.
+  // Parse background images. A declaration with an invalid image is ignored
+  // with `onStyleError`.
+  const checkImages = (property: string, layers: { image: string }[]) => {
+    const invalid = layers.find(({ image }) => !VALID_IMAGE.test(image.trim()))
+    if (!invalid) return true
+    const error = new Error(`Invalid background image: "${invalid.image}"`)
+    if (!onStyleError) throw error
+    onStyleError(error)
+    delete serializedStyle[property]
+    return false
+  }
   if (serializedStyle.backgroundImage) {
     const { backgrounds } = parseElementStyle(serializedStyle)
-    serializedStyle.backgroundImage = backgrounds
+    if (checkImages('backgroundImage', backgrounds)) {
+      serializedStyle.backgroundImage = backgrounds
+    }
   }
 
   if (serializedStyle.maskImage || serializedStyle['WebkitMaskImage']) {
-    serializedStyle.maskImage = parseMask(serializedStyle)
+    const masks = parseMask(serializedStyle)
+    if (checkImages('maskImage', masks)) {
+      serializedStyle.maskImage = masks
+    } else {
+      delete serializedStyle['WebkitMaskImage']
+    }
   }
 
   // Calculate the base font size.

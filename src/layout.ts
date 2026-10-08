@@ -112,6 +112,7 @@ export interface LayoutContext {
   locale?: Locale
   getTwStyles: (tw: string, style: any) => any
   onNodeDetected?: (node: SatoriNode) => void
+  onStyleError?: (error: Error) => void
   replacedElements?: ReplacedElementHandlers
   /** Draws elements with perspective, see `satori/experimental`. */
   projectPlane?: ProjectPlane
@@ -283,7 +284,8 @@ export default async function* layout(
     inheritedStyle,
     style,
     props,
-    context.replacedElements
+    context.replacedElements,
+    context.onStyleError
   )
 
   // Elements are blockified in flex and grid containers, as the root
@@ -534,6 +536,7 @@ export default async function* layout(
       locale: newLocale,
       getTwStyles,
       onNodeDetected: context.onNodeDetected,
+      onStyleError: context.onStyleError,
       replacedElements: context.replacedElements,
       projectPlane: context.projectPlane,
       planes,

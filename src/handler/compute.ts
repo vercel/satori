@@ -12,7 +12,7 @@ import {
   asPointPercentageLength,
   lengthToNumber,
   parseViewBox,
-  v,
+  v as checkValue,
 } from '../utils.js'
 import type { LayoutNode, LayoutStyle, Length } from '../layout-engine/index.js'
 import { resolveImageData } from './image.js'
@@ -155,8 +155,23 @@ export default async function compute(
   inheritedStyle: SerializedStyle,
   definedStyle: Record<string, string | number>,
   props: Record<string, any>,
-  replacedElements?: ReplacedElementHandlers
+  replacedElements?: ReplacedElementHandlers,
+  onStyleError?: (error: Error) => void
 ): Promise<[SerializedStyle, SerializedStyle]> {
+  // With `onStyleError`, invalid values are reported and replaced by the
+  // fallback, as if the declaration wasn't there.
+  const lenient = <T>(resolve: () => T, fallback: T): T => {
+    if (!onStyleError) return resolve()
+    try {
+      return resolve()
+    } catch (error) {
+      onStyleError(error)
+      return fallback
+    }
+  }
+  const v: typeof checkValue = (field, map, fallback, property) =>
+    lenient(() => checkValue(field, map, fallback, property), fallback)
+
   // Extend the default style with defined and inherited styles. Like the user
   // agent stylesheet, the preset is computed together with the defined style,
   // e.g. `em` margins use the defined font size. Defined properties come after
@@ -166,7 +181,7 @@ export default async function compute(
   const style: SerializedStyle = Object.assign(
     {},
     inheritedStyle,
-    expand({ ...presetStyle, ...definedStyle }, inheritedStyle)
+    expand({ ...presetStyle, ...definedStyle }, inheritedStyle, onStyleError)
   )
 
   if (type === 'img') {
@@ -363,29 +378,45 @@ export default async function compute(
     const fontSize = (style.fontSize ?? inheritedStyle.fontSize) as number
     const resolveLength = (length: string) =>
       lengthToNumber(length, fontSize, 0, inheritedStyle)
-    layout.gridTemplateColumns = parseGridTrackList(
-      style.gridTemplateColumns,
-      resolveLength,
-      'gridTemplateColumns'
+    layout.gridTemplateColumns = lenient(
+      () =>
+        parseGridTrackList(
+          style.gridTemplateColumns,
+          resolveLength,
+          'gridTemplateColumns'
+        ),
+      undefined
     )
-    layout.gridTemplateRows = parseGridTrackList(
-      style.gridTemplateRows,
-      resolveLength,
-      'gridTemplateRows'
+    layout.gridTemplateRows = lenient(
+      () =>
+        parseGridTrackList(
+          style.gridTemplateRows,
+          resolveLength,
+          'gridTemplateRows'
+        ),
+      undefined
     )
-    layout.gridAutoColumns = parseGridAutoTracks(
-      style.gridAutoColumns,
-      resolveLength,
-      'gridAutoColumns'
+    layout.gridAutoColumns = lenient(
+      () =>
+        parseGridAutoTracks(
+          style.gridAutoColumns,
+          resolveLength,
+          'gridAutoColumns'
+        ),
+      undefined
     )
-    layout.gridAutoRows = parseGridAutoTracks(
-      style.gridAutoRows,
-      resolveLength,
-      'gridAutoRows'
+    layout.gridAutoRows = lenient(
+      () =>
+        parseGridAutoTracks(style.gridAutoRows, resolveLength, 'gridAutoRows'),
+      undefined
     )
-    layout.gridAutoFlow = parseGridAutoFlow(style.gridAutoFlow as string)
-    layout.gridTemplateAreas = parseGridTemplateAreas(
-      style.gridTemplateAreas as string
+    layout.gridAutoFlow = lenient(
+      () => parseGridAutoFlow(style.gridAutoFlow as string),
+      undefined
+    )
+    layout.gridTemplateAreas = lenient(
+      () => parseGridTemplateAreas(style.gridTemplateAreas as string),
+      undefined
     )
   }
   for (const line of [
@@ -394,7 +425,7 @@ export default async function compute(
     'gridColumnStart',
     'gridColumnEnd',
   ] as const) {
-    layout[line] = parseGridLine(style[line], line)
+    layout[line] = lenient(() => parseGridLine(style[line], line), undefined)
   }
 
   layout.flexDirection = v(
