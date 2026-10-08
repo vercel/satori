@@ -3,7 +3,9 @@ import { it, describe, expect } from 'vitest'
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
 import {
+  expandGrid,
   expandGridPlacement,
+  expandGridTemplate,
   parseGridLine,
   parseGridTemplateAreas,
   parseGridTrackList,
@@ -691,5 +693,119 @@ describe('grid parser', () => {
         { name: 'c', rowStart: 2, rowEnd: 3, columnStart: 2, columnEnd: 4 },
       ],
     })
+  })
+})
+
+describe('grid shorthands', () => {
+  let fonts
+  initFonts((f) => (fonts = f))
+
+  it('should support grid and grid-template', async () => {
+    const svg = await satori(
+      <div style={{ display: 'flex', gap: 10 }}>
+        <div
+          style={{
+            display: 'grid',
+            width: 100,
+            gridTemplate: '"a a" 40px "b c" 30px / 40px 1fr',
+            gap: 2,
+          }}
+        >
+          <Cell i={0} style={{ gridArea: 'a' }} />
+          <Cell i={1} style={{ gridArea: 'b' }} />
+          <Cell i={2} style={{ gridArea: 'c' }} />
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            width: 100,
+            grid: 'auto-flow / 30px 50px',
+            gap: 2,
+          }}
+        >
+          {[0, 1, 2, 3].map((i) => (
+            <Cell key={i} i={i} style={{ height: 20 }} />
+          ))}
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            width: 100,
+            height: 60,
+            grid: '20px 30px / auto-flow 25px',
+            gap: 2,
+          }}
+        >
+          {[0, 1, 2, 3, 4].map((i) => (
+            <Cell key={i} i={i} />
+          ))}
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            width: 90,
+            gridTemplate: '[top] 30px [mid] 40px [bot] / 1fr 2fr',
+          }}
+        >
+          <Cell i={4} style={{ gridRow: 'mid / bot' }} />
+          <Cell i={5} style={{ gridRow: 'top / mid', gridColumn: 2 }} />
+        </div>
+      </div>,
+      { width: 420, height: 110, fonts }
+    )
+    expect(toImage(svg, 420)).toMatchImageSnapshot()
+  })
+
+  it('should expand grid-template', () => {
+    expect(expandGridTemplate('none')).toEqual({
+      gridTemplateRows: 'none',
+      gridTemplateColumns: 'none',
+      gridTemplateAreas: 'none',
+    })
+    expect(expandGridTemplate('100px 1fr / repeat(2, 50px)')).toEqual({
+      gridTemplateRows: '100px 1fr',
+      gridTemplateColumns: 'repeat(2, 50px)',
+      gridTemplateAreas: 'none',
+    })
+    expect(
+      expandGridTemplate(
+        '[header-start] "a a" 30px [header-end] "b c" / auto 1fr'
+      )
+    ).toEqual({
+      gridTemplateRows: '[header-start] 30px [header-end] auto',
+      gridTemplateColumns: 'auto 1fr',
+      gridTemplateAreas: '"a a" "b c"',
+    })
+    expect(() => expandGridTemplate('100px 1fr')).toThrow()
+    expect(() => expandGridTemplate('"a" / "b"')).toThrow()
+  })
+
+  it('should expand grid', () => {
+    expect(expandGrid('auto-flow dense 40px / 1fr 1fr')).toEqual({
+      gridTemplateRows: 'none',
+      gridTemplateColumns: '1fr 1fr',
+      gridTemplateAreas: 'none',
+      gridAutoFlow: 'row dense',
+      gridAutoRows: '40px',
+      gridAutoColumns: 'auto',
+    })
+    expect(expandGrid('100px / auto-flow')).toEqual({
+      gridTemplateRows: '100px',
+      gridTemplateColumns: 'none',
+      gridTemplateAreas: 'none',
+      gridAutoFlow: 'column',
+      gridAutoRows: 'auto',
+      gridAutoColumns: 'auto',
+    })
+    expect(expandGrid('"a b" 20px / 1fr 2fr')).toEqual({
+      gridTemplateRows: '20px',
+      gridTemplateColumns: '1fr 2fr',
+      gridTemplateAreas: '"a b"',
+      gridAutoFlow: 'row',
+      gridAutoRows: 'auto',
+      gridAutoColumns: 'auto',
+    })
+    expect(() => expandGrid('auto-flow / auto-flow')).toThrow()
+    expect(() => expandGrid('auto-flow 1fr')).toThrow()
   })
 })

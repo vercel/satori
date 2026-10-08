@@ -532,4 +532,42 @@ describe('Border', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
+
+  describe('width', () => {
+    it('should snap widths to device pixels', async () => {
+      const element = (
+        <div style={{ display: 'flex', gap: 10, padding: 10 }}>
+          {[0.3, 0.5, 1.5, 2.7, 3.9].map((width) => (
+            <div
+              key={width}
+              style={{
+                width: 20,
+                height: 20,
+                border: `${width}px solid black`,
+              }}
+            />
+          ))}
+          <div
+            style={{
+              width: 20,
+              height: 20,
+              outline: '1.6px solid red',
+              outlineOffset: 2,
+            }}
+          />
+        </div>
+      )
+      const svg = await satori(element, { width: 260, height: 50, fonts })
+      expect(toImage(svg, 260)).toMatchImageSnapshot()
+
+      // With 2 device pixels per pixel, half pixels are kept.
+      const scaled = await satori(element, {
+        width: 260,
+        height: 50,
+        fonts,
+        pointScaleFactor: 2,
+      })
+      expect(toImage(scaled, 520)).toMatchImageSnapshot()
+    })
+  })
 })

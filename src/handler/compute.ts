@@ -136,6 +136,20 @@ const DISPLAY_TYPES: Record<
   none: ['none', 'none'],
 }
 
+/**
+ * Snaps a border or outline width to device pixels: widths between 0 and 1
+ * device pixel are rounded up, and wider ones down. Layouts that aren't
+ * rounded, with a `pointScaleFactor` of 0, aren't snapped either.
+ *
+ * @see https://www.w3.org/TR/css-values-4/#snap-a-length-as-a-border-width
+ */
+function snapLineWidth(width: number, pointScaleFactor = 1) {
+  if (!pointScaleFactor || width <= 0) return width
+  const pixels = width * pointScaleFactor
+  if (Math.abs(pixels - Math.round(pixels)) < 1e-6) return width
+  return Math.max(1, Math.floor(pixels)) / pointScaleFactor
+}
+
 export default async function compute(
   node: LayoutNode,
   type: SatoriElement | string,
@@ -144,7 +158,8 @@ export default async function compute(
   props: Record<string, any>,
   replacedElements?: ReplacedElementHandlers,
   onStyleError?: (error: Error) => void,
-  convertColors = true
+  convertColors = true,
+  pointScaleFactor?: number
 ): Promise<[SerializedStyle, SerializedStyle]> {
   // With `onStyleError`, invalid values are reported and replaced by the
   // fallback, as if the declaration wasn't there.
@@ -566,6 +581,19 @@ export default async function compute(
     }
   }
 
+  // Border and outline widths are snapped to device pixels.
+  for (const prop of [
+    'borderTopWidth',
+    'borderRightWidth',
+    'borderBottomWidth',
+    'borderLeftWidth',
+    'outlineWidth',
+  ]) {
+    if (typeof style[prop] === 'number') {
+      style[prop] = snapLineWidth(style[prop] as number, pointScaleFactor)
+    }
+  }
+
   layout.borderTopWidth = (style.borderTopWidth as number) || 0
   layout.borderBottomWidth = (style.borderBottomWidth as number) || 0
   layout.borderLeftWidth = (style.borderLeftWidth as number) || 0
@@ -594,6 +622,8 @@ export default async function compute(
       static: 'static',
       // Laid out in its containing block, see `fixed-position.ts`.
       fixed: 'fixed',
+      // Moved after the layout, see `getStickyOffset()`.
+      sticky: 'sticky',
     },
     'static',
     'position'
@@ -631,8 +661,9 @@ export default async function compute(
     'clear'
   )
 
-  // Static elements ignore insets.
-  if (position !== 'static') {
+  // Static elements ignore insets, and sticky elements are moved after the
+  // layout.
+  if (position !== 'static' && position !== 'sticky') {
     for (const edge of ['top', 'bottom', 'left', 'right'] as const) {
       if (typeof style[edge] !== 'undefined') {
         layout[edge] = asPointPercentageLength(style[edge], edge)

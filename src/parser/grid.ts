@@ -392,3 +392,164 @@ export function parseGridTemplateAreas(
     })),
   }
 }
+
+type ShorthandToken =
+  | { type: 'string'; value: string }
+  | { type: 'slash' }
+  | { type: 'value'; value: string }
+
+/** Splits a value into strings, slashes and other values with line names. */
+function tokenizeShorthand(value: string, property: string) {
+  const tokens: ShorthandToken[] = []
+  let i = 0
+  while (i < value.length) {
+    const char = value[i]
+    if (/\s/.test(char)) {
+      i++
+    } else if (char === '"' || char === "'") {
+      const end = value.indexOf(char, i + 1)
+      if (end === -1) invalid(property, value)
+      tokens.push({ type: 'string', value: value.slice(i + 1, end) })
+      i = end + 1
+    } else if (char === '/') {
+      tokens.push({ type: 'slash' })
+      i++
+    } else {
+      let j = i
+      let depth = 0
+      while (j < value.length) {
+        if (value[j] === '(' || value[j] === '[') depth++
+        else if (value[j] === ')' || value[j] === ']') depth--
+        else if (depth === 0 && /[\s/"']/.test(value[j])) break
+        j++
+      }
+      tokens.push({ type: 'value', value: value.slice(i, j) })
+      i = j
+    }
+  }
+  return tokens
+}
+
+const joinValues = (tokens: ShorthandToken[]) =>
+  tokens.map((token) => (token as { value: string }).value).join(' ')
+
+const isLineNames = (token: ShorthandToken | undefined) =>
+  token?.type === 'value' && token.value.startsWith('[')
+
+/**
+ * Expands `grid-template`: `none`, `<rows> / <columns>`, or rows with the
+ * strings of `grid-template-areas`, optionally followed by `/ <columns>`.
+ */
+export function expandGridTemplate(
+  value: string,
+  property = 'gridTemplate'
+): Record<string, string> {
+  const tokens = tokenizeShorthand(value.trim(), property)
+  if (tokens.length === 1 && joinValues(tokens).toLowerCase() === 'none') {
+    return {
+      gridTemplateRows: 'none',
+      gridTemplateColumns: 'none',
+      gridTemplateAreas: 'none',
+    }
+  }
+  const slash = tokens.findIndex((token) => token.type === 'slash')
+  if (tokens.filter((token) => token.type === 'slash').length > 1) {
+    invalid(property, value)
+  }
+  const before = slash === -1 ? tokens : tokens.slice(0, slash)
+  const after = slash === -1 ? [] : tokens.slice(slash + 1)
+  if (after.some((token) => token.type === 'string')) invalid(property, value)
+
+  if (!before.some((token) => token.type === 'string')) {
+    if (slash === -1 || !before.length || !after.length) {
+      invalid(property, value)
+    }
+    return {
+      gridTemplateRows: joinValues(before),
+      gridTemplateColumns: joinValues(after),
+      gridTemplateAreas: 'none',
+    }
+  }
+
+  // `[<line-names>? <string> <track-size>? <line-names>?]+`
+  const rows: string[] = []
+  const areas: string[] = []
+  let i = 0
+  while (i < before.length) {
+    if (isLineNames(before[i])) rows.push(joinValues([before[i++]]))
+    const area = before[i++]
+    if (area?.type !== 'string') invalid(property, value)
+    areas.push(JSON.stringify((area as { value: string }).value))
+    const size = before[i]
+    if (size?.type === 'value' && !isLineNames(size)) {
+      rows.push(size.value)
+      i++
+    } else {
+      rows.push('auto')
+    }
+    if (isLineNames(before[i])) rows.push(joinValues([before[i++]]))
+  }
+  if (slash !== -1 && !after.length) invalid(property, value)
+  return {
+    gridTemplateRows: rows.join(' '),
+    gridTemplateColumns: after.length ? joinValues(after) : 'none',
+    gridTemplateAreas: areas.join(' '),
+  }
+}
+
+/**
+ * Expands `grid`: a `grid-template`, or `auto-flow` with implicit tracks on
+ * one side of the slash and explicit tracks on the other.
+ */
+export function expandGrid(value: string): Record<string, string> {
+  const tokens = tokenizeShorthand(value.trim(), 'grid')
+  const slash = tokens.findIndex((token) => token.type === 'slash')
+  const isAutoFlow = (token: ShorthandToken) =>
+    token.type === 'value' && token.value.toLowerCase() === 'auto-flow'
+  const autoFlowIndex = tokens.findIndex(isAutoFlow)
+  const reset = { gridAutoRows: 'auto', gridAutoColumns: 'auto' }
+  if (autoFlowIndex === -1) {
+    return {
+      ...expandGridTemplate(value, 'grid'),
+      ...reset,
+      gridAutoFlow: 'row',
+    }
+  }
+  if (slash === -1 || tokens.filter((t) => t.type === 'slash').length > 1) {
+    invalid('grid', value)
+  }
+  const rowFlow = autoFlowIndex < slash
+  const side = rowFlow ? tokens.slice(0, slash) : tokens.slice(slash + 1)
+  const other = rowFlow ? tokens.slice(slash + 1) : tokens.slice(0, slash)
+  // `[auto-flow && dense?] <track-size>*`
+  let dense = false
+  let flowCount = 0
+  let start = 0
+  while (start < side.length && start < 2) {
+    const token = side[start]
+    if (isAutoFlow(token)) flowCount++
+    else if (token.type === 'value' && token.value.toLowerCase() === 'dense') {
+      dense = true
+    } else break
+    start++
+  }
+  const sizes = side.slice(start)
+  if (
+    flowCount !== 1 ||
+    !other.length ||
+    side.some((token) => token.type === 'string') ||
+    sizes.some(isAutoFlow) ||
+    other.some((token) => token.type === 'string' || isAutoFlow(token))
+  ) {
+    invalid('grid', value)
+  }
+  const implicit = sizes.length ? joinValues(sizes) : 'auto'
+  return {
+    gridTemplateRows: rowFlow ? 'none' : joinValues(other),
+    gridTemplateColumns: rowFlow ? joinValues(other) : 'none',
+    gridTemplateAreas: 'none',
+    gridAutoFlow: (rowFlow ? 'row' : 'column') + (dense ? ' dense' : ''),
+    gridAutoRows: rowFlow ? implicit : 'auto',
+    gridAutoColumns: rowFlow ? 'auto' : implicit,
+  }
+}

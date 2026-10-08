@@ -270,4 +270,39 @@ describe('transform', () => {
     )
     expect(toImage(svg, 1000)).toMatchImageSnapshot()
   })
+
+  it('should support the individual transform properties', async () => {
+    const box = (background: string, style = {}) => ({
+      width: 40,
+      height: 40,
+      background,
+      ...style,
+    })
+    const svg = await satori(
+      <div style={{ display: 'flex', gap: 20, padding: 20 }}>
+        <div style={box('red', { translate: '10px 20px' })} />
+        <div style={box('green', { rotate: '30deg' })} />
+        <div style={box('blue', { scale: '1.3 0.7' })} />
+        {/* Applied in this order, before `transform`. */}
+        <div
+          style={box('orange', {
+            translate: '50%',
+            rotate: '20deg',
+            scale: 0.8,
+            transform: 'skewX(10deg)',
+          })}
+        />
+        <div
+          style={box('purple', {
+            rotate: 'z 45deg',
+            transformOrigin: 'top left',
+          })}
+        />
+        <div style={box('teal', { rotate: 'x 60deg' })} />
+        <div style={box('gray', { scale: '150%', translate: '0 -10px' })} />
+      </div>,
+      { width: 420, height: 90, fonts }
+    )
+    expect(toImage(svg, 420)).toMatchImageSnapshot()
+  })
 })

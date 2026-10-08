@@ -13,6 +13,7 @@ import {
   isForwardRefComponent,
 } from './utils.js'
 import { LayoutNode } from './layout-engine/index.js'
+import { getStickyOffset } from './sticky-position.js'
 import { SVGNodeToImage } from './handler/preprocess.js'
 import { svgTransformToCSS } from './parser/svg-transform.js'
 import computeStyle from './handler/compute.js'
@@ -100,6 +101,12 @@ type TransformList = TransformFunction[] & {
   __state?: TransformState
 }
 
+/** A node, and the position of its border box once it's known. */
+export interface PositionedBox {
+  node: LayoutNode
+  offset: { left: number; top: number }
+}
+
 export interface LayoutContext {
   id: string
   parentStyle: SerializedStyle
@@ -116,6 +123,7 @@ export interface LayoutContext {
   onNodeDetected?: (node: SatoriNode) => void
   onStyleError?: (error: Error) => void
   convertColors: boolean
+  pointScaleFactor?: number
   replacedElements?: ReplacedElementHandlers
   /** Draws elements with perspective, see `satori/experimental`. */
   projectPlane?: ProjectPlane
@@ -133,6 +141,13 @@ export interface LayoutContext {
   absoluteContainingBlock?: FixedContainingBlock
   /** Collects the out-of-flow elements laid out in their containing block. */
   fixedElements: FixedElement[]
+  /** The parent, the containing block of sticky children. */
+  parentBox?: PositionedBox
+  /**
+   * The nearest scroll container, or the root, which sticky descendants stick
+   * to.
+   */
+  scrollport?: PositionedBox
   /**
    * Collects the layers of the stacking context the element is in. The root
    * element has none, and establishes the root stacking context.
@@ -301,7 +316,8 @@ export default async function* layout(
     props,
     context.replacedElements,
     context.onStyleError,
-    context.convertColors
+    context.convertColors,
+    context.pointScaleFactor
   )
 
   // Elements are blockified in flex and grid containers, as the root
@@ -499,6 +515,18 @@ export default async function* layout(
     absoluteContainingBlock = { ...absoluteContainingBlock, ...fixedClip }
   }
 
+  // The containing block of sticky children is the nearest block container,
+  // and they stick to the nearest scroll container.
+  const box: PositionedBox = { node, offset: { left: 0, top: 0 } }
+  const isScrollContainer =
+    !inlineBox &&
+    [computedStyle.overflowX, computedStyle.overflowY].some(
+      (overflow) =>
+        overflow === 'hidden' || overflow === 'scroll' || overflow === 'auto'
+    )
+  const parentBox = inlineBox || isContents ? context.parentBox : box
+  const scrollport = isScrollContainer ? box : context.scrollport
+
   // A stacking context paints its descendants together. Elements of a 3D
   // rendering context, elements projected by the `perspective` of their parent,
   // and elements hidden by `backface-visibility` are drawn with their
@@ -522,6 +550,7 @@ export default async function* layout(
     computedStyle.isolation === 'isolate' ||
     zIndex !== undefined ||
     computedStyle.position === 'fixed' ||
+    computedStyle.position === 'sticky' ||
     isFixedContainingBlock ||
     opacity < 1 ||
     !!hasClipPath ||
@@ -608,12 +637,15 @@ export default async function* layout(
       onNodeDetected: context.onNodeDetected,
       onStyleError: context.onStyleError,
       convertColors: context.convertColors,
+      pointScaleFactor: context.pointScaleFactor,
       replacedElements: context.replacedElements,
       projectPlane: context.projectPlane,
       planes,
       fixedContainingBlock,
       absoluteContainingBlock,
       fixedElements: context.fixedElements,
+      parentBox,
+      scrollport,
       floats: context.floats,
       stackingContext,
       formattingContext: childFormattingContext,
@@ -645,6 +677,23 @@ export default async function* layout(
     left += x
     top += y
   }
+  if (
+    computedStyle.position === 'sticky' &&
+    !inlineBox &&
+    context.parentBox &&
+    context.scrollport
+  ) {
+    const [dx, dy] = getStickyOffset(
+      { left, top, width, height, margin: node.layout.margin },
+      computedStyle,
+      context.parentBox,
+      context.scrollport
+    )
+    left += dx
+    top += dy
+  }
+  box.offset.left = left
+  box.offset.top = top
   for (const containingBlock of [
     fixedContainingBlock,
     absoluteContainingBlock,

@@ -205,10 +205,14 @@ export async function render(
     onNodeDetected: options.onNodeDetected,
     onStyleError: options.onStyleError,
     convertColors: options.convertColors ?? true,
+    pointScaleFactor: options.pointScaleFactor,
     replacedElements,
     projectPlane,
     // Fixed elements are positioned relative to the viewport by default.
     fixedContainingBlock: { node: root, offset: { left: 0, top: 0 } },
+    // Sticky elements stick to the viewport by default.
+    parentBox: { node: root, offset: { left: 0, top: 0 } },
+    scrollport: { node: root, offset: { left: 0, top: 0 } },
     // So are absolutely positioned ones without a positioned ancestor.
     absoluteContainingBlock: { node: root, offset: { left: 0, top: 0 } },
     fixedElements,
