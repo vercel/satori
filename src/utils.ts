@@ -33,6 +33,8 @@ export function hasDangerouslySetInnerHTMLProp(props: any) {
   return 'dangerouslySetInnerHTML' in props
 }
 
+const REACT_FRAGMENT = Symbol.for('react.fragment')
+
 export function normalizeChildren(children: any) {
   const flattend =
     typeof children === 'undefined' ? [] : [].concat(children).flat(Infinity)
@@ -49,6 +51,11 @@ export function normalizeChildren(children: any) {
     }
     if (typeof value === 'number') {
       value = String(value)
+    }
+    // Fragments are replaced by their children.
+    if (value?.type === REACT_FRAGMENT) {
+      flattend.splice(i + 1, 0, ...normalizeChildren(value.props?.children))
+      continue
     }
     if (
       typeof value === 'string' &&

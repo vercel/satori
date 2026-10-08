@@ -2,7 +2,7 @@
  * This module is used to calculate the layout of the current sub-tree.
  */
 
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import {
   isReactElement,
   isClass,
@@ -26,6 +26,11 @@ import {
   type InlineEnv,
 } from './text/inline.js'
 import rect from './builder/rect.js'
+import {
+  buildFilterPrimitive,
+  getExpansion,
+} from './builder/backdrop-filter.js'
+import type { BackdropFilter } from './parser/backdrop-filter.js'
 import { Locale, normalizeLocale } from './language.js'
 import { SerializedStyle } from './handler/expand.js'
 import type {
@@ -215,6 +220,21 @@ export default async function* layout(
     await iter.next()
     const offset = yield
     return (await iter.next(offset)).value as string
+  }
+
+  // A fragment, e.g. returned by a component, generates no box.
+  if ((element.type as unknown) === Symbol.for('react.fragment')) {
+    return yield* layout(
+      {
+        ...element,
+        type: 'div',
+        props: {
+          children: element.props?.children,
+          style: { display: 'contents' },
+        },
+      } as ReactElement,
+      context
+    )
   }
 
   // Process as element.
@@ -768,6 +788,56 @@ export default async function* layout(
         (isStackingContext
           ? paintStackingContext(stackingContext.layers, childrenRenderResult)
           : childrenRenderResult)
+
+  // The filter applies to the element and its descendants as a group, then
+  // its own clip path clips the filtered result, e.g. the edges of a blur.
+  // https://drafts.fxtf.org/filter-effects-1/#placement
+  const filters = computedStyle._filters as unknown as
+    | BackdropFilter[]
+    | undefined
+  if (result && filters?.length) {
+    // Descendants can be drawn anywhere, so the filter region is the image,
+    // and what the filter draws into it from outside.
+    const filterId = `satori_f-${id}`
+    const expansion = getExpansion(filters)
+    const primitives = filters
+      .map((filter, index) =>
+        buildFilterPrimitive(
+          filter,
+          index ? `${filterId}-${index - 1}` : 'SourceGraphic',
+          `${filterId}-${index}`,
+          false
+        )
+      )
+      .join('')
+    result =
+      buildXMLString(
+        'filter',
+        {
+          id: filterId,
+          x: -expansion.left,
+          y: -expansion.top,
+          width:
+            (computedStyle._viewportWidth as number) +
+            expansion.left +
+            expansion.right,
+          height:
+            (computedStyle._viewportHeight as number) +
+            expansion.top +
+            expansion.bottom,
+          filterUnits: 'userSpaceOnUse',
+          'color-interpolation-filters': 'sRGB',
+        },
+        primitives
+      ) + buildXMLString('g', { filter: `url(#${filterId})` }, result)
+    if (hasClipPath && isInheritingTransform) {
+      result = buildXMLString(
+        'g',
+        { 'clip-path': `url(#satori_cp-${id})` },
+        result
+      )
+    }
+  }
 
   if (result && transformState.projection && !isInheritingTransform) {
     result = context.projectPlane(result, {

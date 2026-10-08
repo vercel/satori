@@ -258,6 +258,18 @@ function handleSpecialCase(
     }
   }
 
+  if (name === 'filter') {
+    return {
+      filter: value,
+      _filters: parseBackdropFilter(
+        value,
+        inheritedStyle,
+        currentColor,
+        'filter'
+      ),
+    }
+  }
+
   if (name === 'backdropFilter' || name === 'WebkitBackdropFilter') {
     return {
       _backdropFilters: parseBackdropFilter(
