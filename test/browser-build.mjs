@@ -37,6 +37,13 @@ for (const entry of [
         'import external breaks every bundler.'
     )
   }
+
+  if (entry.endsWith('.js') && source.includes('__dirname')) {
+    throw new Error(
+      `${entry} refers to __dirname. Node ESM does not define it, so importing ` +
+        'the bundle throws before Satori can render.'
+    )
+  }
 }
 
 const outfile = new URL('../.tmp/browser-build.js', import.meta.url)

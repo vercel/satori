@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   harfbuzzjs@0.10.0:
-    hash: 4d5fe9c2103e6cad08530ac6cf0d662d8f70ec4d9a741d0729e3c562569d337a
+    hash: 760b5ac12c5d269b507b4dd008b00a9e9957c29d9b08d00047b07cb9305cee97
     path: patches/harfbuzzjs@0.10.0.patch
 
 importers:
@@ -39,7 +39,7 @@ importers:
         version: 0.7.3
       harfbuzzjs:
         specifier: 0.10.0
-        version: 0.10.0(patch_hash=4d5fe9c2103e6cad08530ac6cf0d662d8f70ec4d9a741d0729e3c562569d337a)
+        version: 0.10.0(patch_hash=760b5ac12c5d269b507b4dd008b00a9e9957c29d9b08d00047b07cb9305cee97)
       linebreak:
         specifier: ^1.1.0
         version: 1.1.0
@@ -8689,7 +8689,7 @@ snapshots:
 
   grapheme-splitter@1.0.4: {}
 
-  harfbuzzjs@0.10.0(patch_hash=4d5fe9c2103e6cad08530ac6cf0d662d8f70ec4d9a741d0729e3c562569d337a): {}
+  harfbuzzjs@0.10.0(patch_hash=760b5ac12c5d269b507b4dd008b00a9e9957c29d9b08d00047b07cb9305cee97): {}
 
   has-bigints@1.0.2: {}
 
