@@ -8,6 +8,7 @@
  */
 
 import type {
+  CalcLength,
   GridLine,
   GridTrackBreadth,
   GridTrackList,
@@ -49,16 +50,22 @@ const FLEX_WRAP = { nowrap: 0, wrap: 1, 'wrap-reverse': 2 }
 
 const OVERFLOW = { visible: 0, hidden: 1, clip: 2 }
 
-/** Unit codes: 0 is auto, 1 is a length, 2 is a percentage. */
+/**
+ * Unit codes: 0 is auto, 1 is a length, 2 is a percentage, 3 is a `calc()`
+ * expression, by its index in `calcs`.
+ */
 function pushLength(
   data: number[],
   length: Length | undefined,
   fallback: Length,
-  scale: number
+  scale: number,
+  calcs: CalcLength['calc'][]
 ) {
   const value = length ?? fallback
   if (typeof value === 'number') {
     data.push(1, value * scale)
+  } else if (typeof value === 'object') {
+    data.push(3, calcs.push(value.calc) - 1)
   } else if (value.endsWith('%')) {
     data.push(2, parseFloat(value) / 100)
   } else {
@@ -70,9 +77,14 @@ function pushAlignment(data: number[], alignment: string | undefined) {
   data.push(alignment === undefined ? -1 : ALIGNMENT[alignment] ?? -1)
 }
 
-function encodeStyle(data: number[], style: LayoutStyle, scale: number) {
+function encodeStyle(
+  data: number[],
+  style: LayoutStyle,
+  scale: number,
+  calcs: CalcLength['calc'][]
+) {
   const length = (value: Length | undefined, fallback: Length) =>
-    pushLength(data, value, fallback, scale)
+    pushLength(data, value, fallback, scale, calcs)
 
   data.push(
     DISPLAY[style.display] ?? DISPLAY.flex,
@@ -270,6 +282,8 @@ export interface EncodedTree {
   childIndices: number[][]
   /** `display: contents` nodes, which aren't laid out. */
   contents: LayoutNode[]
+  /** The `calc()` expressions, by the index in the buffer. */
+  calcs: CalcLength['calc'][]
 }
 
 /**
@@ -307,11 +321,18 @@ export function encodeTree(root: LayoutNode, scale: number): EncodedTree {
   visit(root)
 
   const data: number[] = [nodes.length]
+  const calcs: CalcLength['calc'][] = []
   nodes.forEach((node, index) => {
-    encodeStyle(data, node.style, scale)
+    encodeStyle(data, node.style, scale, calcs)
     data.push(node.measure ? 1 : 0, childIndices[index].length)
     data.push(...childIndices[index])
   })
 
-  return { data: Float32Array.from(data), nodes, childIndices, contents }
+  return {
+    data: Float32Array.from(data),
+    nodes,
+    childIndices,
+    contents,
+    calcs,
+  }
 }

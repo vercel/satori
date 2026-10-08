@@ -76,4 +76,27 @@ describe('Minimal JSX runtime', () => {
     })
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should lay out the children of Fragment elements in their parent', async () => {
+    const box = (background: string) => (
+      <div style={{ width: 20, height: 20, background }} />
+    )
+    const Boxes = () => (
+      <>
+        {box('green')}
+        {box('blue')}
+      </>
+    )
+    const svg = await satori(
+      <div style={{ display: 'flex', gap: 4 }}>
+        <>
+          {box('red')}
+          {box('orange')}
+        </>
+        <Boxes />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })

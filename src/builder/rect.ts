@@ -270,7 +270,7 @@ export default async function rect(
     })
   }
 
-  const { backgroundClip, filter: cssFilter } = style
+  const { backgroundClip } = style
 
   const currentClipPath =
     backgroundClip === 'text'
@@ -281,8 +281,21 @@ export default async function rect(
       ? genClipPath(id)
       : undefined
 
+  // The element's own clip path is only clipped by the ones of its ancestors,
+  // and must not reference itself.
   const clip = overflow(
-    { left, top, width, height, path, id, matrix, currentClipPath, src },
+    {
+      left,
+      top,
+      width,
+      height,
+      path,
+      id,
+      matrix,
+      currentClipPath:
+        backgroundClip === 'text' || clipPathId ? currentClipPath : undefined,
+      src,
+    },
     style as Record<string, number>,
     inheritableStyle
   )
@@ -314,7 +327,6 @@ export default async function rect(
     fills.length === 1 &&
     !backdropShape &&
     !backgroundShapes &&
-    !cssFilter &&
     !maskId &&
     !style.boxShadow &&
     !(
@@ -339,7 +351,6 @@ export default async function rect(
         d: path ? path : undefined,
         transform: matrix ? matrix : undefined,
         'clip-path': style.transform ? undefined : currentClipPath,
-        style: cssFilter ? `filter:${cssFilter}` : undefined,
         mask: style.transform ? undefined : maskId,
       })
     )
@@ -579,7 +590,6 @@ export default async function rect(
       href: src,
       preserveAspectRatio,
       transform: matrix ? matrix : undefined,
-      style: cssFilter ? `filter:${cssFilter}` : undefined,
       'clip-path': style.transform
         ? imageBorderRadius
           ? `url(#${imageBorderRadius[1]})`

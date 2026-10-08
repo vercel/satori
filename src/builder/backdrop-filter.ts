@@ -86,10 +86,16 @@ export function backdropFilter({
   return [definitions, shape] as const
 }
 
-function buildFilterPrimitive(
+/**
+ * The SVG filter primitives of a filter function. The shadow of `drop-shadow()`
+ * is cast by the input, or by the part of it inside the source graphic with
+ * `clipToSource`, for backdrops.
+ */
+export function buildFilterPrimitive(
   filter: BackdropFilter,
   input: string,
-  result: string
+  result: string,
+  clipToSource = true
 ) {
   if (filter.type === 'blur') {
     return buildXMLString('feGaussianBlur', {
@@ -150,22 +156,45 @@ function buildFilterPrimitive(
   }
 
   if (filter.type === 'drop-shadow') {
-    const clippedInput = `${result}-input`
+    // Built from primitives instead of `feDropShadow`, which resvg draws with
+    // the wrong color when `color-interpolation-filters` is `sRGB`.
+    const shadowInput = clipToSource ? `${result}-input` : input
     return (
-      buildXMLString('feComposite', {
-        in: input,
-        in2: 'SourceAlpha',
-        operator: 'in',
-        result: clippedInput,
+      (clipToSource
+        ? buildXMLString('feComposite', {
+            in: input,
+            in2: 'SourceAlpha',
+            operator: 'in',
+            result: shadowInput,
+          })
+        : '') +
+      buildXMLString('feFlood', {
+        'flood-color': filter.color,
+        result: `${result}-flood`,
       }) +
-      buildXMLString('feDropShadow', {
-        in: clippedInput,
+      buildXMLString('feComposite', {
+        in: `${result}-flood`,
+        in2: shadowInput,
+        operator: 'in',
+        result: `${result}-shape`,
+      }) +
+      buildXMLString('feGaussianBlur', {
+        in: `${result}-shape`,
+        stdDeviation: filter.blurRadius,
+        result: `${result}-blur`,
+      }) +
+      buildXMLString('feOffset', {
+        in: `${result}-blur`,
         dx: filter.offsetX,
         dy: filter.offsetY,
-        stdDeviation: filter.blurRadius,
-        'flood-color': filter.color,
-        result,
-      })
+        result: `${result}-shadow`,
+      }) +
+      buildXMLString(
+        'feMerge',
+        { result },
+        buildXMLString('feMergeNode', { in: `${result}-shadow` }) +
+          buildXMLString('feMergeNode', { in: shadowInput })
+      )
     )
   }
 
@@ -194,7 +223,10 @@ function buildFilterPrimitive(
   )
 }
 
-function getExpansion(filters: BackdropFilter[]) {
+/**
+ * How far the filter functions draw outside of their input.
+ */
+export function getExpansion(filters: BackdropFilter[]) {
   let left = 0
   let top = 0
   let right = 0

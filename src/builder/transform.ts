@@ -13,7 +13,7 @@
 
 import type { ParsedTransformOrigin } from '../transform-origin.js'
 import type { TransformFunction } from '../parser/transform.js'
-import type { LayoutNode } from '../layout-engine/index.js'
+import type { CalcLength, LayoutNode } from '../layout-engine/index.js'
 import type { SerializedStyle } from '../handler/expand.js'
 
 /** A 4x4 matrix in column-major order, like the arguments of `matrix3d()`. */
@@ -146,10 +146,15 @@ function toMatrix(
   height: number
 ): Mat4 {
   // Percentages are only allowed in X and Y translations.
-  const resolve = (value: number | string | undefined, size: number) =>
+  const resolve = (
+    value: number | string | CalcLength | undefined,
+    size: number
+  ) =>
     typeof value === 'string'
       ? (parseFloat(value) / 100) * size
-      : (value as number) ?? 0
+      : typeof value === 'object'
+      ? value.calc(size)
+      : value ?? 0
   const [a, b, c, d] = args as number[]
 
   switch (name) {

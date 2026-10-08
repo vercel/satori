@@ -978,7 +978,6 @@ export default async function* buildTextNodes(
             d: mergedPath,
             transform: matrix ? matrix : undefined,
             'fill-opacity': fillOpacity,
-            style: cssFilter ? `filter:${cssFilter}` : undefined,
             ...strokeAttributes,
           })
         : ''

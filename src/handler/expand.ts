@@ -23,6 +23,7 @@ import parseTransform, {
   type TransformFunction,
 } from '../parser/transform.js'
 import { FontWeight, FontStyle } from '../font.js'
+import { MATH_FUNCTION, parseMath } from '../parser/math.js'
 import {
   extractCustomProperties,
   mergeVariables,
@@ -111,12 +112,65 @@ function purify(name: string, value?: string | number) {
   return String(value)
 }
 
+/** Splits a value at the spaces that aren't in parentheses. */
+function splitValues(value: string) {
+  const values: string[] = []
+  let depth = 0
+  let current = ''
+  for (const char of value.trim()) {
+    if (char === '(') depth++
+    if (char === ')') depth--
+    if (/\s/.test(char) && depth === 0) {
+      if (current) values.push(current)
+      current = ''
+    } else {
+      current += char
+    }
+  }
+  if (current) values.push(current)
+  return values
+}
+
+/** Expands 1 to 4 values to the top, right, bottom and left. */
+function expandEdges(
+  value: string | number,
+  [top, right, bottom, left]: string[]
+) {
+  const values = typeof value === 'number' ? [value] : splitValues(value)
+  if (!values.length || values.length > 4) {
+    throw new Error(`Invalid value: "${value}".`)
+  }
+  const [t, r = t, b = t, l = r] = values
+  return { [top]: t, [right]: r, [bottom]: b, [left]: l }
+}
+
 function handleSpecialCase(
   name: string,
   value: string | number,
   currentColor: string,
   inheritedStyle: SerializedStyle
 ) {
+  if (name === 'inset') {
+    return expandEdges(value, ['top', 'right', 'bottom', 'left'])
+  }
+
+  // Shorthands with math functions, which aren't parsed by
+  // css-to-react-native.
+  if (typeof value === 'string' && value.includes('(')) {
+    if (name === 'margin' || name === 'padding') {
+      return expandEdges(value, [
+        `${name}Top`,
+        `${name}Right`,
+        `${name}Bottom`,
+        `${name}Left`,
+      ])
+    }
+    if (name === 'gap') {
+      const [rowGap, columnGap = rowGap] = splitValues(value)
+      return { rowGap, columnGap }
+    }
+  }
+
   if (name === 'zIndex') {
     const normalized = String(value).trim().toLowerCase()
     if (normalized === 'auto') return { zIndex: 'auto' }
@@ -255,6 +309,18 @@ function handleSpecialCase(
     }
     return {
       [name]: typeof value === 'string' ? parseBoxShadow(value) : value,
+    }
+  }
+
+  if (name === 'filter') {
+    return {
+      filter: value,
+      _filters: parseBackdropFilter(
+        value,
+        inheritedStyle,
+        currentColor,
+        'filter'
+      ),
     }
   }
 
@@ -525,13 +591,6 @@ function handleSpecialCase(
   return
 }
 
-function getErrorHint(name: string) {
-  if (name === 'transform') {
-    return ' `calc()` is not supported in transform functions.'
-  }
-  return ''
-}
-
 const RGB_SLASH = /rgb\((\d+)\s+(\d+)\s+(\d+)\s*\/\s*([\.\d]+)\)/
 function normalizeColor(value: string | object) {
   if (typeof value === 'string') {
@@ -607,9 +666,39 @@ type OtherStyle = Exclude<Record<PropertyKey, string | number>, keyof MainStyle>
 
 export type SerializedStyle = Partial<MainStyle & OtherStyle>
 
+// Lengths that can have percentages in `calc()`.
+const CALC_LENGTHS = new Set([
+  'width',
+  'height',
+  'minWidth',
+  'minHeight',
+  'maxWidth',
+  'maxHeight',
+  'marginTop',
+  'marginRight',
+  'marginBottom',
+  'marginLeft',
+  'paddingTop',
+  'paddingRight',
+  'paddingBottom',
+  'paddingLeft',
+  'top',
+  'right',
+  'bottom',
+  'left',
+  'flexBasis',
+  'gap',
+  'rowGap',
+  'columnGap',
+])
+
+const VALID_IMAGE =
+  /^(none|url\(.*\)|(repeating-)?(linear|radial|conic)-gradient\(.*\))$/is
+
 export default function expand(
   style: Record<string, string | number> | undefined,
-  inheritedStyle: SerializedStyle
+  inheritedStyle: SerializedStyle,
+  onStyleError?: (error: Error) => void
 ): SerializedStyle {
   const serializedStyle: SerializedStyle = {}
 
@@ -654,7 +743,12 @@ export default function expand(
 
     for (const prop in processableStyle) {
       if (prop.startsWith('_')) {
-        throw new Error(`Invalid style property: ${JSON.stringify(prop)}`)
+        const error = new Error(
+          `Invalid style property: ${JSON.stringify(prop)}`
+        )
+        if (!onStyleError) throw error
+        onStyleError(error)
+        continue
       }
 
       if (prop === 'color') {
@@ -684,26 +778,43 @@ export default function expand(
 
         Object.assign(serializedStyle, resolvedStyle)
       } catch (err) {
-        throw new Error(
-          err.message +
-            // Attach the extra information of the rule itself if it's not included in
-            // the error message.
-            (err.message.includes(value)
-              ? '\n  ' + getErrorHint(name)
-              : `\n  in CSS rule \`${name}: ${value}\`.${getErrorHint(name)}`)
+        // Attach the rule itself if it's not included in the error message.
+        const error = new Error(
+          err.message.includes(value)
+            ? err.message
+            : `${err.message}\n  in CSS rule \`${name}: ${value}\`.`
         )
+        if (!onStyleError) throw error
+        onStyleError(error)
       }
     }
   }
 
-  // Parse background images.
+  // Parse background images. A declaration with an invalid image is ignored
+  // with `onStyleError`.
+  const checkImages = (property: string, layers: { image: string }[]) => {
+    const invalid = layers.find(({ image }) => !VALID_IMAGE.test(image.trim()))
+    if (!invalid) return true
+    const error = new Error(`Invalid background image: "${invalid.image}"`)
+    if (!onStyleError) throw error
+    onStyleError(error)
+    delete serializedStyle[property]
+    return false
+  }
   if (serializedStyle.backgroundImage) {
     const { backgrounds } = parseElementStyle(serializedStyle)
-    serializedStyle.backgroundImage = backgrounds
+    if (checkImages('backgroundImage', backgrounds)) {
+      serializedStyle.backgroundImage = backgrounds
+    }
   }
 
   if (serializedStyle.maskImage || serializedStyle['WebkitMaskImage']) {
-    serializedStyle.maskImage = parseMask(serializedStyle)
+    const masks = parseMask(serializedStyle)
+    if (checkImages('maskImage', masks)) {
+      serializedStyle.maskImage = masks
+    } else {
+      delete serializedStyle['WebkitMaskImage']
+    }
   }
 
   // Calculate the base font size.
@@ -746,6 +857,20 @@ export default function expand(
           ) / baseFontSize
       }
     } else {
+      // Math functions are resolved, except for percentages of lengths that
+      // are only known in the layout.
+      const math =
+        typeof value === 'string' && MATH_FUNCTION.test(value)
+          ? parseMath(value, (length) =>
+              lengthToNumber(length, baseFontSize, 0, inheritedStyle)
+            )
+          : undefined
+      if (math && !math.percentage) {
+        value = serializedStyle[prop] = math.evaluate(0)
+      } else if (math && CALC_LENGTHS.has(prop)) {
+        value = serializedStyle[prop] = { calc: math.evaluate } as any
+      }
+
       // Convert em and rem values to px (number).
       if (typeof value === 'string') {
         const len = lengthToNumber(
@@ -839,6 +964,10 @@ function calcBaseFontSize(
   if (keyword === 'smaller') return inheritedSize / 1.2
 
   // `em` and percentages are relative to the inherited font size.
+  const math = parseMath(size, (length) =>
+    lengthToNumber(length, inheritedSize, 0, inheritedStyle)
+  )
+  if (math?.type === 'length') return math.evaluate(inheritedSize)
   return (
     lengthToNumber(size, inheritedSize, inheritedSize, inheritedStyle, true) ??
     inheritedSize

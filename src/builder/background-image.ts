@@ -3,6 +3,7 @@ import { buildXMLString, lengthToNumber } from '../utils.js'
 import { hasIntrinsicSize, resolveImageData } from '../handler/image.js'
 import { buildLinearGradient } from './gradient/linear.js'
 import { buildRadialGradient } from './gradient/radial.js'
+import { buildConicGradient } from './gradient/conic.js'
 import cssColorParse from 'parse-css-color'
 
 interface Background {
@@ -152,7 +153,9 @@ export default async function backgroundImage(
     return [keywords[0], keywords[1] ?? keywords[0]]
   })()
 
-  const isGradient = /^(repeating-)?(linear|radial)-gradient\(/.test(image)
+  const isGradient = /^(repeating-)?(linear|radial|conic)-gradient\(/.test(
+    image
+  )
   if (!isGradient && !image.startsWith('url(')) {
     return buildColorLayer(id, image, left, top, width, height)
   }
@@ -249,6 +252,17 @@ export default async function backgroundImage(
   )
   const offsets = [offsetX, offsetY]
   const tiles: [number, number] = [tileX, tileY]
+
+  if (/^(repeating-)?conic-gradient\(/.test(image)) {
+    return buildConicGradient(
+      { id, width, height, tiles },
+      image,
+      dimensions,
+      offsets,
+      inheritableStyle,
+      from
+    )
+  }
 
   if (image.includes('linear-gradient(')) {
     return buildLinearGradient(

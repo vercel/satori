@@ -3,6 +3,7 @@ import escapeHTML from 'escape-html'
 import LineBreaker from 'linebreak'
 
 import CssDimension from './vendor/parse-css-dimension/index.js'
+import type { CalcLength } from './layout-engine/node.js'
 
 export function isReactElement(node: ReactNode): node is ReactElement {
   const type = typeof node
@@ -33,6 +34,8 @@ export function hasDangerouslySetInnerHTMLProp(props: any) {
   return 'dangerouslySetInnerHTML' in props
 }
 
+const REACT_FRAGMENT = Symbol.for('react.fragment')
+
 export function normalizeChildren(children: any) {
   const flattend =
     typeof children === 'undefined' ? [] : [].concat(children).flat(Infinity)
@@ -49,6 +52,11 @@ export function normalizeChildren(children: any) {
     }
     if (typeof value === 'number') {
       value = String(value)
+    }
+    // Fragments are replaced by their children.
+    if (value?.type === REACT_FRAGMENT) {
+      flattend.splice(i + 1, 0, ...normalizeChildren(value.props?.children))
+      continue
     }
     if (
       typeof value === 'string' &&
@@ -373,10 +381,10 @@ export function isUndefined(x: unknown): x is undefined {
 }
 
 export function asPointPercentageLength(
-  x: string | number,
+  x: string | number | CalcLength,
   propertyName?: string
-): number | `${number}%` | undefined {
-  if (typeof x === 'number') {
+): number | `${number}%` | CalcLength | undefined {
+  if (typeof x === 'number' || typeof x === 'object') {
     return x
   }
   if (x.endsWith('%')) {
@@ -401,10 +409,10 @@ export function asPointPercentageLength(
 }
 
 export function asPointAutoPercentageLength(
-  x: string | number,
+  x: string | number | CalcLength,
   propertyName?: string
-): number | 'auto' | `${number}%` | undefined {
-  if (typeof x === 'number') {
+): number | 'auto' | `${number}%` | CalcLength | undefined {
+  if (typeof x === 'number' || typeof x === 'object') {
     return x
   }
   if (x === 'auto') {

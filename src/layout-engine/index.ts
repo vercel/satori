@@ -4,7 +4,12 @@
  */
 
 import { encodeTree } from './encode.js'
-import { emptyLayout, type Edges, type LayoutNode } from './node.js'
+import {
+  emptyLayout,
+  type CalcLength,
+  type Edges,
+  type LayoutNode,
+} from './node.js'
 
 export * from './node.js'
 
@@ -92,10 +97,14 @@ export function createLayoutEngine(): LayoutEngine {
   let exports: LayoutExports | undefined
   // The tree being laid out, for `measure`.
   let nodes: LayoutNode[] = []
+  let calcs: CalcLength['calc'][] = []
   let scale = 1
 
   const imports = {
     env: {
+      resolve_calc(index: number, basis: number) {
+        return calcs[index](basis / scale) * scale
+      },
       measure(
         index: number,
         knownWidth: number,
@@ -137,11 +146,13 @@ export function createLayoutEngine(): LayoutEngine {
       // Measuring a node may lay out another tree, e.g. an atomic inline, so
       // restore the tree being laid out afterwards.
       const outerNodes = nodes
+      const outerCalcs = calcs
       const outerScale = scale
       const layoutScale = pointScaleFactor || 1
       scale = layoutScale
       const encoded = encodeTree(root, layoutScale)
       nodes = encoded.nodes
+      calcs = encoded.calcs
 
       const { data } = encoded
       const ptr = exports.alloc(data.length)
@@ -160,6 +171,7 @@ export function createLayoutEngine(): LayoutEngine {
       } finally {
         exports.dealloc(ptr, data.length)
         nodes = outerNodes
+        calcs = outerCalcs
         scale = outerScale
       }
 

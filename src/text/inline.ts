@@ -1092,7 +1092,6 @@ export class Paragraph {
             fill: filter && isFullyTransparent(fillColor) ? 'black' : fillColor,
             d: path,
             transform: matrix || undefined,
-            style: style.filter ? `filter:${style.filter}` : undefined,
             ...strokeAttributes,
           })
         : ''

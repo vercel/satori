@@ -4,7 +4,13 @@
  */
 
 /** A length in px, a percentage, or `auto`. */
-export type Length = number | `${number}%` | 'auto'
+/** A `calc()` expression with percentages, see `parseMath()`. */
+export interface CalcLength {
+  /** The length in px, with percentages of `basis`. */
+  calc: (basis: number) => number
+}
+
+export type Length = number | `${number}%` | 'auto' | CalcLength
 
 export type Alignment =
   | 'start'

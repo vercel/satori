@@ -30,9 +30,6 @@ const list = new Set([
   'transform',
   'wordBreak',
   'tabSize',
-  // Special case: SVG doesn't apply these to children elements so we need to
-  // make it inheritable here.
-  'filter',
 
   // Special properties of Satori:
   '_viewportWidth',

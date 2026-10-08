@@ -118,7 +118,6 @@ export default function buildText(
       height,
       transform: matrix || undefined,
       'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-      style: style.filter ? `filter:${style.filter}` : undefined,
     }
     const imageMarkup =
       buildXMLString('image', shapeProps) + (decorationShape || '')
@@ -145,7 +144,6 @@ export default function buildText(
     'letter-spacing': style.letterSpacing || undefined,
     transform: matrix || undefined,
     'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-    style: style.filter ? `filter:${style.filter}` : undefined,
     ...getTextStrokeAttributes(style),
   }
   const textMarkup =
