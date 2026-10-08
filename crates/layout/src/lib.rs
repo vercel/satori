@@ -59,6 +59,12 @@ pub unsafe extern "C" fn dealloc(ptr: *mut f32, len: usize) {
     drop(Vec::from_raw_parts(ptr, 0, len));
 }
 
+/// The handle of the `calc()` expression at `index`, which Taffy passes to
+/// `resolve_calc`. Taffy uses the low 3 bits as a tag, which must be 0.
+fn calc_handle(index: f32) -> *const () {
+    ((index as usize + 1) << 3) as *const ()
+}
+
 struct Reader<'a> {
     data: &'a [f32],
     index: usize,
@@ -75,13 +81,15 @@ impl<'a> Reader<'a> {
         self.next() as i32
     }
 
-    /// A unit (0: auto, 1: length, 2: percentage) and a value.
+    /// A unit (0: auto, 1: length, 2: percentage, 3: `calc()`) and a value,
+    /// which is the index of the expression for `calc()`.
     fn dimension(&mut self) -> Dimension {
         let unit = self.int();
         let value = self.next();
         match unit {
             1 => Dimension::length(value),
             2 => Dimension::percent(value),
+            3 => Dimension::calc(calc_handle(value)),
             _ => Dimension::auto(),
         }
     }
@@ -92,6 +100,7 @@ impl<'a> Reader<'a> {
         match unit {
             1 => LengthPercentageAuto::length(value),
             2 => LengthPercentageAuto::percent(value),
+            3 => LengthPercentageAuto::calc(calc_handle(value)),
             _ => LengthPercentageAuto::auto(),
         }
     }
@@ -103,6 +112,7 @@ impl<'a> Reader<'a> {
         match unit {
             1 => LengthPercentage::length(value),
             2 => LengthPercentage::percent(value),
+            3 => LengthPercentage::calc(calc_handle(value)),
             _ => LengthPercentage::length(0.0),
         }
     }

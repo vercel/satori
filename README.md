@@ -227,7 +227,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>right</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>bottom</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>left</code></td><td>Supported</td><td></td></tr>
-<tr><td><code>inset</code></td><td>Not supported</td><td></td></tr>
+<tr><td><code>inset</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="3">Size</td></tr>
 <tr><td><code>width</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
@@ -462,7 +462,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 Note:
 
 1. In 3D transforms, elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
-2. `calc()`, `min()`, `max()` and `clamp()` aren't supported. Lengths with them are ignored, and transforms with them throw.
+2. Percentages in `calc()`, `min()`, `max()` and `clamp()` only work in sizes, margins, paddings, insets, gaps, `flexBasis` and translations. Elsewhere, values with them are ignored.
 3. Properties that aren't listed are ignored, for example `aspectRatio`, `visibility`, `outline`, `float`, `columns`, `direction`, `writingMode`, `wordSpacing`, `fontVariant`, `fontStretch` and `fontKerning`.
 4. Invalid values throw an error, which fails the whole render, unless they're ignored with [`onStyleError`](#invalid-styles).
 
@@ -652,7 +652,7 @@ const svg = await satori(
 
 ### Invalid Styles
 
-By default, an invalid or unsupported style declaration throws an error, which fails the whole render. With `onStyleError`, the declaration is ignored instead, like in browsers, and its error is passed to the callback:
+By default, an invalid or unsupported style declaration throws an error, which fails the whole render. With `onStyleError`, the declaration is ignored instead, and its error is passed to the callback:
 
 ```jsx
 const svg = await satori(

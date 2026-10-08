@@ -23,6 +23,7 @@ import parseTransform, {
   type TransformFunction,
 } from '../parser/transform.js'
 import { FontWeight, FontStyle } from '../font.js'
+import { MATH_FUNCTION, parseMath } from '../parser/math.js'
 import {
   extractCustomProperties,
   mergeVariables,
@@ -111,12 +112,65 @@ function purify(name: string, value?: string | number) {
   return String(value)
 }
 
+/** Splits a value at the spaces that aren't in parentheses. */
+function splitValues(value: string) {
+  const values: string[] = []
+  let depth = 0
+  let current = ''
+  for (const char of value.trim()) {
+    if (char === '(') depth++
+    if (char === ')') depth--
+    if (/\s/.test(char) && depth === 0) {
+      if (current) values.push(current)
+      current = ''
+    } else {
+      current += char
+    }
+  }
+  if (current) values.push(current)
+  return values
+}
+
+/** Expands 1 to 4 values to the top, right, bottom and left. */
+function expandEdges(
+  value: string | number,
+  [top, right, bottom, left]: string[]
+) {
+  const values = typeof value === 'number' ? [value] : splitValues(value)
+  if (!values.length || values.length > 4) {
+    throw new Error(`Invalid value: "${value}".`)
+  }
+  const [t, r = t, b = t, l = r] = values
+  return { [top]: t, [right]: r, [bottom]: b, [left]: l }
+}
+
 function handleSpecialCase(
   name: string,
   value: string | number,
   currentColor: string,
   inheritedStyle: SerializedStyle
 ) {
+  if (name === 'inset') {
+    return expandEdges(value, ['top', 'right', 'bottom', 'left'])
+  }
+
+  // Shorthands with math functions, which aren't parsed by
+  // css-to-react-native.
+  if (typeof value === 'string' && value.includes('(')) {
+    if (name === 'margin' || name === 'padding') {
+      return expandEdges(value, [
+        `${name}Top`,
+        `${name}Right`,
+        `${name}Bottom`,
+        `${name}Left`,
+      ])
+    }
+    if (name === 'gap') {
+      const [rowGap, columnGap = rowGap] = splitValues(value)
+      return { rowGap, columnGap }
+    }
+  }
+
   if (name === 'zIndex') {
     const normalized = String(value).trim().toLowerCase()
     if (normalized === 'auto') return { zIndex: 'auto' }
@@ -619,6 +673,32 @@ type OtherStyle = Exclude<Record<PropertyKey, string | number>, keyof MainStyle>
 
 export type SerializedStyle = Partial<MainStyle & OtherStyle>
 
+// Lengths that can have percentages in `calc()`.
+const CALC_LENGTHS = new Set([
+  'width',
+  'height',
+  'minWidth',
+  'minHeight',
+  'maxWidth',
+  'maxHeight',
+  'marginTop',
+  'marginRight',
+  'marginBottom',
+  'marginLeft',
+  'paddingTop',
+  'paddingRight',
+  'paddingBottom',
+  'paddingLeft',
+  'top',
+  'right',
+  'bottom',
+  'left',
+  'flexBasis',
+  'gap',
+  'rowGap',
+  'columnGap',
+])
+
 const VALID_IMAGE =
   /^(none|url\(.*\)|(repeating-)?(linear|radial|conic)-gradient\(.*\))$/is
 
@@ -786,6 +866,20 @@ export default function expand(
           ) / baseFontSize
       }
     } else {
+      // Math functions are resolved, except for percentages of lengths that
+      // are only known in the layout.
+      const math =
+        typeof value === 'string' && MATH_FUNCTION.test(value)
+          ? parseMath(value, (length) =>
+              lengthToNumber(length, baseFontSize, 0, inheritedStyle)
+            )
+          : undefined
+      if (math && !math.percentage) {
+        value = serializedStyle[prop] = math.evaluate(0)
+      } else if (math && CALC_LENGTHS.has(prop)) {
+        value = serializedStyle[prop] = { calc: math.evaluate } as any
+      }
+
       // Convert em and rem values to px (number).
       if (typeof value === 'string') {
         const len = lengthToNumber(
@@ -879,6 +973,10 @@ function calcBaseFontSize(
   if (keyword === 'smaller') return inheritedSize / 1.2
 
   // `em` and percentages are relative to the inherited font size.
+  const math = parseMath(size, (length) =>
+    lengthToNumber(length, inheritedSize, 0, inheritedStyle)
+  )
+  if (math?.type === 'length') return math.evaluate(inheritedSize)
   return (
     lengthToNumber(size, inheritedSize, inheritedSize, inheritedStyle, true) ??
     inheritedSize

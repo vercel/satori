@@ -3,6 +3,7 @@ import escapeHTML from 'escape-html'
 import LineBreaker from 'linebreak'
 
 import CssDimension from './vendor/parse-css-dimension/index.js'
+import type { CalcLength } from './layout-engine/node.js'
 
 export function isReactElement(node: ReactNode): node is ReactElement {
   const type = typeof node
@@ -380,10 +381,10 @@ export function isUndefined(x: unknown): x is undefined {
 }
 
 export function asPointPercentageLength(
-  x: string | number,
+  x: string | number | CalcLength,
   propertyName?: string
-): number | `${number}%` | undefined {
-  if (typeof x === 'number') {
+): number | `${number}%` | CalcLength | undefined {
+  if (typeof x === 'number' || typeof x === 'object') {
     return x
   }
   if (x.endsWith('%')) {
@@ -408,10 +409,10 @@ export function asPointPercentageLength(
 }
 
 export function asPointAutoPercentageLength(
-  x: string | number,
+  x: string | number | CalcLength,
   propertyName?: string
-): number | 'auto' | `${number}%` | undefined {
-  if (typeof x === 'number') {
+): number | 'auto' | `${number}%` | CalcLength | undefined {
+  if (typeof x === 'number' || typeof x === 'object') {
     return x
   }
   if (x === 'auto') {

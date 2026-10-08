@@ -92,9 +92,8 @@ export type SatoriOptions = (
   tailwindConfig?: TwConfig
   onNodeDetected?: (node: SatoriNode) => void
   /**
-   * Called with the error of each invalid or unsupported style declaration.
-   * The declaration is ignored, like browsers do, instead of failing the
-   * render.
+   * Called with the error of each invalid or unsupported style declaration,
+   * which is then ignored instead of failing the render.
    */
   onStyleError?: (error: Error) => void
   pointScaleFactor?: number
