@@ -1018,6 +1018,9 @@ export default async function* buildTextNodes(
     result = buildXMLString('g', { opacity: textOpacity }, result)
   }
 
+  // Hidden text takes up space, but isn't drawn.
+  if (parentStyle.visibility === 'hidden') return ''
+
   // Attach information to the parent node.
   if (backgroundClipDef) {
     ;(parentStyle._inheritedBackgroundClipTextPath as any).value +=

@@ -184,6 +184,13 @@ export default async function compute(
     expand({ ...presetStyle, ...definedStyle }, inheritedStyle, onStyleError)
   )
 
+  // An `aspect-ratio` replaces the natural ratio of replaced elements, unless
+  // it's `auto <ratio>`.
+  const aspectRatio =
+    typeof style.aspectRatio === 'number' ? style.aspectRatio : undefined
+  const replacesNaturalRatio =
+    aspectRatio !== undefined && !style._aspectRatioAuto
+
   if (type === 'img') {
     let [resolvedSrc, imageWidth, imageHeight] = await resolveImageData(
       props.src
@@ -199,6 +206,7 @@ export default async function compute(
       imageWidth = parseInt(props.width)
       imageHeight = parseInt(props.height)
     }
+    if (replacesNaturalRatio) imageHeight = imageWidth / aspectRatio
 
     setReplacedElementSize(
       node,
@@ -216,7 +224,11 @@ export default async function compute(
   if (type === 'svg') {
     const viewBox = props.viewBox || props.viewbox
     const viewBoxSize = parseViewBox(viewBox)
-    const ratio = viewBoxSize ? viewBoxSize[3] / viewBoxSize[2] : null
+    const ratio = replacesNaturalRatio
+      ? 1 / aspectRatio
+      : viewBoxSize
+      ? viewBoxSize[3] / viewBoxSize[2]
+      : null
 
     let { width, height } = props
     if (typeof width === 'undefined' && height) {
@@ -268,6 +280,32 @@ export default async function compute(
 
   // Set the layout style.
   const layout: LayoutStyle = node.style
+
+  if (aspectRatio !== undefined && type !== 'img') {
+    layout.aspectRatio = aspectRatio
+  }
+
+  if (style.order !== undefined) {
+    layout.order = lenient(() => {
+      const order = Number(style.order)
+      if (!Number.isInteger(order)) {
+        throw new Error(
+          `Invalid value for CSS property "order": ${style.order}`
+        )
+      }
+      return order
+    }, undefined)
+  }
+
+  // `visibility` is inherited, so only the element's own value is checked.
+  if (style.visibility !== inheritedStyle.visibility) {
+    style.visibility = v(
+      style.visibility,
+      { visible: 'visible', hidden: 'hidden', collapse: 'hidden' },
+      inheritedStyle.visibility ?? 'visible',
+      'visibility'
+    )
+  }
 
   // The outer display type, how the element takes part in the layout of its
   // parent, and the inner one, how its children are laid out. Elements are
@@ -494,6 +532,14 @@ export default async function compute(
   layout.marginBottom = asPointAutoPercentageLength(style.marginBottom || 0)
   layout.marginLeft = asPointAutoPercentageLength(style.marginLeft || 0)
   layout.marginRight = asPointAutoPercentageLength(style.marginRight || 0)
+
+  // A side without a border style has no width.
+  for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
+    const lineStyle = style[`border${side}Style`]
+    if (lineStyle === 'none' || lineStyle === 'hidden') {
+      style[`border${side}Width`] = 0
+    }
+  }
 
   layout.borderTopWidth = (style.borderTopWidth as number) || 0
   layout.borderBottomWidth = (style.borderBottomWidth as number) || 0

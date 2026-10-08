@@ -313,7 +313,15 @@ export function encodeTree(root: LayoutNode, scale: number): EncodedTree {
     const index = nodes.length
     nodes.push(node)
     childIndices.push([])
-    for (const child of collectChildren(node, [])) {
+    const children = collectChildren(node, [])
+    // Flex and grid items are laid out in `order`, then in tree order.
+    if (
+      (node.style.display === 'flex' || node.style.display === 'grid') &&
+      children.some((child) => child.style.order)
+    ) {
+      children.sort((a, b) => (a.style.order || 0) - (b.style.order || 0))
+    }
+    for (const child of children) {
       childIndices[index].push(visit(child))
     }
     return index

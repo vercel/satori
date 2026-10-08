@@ -30,6 +30,7 @@ const list = new Set([
   'transform',
   'wordBreak',
   'tabSize',
+  'visibility',
 
   // Special properties of Satori:
   '_viewportWidth',

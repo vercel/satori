@@ -211,6 +211,12 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 </tr>
 
 <tr>
+<td colspan="2"><code>visibility</code></td>
+<td>Supported</td>
+<td></td>
+</tr>
+
+<tr>
 <td colspan="2"><code>color</code></td>
 <td>Colors are written to the SVG as they are, so the SVG renderer has to support them. Hex colors, most named colors, <code>rgb()</code> and <code>hsl()</code> work in browsers and resvg. resvg draws these black: <code>hwb()</code>, <code>lab()</code>, <code>lch()</code>, <code>oklab()</code>, <code>oklch()</code>, <code>color()</code>, <code>color-mix()</code>, <code>light-dark()</code>, <code>rebeccapurple</code>, angle units in <code>hsl()</code> and percentage alpha after a slash.</td>
 <td></td>
@@ -229,9 +235,10 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>left</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>inset</code></td><td>Supported</td><td></td></tr>
 
-<tr><td rowspan="3">Size</td></tr>
+<tr><td rowspan="4">Size</td></tr>
 <tr><td><code>width</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
 <tr><td><code>height</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
+<tr><td><code>aspectRatio</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="5">Min & max size</td></tr>
 <tr><td><code>minWidth</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
@@ -240,10 +247,16 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>maxHeight</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
 
 <tr><td rowspan="5"><code>border</code></td></tr>
-<tr><td>Width (<code>borderWidth</code>, <code>borderTopWidth</code>, ...)</td><td>Supported except for <code>thin</code>, <code>medium</code> and <code>thick</code>, which throw</td><td></td></tr>
-<tr><td>Style (<code>borderStyle</code>, <code>borderTopStyle</code>, ...)</td><td>Only <code>solid</code>, <code>dashed</code> and <code>none</code>, other styles throw. Defaults to <code>solid</code> instead of <code>none</code>, so a border with only a width is drawn</td><td></td></tr>
+<tr><td>Width (<code>borderWidth</code>, <code>borderTopWidth</code>, ...)</td><td>Supported</td><td></td></tr>
+<tr><td>Style (<code>borderStyle</code>, <code>borderTopStyle</code>, ...)</td><td>Defaults to <code>solid</code> instead of <code>none</code>, so a border with only a width is drawn. Dots and dashes are spaced per side, so on rounded corners they're placed differently</td><td></td></tr>
 <tr><td>Color (<code>borderColor</code>, <code>borderTopColor</code>, ...)</td><td>Supported</td><td></td></tr>
 <tr><td>Shorthand (<code>border</code>, <code>borderTop</code>, ...)</td><td>Supported</td><td></td></tr>
+
+<tr>
+<td colspan="2"><code>outline</code>, <code>outlineWidth</code>, <code>outlineStyle</code>, <code>outlineColor</code>, <code>outlineOffset</code></td>
+<td>Outlines of inline elements aren't drawn, and <code>auto</code> is drawn like <code>solid</code> instead of as a focus ring. Dots and dashes are spaced like those of borders.</td>
+<td></td>
+</tr>
 
 <tr><td rowspan="6"><code>borderRadius</code></td></tr>
 <tr><td><code>borderTopLeftRadius</code></td><td>Supported</td><td></td></tr>
@@ -268,16 +281,17 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>alignSelf</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>justifyContent</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>gap</code>, <code>rowGap</code>, <code>columnGap</code></td><td>Supported</td><td></td></tr>
-<tr><td><code>order</code></td><td>Not supported</td><td></td></tr>
+<tr><td><code>order</code></td><td>Supported</td><td></td></tr>
 
-<tr><td rowspan="8">Grid</td></tr>
+<tr><td rowspan="9">Grid</td></tr>
 <tr><td><code>gridTemplateColumns</code>, <code>gridTemplateRows</code></td><td>Supported except for <code>subgrid</code>, which throws, and <code>masonry</code></td><td></td></tr>
 <tr><td><code>gridTemplateAreas</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>gridAutoColumns</code>, <code>gridAutoRows</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>gridAutoFlow</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>gridRow</code>, <code>gridColumn</code>, <code>gridArea</code> and their longhands</td><td>Supported</td><td></td></tr>
 <tr><td><code>justifyItems</code>, <code>justifySelf</code></td><td>Supported</td><td></td></tr>
-<tr><td>Shorthands (<code>grid</code>, <code>gridTemplate</code>, <code>placeItems</code>, <code>placeContent</code>, <code>placeSelf</code>)</td><td>Not supported</td><td></td></tr>
+<tr><td><code>placeItems</code>, <code>placeContent</code>, <code>placeSelf</code></td><td>Supported</td><td></td></tr>
+<tr><td>Shorthands (<code>grid</code>, <code>gridTemplate</code>)</td><td>Not supported</td><td></td></tr>
 
 <tr><td rowspan="6">Font</td></tr>
 <tr><td><code>fontFamily</code></td><td>Only the fonts passed in the <code>fonts</code> option are used. After the listed families, the other loaded fonts are used as fallbacks in the order they were passed, so generic families like <code>serif</code> don't select a font</td><td></td></tr>
@@ -463,7 +477,7 @@ Note:
 
 1. In 3D transforms, elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
 2. Percentages in `calc()`, `min()`, `max()` and `clamp()` only work in sizes, margins, paddings, insets, gaps, `flexBasis` and translations. Elsewhere, values with them are ignored.
-3. Properties that aren't listed are ignored, for example `aspectRatio`, `visibility`, `outline`, `float`, `columns`, `direction`, `writingMode`, `wordSpacing`, `fontVariant`, `fontStretch` and `fontKerning`.
+3. Properties that aren't listed are ignored, for example `float`, `columns`, `direction`, `writingMode`, `wordSpacing`, `fontVariant`, `fontStretch` and `fontKerning`.
 4. Invalid values throw an error, which fails the whole render, unless they're ignored with [`onStyleError`](#invalid-styles).
 
 #### Perspective (experimental)

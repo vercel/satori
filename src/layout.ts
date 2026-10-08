@@ -26,6 +26,7 @@ import {
   type InlineEnv,
 } from './text/inline.js'
 import rect from './builder/rect.js'
+import outline from './builder/outline.js'
 import {
   buildFilterPrimitive,
   getExpansion,
@@ -521,7 +522,10 @@ export default async function* layout(
 
   let i = 0
   const segmentsMissingFont: { word: string; locale?: string }[] = []
+  // The `order` of the flex or grid item each child generates.
+  const childOrders: number[] = []
   for (const child of normalizedChildren) {
+    const childCount = childParent.children.length
     const iter = layout(child, {
       id: id + '-' + i++,
       parentStyle: computedStyle,
@@ -552,6 +556,8 @@ export default async function* layout(
     } else {
       await iter.next()
     }
+    const added = childParent.children.slice(childCount)
+    childOrders.push(added.length === 1 ? added[0].style.order || 0 : 0)
     iterators.push(iter)
   }
   if (inlineBox) context.inline.closeBox(inlineBox)
@@ -759,10 +765,29 @@ export default async function* layout(
     groupOpacity = 1
   }
 
-  // Generate the rendered markup for the children.
-  for (const iter of iterators) {
-    childrenRenderResult += (await iter.next([left, top])).value
+  // Generate the rendered markup for the children. Flex and grid items are
+  // painted in `order`, like they're laid out.
+  const paintOrder = iterators.map((_, index) => index)
+  if (
+    childParent === node &&
+    (node.style.display === 'flex' || node.style.display === 'grid') &&
+    childOrders.some(Boolean)
+  ) {
+    paintOrder.sort((a, b) => childOrders[a] - childOrders[b])
   }
+  for (const index of paintOrder) {
+    childrenRenderResult += (await iterators[index].next([left, top])).value
+  }
+
+  // The outline is drawn over the element and its in-flow descendants, and
+  // under positioned ones. Outlines of inline boxes aren't drawn.
+  const outlineResult =
+    inlineBox || computedStyle.visibility === 'hidden'
+      ? ''
+      : outline(
+          { id, left, top, width, height, isInheritingTransform },
+          computedStyle
+        )
 
   // An extra pass to generate the special background-clip shape collected from
   // children.
@@ -789,8 +814,11 @@ export default async function* layout(
       : depsRenderResult +
         baseRenderResult +
         (isStackingContext
-          ? paintStackingContext(stackingContext.layers, childrenRenderResult)
-          : childrenRenderResult)
+          ? paintStackingContext(
+              stackingContext.layers,
+              childrenRenderResult + outlineResult
+            )
+          : childrenRenderResult + outlineResult)
 
   // The filter applies to the element and its descendants as a group, then
   // its own clip path clips the filtered result, e.g. the edges of a blur.
