@@ -510,8 +510,8 @@ export default async function* layout(
     contextPlanes.push(plane)
   }
 
-  // Like in browsers, an element is drawn as a group with its opacity, with
-  // its descendants and the elements in its stacking context. Without
+  // An element is drawn as a group with its opacity, with its descendants
+  // and the elements in its stacking context. Without
   // children, it's drawn by itself, which avoids an extra group for a single
   // shape.
   let groupOpacity = opacity < 1 && iterators.length > 0 ? opacity : 1

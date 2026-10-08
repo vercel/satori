@@ -65,8 +65,8 @@ export function getBorderClipPath(
 
 /**
  * The region of a group of adjacent sides of a box. Sides are split at the
- * lines from the outer to the inner corners like CSS, and extend into the box
- * to include the strokes of rounded corners.
+ * lines from the outer to the inner corners, and extend into the box to
+ * include the strokes of rounded corners.
  */
 function sidesRegion(
   sides: boolean[],
@@ -196,7 +196,7 @@ export default function border(
     const clipId = `satori_bs-${id}-${group++}`
     const { transform, ...rest } = attributes
     // Draw the whole corners, clipped where the sides meet and to the area of
-    // the border, so the width changes along the corners like CSS.
+    // the border, so the width changes along the corners.
     rest.d = radius(
       { left, top, width, height },
       style as Record<string, number>,

@@ -151,8 +151,7 @@ export default function buildDecoration(
           ? top + ascender * 0.7
           : line === 'underline'
           ? top + getUnderlineY(style, ascender, height)
-          : // Like in browsers, the overline is drawn above the text.
-            top - height / 2
+          : top - height / 2
       )
     )
     .join('')

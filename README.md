@@ -447,7 +447,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>paintOrder</code></td>
-<td><code>normal</code>, or <code>fill</code>, <code>stroke</code> and <code>markers</code> in any order. Like browsers, text strokes are painted above the fill by default</td>
+<td><code>normal</code>, or <code>fill</code>, <code>stroke</code> and <code>markers</code> in any order. Text strokes are painted above the fill by default</td>
 <td></td>
 </tr>
 
@@ -457,7 +457,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 Note:
 
 1. 3D transforms are drawn like in browsers, with two differences. Elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
-2. Elements are painted in stacking order, see `zIndex`. Like in browsers, an element with `opacity` is drawn as a group with its descendants.
+2. Elements are painted in stacking order, see `zIndex`.
 3. `calc` isn't supported.
 4. `currentColor` support is only available for the `color` property.
 5. CSS variables (custom properties) are supported, including inheritance, fallback values, and nested variables.

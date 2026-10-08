@@ -285,7 +285,7 @@ export default function radius(
   fullCorners = false,
   /**
    * Insets for the inner edge of a border, `[top, right, bottom, left]`.
-   * The radii are reduced by them like CSS.
+   * The radii are reduced by them.
    */
   inset?: number[]
 ) {

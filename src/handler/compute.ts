@@ -246,8 +246,8 @@ export default async function compute(
     'display'
   )
 
-  // Like CSS, `align-content` defaults to `normal`, which stretches flex
-  // lines. In block containers, other values prevent margins from collapsing.
+  // `align-content` defaults to `normal`. In block containers, other values
+  // prevent margins from collapsing.
   layout.alignContent =
     v(
       style.alignContent,

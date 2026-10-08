@@ -53,7 +53,7 @@ export function getTextStrokeAttributes(
     'stroke-width': `${width}px`,
     stroke: style.WebkitTextStrokeColor ?? style.color,
     'stroke-linejoin': 'round',
-    // Like browsers, the stroke is painted above the fill by default.
+    // The stroke is painted above the fill by default.
     'paint-order':
       style.paintOrder && style.paintOrder !== 'normal'
         ? style.paintOrder
