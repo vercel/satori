@@ -223,6 +223,8 @@ export async function SVGNodeToImage(
     className,
     style,
     children,
+    // It transforms the element's box instead, see `layout()`.
+    transform: _transform,
     ...restProps
   } = node.props || {}
 

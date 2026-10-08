@@ -10,6 +10,7 @@ import border, { getBorderClipPath } from './border.js'
 import { genClipPath } from './clip-path.js'
 import buildMaskImage from './mask-image.js'
 import { backdropFilter } from './backdrop-filter.js'
+import contentMask from './content-mask.js'
 import type { BackdropFilter } from '../parser/backdrop-filter.js'
 import CssDimension from '../vendor/parse-css-dimension/index.js'
 
@@ -298,6 +299,42 @@ export default async function rect(
       })
     )
     .join('')
+
+  // `background-clip: padding-box | content-box` masks the backgrounds with
+  // the inner edge of the border, or of the padding.
+  if (
+    (shape || backgroundShapes) &&
+    (backgroundClip === 'padding-box' || backgroundClip === 'content-box')
+  ) {
+    const sides = ['Top', 'Right', 'Bottom', 'Left']
+    const borderOnly = backgroundClip === 'padding-box'
+    const hasInset = sides.some(
+      (side) =>
+        style[`border${side}Width`] || (!borderOnly && style[`padding${side}`])
+    )
+    if (hasInset) {
+      const backgroundClipMaskId = `satori_bgc-${id}`
+      // The shapes are transformed by themselves, so the mask needs the
+      // transform too.
+      defs += contentMask(
+        {
+          id: backgroundClipMaskId,
+          left,
+          top,
+          width,
+          height,
+          matrix: matrix || undefined,
+          borderOnly,
+        },
+        { ...style, overflow: 'hidden', _inheritedMaskId: undefined }
+      )
+      const mask = { mask: `url(#${backgroundClipMaskId})` }
+      if (shape) shape = buildXMLString('g', mask, shape)
+      if (backgroundShapes) {
+        backgroundShapes = buildXMLString('g', mask, backgroundShapes)
+      }
+    }
+  }
 
   const borderClip = getBorderClipPath(
     {

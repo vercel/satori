@@ -135,12 +135,16 @@ export default async function compute(
   props: Record<string, any>,
   replacedElements?: ReplacedElementHandlers
 ): Promise<[SerializedStyle, SerializedStyle]> {
-  // Extend the default style with defined and inherited styles.
+  // Extend the default style with defined and inherited styles. Like the user
+  // agent stylesheet, the preset is computed together with the defined style,
+  // e.g. `em` margins use the defined font size. Defined properties come after
+  // the remaining preset ones, so they override them in order.
+  const presetStyle = { ...presets[type] }
+  for (const prop in definedStyle) delete presetStyle[prop]
   const style: SerializedStyle = Object.assign(
     {},
     inheritedStyle,
-    expand(presets[type], inheritedStyle),
-    expand(definedStyle, inheritedStyle)
+    expand({ ...presetStyle, ...definedStyle }, inheritedStyle)
   )
 
   if (type === 'img') {
