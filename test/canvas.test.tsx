@@ -831,7 +831,10 @@ describe('Canvas shaders', () => {
             )
           }
         />
-        <div style={{ fontSize: 24, color: 'white' }}>Hello, shaders</div>
+        {/* Positioned, so it's drawn over the absolutely positioned canvas. */}
+        <div style={{ position: 'relative', fontSize: 24, color: 'white' }}>
+          Hello, shaders
+        </div>
       </div>,
       { width: 200, height: 100, fonts, createWebGLContext }
     )

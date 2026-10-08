@@ -193,6 +193,7 @@ describe('Basic', () => {
               height: '100px',
               backgroundColor: 'red',
               borderWidth: '0.5px',
+              borderStyle: 'solid',
               borderColor: 'blue',
             }}
           ></div>
@@ -202,6 +203,7 @@ describe('Basic', () => {
               height: '100px',
               backgroundColor: 'red',
               borderWidth: '0.5px',
+              borderStyle: 'solid',
               borderColor: 'blue',
             }}
           ></div>

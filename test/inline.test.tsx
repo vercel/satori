@@ -376,4 +376,28 @@ describe('Inline layout', () => {
     expect(svg).toContain('<text')
     expect(svg).toContain('fill="red"')
   })
+
+  it('should move inline elements with relative position', async () => {
+    const text = { fontSize: 14, margin: 0 }
+    const svg = await satori(
+      <div style={{ padding: 10, ...text }}>
+        <p style={text}>
+          Text{' '}
+          <span
+            style={{
+              position: 'relative',
+              top: 8,
+              left: 10,
+              background: 'gold',
+            }}
+          >
+            shifted <b>bold</b>
+          </span>{' '}
+          after
+        </p>
+      </div>,
+      { width: 300, height: 60, fonts }
+    )
+    expect(toImage(svg, 300)).toMatchImageSnapshot()
+  })
 })

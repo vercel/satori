@@ -202,6 +202,8 @@ export async function render(
     projectPlane,
     // Fixed elements are positioned relative to the viewport by default.
     fixedContainingBlock: { node: root, offset: { left: 0, top: 0 } },
+    // So are absolutely positioned ones without a positioned ancestor.
+    absoluteContainingBlock: { node: root, offset: { left: 0, top: 0 } },
     fixedElements,
     floats: { found: false },
     formattingContext: 'root',

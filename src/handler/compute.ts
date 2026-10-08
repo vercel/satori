@@ -54,62 +54,49 @@ export function setReplacedElementSize(
 ) {
   const r = naturalHeight / naturalWidth
 
-  // Before calculating the missing width or height based on the image ratio,
-  // we must subtract the padding and border due to how box model works.
-  // TODO: Ensure these are absolute length values, not relative values.
-  let extraHorizontal =
-    (style.borderLeftWidth || 0) +
-    (style.borderRightWidth || 0) +
-    (style.paddingLeft || 0) +
-    (style.paddingRight || 0)
-  let extraVertical =
-    (style.borderTopWidth || 0) +
-    (style.borderBottomWidth || 0) +
-    (style.paddingTop || 0) +
-    (style.paddingBottom || 0)
+  // Without one of the sizes, the content box has the natural ratio. The
+  // sizes are of the border box with `box-sizing: border-box`.
+  const isBorderBox = style.boxSizing === 'border-box'
+  const extraHorizontal = isBorderBox
+    ? (style.borderLeftWidth || 0) +
+      (style.borderRightWidth || 0) +
+      (style.paddingLeft || 0) +
+      (style.paddingRight || 0)
+    : 0
+  const extraVertical = isBorderBox
+    ? (style.borderTopWidth || 0) +
+      (style.borderBottomWidth || 0) +
+      (style.paddingTop || 0) +
+      (style.paddingBottom || 0)
+    : 0
 
-  let contentBoxWidth = style.width || attributeWidth
-  let contentBoxHeight = style.height || attributeHeight
+  // Attributes are lengths in px.
+  const toLength = (value: number | string | undefined) =>
+    typeof value === 'string' && /^\d*\.?\d+$/.test(value.trim())
+      ? Number(value)
+      : value
+  let width = style.width || toLength(attributeWidth)
+  let height = style.height || toLength(attributeHeight)
 
-  const isAbsoluteContentSize =
-    typeof contentBoxWidth === 'number' && typeof contentBoxHeight === 'number'
-
-  if (isAbsoluteContentSize) {
-    contentBoxWidth = (contentBoxWidth as number) - extraHorizontal
-    contentBoxHeight = (contentBoxHeight as number) - extraVertical
-  }
-
-  // When no content size is defined, we use the image size as the content size.
-  if (contentBoxWidth === undefined && contentBoxHeight === undefined) {
-    contentBoxWidth = '100%'
+  if (width === undefined && height === undefined) {
+    width = '100%'
     node.style.aspectRatio = 1 / r
-  } else {
-    // If only one sisde is not defined, we can calculate the other one.
-    if (contentBoxWidth === undefined) {
-      if (typeof contentBoxHeight === 'number') {
-        contentBoxWidth = contentBoxHeight / r
-      } else {
-        // If it uses a relative value (e.g. 50%), we can rely on aspect ratio.
-        // Note: this doesn't work well if there are paddings or borders.
-        node.style.aspectRatio = 1 / r
-      }
-    } else if (contentBoxHeight === undefined) {
-      if (typeof contentBoxWidth === 'number') {
-        contentBoxHeight = contentBoxWidth * r
-      } else {
-        // If it uses a relative value (e.g. 50%), we can rely on aspect ratio.
-        // Note: this doesn't work well if there are paddings or borders.
-        node.style.aspectRatio = 1 / r
-      }
+  } else if (height === undefined) {
+    if (typeof width === 'number') {
+      height = (width - extraHorizontal) * r + extraVertical
+    } else {
+      node.style.aspectRatio = 1 / r
+    }
+  } else if (width === undefined) {
+    if (typeof height === 'number') {
+      width = (height - extraVertical) / r + extraHorizontal
+    } else {
+      node.style.aspectRatio = 1 / r
     }
   }
 
-  style.width = isAbsoluteContentSize
-    ? (contentBoxWidth as number) + extraHorizontal
-    : contentBoxWidth
-  style.height = isAbsoluteContentSize
-    ? (contentBoxHeight as number) + extraVertical
-    : contentBoxHeight
+  style.width = width
+  style.height = height
   style.__naturalWidth = naturalWidth
   style.__naturalHeight = naturalHeight
 }
@@ -557,11 +544,19 @@ export default async function compute(
   layout.marginLeft = asPointAutoPercentageLength(style.marginLeft || 0)
   layout.marginRight = asPointAutoPercentageLength(style.marginRight || 0)
 
-  // A side without a border style has no width.
+  // A side without a border style has no width. The width defaults to
+  // `medium`, and the color to the current color.
   for (const side of ['Top', 'Right', 'Bottom', 'Left']) {
     const lineStyle = style[`border${side}Style`]
-    if (lineStyle === 'none' || lineStyle === 'hidden') {
+    if (!lineStyle || lineStyle === 'none' || lineStyle === 'hidden') {
       style[`border${side}Width`] = 0
+    } else {
+      if (style[`border${side}Width`] === undefined) {
+        style[`border${side}Width`] = 3
+      }
+      if (style[`border${side}Color`] === undefined) {
+        style[`border${side}Color`] = style.color
+      }
     }
   }
 
@@ -581,7 +576,7 @@ export default async function compute(
       'border-box': 'border-box',
       'content-box': 'content-box',
     },
-    'border-box',
+    'content-box',
     'boxSizing'
   )
 
@@ -594,9 +589,10 @@ export default async function compute(
       // Laid out in its containing block, see `fixed-position.ts`.
       fixed: 'fixed',
     },
-    'relative',
+    'static',
     'position'
   )
+  style.position = position
   layout.position =
     position === 'absolute' || position === 'fixed' ? 'absolute' : 'relative'
 

@@ -55,13 +55,14 @@ export default {
   },
   hr: {
     display: DEFAULT_DISPLAY,
+    color: 'gray',
     marginTop: '0.5em',
     marginBottom: '0.5em',
     marginLeft: 'auto',
     marginRight: 'auto',
     borderWidth: 1,
-    // We don't have `inset`
-    borderStyle: 'solid',
+    borderStyle: 'inset',
+    overflow: 'hidden',
   },
   // Heading elements
   h1: {

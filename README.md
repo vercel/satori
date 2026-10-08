@@ -200,19 +200,19 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>position</code></td>
-<td>Defaults to <code>relative</code> instead of <code>static</code>, so absolutely positioned elements are placed relative to their parent unless it's set to <code>static</code>. <code>sticky</code> isn't supported and throws.</td>
+<td>Positioned inline elements (with <code>display: inline</code>) aren't the containing block of their absolutely positioned descendants, the nearest positioned block is. <code>sticky</code> isn't supported and throws.</td>
 <td></td>
 </tr>
 
 <tr>
 <td colspan="2"><code>float</code>, <code>clear</code></td>
-<td>A float in the middle of a paragraph is placed at the start of the paragraph, instead of on the line it's in. Each line is shortened by the floats beside its top, so a line that is taller than its text can overlap a float that starts lower. Since elements default to <code>position: relative</code>, blocks after a float are painted over it. <code>lineClamp</code>, <code>textOverflow: ellipsis</code> and <code>textWrap</code> don't apply to text after a float.</td>
+<td>A float in the middle of a paragraph is placed at the start of the paragraph, instead of on the line it's in. Each line is shortened by the floats beside its top, so a line that is taller than its text can overlap a float that starts lower. <code>lineClamp</code>, <code>textOverflow: ellipsis</code> and <code>textWrap</code> don't apply to text after a float.</td>
 <td></td>
 </tr>
 
 <tr>
 <td colspan="2"><code>zIndex</code></td>
-<td>Also applies to elements with <code>position: static</code>.</td>
+<td>Supported</td>
 <td></td>
 </tr>
 
@@ -254,7 +254,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr><td rowspan="5"><code>border</code></td></tr>
 <tr><td>Width (<code>borderWidth</code>, <code>borderTopWidth</code>, ...)</td><td>Supported</td><td></td></tr>
-<tr><td>Style (<code>borderStyle</code>, <code>borderTopStyle</code>, ...)</td><td>Defaults to <code>solid</code> instead of <code>none</code>, so a border with only a width is drawn. Dots and dashes are spaced per side, so on rounded corners they're placed differently</td><td></td></tr>
+<tr><td>Style (<code>borderStyle</code>, <code>borderTopStyle</code>, ...)</td><td>Dots and dashes are spaced per side, so on rounded corners they're placed differently</td><td></td></tr>
 <tr><td>Color (<code>borderColor</code>, <code>borderTopColor</code>, ...)</td><td>Supported</td><td></td></tr>
 <tr><td>Shorthand (<code>border</code>, <code>borderTop</code>, ...)</td><td>Supported</td><td></td></tr>
 
@@ -405,7 +405,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>boxSizing</code></td>
-<td>Defaults to <code>border-box</code> instead of <code>content-box</code></td>
+<td>Supported</td>
 <td></td>
 </tr>
 
