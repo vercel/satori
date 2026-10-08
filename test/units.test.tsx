@@ -23,7 +23,7 @@ describe('Units', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support em', async () => {
@@ -42,7 +42,7 @@ describe('Units', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support vh and vw', async () => {
@@ -60,7 +60,7 @@ describe('Units', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support rem', async () => {
@@ -79,7 +79,7 @@ describe('Units', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support px and numbers', async () => {
@@ -98,7 +98,7 @@ describe('Units', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support rgb syntaxs', async () => {
@@ -132,7 +132,7 @@ describe('Units', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support split multiple effect', () => {
@@ -185,7 +185,7 @@ describe('Units', () => {
       </div>,
       { width: 200, height: 100, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should resolve font size keywords and percentages', async () => {
@@ -201,6 +201,6 @@ describe('Units', () => {
       </div>,
       { width: 200, height: 160, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 })

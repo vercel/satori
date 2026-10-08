@@ -20,7 +20,7 @@ describe('Flex sizing', () => {
         />
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should not shrink text below its longest word', async () => {
@@ -38,7 +38,7 @@ describe('Flex sizing', () => {
         <div style={{ background: 'yellow' }}>Unbreakable</div>
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should shrink text below its longest word with min-width: 0 or overflow: hidden', async () => {
@@ -65,7 +65,7 @@ describe('Flex sizing', () => {
         </div>
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should wrap text in items centered in a column', async () => {
@@ -89,7 +89,7 @@ describe('Flex sizing', () => {
         <div style={{ background: 'lightblue' }}>Short</div>
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should wrap text in nested elements without text of their own', async () => {
@@ -104,7 +104,7 @@ describe('Flex sizing', () => {
         </div>
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should distribute free space with flex-grow and flex-basis', async () => {
@@ -131,7 +131,7 @@ describe('Flex sizing', () => {
         </div>
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support space-evenly', async () => {
@@ -160,7 +160,7 @@ describe('Flex sizing', () => {
         <div style={{ height: 20, background: 'blue' }} />
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should wrap items and align the lines', async () => {
@@ -184,7 +184,7 @@ describe('Flex sizing', () => {
         ))}
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should respect the margins of top-level elements', async () => {
@@ -198,7 +198,7 @@ describe('Flex sizing', () => {
         }}
       />
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should lay out children of display: contents in the parent', async () => {
@@ -219,7 +219,7 @@ describe('Flex sizing', () => {
         </div>
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should align items to the end and stretch them', async () => {
@@ -253,7 +253,7 @@ describe('Flex sizing', () => {
         />
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should keep images in a row stretched or sized by their aspect ratio', async () => {
@@ -281,6 +281,6 @@ describe('Flex sizing', () => {
         </div>
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })

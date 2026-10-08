@@ -67,7 +67,7 @@ describe('Math functions', () => {
       </div>,
       { width: 200, height: 160, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should resolve math functions in insets, transforms and gaps', async () => {
@@ -128,6 +128,6 @@ describe('Math functions', () => {
       </div>,
       { width: 200, height: 120, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 })

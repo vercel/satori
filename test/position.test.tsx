@@ -31,7 +31,7 @@ describe('Position', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     // https://www.yogalayout.dev/blog/announcing-yoga-3.0#better-support-for-absolute-positioning
@@ -57,7 +57,7 @@ describe('Position', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -107,7 +107,7 @@ describe('Position', () => {
         </div>,
         { width: 300, height: 120, fonts }
       )
-      expect(toImage(svg, 300)).toMatchImageSnapshot()
+      expect(await toImage(svg, 300)).toMatchImageSnapshot()
     })
 
     it('should ignore insets of static elements and paint them first', async () => {
@@ -163,7 +163,7 @@ describe('Position', () => {
         </div>,
         { width: 300, height: 90, fonts }
       )
-      expect(toImage(svg, 300)).toMatchImageSnapshot()
+      expect(await toImage(svg, 300)).toMatchImageSnapshot()
     })
   })
 
@@ -192,7 +192,7 @@ describe('Position', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -252,7 +252,7 @@ describe('Position', () => {
       expect(await getLayout(element)).toEqual({ fixed: [75, 85, 20, 10] })
 
       const svg = await satori(element, { width: 100, height: 100, fonts })
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support fixed root and nested fixed elements', async () => {
@@ -447,7 +447,7 @@ describe('Position', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should be clipped by the clip-path of ancestors', async () => {
@@ -476,7 +476,7 @@ describe('Position', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should not display inside elements with display: none', async () => {
@@ -533,7 +533,7 @@ describe('Position', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -646,7 +646,7 @@ describe('Position', () => {
         </div>,
         { width: 400, height: 120, fonts }
       )
-      expect(toImage(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
   })
 })

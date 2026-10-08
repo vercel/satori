@@ -44,7 +44,7 @@ describe('clipPath', () => {
       )
     )
 
-    svgs.forEach((svg) => expect(toImage(svg)).toMatchImageSnapshot())
+    for (const svg of svgs) expect(await toImage(svg)).toMatchImageSnapshot()
   })
 
   it('should make clip-path compatible with overflow', async () => {
@@ -73,7 +73,7 @@ describe('clipPath', () => {
       }
     )
 
-    expect(toImage(svg)).toMatchImageSnapshot()
+    expect(await toImage(svg)).toMatchImageSnapshot()
   })
 
   it('should respect the position value', async () => {
@@ -101,7 +101,7 @@ describe('clipPath', () => {
       }
     )
 
-    expect(toImage(svg)).toMatchImageSnapshot()
+    expect(await toImage(svg)).toMatchImageSnapshot()
   })
 
   it('should respect left and top', async () => {
@@ -135,7 +135,7 @@ describe('clipPath', () => {
       }
     )
 
-    expect(toImage(svg)).toMatchImageSnapshot()
+    expect(await toImage(svg)).toMatchImageSnapshot()
   })
 
   it('should not reference itself', async () => {
@@ -173,6 +173,6 @@ describe('clipPath', () => {
     )) {
       expect(reference).not.toBe(id)
     }
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })

@@ -753,7 +753,7 @@ describe('grid shorthands', () => {
       </div>,
       { width: 420, height: 110, fonts }
     )
-    expect(toImage(svg, 420)).toMatchImageSnapshot()
+    expect(await toImage(svg, 420)).toMatchImageSnapshot()
   })
 
   it('should expand grid-template', () => {

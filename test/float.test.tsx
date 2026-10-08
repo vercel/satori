@@ -34,7 +34,7 @@ describe('float', () => {
       </div>,
       { width: 300, height: 110, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
   it('should wrap text around right floats', async () => {
@@ -53,7 +53,7 @@ describe('float', () => {
       </div>,
       { width: 300, height: 110, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
   it('should place floats next to each other and clear them', async () => {
@@ -73,7 +73,7 @@ describe('float', () => {
       </div>,
       { width: 300, height: 100, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
   it('should clear floats on one side', async () => {
@@ -90,7 +90,7 @@ describe('float', () => {
       </div>,
       { width: 300, height: 110, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
   it('should wrap later paragraphs around tall floats', async () => {
@@ -110,7 +110,7 @@ describe('float', () => {
       </div>,
       { width: 300, height: 130, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
   it('should place formatting context roots beside floats', async () => {
@@ -129,7 +129,7 @@ describe('float', () => {
       </div>,
       { width: 300, height: 80, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
   it('should not grow containers for floats, unless they are flow roots', async () => {
@@ -155,7 +155,7 @@ describe('float', () => {
       </div>,
       { width: 300, height: 90, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
   it('should move lines that do not fit beside floats below them', async () => {
@@ -168,7 +168,7 @@ describe('float', () => {
       </div>,
       { width: 200, height: 90, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should align lines beside floats', async () => {
@@ -184,7 +184,7 @@ describe('float', () => {
       </div>,
       { width: 300, height: 80, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
   it('should not float flex items', async () => {
@@ -197,7 +197,7 @@ describe('float', () => {
       </div>,
       { width: 200, height: 52, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should throw for invalid values', async () => {

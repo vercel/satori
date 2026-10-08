@@ -44,7 +44,7 @@ describe('tab-size', () => {
       }
     )
 
-    expect(toImage(svg, 150)).toMatchImageSnapshot()
+    expect(await toImage(svg, 150)).toMatchImageSnapshot()
   })
 
   it("Tabs render correctly with default tab-size of 8 when white-space is 'pre'", async () => {
@@ -85,7 +85,7 @@ describe('tab-size', () => {
       }
     )
 
-    expect(toImage(svg, 150)).toMatchImageSnapshot()
+    expect(await toImage(svg, 150)).toMatchImageSnapshot()
   })
 
   it('Tabs render correctly when tab-size is a number', async () => {
@@ -127,7 +127,7 @@ describe('tab-size', () => {
       }
     )
 
-    expect(toImage(svg, 150)).toMatchImageSnapshot()
+    expect(await toImage(svg, 150)).toMatchImageSnapshot()
   })
 
   it('Tabs render correctly when tab-size is a string', async () => {
@@ -169,7 +169,7 @@ describe('tab-size', () => {
       }
     )
 
-    expect(toImage(svg, 150)).toMatchImageSnapshot()
+    expect(await toImage(svg, 150)).toMatchImageSnapshot()
   })
 
   it("Tabs render correctly with default tab-size of 8 when white-space is 'pre-wrap'", async () => {
@@ -210,6 +210,6 @@ describe('tab-size', () => {
       }
     )
 
-    expect(toImage(svg, 150)).toMatchImageSnapshot()
+    expect(await toImage(svg, 150)).toMatchImageSnapshot()
   })
 })

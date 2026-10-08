@@ -24,7 +24,7 @@ describe('transform', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should translate shape in x-axis', async () => {
@@ -43,7 +43,7 @@ describe('transform', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should translate shape in y-axis', async () => {
@@ -62,7 +62,7 @@ describe('transform', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support %', async () => {
@@ -91,7 +91,7 @@ describe('transform', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -112,7 +112,7 @@ describe('transform', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
     it('should rotate text with overflow', async () => {
       const svg = await satori(
@@ -133,7 +133,7 @@ describe('transform', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -154,7 +154,7 @@ describe('transform', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should scale shape in two directions', async () => {
@@ -173,7 +173,7 @@ describe('transform', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -194,7 +194,7 @@ describe('transform', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -224,7 +224,7 @@ describe('transform', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -268,7 +268,7 @@ describe('transform', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 1000)).toMatchImageSnapshot()
+    expect(await toImage(svg, 1000)).toMatchImageSnapshot()
   })
 
   it('should support the individual transform properties', async () => {
@@ -303,6 +303,6 @@ describe('transform', () => {
       </div>,
       { width: 420, height: 90, fonts }
     )
-    expect(toImage(svg, 420)).toMatchImageSnapshot()
+    expect(await toImage(svg, 420)).toMatchImageSnapshot()
   })
 })

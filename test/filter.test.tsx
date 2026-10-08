@@ -49,7 +49,7 @@ describe('filter', () => {
       ),
       { width: 160, height: 100, fonts }
     )
-    expect(toImage(svg, 160)).toMatchImageSnapshot()
+    expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
 
   it('should blur rounded images beyond their corners', async () => {
@@ -64,7 +64,7 @@ describe('filter', () => {
       ),
       { width: 160, height: 100, fonts }
     )
-    expect(toImage(svg, 160)).toMatchImageSnapshot()
+    expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
 
   it('should blur the content of an element after its overflow clip', async () => {
@@ -95,7 +95,7 @@ describe('filter', () => {
       ),
       { width: 160, height: 100, fonts }
     )
-    expect(toImage(svg, 160)).toMatchImageSnapshot()
+    expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
 
   it('should clip the filtered element with its clip path', async () => {
@@ -126,7 +126,7 @@ describe('filter', () => {
       ),
       { width: 160, height: 100, fonts }
     )
-    expect(toImage(svg, 160)).toMatchImageSnapshot()
+    expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
 
   it('should blur text with background-clip: text', async () => {
@@ -146,7 +146,7 @@ describe('filter', () => {
       ),
       { width: 160, height: 100, fonts }
     )
-    expect(toImage(svg, 160)).toMatchImageSnapshot()
+    expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
 
   it('should filter an element and its descendants as a group', async () => {
@@ -171,7 +171,7 @@ describe('filter', () => {
     // The child overlaps the parent's text, so the shadow is only cast by
     // the outline of both together.
     expect(svg.match(/<filter /g)).toHaveLength(1)
-    expect(toImage(svg, 160)).toMatchImageSnapshot()
+    expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
 
   it('should apply chained filters in order', async () => {
@@ -196,6 +196,6 @@ describe('filter', () => {
       ),
       { width: 160, height: 100, fonts }
     )
-    expect(toImage(svg, 160)).toMatchImageSnapshot()
+    expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
 })

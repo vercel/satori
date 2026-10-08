@@ -1,9 +1,8 @@
 import { it, describe, expect } from 'vitest'
 
-import { initFonts, toImageWithSharp } from './utils.js'
+import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
 
-// resvg 2.1, which `toImage` uses, doesn't support blending.
 describe('mix-blend-mode', () => {
   let fonts
   initFonts((f) => (fonts = f))
@@ -56,7 +55,7 @@ describe('mix-blend-mode', () => {
       </div>,
       { width: 200, height: 200, fonts }
     )
-    expect(await toImageWithSharp(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should blend with everything painted before', async () => {
@@ -93,7 +92,7 @@ describe('mix-blend-mode', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(await toImageWithSharp(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should not blend with elements painted after', async () => {
@@ -130,7 +129,7 @@ describe('mix-blend-mode', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(await toImageWithSharp(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should blend an element with its descendants as a group', async () => {
@@ -161,7 +160,7 @@ describe('mix-blend-mode', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(await toImageWithSharp(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should only blend within the parent stacking context', async () => {
@@ -199,7 +198,7 @@ describe('mix-blend-mode', () => {
       </div>,
       { width: 200, height: 100, fonts }
     )
-    expect(await toImageWithSharp(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should blend with the backdrop inside an isolated parent', async () => {
@@ -237,7 +236,7 @@ describe('mix-blend-mode', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(await toImageWithSharp(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should blend text and images', async () => {
@@ -277,7 +276,7 @@ describe('mix-blend-mode', () => {
       </div>,
       { width: 200, height: 100, fonts }
     )
-    expect(await toImageWithSharp(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should blend transformed elements', async () => {
@@ -306,7 +305,7 @@ describe('mix-blend-mode', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(await toImageWithSharp(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should not wrap elements with `normal` blending', async () => {

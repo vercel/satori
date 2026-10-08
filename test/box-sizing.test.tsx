@@ -42,7 +42,7 @@ describe('box sizing', () => {
       </div>,
       { width: 100, height: 100, fonts: [] }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support content-box', async () => {
@@ -76,7 +76,7 @@ describe('box sizing', () => {
       </div>,
       { width: 100, height: 100, fonts: [] }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should default to content-box, also for images', async () => {
@@ -118,6 +118,6 @@ describe('box sizing', () => {
       </div>,
       { width: 400, height: 100, fonts: [] }
     )
-    expect(toImage(svg, 400)).toMatchImageSnapshot()
+    expect(await toImage(svg, 400)).toMatchImageSnapshot()
   })
 })

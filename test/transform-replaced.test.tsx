@@ -77,7 +77,7 @@ describe('transform of images and inline SVGs', () => {
       </Center>,
       { width: 240, height: 80, fonts }
     )
-    expect(toImage(svg, 240)).toMatchImageSnapshot()
+    expect(await toImage(svg, 240)).toMatchImageSnapshot()
   })
 
   it('should transform images with their box decorations', async () => {
@@ -118,7 +118,7 @@ describe('transform of images and inline SVGs', () => {
       </Center>,
       { width: 240, height: 80, fonts }
     )
-    expect(toImage(svg, 240)).toMatchImageSnapshot()
+    expect(await toImage(svg, 240)).toMatchImageSnapshot()
   })
 
   it('should transform images around the transform origin', async () => {
@@ -137,7 +137,7 @@ describe('transform of images and inline SVGs', () => {
       </Center>,
       { width: 250, height: 80, fonts }
     )
-    expect(toImage(svg, 250)).toMatchImageSnapshot()
+    expect(await toImage(svg, 250)).toMatchImageSnapshot()
   })
 
   it('should clip transformed images by overflow', async () => {
@@ -173,7 +173,7 @@ describe('transform of images and inline SVGs', () => {
       </Center>,
       { width: 160, height: 80, fonts }
     )
-    expect(toImage(svg, 160)).toMatchImageSnapshot()
+    expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
 
   it('should transform inline SVGs with the transform property', async () => {
@@ -192,7 +192,7 @@ describe('transform of images and inline SVGs', () => {
       </Center>,
       { width: 240, height: 80, fonts }
     )
-    expect(toImage(svg, 240)).toMatchImageSnapshot()
+    expect(await toImage(svg, 240)).toMatchImageSnapshot()
   })
 
   it('should transform inline SVGs with the transform attribute', async () => {
@@ -208,7 +208,7 @@ describe('transform of images and inline SVGs', () => {
     )
     // It isn't applied again inside the image.
     expect(svg).not.toContain('rotate(45)')
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
   it('should prefer the transform property to the attribute', async () => {

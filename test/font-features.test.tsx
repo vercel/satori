@@ -33,7 +33,7 @@ describe('Font Feature Settings', () => {
       </div>,
       { width: 400, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 400)).toMatchImageSnapshot()
+    expect(await toImage(svg, 400)).toMatchImageSnapshot()
   })
 
   it('Should work with ligatures disabled', async () => {
@@ -62,7 +62,7 @@ describe('Font Feature Settings', () => {
       </div>,
       { width: 400, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 400)).toMatchImageSnapshot()
+    expect(await toImage(svg, 400)).toMatchImageSnapshot()
   })
 
   it('Should work without font-feature-settings (baseline)', async () => {
@@ -90,6 +90,6 @@ describe('Font Feature Settings', () => {
       </div>,
       { width: 400, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 400)).toMatchImageSnapshot()
+    expect(await toImage(svg, 400)).toMatchImageSnapshot()
   })
 })

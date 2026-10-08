@@ -98,7 +98,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
 
     expect(requests).toEqual(['https://via.placeholder.com/150'])
   })
@@ -135,7 +135,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render svg with image using xlinkHref', async () => {
@@ -171,7 +171,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should throw error when relative path is used', async () => {
@@ -200,7 +200,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
 
     expect(requests).toEqual(['https://via.placeholder.com/200'])
   })
@@ -219,7 +219,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should resolve non-square image size correctly', async () => {
@@ -235,7 +235,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should scale image to fit max-width and max-height but maintain the aspect ratio', async () => {
@@ -262,7 +262,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg1, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg1, 100)).toMatchImageSnapshot()
 
     // Hit max-height
     const svg2 = await satori(
@@ -288,7 +288,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 50, fonts }
     )
-    expect(toImage(svg2, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg2, 100)).toMatchImageSnapshot()
   })
 
   it('should support styles', async () => {
@@ -312,7 +312,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support opacity', async () => {
@@ -335,7 +335,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support SVG images and percentage with correct aspect ratio', async () => {
@@ -351,7 +351,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should clip content in the border area', async () => {
@@ -375,7 +375,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should clip content in the border and padding areas', async () => {
@@ -400,7 +400,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should have a separate border radius clip path when transform is used', async () => {
@@ -425,7 +425,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support transparent image with background', async () => {
@@ -448,7 +448,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support ArrayBuffer as src', async () => {
@@ -464,7 +464,7 @@ describe('Image', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should not throw when image is not valid', async () => {
@@ -486,7 +486,7 @@ describe('Image', () => {
       { width: 100, height: 100, fonts }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })
 
@@ -505,7 +505,7 @@ describe('background-image: url()', () => {
       { width: 100, height: 100, fonts }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
 
     expect(requests).toEqual(['https://via.placeholder.com/300'])
   })
@@ -523,7 +523,7 @@ describe('background-image: url()', () => {
       ></div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
 
     expect(requests).toEqual(['https://via.placeholder.com/301'])
   })
@@ -542,7 +542,7 @@ describe('background-image: url()', () => {
       { width: 100, height: 100, fonts }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
 
     expect(requests).toEqual(['https://via.placeholder.com/302'])
   })
@@ -600,7 +600,7 @@ describe('background-image: url()', () => {
         { width: 100, height: 100, fonts }
       )
 
-      const newImageBuffer = toImage(svg, 100)
+      const newImageBuffer = await toImage(svg, 100)
       if (lastImageBuffer) {
         expect(newImageBuffer.equals(lastImageBuffer)).toBe(true)
       }
@@ -640,11 +640,11 @@ describe('background-image: url()', () => {
       'data:image/gif;base64,R0lGODlhSABIANUAAAAAAGZFAHBNBXBREHlWCnlcIINeDoNoMIxnE4x0QJZvGJZ/UJ94HZ+LYKmAIrOJJ7OigLyRK7yuj8aZMMa5n8+iNc/Fr9mqOtnRv+KzP+Lcz+y7Q+zo3/XESPXz7//MTf///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAUKAAAALAAAAABIAEgAAAb/QIBwSCwaj4CPcslkIp/QqJTYrFqd06yWeu16t+CndzwOm5Pk9Pc8VbvLbPF7fo0f6XirfZjv6+N+gU1sgoVLZoaJH2CKiluNiVpqDgEBDn6UlmptaZmVl3iemmlRahuVqAEbdKepqptyZAyuAQx0s662pEhqHbSVHW++v8G7RmoTvwETb8m/zMZcabi0umrUuW7HagbKBm/dv9+wfG7KlW/nAW/Saerp5+zlau/m8dpCc/X09/j6/e4A7vqnDF5BeXPC0RrHzdscNG+wpbI2TRlFSEqc0YKGTBlHjEqG0SrWSxlJkEok1rpVDWWTVqlWzYGJSqbLJaJA0cl5s0om/52hPvUcSrSo0aNIkyodmuHCzQ4XbCbqoJCAggcVpObZUOGBAgKoEJz8UvGcAQQOHkS4wLbthrZsIzxwgEDhr4t1IHpRx7cv34FjRPodPBiwF8EcMEBYcIAw3wILIGDgkMoYmVQHPIDYDEIDBgkQICQYTfoA6dOhJWDQwBmEh8aoyLS7AhZVg9a4c+vevblBKgKy53WRmJm3cd6vs8ERbqUCrQEYjkvnjGEArQrLmVup7WoBh+m8OSz4BTy79iYaaSWgoBm8awoJzn38s82L3V8JIFhgrVuDBdF8MdRFLFdk4NiBrmRgXhFkpIfgYPPRx8sYKj14Dl5VcOJFhRYqt2WGhl080OE5DwSXRRoVCDBiKgJgZ+KJZHSgwIoBKDBWXoykcQECFiLgVDQ5ppEBAyr6JQADCpJzxhwXPIAAd6gQgMADP+Kzh1J7MHhUlvUNxeWELn1ZCkZiwmhImWH4geaVQO4RBAA7'
     )
 
-    expect(toImage(basedOnPlainSvg, 100)).toMatchImageSnapshot()
-    expect(toImage(basedOnEncodedSvg, 100)).toMatchImageSnapshot()
-    expect(toImage(basedOnPng, 100)).toMatchImageSnapshot()
-    expect(toImage(basedOnJpeg, 100)).toMatchImageSnapshot()
-    expect(toImage(basedOnGif, 100)).toMatchImageSnapshot()
+    expect(await toImage(basedOnPlainSvg, 100)).toMatchImageSnapshot()
+    expect(await toImage(basedOnEncodedSvg, 100)).toMatchImageSnapshot()
+    expect(await toImage(basedOnPng, 100)).toMatchImageSnapshot()
+    expect(await toImage(basedOnJpeg, 100)).toMatchImageSnapshot()
+    expect(await toImage(basedOnGif, 100)).toMatchImageSnapshot()
   })
 
   it('should support stretched backgroundSize', async () => {
@@ -661,7 +661,7 @@ describe('background-image: url()', () => {
       { width: 100, height: 50, fonts }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support background-size: cover', async () => {
@@ -678,7 +678,7 @@ describe('background-image: url()', () => {
       { width: 100, height: 100, fonts }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support background-size: contain', async () => {
@@ -695,7 +695,7 @@ describe('background-image: url()', () => {
       { width: 100, height: 100, fonts }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support background-size: auto', async () => {
@@ -712,7 +712,7 @@ describe('background-image: url()', () => {
       { width: 100, height: 100, fonts }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support background-size: cover with non-square container', async () => {
@@ -729,7 +729,7 @@ describe('background-image: url()', () => {
       { width: 200, height: 100, fonts }
     )
 
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should correctly position the background pattern', async () => {
@@ -747,7 +747,7 @@ describe('background-image: url()', () => {
       { width: 100, height: 100, fonts }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should handle charset=utf-8', async () => {
@@ -765,7 +765,7 @@ describe('background-image: url()', () => {
       { width: 100, height: 100, fonts }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should handle charset=utf-8 with comma in data', async () => {
@@ -776,7 +776,7 @@ describe('background-image: url()', () => {
       { width: 100, height: 100, fonts }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should handle charset=utf-8 with in base64', async () => {
@@ -787,7 +787,7 @@ describe('background-image: url()', () => {
       { width: 100, height: 100, fonts }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })
 
@@ -807,7 +807,7 @@ describe('objectFit and objectPosition', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should position to top with cover', async () => {
@@ -826,7 +826,7 @@ describe('objectFit and objectPosition', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should position to bottom with cover', async () => {
@@ -845,7 +845,7 @@ describe('objectFit and objectPosition', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should position to left with cover', async () => {
@@ -864,7 +864,7 @@ describe('objectFit and objectPosition', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should position to right with cover', async () => {
@@ -883,7 +883,7 @@ describe('objectFit and objectPosition', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should position to top left with cover', async () => {
@@ -902,7 +902,7 @@ describe('objectFit and objectPosition', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should position to bottom right with cover', async () => {
@@ -921,7 +921,7 @@ describe('objectFit and objectPosition', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should default to center center with contain', async () => {
@@ -939,7 +939,7 @@ describe('objectFit and objectPosition', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should position to top with contain', async () => {
@@ -958,7 +958,7 @@ describe('objectFit and objectPosition', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should position to bottom left with contain', async () => {
@@ -977,7 +977,7 @@ describe('objectFit and objectPosition', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   describe('objectFit: fill', () => {
@@ -996,7 +996,7 @@ describe('objectFit and objectPosition', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should stretch with fill on non-square container', async () => {
@@ -1014,7 +1014,7 @@ describe('objectFit and objectPosition', () => {
         </div>,
         { width: 150, height: 100, fonts }
       )
-      expect(toImage(svg, 150)).toMatchImageSnapshot()
+      expect(await toImage(svg, 150)).toMatchImageSnapshot()
     })
   })
 
@@ -1036,7 +1036,7 @@ describe('objectFit and objectPosition', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should scale down when image is larger than container', async () => {
@@ -1056,7 +1056,7 @@ describe('objectFit and objectPosition', () => {
         </div>,
         { width: 10, height: 10, fonts }
       )
-      expect(toImage(svg, 10)).toMatchImageSnapshot()
+      expect(await toImage(svg, 10)).toMatchImageSnapshot()
     })
 
     it('should respect objectPosition with scale-down', async () => {
@@ -1075,7 +1075,7 @@ describe('objectFit and objectPosition', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should respect objectPosition bottom right with scale-down', async () => {
@@ -1094,7 +1094,7 @@ describe('objectFit and objectPosition', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support percentage values for objectPosition', async () => {
@@ -1113,7 +1113,7 @@ describe('objectFit and objectPosition', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support pixel values for objectPosition', async () => {
@@ -1132,7 +1132,7 @@ describe('objectFit and objectPosition', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support mixed keyword and percentage for objectPosition', async () => {
@@ -1151,7 +1151,7 @@ describe('objectFit and objectPosition', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support 100% 100% for objectPosition (bottom right)', async () => {
@@ -1170,7 +1170,7 @@ describe('objectFit and objectPosition', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support 0% 0% for objectPosition (top left)', async () => {
@@ -1189,7 +1189,7 @@ describe('objectFit and objectPosition', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support objectPosition with contain and percentages', async () => {
@@ -1208,7 +1208,7 @@ describe('objectFit and objectPosition', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support objectPosition with scale-down and percentages', async () => {
@@ -1227,7 +1227,7 @@ describe('objectFit and objectPosition', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 })

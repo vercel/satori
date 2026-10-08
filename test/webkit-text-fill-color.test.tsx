@@ -35,7 +35,7 @@ describe('-webkit-text-fill-color', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should be inherited and overridden', async () => {
@@ -60,7 +60,7 @@ describe('-webkit-text-fill-color', () => {
       </div>,
       { width: 100, height: 120, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should show only the stroke when transparent', async () => {
@@ -84,7 +84,7 @@ describe('-webkit-text-fill-color', () => {
       </div>,
       { width: 140, height: 100, fonts }
     )
-    expect(toImage(svg, 140)).toMatchImageSnapshot()
+    expect(await toImage(svg, 140)).toMatchImageSnapshot()
   })
 
   it('should keep the text shadow when transparent', async () => {
@@ -105,7 +105,7 @@ describe('-webkit-text-fill-color', () => {
       </div>,
       { width: 150, height: 60, fonts }
     )
-    expect(toImage(svg, 150)).toMatchImageSnapshot()
+    expect(await toImage(svg, 150)).toMatchImageSnapshot()
   })
 
   it('should show the background with `-webkit-background-clip: text`', async () => {
@@ -128,7 +128,7 @@ describe('-webkit-text-fill-color', () => {
       </div>,
       { width: 160, height: 100, fonts }
     )
-    expect(toImage(svg, 160)).toMatchImageSnapshot()
+    expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
 
   it('should fill text without embedded fonts', async () => {

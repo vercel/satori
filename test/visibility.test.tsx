@@ -28,7 +28,7 @@ describe('visibility', () => {
       </div>,
       { width: 200, height: 70, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should keep the space of hidden inline content', async () => {
@@ -42,7 +42,7 @@ describe('visibility', () => {
       </p>,
       { width: 300, height: 30, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
   it('should treat collapse as hidden', async () => {
@@ -61,6 +61,6 @@ describe('visibility', () => {
       </div>,
       { width: 120, height: 40, fonts }
     )
-    expect(toImage(svg, 120)).toMatchImageSnapshot()
+    expect(await toImage(svg, 120)).toMatchImageSnapshot()
   })
 })

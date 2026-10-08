@@ -1,9 +1,8 @@
 import { it, describe, expect } from 'vitest'
 
-import { initFonts, toImageWithSharp } from './utils.js'
+import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
 
-// resvg 2.1, which `toImage` uses, doesn't support `paint-order`.
 describe('paint-order', () => {
   let fonts
   initFonts((f) => (fonts = f))
@@ -41,7 +40,7 @@ describe('paint-order', () => {
       { width: 200, height: 100, fonts }
     )
     expect(svg).not.toContain('paint-order')
-    expect(await toImageWithSharp(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should paint the stroke below the fill', async () => {
@@ -62,7 +61,7 @@ describe('paint-order', () => {
       </div>,
       { width: 200, height: 100, fonts }
     )
-    expect(await toImageWithSharp(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should be inherited', async () => {
@@ -86,7 +85,7 @@ describe('paint-order', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(await toImageWithSharp(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should apply to text without embedded fonts', async () => {

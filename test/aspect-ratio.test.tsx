@@ -44,7 +44,7 @@ describe('aspect-ratio', () => {
       </div>,
       { width: 500, height: 100, fonts }
     )
-    expect(toImage(svg, 500)).toMatchImageSnapshot()
+    expect(await toImage(svg, 500)).toMatchImageSnapshot()
   })
 
   it('should transfer sizes in block and grid layout', async () => {
@@ -68,7 +68,7 @@ describe('aspect-ratio', () => {
       </div>,
       { width: 300, height: 140, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
   it('should keep the ratio of flex items that shrink', async () => {
@@ -86,7 +86,7 @@ describe('aspect-ratio', () => {
       </div>,
       { width: 200, height: 100, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should not shrink flex items below the transferred size', async () => {
@@ -104,7 +104,7 @@ describe('aspect-ratio', () => {
       </div>,
       { width: 200, height: 100, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should transfer stretched sizes of flex items', async () => {
@@ -124,7 +124,7 @@ describe('aspect-ratio', () => {
       </div>,
       { width: 300, height: 100, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
   it('should throw for invalid ratios', async () => {

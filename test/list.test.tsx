@@ -58,7 +58,7 @@ describe('List', () => {
       </div>,
       { width: 400, height: 260, fonts }
     )
-    expect(toImage(svg, 400)).toMatchImageSnapshot()
+    expect(await toImage(svg, 400)).toMatchImageSnapshot()
   })
 
   it('should support the attributes of lists', async () => {
@@ -87,7 +87,7 @@ describe('List', () => {
       </div>,
       { width: 400, height: 140, fonts }
     )
-    expect(toImage(svg, 400)).toMatchImageSnapshot()
+    expect(await toImage(svg, 400)).toMatchImageSnapshot()
   })
 
   it('should reset, increment and set counters', async () => {
@@ -104,7 +104,7 @@ describe('List', () => {
       </div>,
       { width: 200, height: 110, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should support counter styles and strings', async () => {
@@ -141,7 +141,7 @@ describe('List', () => {
       </div>,
       { width: 420, height: 120, fonts }
     )
-    expect(toImage(svg, 420)).toMatchImageSnapshot()
+    expect(await toImage(svg, 420)).toMatchImageSnapshot()
   })
 
   it('should draw markers inside, in the first line, and images', async () => {
@@ -170,7 +170,7 @@ describe('List', () => {
       </div>,
       { width: 400, height: 230, fonts }
     )
-    expect(toImage(svg, 400)).toMatchImageSnapshot()
+    expect(await toImage(svg, 400)).toMatchImageSnapshot()
   })
 
   it('should size and place markers by the font', async () => {
@@ -208,7 +208,7 @@ describe('List', () => {
       </div>,
       { width: 420, height: 200, fonts }
     )
-    expect(toImage(svg, 420)).toMatchImageSnapshot()
+    expect(await toImage(svg, 420)).toMatchImageSnapshot()
   })
 
   it('should format counters', () => {
