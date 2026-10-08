@@ -238,6 +238,12 @@ export default async function* layout(
   let { style, children, tw, lang: _newLocale = locale } = props || {}
   const newLocale = normalizeLocale(_newLocale)
 
+  if (style && typeof style === 'object') {
+    style = Object.fromEntries(
+      Object.entries(style).filter(([, value]) => value != null)
+    )
+  }
+
   // Extend Tailwind styles.
   if (tw) {
     const twStyles = getTwStyles(tw, style)
