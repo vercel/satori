@@ -1,4 +1,4 @@
-import cssColorParse from 'parse-css-color'
+import { parseColor } from '../parser/color.js'
 import { buildXMLString } from '../utils.js'
 import radius, {
   resolveBorderRadii,
@@ -137,28 +137,16 @@ function darken(rgb: number[]) {
   return scaleColor(rgb, Math.max(0, (v - 0.33) / v))
 }
 
-function hslToRgb([h, s, l]: number[]) {
-  s /= 100
-  l /= 100
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12
-    return (
-      255 *
-      (l - s * Math.min(l, 1 - l) * Math.max(-1, Math.min(k - 3, 9 - k, 1)))
-    )
-  }
-  return [f(0), f(8), f(4)].map(Math.round)
-}
-
 /**
  * The dark and light shades of a color for the sides of `inset`, `outset`,
  * `groove` and `ridge` borders. CSS leaves them to the user agent, these are
  * the ones of Chrome.
  */
 function shadeColor(color: string): [dark: string, light: string] {
-  const parsed = cssColorParse(color)
+  const parsed = parseColor(color)
   if (!parsed) return [color, color]
-  const rgb = parsed.type === 'hsl' ? hslToRgb(parsed.values) : parsed.values
+  const rgb = parsed.slice(0, 3).map(Math.round)
+  const alpha = parsed[3]
   const distance = (to: number) =>
     rgb.reduce((sum, c) => sum + (c - to) ** 2, 0)
   let dark: number[]
@@ -171,9 +159,7 @@ function shadeColor(color: string): [dark: string, light: string] {
     light = distance(255) < NEAR_WHITE ? rgb : lighten(rgb)
   }
   const format = ([r, g, b]: number[]) =>
-    parsed.alpha < 1
-      ? `rgba(${r},${g},${b},${parsed.alpha})`
-      : `rgb(${r},${g},${b})`
+    alpha < 1 ? `rgba(${r},${g},${b},${alpha})` : `rgb(${r},${g},${b})`
   return [format(dark), format(light)]
 }
 

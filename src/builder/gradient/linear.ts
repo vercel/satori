@@ -1,5 +1,9 @@
 import { parseLinearGradient, ColorStop } from 'css-gradient-parser'
-import { expandColorStops, normalizeStops } from './utils.js'
+import {
+  expandColorStops,
+  extractInterpolationMethod,
+  normalizeStops,
+} from './utils.js'
 import { buildXMLString, calcDegree, lengthToNumber } from '../../utils.js'
 
 export function buildLinearGradient(
@@ -21,7 +25,8 @@ export function buildLinearGradient(
   inheritableStyle: Record<string, number | string>,
   from?: 'background' | 'mask'
 ) {
-  const parsed = parseLinearGradient(expandColorStops(image))
+  const [gradient, method] = extractInterpolationMethod(image)
+  const parsed = parseLinearGradient(expandColorStops(gradient))
   const [imageWidth, imageHeight] = dimensions
   const repeating = image.startsWith('repeating')
 
@@ -59,7 +64,8 @@ export function buildLinearGradient(
     parsed.stops,
     inheritableStyle,
     repeating,
-    from
+    from,
+    method
   )
 
   const gradientId = `satori_bi${id}`

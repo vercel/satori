@@ -96,6 +96,12 @@ export type SatoriOptions = (
    * which is then ignored instead of failing the render.
    */
   onStyleError?: (error: Error) => void
+  /**
+   * Converts colors that SVG renderers may not support, like `oklch()`,
+   * `lab()` and `color-mix()`, to `rgb()` and `rgba()`. Set it to `false` to
+   * keep them as they are written. Defaults to `true`.
+   */
+  convertColors?: boolean
   pointScaleFactor?: number
 }
 export type { SatoriNode }
@@ -198,6 +204,7 @@ export async function render(
     canLoadAdditionalAssets: !!options.loadAdditionalAsset,
     onNodeDetected: options.onNodeDetected,
     onStyleError: options.onStyleError,
+    convertColors: options.convertColors ?? true,
     replacedElements,
     projectPlane,
     // Fixed elements are positioned relative to the viewport by default.

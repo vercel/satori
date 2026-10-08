@@ -115,6 +115,7 @@ export interface LayoutContext {
   getTwStyles: (tw: string, style: any) => any
   onNodeDetected?: (node: SatoriNode) => void
   onStyleError?: (error: Error) => void
+  convertColors: boolean
   replacedElements?: ReplacedElementHandlers
   /** Draws elements with perspective, see `satori/experimental`. */
   projectPlane?: ProjectPlane
@@ -299,7 +300,8 @@ export default async function* layout(
     style,
     props,
     context.replacedElements,
-    context.onStyleError
+    context.onStyleError,
+    context.convertColors
   )
 
   // Elements are blockified in flex and grid containers, as the root
@@ -605,6 +607,7 @@ export default async function* layout(
       getTwStyles,
       onNodeDetected: context.onNodeDetected,
       onStyleError: context.onStyleError,
+      convertColors: context.convertColors,
       replacedElements: context.replacedElements,
       projectPlane: context.projectPlane,
       planes,
@@ -754,7 +757,11 @@ export default async function* layout(
     // When entering a <svg> node, we need to convert it to a <img> with the
     // SVG data URL embedded.
     const currentColor = computedStyle.color
-    const src = await SVGNodeToImage(element, currentColor)
+    const src = await SVGNodeToImage(
+      element,
+      currentColor,
+      context.convertColors
+    )
     baseRenderResult = await rect(
       {
         id,

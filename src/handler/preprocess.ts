@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode, Fragment } from 'react'
 import { Fragment as FragmentSymbol } from '../jsx/jsx-runtime.js'
 import { resolveImageData, cache } from './image.js'
+import { convertColors as convertColorValues } from '../parser/color.js'
 import {
   buildXMLString,
   escapeXMLText,
@@ -102,18 +103,33 @@ const ATTRIBUTE_MAPPING = {
 // additionally encoded so inner XML entities survive the enclosing SVG parse.
 const EMBEDDED_SVG_DATA_URL_SYMBOLS = /[\r\n%#()<>?[\\\]^`{|}"'&]/g
 
+/**
+ * Resolves `currentColor` in an attribute or style value, and converts colors
+ * that SVG renderers may not support.
+ */
+function resolveSVGColors(
+  value: unknown,
+  currentColor: string,
+  convertColors: boolean
+) {
+  if (typeof value !== 'string') return value
+  if (value.toLowerCase() === 'currentcolor') return currentColor
+  return convertColors ? convertColorValues(value, currentColor) : value
+}
+
 function translateSVGNodeToSVGString(
   node:
     | ReactElement
     | string
     | typeof Fragment
     | (ReactElement | string | typeof Fragment)[],
-  inheritedColor: string
+  inheritedColor: string,
+  convertColors: boolean
 ): string {
   if (!node) return ''
   if (Array.isArray(node)) {
     return node
-      .map((n) => translateSVGNodeToSVGString(n, inheritedColor))
+      .map((n) => translateSVGNodeToSVGString(n, inheritedColor, convertColors))
       .join('')
   }
   if (typeof node !== 'object') return escapeXMLText(node)
@@ -126,10 +142,12 @@ function translateSVGNodeToSVGString(
   }
 
   const { children, style, ...restProps } = node.props || {}
-  const currentColor = style?.color || inheritedColor
+  const currentColor = style?.color
+    ? String(resolveSVGColors(style.color, inheritedColor, convertColors))
+    : inheritedColor
 
   if ((type as typeof node.type | typeof FragmentSymbol) === FragmentSymbol) {
-    return translateSVGNodeToSVGString(children, currentColor)
+    return translateSVGNodeToSVGString(children, currentColor, convertColors)
   }
 
   if (typeof type !== 'string') {
@@ -138,13 +156,7 @@ function translateSVGNodeToSVGString(
 
   const attrs: Record<string, unknown> = {}
   for (const [k, value] of Object.entries(restProps)) {
-    let resolvedValue = value
-    if (
-      typeof resolvedValue === 'string' &&
-      resolvedValue.toLowerCase() === 'currentcolor'
-    ) {
-      resolvedValue = currentColor
-    }
+    let resolvedValue = resolveSVGColors(value, currentColor, convertColors)
 
     if ((k === 'href' || k === 'xlinkHref') && type === 'image') {
       resolvedValue = cache.get(resolvedValue as string)[0]
@@ -156,14 +168,21 @@ function translateSVGNodeToSVGString(
 
   if (style) {
     attrs.style = Object.entries(style)
-      .map(([k, value]) => `${midline(k)}:${value}`)
+      .map(
+        ([k, value]) =>
+          `${midline(k)}:${
+            k === 'color'
+              ? currentColor
+              : resolveSVGColors(value, currentColor, convertColors)
+          }`
+      )
       .join(';')
   }
 
   return buildXMLString(
     type,
     attrs,
-    translateSVGNodeToSVGString(children, currentColor)
+    translateSVGNodeToSVGString(children, currentColor, convertColors)
   )
 }
 /**
@@ -213,7 +232,8 @@ export async function preProcessNode(node: ReactNode) {
 
 export async function SVGNodeToImage(
   node: ReactElement,
-  inheritedColor: string
+  inheritedColor: string,
+  convertColors = true
 ): Promise<string> {
   let {
     viewBox,
@@ -233,7 +253,9 @@ export async function SVGNodeToImage(
   // We directly assign the xmlns attribute here to deduplicate.
   restProps.xmlns = 'http://www.w3.org/2000/svg'
 
-  const currentColor = style?.color || inheritedColor
+  const currentColor = style?.color
+    ? String(resolveSVGColors(style.color, inheritedColor, convertColors))
+    : inheritedColor
   const viewBoxSize = parseViewBox(viewBox)
 
   // ratio = height / width
@@ -248,16 +270,13 @@ export async function SVGNodeToImage(
   const attrs: Record<string, unknown> = {}
   for (const [k, value] of Object.entries(restProps)) {
     const name = ATTRIBUTE_MAPPING[k] || k
-    attrs[name] =
-      typeof value === 'string' && value.toLowerCase() === 'currentcolor'
-        ? currentColor
-        : value
+    attrs[name] = resolveSVGColors(value, currentColor, convertColors)
   }
 
   const serializedSVG = buildXMLString(
     'svg',
     attrs,
-    translateSVGNodeToSVGString(children, currentColor)
+    translateSVGNodeToSVGString(children, currentColor, convertColors)
   )
 
   return `data:image/svg+xml;utf8,${serializedSVG.replace(

@@ -40,6 +40,14 @@ Satori will render the element into a 600×400 SVG, and return the SVG string:
 '<svg ...><path d="..." fill="black"></path></svg>'
 ```
 
+To render it to a PNG, use [Sharp](https://sharp.pixelplumbing.com), which draws SVG with librsvg:
+
+```js
+import sharp from 'sharp'
+
+const png = await sharp(Buffer.from(svg)).png().toBuffer()
+```
+
 Under the hood, it handles layout calculation, font, typography and more, to generate a SVG that matches the exact same HTML and CSS in a browser.
 
 <br/>
@@ -224,7 +232,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>color</code></td>
-<td>Colors are written to the SVG as they are, so the SVG renderer has to support them. Hex colors, most named colors, <code>rgb()</code> and <code>hsl()</code> work in browsers and resvg. resvg draws these black: <code>hwb()</code>, <code>lab()</code>, <code>lch()</code>, <code>oklab()</code>, <code>oklch()</code>, <code>color()</code>, <code>color-mix()</code>, <code>light-dark()</code>, <code>rebeccapurple</code>, angle units in <code>hsl()</code> and percentage alpha after a slash.</td>
+<td>Colors that SVG renderers may not support are converted to <code>rgb()</code> and <code>rgba()</code>, see <a href="#colors">Colors</a>. Colors outside the sRGB gamut, like <code>color(display-p3 1 0 0)</code>, are clipped to it. <code>light-dark()</code> always uses the light color, since <code>color-scheme</code> isn't supported. System colors like <code>Canvas</code> aren't supported.</td>
 <td></td>
 </tr>
 
@@ -689,6 +697,28 @@ const svg = await satori(
   },
 )
 ```
+
+### Colors
+
+Satori converts the colors that SVG renderers may not support to `rgb()` and `rgba()`. Sharp, for example, draws most of them black. They are:
+
+- `lab()`, `lch()`, `oklab()`, `oklch()` and `color()`;
+- `color-mix()`, `light-dark()` and relative colors like `rgb(from red r g b / 50%)`;
+- `hwb()`, `rebeccapurple`, and `rgb()` and `hsl()` without commas, like `rgb(255 0 0 / 50%)`.
+
+To keep them as they're written, for an SVG renderer that supports them, set `convertColors` to `false`:
+
+```jsx
+const svg = await satori(
+  <div style={{ color: 'oklch(0.7 0.2 30)' }}>hello, world</div>,
+  {
+    ...,
+    convertColors: false,
+  },
+)
+```
+
+Colors in gradients are converted either way. SVG interpolates gradients in sRGB, so Satori adds stops to gradients that are interpolated in another color space: those with a color space like `linear-gradient(in oklch, red, blue)`, and those in Oklab by default because they have colors from `lab()`, `lch()`, `oklab()`, `oklch()`, `color()`, `color-mix()` or relative colors.
 
 ### Debug
 

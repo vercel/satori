@@ -1,8 +1,18 @@
 import { parseConicGradient } from 'css-gradient-parser'
-import cssColorParse from 'parse-css-color'
+import {
+  parseColor as parseRGBA,
+  mixColors,
+  parseCSSColor,
+  type Color,
+  type InterpolationMethod,
+} from '../../parser/color.js'
 
 import { buildXMLString, calcDegree, lengthToNumber } from '../../utils.js'
-import { expandColorStops } from './utils.js'
+import {
+  applyHint,
+  expandColorStops,
+  extractInterpolationMethod,
+} from './utils.js'
 
 /**
  * SVG has no conic gradients, so they're drawn as thin wedges around the
@@ -33,13 +43,14 @@ export function buildConicGradient(
     position,
     stops: colorStops,
     repeating,
-  } = parseConicGradient(expandColorStops(image))
+  } = parseConicGradient(expandColorStops(extractInterpolationMethod(image)[0]))
+  const method = extractInterpolationMethod(image)[1]
   const [w, h] = dimensions
   const [cx, cy] = resolveCenter(position, w, h, inheritableStyle)
   const startAngle = calcDegree(angle) || 0
 
   const stops = resolveStops(colorStops, inheritableStyle)
-  const colorAt = createColorAt(stops, repeating)
+  const colorAt = createColorAt(stops, repeating, method)
 
   // Split at every stop, then into wedges of at most 1 degree, with at most
   // about 2 levels of difference in each channel.
@@ -207,6 +218,8 @@ export function buildConicGradient(
 
 type Stop = {
   color: [number, number, number, number]
+  /** The color before it's clipped to sRGB. */
+  parsed: Color | null
   position?: number
   hint?: number
 }
@@ -274,23 +287,10 @@ function parseColor(
 ): [number, number, number, number] {
   const value =
     color.toLowerCase() === 'currentcolor' ? String(style.color) : color
-  const parsed = cssColorParse(value)
+  const parsed = parseRGBA(value, String(style.color))
   if (!parsed) return [0, 0, 0, 0]
-  let [r, g, b] = parsed.values
-  if (parsed.type === 'hsl') {
-    ;[r, g, b] = hslToRgb(r, g, b)
-  }
-  return [r / 255, g / 255, b / 255, parsed.alpha]
-}
-
-function hslToRgb(h: number, s: number, l: number) {
-  s /= 100
-  l /= 100
-  const k = (n: number) => (n + h / 30) % 12
-  const a = s * Math.min(l, 1 - l)
-  const f = (n: number) =>
-    l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))
-  return [f(0) * 255, f(8) * 255, f(4) * 255]
+  const [r, g, b, a] = parsed
+  return [r / 255, g / 255, b / 255, a]
 }
 
 /** A position as a fraction of a turn. */
@@ -319,10 +319,13 @@ function resolveStops(
 ): ResolvedStop[] {
   const stops: Stop[] = colorStops.map((stop) => ({
     color: parseColor(stop.color, style),
+    parsed: parseCSSColor(stop.color, String(style.color)),
     position: stop.offset ? resolvePosition(stop.offset) : undefined,
     hint: stop.hint ? resolvePosition(stop.hint) : undefined,
   }))
-  if (!stops.length) return [{ color: [0, 0, 0, 0], position: 0 }]
+  if (!stops.length) {
+    return [{ color: [0, 0, 0, 0], parsed: null, position: 0 }]
+  }
   if (stops[0].position === undefined) stops[0].position = 0
   if (stops[stops.length - 1].position === undefined) {
     stops[stops.length - 1].position = Math.max(
@@ -369,7 +372,11 @@ function stopPositions(stops: ResolvedStop[], repeating: boolean) {
   return all
 }
 
-function createColorAt(stops: ResolvedStop[], repeating: boolean) {
+function createColorAt(
+  stops: ResolvedStop[],
+  repeating: boolean,
+  method: InterpolationMethod | undefined
+) {
   const first = stops[0].position
   const last = stops[stops.length - 1].position
   const period = last - first
@@ -388,11 +395,10 @@ function createColorAt(stops: ResolvedStop[], repeating: boolean) {
     if (length <= 0) return b.color
     let t = (p - a.position) / length
     // A hint moves the middle of the transition.
-    if (a.hint !== undefined) {
-      const middle = (a.hint - a.position) / length
-      if (middle <= 0) t = 1
-      else if (middle >= 1) t = 0
-      else t = Math.pow(t, Math.log(0.5) / Math.log(middle))
+    if (a.hint !== undefined) t = applyHint(t, (a.hint - a.position) / length)
+    if (method && a.parsed && b.parsed) {
+      const [r, g, blue, alpha] = mixColors(a.parsed, b.parsed, t, method)
+      return [r / 255, g / 255, blue / 255, alpha]
     }
     // Interpolate with premultiplied alpha.
     const alpha = a.color[3] + (b.color[3] - a.color[3]) * t

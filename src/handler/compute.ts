@@ -143,7 +143,8 @@ export default async function compute(
   definedStyle: Record<string, string | number>,
   props: Record<string, any>,
   replacedElements?: ReplacedElementHandlers,
-  onStyleError?: (error: Error) => void
+  onStyleError?: (error: Error) => void,
+  convertColors = true
 ): Promise<[SerializedStyle, SerializedStyle]> {
   // With `onStyleError`, invalid values are reported and replaced by the
   // fallback, as if the declaration wasn't there.
@@ -168,7 +169,12 @@ export default async function compute(
   const style: SerializedStyle = Object.assign(
     {},
     inheritedStyle,
-    expand({ ...presetStyle, ...definedStyle }, inheritedStyle, onStyleError)
+    expand(
+      { ...presetStyle, ...definedStyle },
+      inheritedStyle,
+      onStyleError,
+      convertColors
+    )
   )
 
   // An `aspect-ratio` replaces the natural ratio of replaced elements, unless
