@@ -24,13 +24,14 @@ const list = new Set([
   'textDecorationStyle',
   'textDecorationColor',
   'textDecorationSkipInk',
+  'textDecorationThickness',
+  'textUnderlineOffset',
   'whiteSpace',
   'transform',
   'wordBreak',
   'tabSize',
   // Special case: SVG doesn't apply these to children elements so we need to
   // make it inheritable here.
-  'opacity',
   'filter',
 
   // Special properties of Satori:

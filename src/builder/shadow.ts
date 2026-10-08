@@ -137,13 +137,11 @@ export function boxShadow(
     width,
     height,
     shape,
-    opacity,
     id,
   }: {
     width: number
     height: number
     shape: string
-    opacity: number
     id: string
   },
   style: Record<string, any>
@@ -295,7 +293,6 @@ export function boxShadow(
         {
           mask: `url(#${maskId})`,
           filter: `url(#${sid})`,
-          opacity: opacity,
         },
         finalShape
       )

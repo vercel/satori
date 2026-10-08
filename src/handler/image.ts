@@ -151,8 +151,27 @@ const ALLOWED_IMAGE_TYPES = [PNG, APNG, JPEG, GIF, SVG, WEBP]
 // Pre-compiled regex patterns for SVG parsing
 const SVG_ATTRS_REGEX = /<svg[^>]*>/i
 const VIEWBOX_REGEX = /viewBox=['"]([^'"]+)['"]/
-const WIDTH_REGEX = /width=['"](\d*\.?\d+)['"]/
-const HEIGHT_REGEX = /height=['"](\d*\.?\d+)['"]/
+const WIDTH_REGEX = /\swidth=['"](\d*\.?\d+)(?:px)?['"]/
+const HEIGHT_REGEX = /\sheight=['"](\d*\.?\d+)(?:px)?['"]/
+
+/**
+ * Whether an image has a size. An SVG without `width` and `height` only has
+ * a ratio from its `viewBox`, so CSS sizes it to fit backgrounds.
+ */
+export function hasIntrinsicSize(src: string) {
+  if (!src.startsWith('data:image/svg+xml')) return true
+  const comma = src.indexOf(',')
+  let data = src.slice(comma + 1)
+  try {
+    data = src.slice(0, comma).endsWith(';base64')
+      ? atob(data)
+      : decodeURIComponent(data)
+  } catch {
+    return true
+  }
+  const tag = data.match(SVG_ATTRS_REGEX)?.[0]
+  return !tag || WIDTH_REGEX.test(tag) || HEIGHT_REGEX.test(tag)
+}
 
 export function arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array) {
   const bytes = new Uint8Array(buffer)

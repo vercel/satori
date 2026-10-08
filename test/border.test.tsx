@@ -297,5 +297,60 @@ describe('Border', () => {
       )
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
+
+    it('should join sides with different colors diagonally', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 10,
+            padding: 5,
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderWidth: 12,
+              borderStyle: 'solid',
+              borderColor: 'red green blue orange',
+            }}
+          />
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderStyle: 'solid',
+              borderColor: 'red red blue blue',
+              borderWidth: '4px 12px 12px 4px',
+              borderRadius: 14,
+            }}
+          />
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderLeft: '14px solid purple',
+              borderTop: '6px solid orange',
+              borderBottom: '6px dashed orange',
+            }}
+          />
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderWidth: 10,
+              borderStyle: 'solid',
+              borderColor: 'transparent transparent black',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(toImage(svg, 100)).toMatchImageSnapshot()
+    })
   })
 })

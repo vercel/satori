@@ -102,6 +102,36 @@ function parseObjectPosition(
   ]
 }
 
+/**
+ * The area of a box (`border-box`, `padding-box` or `content-box`) of an
+ * element, which positions its backgrounds. Defaults to the padding box.
+ */
+function getBoxArea(
+  {
+    left,
+    top,
+    width,
+    height,
+  }: Record<'left' | 'top' | 'width' | 'height', number>,
+  style: Record<string, number | string>,
+  box = 'padding-box'
+) {
+  const inset = (side: string) => {
+    const borderWidth = box === 'border-box' ? 0 : style[`border${side}Width`]
+    const padding = box === 'content-box' ? style[`padding${side}`] : 0
+    return (
+      (typeof borderWidth === 'number' ? borderWidth : 0) +
+      (typeof padding === 'number' ? padding : 0)
+    )
+  }
+  return {
+    left: left + inset('Left'),
+    top: top + inset('Top'),
+    width: width - inset('Left') - inset('Right'),
+    height: height - inset('Top') - inset('Bottom'),
+  }
+}
+
 export default async function rect(
   {
     id,
@@ -112,6 +142,8 @@ export default async function rect(
     isInheritingTransform,
     src,
     debug,
+    opacity = 1,
+    drawn,
   }: {
     id: string
     left: number
@@ -121,6 +153,13 @@ export default async function rect(
     isInheritingTransform: boolean
     src?: string
     debug?: boolean
+    /**
+     * The opacity of everything drawn here. Elements with children are drawn
+     * as a group with their opacity instead, see `layout()`.
+     */
+    opacity?: number
+    /** Set to whether shapes are drawn, not just definitions. */
+    drawn?: { shapes: boolean }
   },
   style: Record<string, number | string>,
   inheritableStyle: Record<string, number | string>
@@ -133,15 +172,10 @@ export default async function rect(
   let matrix = ''
   let defs = ''
   let fills: string[] = []
-  let opacity = 1
   let extra = ''
 
   if (style.backgroundColor) {
     fills.push(style.backgroundColor as string)
-  }
-
-  if (style.opacity !== undefined) {
-    opacity = +style.opacity
   }
 
   if (style.transform) {
@@ -169,7 +203,18 @@ export default async function rect(
     ) {
       const background = (style.backgroundImage as any)[index]
       const image = await backgroundImage(
-        { id: id + '_' + index, width, height, left, top },
+        {
+          id: id + '_' + index,
+          width,
+          height,
+          left,
+          top,
+          origin: getBoxArea(
+            { left, top, width, height },
+            style,
+            background.origin
+          ),
+        },
         background,
         inheritableStyle
       )
@@ -554,6 +599,7 @@ export default async function rect(
 
     shape += border(
       {
+        id,
         left,
         top,
         width,
@@ -575,7 +621,6 @@ export default async function rect(
       width,
       height,
       id,
-      opacity,
       shape: buildXMLString(type, {
         x: left,
         y: top,
@@ -606,17 +651,19 @@ export default async function rect(
     )
   }
 
+  // Shadows and content are drawn as a group with the opacity, so e.g. a
+  // shadow under the element doesn't show through it.
+  let shapes = (shadow ? shadow[0] : '') + content + (shadow ? shadow[1] : '')
+  if (drawn) drawn.shapes = !!shapes
   if (opacity !== 1 && !useFillOpacity) {
-    content = buildXMLString('g', { opacity }, content)
+    shapes = buildXMLString('g', { opacity }, shapes)
   }
 
   return (
     (defs ? buildXMLString('defs', {}, defs) : '') +
-    (shadow ? shadow[0] : '') +
     (imageBorderRadius ? imageBorderRadius[0] : '') +
     clip +
-    content +
-    (shadow ? shadow[1] : '') +
+    shapes +
     extra
   )
 }

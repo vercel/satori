@@ -260,9 +260,15 @@ export default async function* layout(
 
   // Post-process styles to attach inheritable properties for Satori.
 
+  const opacity =
+    typeof computedStyle.opacity === 'number' ? computedStyle.opacity : 1
+
   // Elements that affect how their children are transformed, and children of
-  // those, need their own transform state even without a `transform`.
-  const preserve3d = computedStyle.transformStyle === 'preserve-3d'
+  // those, need their own transform state even without a `transform`. Like in
+  // browsers, `opacity` makes `preserve-3d` flat, as the element and its
+  // descendants are drawn as a group.
+  const preserve3d =
+    computedStyle.transformStyle === 'preserve-3d' && opacity === 1
   const perspective =
     typeof computedStyle.perspective === 'number'
       ? computedStyle.perspective
@@ -271,7 +277,7 @@ export default async function* layout(
   // These properties make the element the containing block of its fixed
   // descendants.
   const isFixedContainingBlock =
-    preserve3d ||
+    computedStyle.transformStyle === 'preserve-3d' ||
     perspective !== undefined ||
     (computedStyle.transform !== inheritedStyle.transform &&
       (computedStyle.transform as unknown as TransformList).length > 0) ||
@@ -353,7 +359,7 @@ export default async function* layout(
     zIndex !== undefined ||
     computedStyle.position === 'fixed' ||
     isFixedContainingBlock ||
-    (computedStyle.opacity as number) < (inheritedStyle.opacity as number) ||
+    opacity < 1 ||
     !!hasClipPath ||
     !!computedStyle.maskImage ||
     !!context.planes ||
@@ -504,6 +510,14 @@ export default async function* layout(
     contextPlanes.push(plane)
   }
 
+  // An element is drawn as a group with its opacity, with its descendants
+  // and the elements in its stacking context. Without
+  // children, it's drawn by itself, which avoids an extra group for a single
+  // shape.
+  let groupOpacity = opacity < 1 && iterators.length > 0 ? opacity : 1
+  const rectOpacity = groupOpacity < 1 ? 1 : opacity
+  const drawn = { shapes: true }
+
   // Generate the rendered markup for the current node.
   if (type === 'img' || isReplaced) {
     // A replaced element without rendered content has no `src`, so it's drawn
@@ -519,6 +533,7 @@ export default async function* layout(
         src,
         isInheritingTransform,
         debug,
+        opacity: rectOpacity,
       },
       computedStyle,
       newInheritableStyle
@@ -538,6 +553,7 @@ export default async function* layout(
         src,
         isInheritingTransform,
         debug,
+        opacity: rectOpacity,
       },
       computedStyle,
       newInheritableStyle
@@ -559,10 +575,32 @@ export default async function* layout(
       )
     }
     baseRenderResult = await rect(
-      { id, left, top, width, height, isInheritingTransform, debug },
+      {
+        id,
+        left,
+        top,
+        width,
+        height,
+        isInheritingTransform,
+        debug,
+        opacity: rectOpacity,
+        drawn,
+      },
       computedStyle,
       newInheritableStyle
     )
+  }
+
+  // If the element only has text, the text is drawn with the opacity, which
+  // can avoid a group for a single path.
+  if (
+    groupOpacity < 1 &&
+    !drawn.shapes &&
+    normalizedChildren.length === 1 &&
+    typeof normalizedChildren[0] === 'string'
+  ) {
+    computedStyle._textOpacity = groupOpacity
+    groupOpacity = 1
   }
 
   // Generate the rendered markup for the children.
@@ -588,13 +626,14 @@ export default async function* layout(
   // Children in the same 3D rendering context were added to `planes` and
   // returned nothing, so this is the element's own plane, including the
   // descendants flattened onto it.
-  let result = isHidden
-    ? ''
-    : depsRenderResult +
-      baseRenderResult +
-      (isStackingContext
-        ? paintStackingContext(stackingContext.layers, childrenRenderResult)
-        : childrenRenderResult)
+  let result =
+    isHidden || opacity === 0
+      ? ''
+      : depsRenderResult +
+        baseRenderResult +
+        (isStackingContext
+          ? paintStackingContext(stackingContext.layers, childrenRenderResult)
+          : childrenRenderResult)
 
   if (result && transformState.projection && !isInheritingTransform) {
     result = context.projectPlane(result, {
@@ -612,16 +651,18 @@ export default async function* layout(
     isStackingContext &&
     stackingContext.hasBlending &&
     !!context.stackingContext
-  if (result && (mixBlendMode || isolate)) {
+  if (result && (mixBlendMode || isolate || groupOpacity < 1)) {
     result = buildXMLString(
       'g',
       {
-        style: [
-          mixBlendMode && `mix-blend-mode:${mixBlendMode}`,
-          isolate && 'isolation:isolate',
-        ]
-          .filter(Boolean)
-          .join(';'),
+        opacity: groupOpacity < 1 ? groupOpacity : undefined,
+        style:
+          [
+            mixBlendMode && `mix-blend-mode:${mixBlendMode}`,
+            isolate && 'isolation:isolate',
+          ]
+            .filter(Boolean)
+            .join(';') || undefined,
       },
       result
     )

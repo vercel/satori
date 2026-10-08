@@ -246,8 +246,8 @@ export default async function compute(
     'display'
   )
 
-  // Unlike CSS, `align-content` defaults to `flex-start` in flex containers.
-  // In block containers, other values prevent margins from collapsing.
+  // `align-content` defaults to `normal`. In block containers, other values
+  // prevent margins from collapsing.
   layout.alignContent =
     v(
       style.alignContent,
@@ -264,7 +264,7 @@ export default async function compute(
         baseline: 'flex-start',
         normal: null,
       },
-      layout.display === 'flex' ? 'flex-start' : null,
+      null,
       'alignContent'
     ) ?? undefined
 
