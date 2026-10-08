@@ -127,6 +127,28 @@ const ITEM_ALIGNMENT = {
   baseline: 'baseline',
 } as const
 
+export type OuterDisplay = 'block' | 'inline' | 'contents' | 'none'
+
+/** The outer and inner display types of each value of `display`. */
+const DISPLAY_TYPES: Record<
+  string,
+  [OuterDisplay, LayoutStyle['display'] | 'inline']
+> = {
+  block: ['block', 'block'],
+  'flow-root': ['block', 'flow-root'],
+  // Markers aren't drawn.
+  'list-item': ['block', 'block'],
+  flex: ['block', 'flex'],
+  '-webkit-box': ['block', 'flex'],
+  grid: ['block', 'grid'],
+  inline: ['inline', 'inline'],
+  'inline-block': ['inline', 'flow-root'],
+  'inline-flex': ['inline', 'flex'],
+  'inline-grid': ['inline', 'grid'],
+  contents: ['contents', 'contents'],
+  none: ['none', 'none'],
+}
+
 export default async function compute(
   node: LayoutNode,
   type: SatoriElement | string,
@@ -232,19 +254,19 @@ export default async function compute(
   // Set the layout style.
   const layout: LayoutStyle = node.style
 
-  layout.display = v(
+  // The outer display type, how the element takes part in the layout of its
+  // parent, and the inner one, how its children are laid out. Elements are
+  // inline by default, and blockified in flex and grid containers, see
+  // `layout()`.
+  const [outerDisplay, innerDisplay] = v(
     style.display,
-    {
-      flex: 'flex',
-      block: 'block',
-      grid: 'grid',
-      contents: 'contents',
-      none: 'none',
-      '-webkit-box': 'flex',
-    },
-    'flex',
+    DISPLAY_TYPES,
+    DISPLAY_TYPES.inline,
     'display'
-  )
+  ) as [OuterDisplay, LayoutStyle['display'] | 'inline']
+  style.__outerDisplay = outerDisplay
+  style.__innerDisplay = innerDisplay
+  layout.display = innerDisplay === 'inline' ? 'block' : innerDisplay
 
   // `align-content` defaults to `normal`. In block containers, other values
   // prevent margins from collapsing.

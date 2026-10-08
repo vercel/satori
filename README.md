@@ -173,7 +173,7 @@ declare module 'react' {
 
 ### CSS
 
-Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Grid and block layouts, and it’s **not** a complete CSS implementation. However, it supports a subset of the spec that covers most common CSS features:
+Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Grid and block layouts, and its own inline layout for text and inline elements. It’s **not** a complete CSS implementation. However, it supports a subset of the spec that covers most common CSS features:
 
 <table>
 <thead>
@@ -194,7 +194,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>display</code></td>
-<td><code>flex</code>, <code>block</code>, <code>grid</code>, <code>contents</code>, <code>none</code>, <code>-webkit-box</code>, default to <code>flex</code>. Use <code>flex</code>, <code>block</code>, <code>grid</code>, <code>contents</code>, or <code>none</code> for <code>div</code> elements with multiple child nodes. Children of <code>block</code> elements are stacked vertically, including text, and margins collapse like in CSS.</td>
+<td><code>block</code>, <code>inline</code>, <code>inline-block</code>, <code>flex</code>, <code>inline-flex</code>, <code>grid</code>, <code>inline-grid</code>, <code>flow-root</code>, <code>list-item</code>, <code>contents</code>, <code>none</code> and <code>-webkit-box</code>. Elements default to <code>inline</code>, and <code>div</code>, <code>p</code>, headings, lists and other block-level elements to <code>block</code>. In block containers, text, inline elements and atomic inlines such as images flow in lines, and blocks are stacked with collapsing margins. In flex and grid containers, children are laid out as blocks. List markers aren't drawn.</td>
 <td></td>
 </tr>
 
@@ -206,7 +206,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>zIndex</code></td>
-<td>Integers and <code>auto</code>, default to <code>auto</code>. Elements are painted in <a href="https://www.w3.org/TR/CSS22/zindex.html">stacking order</a>: positioned elements are painted above static ones, and all elements are flex items, so <code>zIndex</code> applies to static elements too</td>
+<td>Integers and <code>auto</code>, default to <code>auto</code>. Elements are painted in <a href="https://www.w3.org/TR/CSS22/zindex.html">stacking order</a>: positioned elements are painted above static ones, and <code>zIndex</code> applies to static elements too</td>
 <td></td>
 </tr>
 
@@ -286,10 +286,11 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>fontStyle</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontFeatureSettings</code></td><td>Supported via HarfBuzz text shaping. Enables OpenType features like ligatures, small caps, stylistic sets, etc.</td><td></td></tr>
 
-<tr><td rowspan="13">Text</td></tr>
+<tr><td rowspan="14">Text</td></tr>
 <tr><td><code>tabSize</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>textAlign</code></td><td><code>start</code>, <code>end</code>, <code>left</code>, <code>right</code>, <code>center</code>, <code>justify</code>, default to <code>start</code></td><td></td></tr>
 <tr><td><code>textIndent</code></td><td>Supported, including negative values (hanging indent)</td><td></td></tr>
+<tr><td><code>verticalAlign</code></td><td><code>baseline</code>, <code>sub</code>, <code>super</code> and lengths for inline elements, also <code>middle</code>, <code>top</code>, <code>bottom</code>, <code>text-top</code> and <code>text-bottom</code> for images and other atomic inlines</td><td></td></tr>
 <tr><td><code>textTransform</code></td><td><code>none</code>, <code>lowercase</code>, <code>uppercase</code>, <code>capitalize</code>, defaults to <code>none</code></td><td></td></tr>
 <tr><td><code>textOverflow</code></td><td><code>clip</code>, <code>ellipsis</code>, defaults to <code>clip</code></td><td></td></tr>
 <tr><td><code>textDecoration</code></td><td>Lines <code>underline</code>, <code>overline</code> and <code>line-through</code>, styles <code>solid</code>, <code>double</code>, <code>dotted</code>, <code>dashed</code> and <code>wavy</code>, a color and a thickness. Also the longhands, <code>textDecorationThickness</code> and <code>textUnderlineOffset</code></td><td><a href="https://og-playground.vercel.app/?share=pVPLTsMwEPwVaytUkAKkPCRklV4oXwDHXhx7YxtcO3Ic2hLl37GTtEKIQynywTvjndGstG6BO4FAYS70x8oSUoedwce2TTUhCrVUgZLpLM_PptlAbrQI6gcndF0ZtotsaXC7Z1O91B550M7GN-5Ms7b714oJoa2kZJaPTMH4u_SuseLJGeejYlKW5cHN2fCiP5GS25uRkqxK8gS6bmUXqUiTHMYgAbdhidx5NmawzuI0di9SMb-OzceoYiT0Ro_SAzpan5ovg4qzSdVbfCf-noIIFwIK4lH0bgM8KQ0RrFbRqjDNMNyAT8rUFAbJhHP-_1CDl5cFO8-z_lzdX_ySb39DBq5KTjXQFvoVBfqQ5xkMOwz0LgGBRSOBlszUmAGu3Zt-3VXpA4RNj6JP2rPndYECaPANdhkEVsQOhca4jfNGQPcF">Example</a></td></tr>
@@ -417,7 +418,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>lineClamp</code></td>
-<td>Supported when the text element uses <code>display: block</code>. For WebKit-style clamping, use <code>display: -webkit-box</code> with <code>WebkitLineClamp</code>.</td>
+<td>Supported for the text of a <code>display: block</code> element, the default for <code>div</code>, without inline elements in it. For WebKit-style clamping, use <code>display: -webkit-box</code> with <code>WebkitLineClamp</code>.</td>
 <td><a href="https://og-playground.vercel.app/?share=5VPBbtQwEP2VkRFakNKSshxQBBwoXDhwaEFc9uLYk6xbx2PZk-6G1Up8DR_GlzDOkgr13FtPGb_xvPf8ojkoQxZVo95Zd7cJAJknj-8Ph1IDbNH1W25gdVHXz1fVCdw5y9sHmHU5ej0J2nncL2ipP7mEhh0F6Rny4xCWbtTWutA3cFH_Q1ptbvtEY7CX5CnJxLOu6-7ZKPC1-4kNrF_P0PG4CR9KsZh_aP9_X60nc7tQAXgX8NLrIQrbPTjo1LvwkZhpkJF1HferU69IAcxiAN8zWmgnyDQgUAe8RdhR8naVwQsFZgZDQ9TBYa7gK-75_CYDBt16zDDRCExgEmpG6EbvzzLLy-EHtqBj9M7oElguGjKLocQ0q3iZEPIr1Iahk_kxFQUdLLjA2CcZlKuRdpiEGK7GzGetLn6_6Dt9bZKLLOIkz-8l0DSzdjrPtO3ovM3nc6KvJNJHyHa1ho368-s3vDBihQb5fVayEa-BX27UE093-apKUZxNqeag5v1Szdu6rtRpAVXzphwstmOvmk77jJXCgW7ctymW7eXdfBKesiSfhxatajiNeKwU61ZubNF7mmNUx78">Example</a></td>
 </tr>
 

@@ -109,9 +109,10 @@ export default async function* buildTextNodes(
     'textAlign'
   )
 
-  // Like the anonymous flex item around text in CSS.
-  const textContainer = new LayoutNode({ flexShrink: 1 })
-  parent.insertChild(textContainer)
+  // Like the anonymous flex item around text in CSS, or the paragraph of a
+  // block container.
+  const textContainer = context.textNode ?? new LayoutNode({ flexShrink: 1 })
+  if (!context.textNode) parent.insertChild(textContainer)
 
   // Get the correct font according to the container style.
   // https://www.w3.org/TR/CSS2/visudet.html
@@ -206,6 +207,7 @@ export default async function* buildTextNodes(
   // @TODO: Use segments instead of words to properly support kerning.
   let lineWidths = []
   let baselines = []
+  let lastBaseline: number | undefined
   let lineSegmentNumber = []
   let texts: string[] = []
   let wordPositionInLayout: (null | {
@@ -419,6 +421,9 @@ export default async function* buildTextNodes(
       lines++
       lineWidths.push(currentWidth)
       baselines.push(currentBaselineOffset)
+      lastBaseline = height - currentLineHeight + currentBaselineOffset
+    } else {
+      lastBaseline = lines ? height : undefined
     }
 
     // @TODO: Support `line-height`.
@@ -492,6 +497,10 @@ export default async function* buildTextNodes(
     return { width: _width, height }
   }
   textContainer.measure = measure
+  textContainer.lastBaseline = (width) => {
+    measure(width)
+    return lastBaseline
+  }
 
   const [x, y] = yield
 
@@ -616,9 +625,15 @@ export default async function* buildTextNodes(
       leftOffset += textIndentNumber
     }
 
-    if (lineWidths.length > 1) {
-      // Calculate alignment. Note that for Flexbox, there is only text
-      // alignment when the container is multi-line.
+    if (
+      lineWidths.length > 1 ||
+      (context.blockParagraph &&
+        (textAlign === 'right' ||
+          textAlign === 'end' ||
+          textAlign === 'center'))
+    ) {
+      // Calculate alignment. A flex item around text is as wide as a single
+      // line, but a paragraph of a block container fills its width.
       const remainingWidth = containerWidth - lineWidths[line]
       if (textAlign === 'right' || textAlign === 'end') {
         leftOffset += remainingWidth

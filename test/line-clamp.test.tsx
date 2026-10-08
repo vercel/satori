@@ -120,6 +120,7 @@ describe('Line Clamp', () => {
       >
         <div
           style={{
+            display: 'flex',
             width: '100%',
             lineClamp: 2,
           }}
