@@ -61,6 +61,112 @@ describe('Position', () => {
     })
   })
 
+  describe('containing block', () => {
+    it('should position absolute elements in the nearest positioned ancestor', async () => {
+      const svg = await satori(
+        <div style={{ padding: 10 }}>
+          <div
+            style={{
+              position: 'relative',
+              height: 90,
+              background: '#eef',
+              padding: 10,
+            }}
+          >
+            <div
+              style={{
+                padding: 15,
+                overflow: 'hidden',
+                height: 40,
+                background: '#fde',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  bottom: 0,
+                  width: 40,
+                  height: 30,
+                  background: 'blue',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 230,
+                  top: 30,
+                  width: 80,
+                  height: 20,
+                  background: 'green',
+                }}
+              />
+              static text
+            </div>
+          </div>
+        </div>,
+        { width: 300, height: 120, fonts }
+      )
+      expect(toImage(svg, 300)).toMatchImageSnapshot()
+    })
+
+    it('should ignore insets of static elements and paint them first', async () => {
+      const svg = await satori(
+        <div style={{ padding: 10 }}>
+          <div
+            style={{
+              top: 30,
+              left: 30,
+              height: 30,
+              width: 60,
+              background: 'red',
+            }}
+          />
+          <div
+            style={{
+              position: 'relative',
+              height: 30,
+              width: 60,
+              background: 'blue',
+              marginBottom: -15,
+            }}
+          />
+          {/* `z-index` doesn't apply to static blocks, but to flex items. */}
+          <div
+            style={{ height: 30, width: 90, background: 'gold', zIndex: 5 }}
+          />
+          <div
+            style={{
+              display: 'flex',
+              position: 'absolute',
+              left: 150,
+              top: 10,
+            }}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                background: 'purple',
+                zIndex: 1,
+              }}
+            />
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                background: 'teal',
+                marginLeft: -20,
+              }}
+            />
+          </div>
+        </div>,
+        { width: 300, height: 90, fonts }
+      )
+      expect(toImage(svg, 300)).toMatchImageSnapshot()
+    })
+  })
+
   describe('static', () => {
     it('should support static position', async () => {
       const svg = await satori(
@@ -178,7 +284,7 @@ describe('Position', () => {
           </div>
         )
       ).toEqual({
-        root: [20, 10, 50, 50],
+        root: [20, 10, 60, 60],
         inner: [2, 1, 3, 4],
         flow: [25, 15, 3, 4],
       })
@@ -232,7 +338,7 @@ describe('Position', () => {
         // Centered in the parent's content box, including margins.
         x: [27, 90, 50, 10],
         // Percentage margins resolve against the viewport.
-        y: [90, 40, 10, 10],
+        y: [90, 30, 10, 10],
       })
     })
 

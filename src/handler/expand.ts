@@ -441,11 +441,10 @@ function handleSpecialCase(
       value,
       isOutline ? OUTLINE_STYLES : BORDER_STYLES
     )
-    // The initial values: a `medium` width, the current color, and no
-    // style for outlines. Borders are `solid`, unlike in CSS.
+    // The initial values: a `medium` width, no style and the current color.
     const purified = {
       Width: width ?? LINE_WIDTH_KEYWORDS.medium,
-      Style: style ?? (isOutline ? 'none' : 'solid'),
+      Style: style ?? 'none',
       Color: color ?? currentColor,
     }
     const full = {}

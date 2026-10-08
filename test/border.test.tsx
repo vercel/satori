@@ -57,7 +57,7 @@ describe('Border', () => {
       const svg = await satori(
         <div
           style={{
-            border: '1px',
+            border: '1px solid',
             borderColor: 'green',
             width: '50%',
             height: '50%',
@@ -72,7 +72,7 @@ describe('Border', () => {
       const svg = await satori(
         <div
           style={{
-            border: '1px blue',
+            border: '1px solid blue',
             borderColor: 'red',
             width: '50%',
             height: '50%',
@@ -260,6 +260,30 @@ describe('Border', () => {
           fonts,
         })
       ).rejects.toThrowError('Invalid line style')
+    })
+  })
+
+  describe('initial values', () => {
+    it('should default to no style, a medium width and the current color', async () => {
+      const box = { width: 40, height: 40, background: '#eee' }
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            gap: 10,
+            padding: 10,
+            alignItems: 'flex-start',
+          }}
+        >
+          <div style={{ ...box, borderWidth: 4, borderColor: 'red' }} />
+          <div style={{ ...box, borderStyle: 'solid', borderColor: 'red' }} />
+          <div style={{ ...box, border: '2px red' }} />
+          <div style={{ ...box, color: 'blue', borderTop: 'solid' }} />
+          <hr style={{ width: 80 }} />
+        </div>,
+        { width: 400, height: 70, fonts }
+      )
+      expect(toImage(svg, 400)).toMatchImageSnapshot()
     })
   })
 

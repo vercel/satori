@@ -51,6 +51,27 @@ export interface InlineBox {
   fragments: InlineBoxFragment[]
   /** The paragraphs the box is in, split by block-level elements. */
   paragraphs: Paragraph[]
+  /** The inline boxes the box is in, from the outermost. */
+  ancestors?: InlineBox[]
+}
+
+/**
+ * How far `position: relative` moves the content of inline boxes, the boxes
+ * from the outermost. Percentages are of the width of the paragraph.
+ */
+export function relativeOffset(boxes: InlineBox[], width: number) {
+  let x = 0
+  let y = 0
+  for (const { style } of boxes) {
+    if (style.position !== 'relative') continue
+    const inset = (side: string) =>
+      style[side] === undefined || style[side] === 'auto'
+        ? undefined
+        : toNumber(style[side], style, width)
+    x += inset('left') ?? -(inset('right') ?? 0)
+    y += inset('top') ?? -(inset('bottom') ?? 0)
+  }
+  return [x, y]
 }
 
 /** A fragment of an inline box, relative to its paragraph. */
@@ -207,6 +228,7 @@ export class InlineFormatting {
   }
 
   openBox(box: InlineBox) {
+    box.ancestors = [...this.open]
     const paragraph = this.current()
     paragraph.items.push({ kind: 'open', box })
     box.paragraphs.push(paragraph)
@@ -924,8 +946,11 @@ export class Paragraph {
                 : line.top + line.height - atomic.marginBoxHeight
               : line.top + line.baseline - align.ascent
             const { layout } = item.atomic.node
-            layout.left = this.node.layout.left + segment.x + layout.margin.left
-            layout.top = this.node.layout.top + marginTop + layout.margin.top
+            const [dx, dy] = relativeOffset(open, width)
+            layout.left =
+              this.node.layout.left + segment.x + layout.margin.left + dx
+            layout.top =
+              this.node.layout.top + marginTop + layout.margin.top + dy
           }
           x = segment.x + segment.width
         }
@@ -964,8 +989,9 @@ export class Paragraph {
     const { style, inheritedStyle, id } = run
     const { engine, isImage } = this.runState(run)
     const { embedFont, debug, graphemeImages } = this.env
-    const left = x + this.node.layout.left
-    const top = y + this.node.layout.top
+    const [dx, dy] = relativeOffset(run.boxes, this.node.layout.width)
+    const left = x + this.node.layout.left + dx
+    const top = y + this.node.layout.top + dy
     const fontSize = style.fontSize as number
     const letterSpacing = style.letterSpacing as number
     const fontFeatureSettings = style.fontFeatureSettings as string

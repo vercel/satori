@@ -21,6 +21,7 @@ import buildTextNodes from './text/index.js'
 import {
   buildInlineText,
   InlineFormatting,
+  relativeOffset,
   type AtomicInline,
   type InlineBox,
   type InlineEnv,
@@ -124,7 +125,12 @@ export interface LayoutContext {
    * displayed.
    */
   fixedContainingBlock?: FixedContainingBlock
-  /** Collects the fixed elements laid out in their containing block. */
+  /**
+   * The containing block of absolutely positioned descendants: the nearest
+   * positioned ancestor, or the root.
+   */
+  absoluteContainingBlock?: FixedContainingBlock
+  /** Collects the out-of-flow elements laid out in their containing block. */
   fixedElements: FixedElement[]
   /**
    * Collects the layers of the stacking context the element is in. The root
@@ -262,10 +268,15 @@ export default async function* layout(
   let { style, children, tw, lang: _newLocale = locale } = props || {}
   const newLocale = normalizeLocale(_newLocale)
 
-  // Extend Tailwind styles.
+  // Extend Tailwind styles. Like with Tailwind's preflight styles, elements
+  // have `border-box` sizing and solid borders without a width.
   if (tw) {
     const twStyles = getTwStyles(tw, style)
-    style = Object.assign(twStyles, style)
+    style = Object.assign(
+      { boxSizing: 'border-box', borderWidth: 0, borderStyle: 'solid' },
+      twStyles,
+      style
+    )
   }
 
   // The `transform` attribute of an inline SVG transforms its box, unless the
@@ -340,19 +351,24 @@ export default async function* layout(
     inlineBox = { style: computedStyle, fragments: [], paragraphs: [] }
   }
 
-  // A fixed element is laid out in its containing block. Without a box, it's
-  // not positioned.
-  const fixedElement =
-    computedStyle.position === 'fixed' &&
-    node.style.display !== 'none' &&
-    node.style.display !== 'contents'
-      ? insertFixedNode(
-          node,
-          parent,
-          context.fixedContainingBlock,
-          context.fixedElements
-        )
+  // Absolutely positioned and fixed elements are laid out in their containing
+  // block. Without a box, they're not positioned.
+  const outOfFlowContainingBlock =
+    node.style.display === 'none' || node.style.display === 'contents'
+      ? undefined
+      : computedStyle.position === 'fixed'
+      ? context.fixedContainingBlock
+      : computedStyle.position === 'absolute'
+      ? context.absoluteContainingBlock
       : undefined
+  const fixedElement = outOfFlowContainingBlock
+    ? insertFixedNode(
+        node,
+        parent,
+        outOfFlowContainingBlock,
+        context.fixedElements
+      )
+    : undefined
   if (fixedElement) {
     // `overflow: hidden` of elements between it and its containing block
     // doesn't clip it.
@@ -457,15 +473,43 @@ export default async function* layout(
   } else if (fixedContainingBlock && (hasClipPath || computedStyle.maskImage)) {
     fixedContainingBlock = { ...fixedContainingBlock, ...fixedClip }
   }
+  // Positioned elements are the containing block of absolutely positioned
+  // descendants too, unless they don't have a box in the layout.
+  let absoluteContainingBlock = context.absoluteContainingBlock
+  if (node.style.display === 'none') {
+    absoluteContainingBlock = undefined
+  } else if (fixedContainingBlock?.node === node) {
+    absoluteContainingBlock = fixedContainingBlock
+  } else if (
+    computedStyle.position !== 'static' &&
+    !inlineBox &&
+    outerDisplay !== 'contents'
+  ) {
+    absoluteContainingBlock = {
+      node,
+      offset: { left: 0, top: 0 },
+      ...fixedClip,
+    }
+  } else if (
+    absoluteContainingBlock &&
+    (hasClipPath || computedStyle.maskImage)
+  ) {
+    absoluteContainingBlock = { ...absoluteContainingBlock, ...fixedClip }
+  }
 
   // A stacking context paints its descendants together. Elements of a 3D
   // rendering context, elements projected by the `perspective` of their parent,
   // and elements hidden by `backface-visibility` are drawn with their
-  // descendants too. All elements are flex items, so `z-index` applies even to
-  // static ones.
-  const zIndex =
-    typeof computedStyle.zIndex === 'number' ? computedStyle.zIndex : undefined
+  // descendants too. `z-index` applies to positioned elements, and to flex and
+  // grid items.
   const isPositioned = computedStyle.position !== 'static'
+  const zIndex =
+    typeof computedStyle.zIndex === 'number' &&
+    (isPositioned ||
+      context.formattingContext === 'flex' ||
+      context.formattingContext === 'grid')
+      ? computedStyle.zIndex
+      : undefined
   const mixBlendMode =
     computedStyle.mixBlendMode && computedStyle.mixBlendMode !== 'normal'
       ? computedStyle.mixBlendMode
@@ -565,6 +609,7 @@ export default async function* layout(
       projectPlane: context.projectPlane,
       planes,
       fixedContainingBlock,
+      absoluteContainingBlock,
       fixedElements: context.fixedElements,
       floats: context.floats,
       stackingContext,
@@ -597,9 +642,14 @@ export default async function* layout(
     left += x
     top += y
   }
-  if (fixedContainingBlock?.node === node) {
-    fixedContainingBlock.offset.left = left
-    fixedContainingBlock.offset.top = top
+  for (const containingBlock of [
+    fixedContainingBlock,
+    absoluteContainingBlock,
+  ]) {
+    if (containingBlock?.node === node) {
+      containingBlock.offset.left = left
+      containingBlock.offset.top = top
+    }
   }
 
   // Add the layer before the descendants add theirs, to keep the tree order.
@@ -726,6 +776,10 @@ export default async function* layout(
     for (const paragraph of inlineBox.paragraphs) paragraph.finalize()
     drawn.shapes = false
     for (const [index, fragment] of inlineBox.fragments.entries()) {
+      const [dx, dy] = relativeOffset(
+        [...inlineBox.ancestors, inlineBox],
+        fragment.paragraph.node.layout.width
+      )
       const fragmentStyle = { ...computedStyle }
       if (!fragment.first) {
         fragmentStyle.borderLeftWidth = 0
@@ -743,8 +797,8 @@ export default async function* layout(
       baseRenderResult += await rect(
         {
           id: `${id}-${index}`,
-          left: left + fragment.paragraph.node.layout.left + fragment.left,
-          top: top + fragment.paragraph.node.layout.top + fragment.top,
+          left: left + fragment.paragraph.node.layout.left + fragment.left + dx,
+          top: top + fragment.paragraph.node.layout.top + fragment.top + dy,
           width: fragment.width,
           height: fragment.height,
           isInheritingTransform,

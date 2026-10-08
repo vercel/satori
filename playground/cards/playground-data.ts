@@ -182,6 +182,7 @@ const playgroundTabs: Tabs = {
     fontWeight: 600,
     textAlign: 'left',
     padding: 70,
+    boxSizing: 'border-box',
     color: 'red',
     backgroundImage: 'linear-gradient(to right, #334d50, #cbcaa5)',
     height: '100%',
@@ -236,6 +237,7 @@ const playgroundTabs: Tabs = {
     height: '100%',
     width: '100%',
     padding: '40px 56px',
+    boxSizing: 'border-box',
     backgroundImage: 'linear-gradient(to bottom right, #fff 50%, #e0f2fe)',
     color: '#0f172a',
   }}
@@ -333,6 +335,7 @@ const playgroundTabs: Tabs = {
         height: '100%',
         width: '100%',
         padding: 32,
+        boxSizing: 'border-box',
         backgroundColor: '#0f172a',
         color: 'white',
       }}
@@ -408,6 +411,7 @@ const playgroundTabs: Tabs = {
         height: '100%',
         width: '100%',
         padding: '10px 20px',
+        boxSizing: 'border-box',
         justifyContent: 'center',
         fontFamily: 'Geist, "Material Icons"',
         fontSize: 28,
