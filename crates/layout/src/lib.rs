@@ -259,6 +259,7 @@ impl<'a> Reader<'a> {
         match self.int() {
             1 => Overflow::Hidden,
             2 => Overflow::Clip,
+            3 => Overflow::Scroll,
             _ => Overflow::Visible,
         }
     }

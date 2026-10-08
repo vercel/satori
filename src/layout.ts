@@ -335,6 +335,7 @@ export default async function* layout(
     computedStyle.transform = inheritedStyle.transform
     newInheritableStyle.transform = inheritedStyle.transform
     computedStyle.overflow = 'visible'
+    computedStyle.overflowX = computedStyle.overflowY = 'visible'
     computedStyle.clipPath = undefined
     inlineBox = { style: computedStyle, fragments: [], paragraphs: [] }
   }

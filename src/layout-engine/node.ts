@@ -92,7 +92,8 @@ export interface LayoutStyle {
   display?: 'flex' | 'block' | 'flow-root' | 'grid' | 'none' | 'contents'
   position?: 'relative' | 'absolute'
   boxSizing?: 'border-box' | 'content-box'
-  overflow?: 'visible' | 'hidden' | 'clip'
+  overflowX?: 'visible' | 'hidden' | 'clip' | 'scroll'
+  overflowY?: 'visible' | 'hidden' | 'clip' | 'scroll'
   width?: Length
   height?: Length
   minWidth?: Length

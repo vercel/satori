@@ -144,7 +144,8 @@ export async function render(
     display: 'flow-root',
     width: definedWidth || 'auto',
     height: definedHeight || 'auto',
-    overflow: 'hidden',
+    overflowX: 'hidden',
+    overflowY: 'hidden',
   })
 
   // Use a null-prototype object so that text matching Object.prototype property

@@ -416,8 +416,14 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 </tr>
 
 <tr>
-<td colspan="2"><code>overflow</code></td>
-<td>Only <code>visible</code> and <code>hidden</code>; <code>clip</code>, <code>scroll</code> and <code>auto</code> throw. <code>overflowX</code> and <code>overflowY</code> aren't supported</td>
+<td colspan="2"><code>overflow</code>, <code>overflowX</code>, <code>overflowY</code></td>
+<td>Scrollbars aren't drawn and take no space, like overlay scrollbars, so <code>scroll</code> and <code>auto</code> look like <code>hidden</code>.</td>
+<td></td>
+</tr>
+
+<tr>
+<td colspan="2"><code>overflowClipMargin</code></td>
+<td>Supported</td>
 <td></td>
 </tr>
 

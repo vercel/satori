@@ -48,7 +48,7 @@ const FLEX_DIRECTION = {
 
 const FLEX_WRAP = { nowrap: 0, wrap: 1, 'wrap-reverse': 2 }
 
-const OVERFLOW = { visible: 0, hidden: 1, clip: 2 }
+const OVERFLOW = { visible: 0, hidden: 1, clip: 2, scroll: 3 }
 
 const FLOAT = { none: 0, left: 1, right: 2 }
 
@@ -94,8 +94,8 @@ function encodeStyle(
     DISPLAY[style.display] ?? DISPLAY.flex,
     style.position === 'absolute' ? 1 : 0,
     style.boxSizing === 'content-box' ? 1 : 0,
-    OVERFLOW[style.overflow] ?? 0,
-    OVERFLOW[style.overflow] ?? 0
+    OVERFLOW[style.overflowX] ?? 0,
+    OVERFLOW[style.overflowY] ?? 0
   )
   length(style.width, 'auto')
   length(style.height, 'auto')
