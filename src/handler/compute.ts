@@ -576,6 +576,35 @@ export default async function compute(
   layout.position =
     position === 'absolute' || position === 'fixed' ? 'absolute' : 'relative'
 
+  // Floats only apply in block containers, see `layout()`.
+  const float = v(
+    style.float,
+    {
+      none: 'none',
+      left: 'left',
+      right: 'right',
+      'inline-start': 'left',
+      'inline-end': 'right',
+    },
+    'none',
+    'float'
+  )
+  layout.float =
+    float === 'none' || layout.position === 'absolute' ? undefined : float
+  layout.clear = v(
+    style.clear,
+    {
+      none: 'none',
+      left: 'left',
+      right: 'right',
+      both: 'both',
+      'inline-start': 'left',
+      'inline-end': 'right',
+    },
+    'none',
+    'clear'
+  )
+
   // Static elements ignore insets.
   if (position !== 'static') {
     for (const edge of ['top', 'bottom', 'left', 'right'] as const) {
