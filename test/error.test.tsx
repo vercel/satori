@@ -95,6 +95,17 @@ describe('Error', () => {
     )
   })
 
+  it('should name the invalid transform function', async () => {
+    const render = satori(
+      <div style={{ transform: 'translateX(calc(10px + 5px)) wobble(3)' }} />,
+      { width: 100, height: 100, fonts }
+    )
+    await expect(render).rejects.toThrowError(
+      'Invalid transform function: "wobble(3)".'
+    )
+    await expect(render).rejects.not.toThrowError('calc()')
+  })
+
   it('should ignore invalid styles with onStyleError', async () => {
     const errors: string[] = []
     const svg = await satori(

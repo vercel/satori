@@ -591,13 +591,6 @@ function handleSpecialCase(
   return
 }
 
-function getErrorHint(name: string) {
-  if (name === 'transform') {
-    return ' `calc()` is not supported in transform functions.'
-  }
-  return ''
-}
-
 const RGB_SLASH = /rgb\((\d+)\s+(\d+)\s+(\d+)\s*\/\s*([\.\d]+)\)/
 function normalizeColor(value: string | object) {
   if (typeof value === 'string') {
@@ -785,13 +778,11 @@ export default function expand(
 
         Object.assign(serializedStyle, resolvedStyle)
       } catch (err) {
+        // Attach the rule itself if it's not included in the error message.
         const error = new Error(
-          err.message +
-            // Attach the extra information of the rule itself if it's not included in
-            // the error message.
-            (err.message.includes(value)
-              ? '\n  ' + getErrorHint(name)
-              : `\n  in CSS rule \`${name}: ${value}\`.${getErrorHint(name)}`)
+          err.message.includes(value)
+            ? err.message
+            : `${err.message}\n  in CSS rule \`${name}: ${value}\`.`
         )
         if (!onStyleError) throw error
         onStyleError(error)
