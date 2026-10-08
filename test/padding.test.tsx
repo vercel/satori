@@ -28,7 +28,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render element with padding shorthand (2 values)', async () => {
@@ -52,7 +52,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render element with padding shorthand (3 values)', async () => {
@@ -76,7 +76,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render element with padding shorthand (4 values)', async () => {
@@ -100,7 +100,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render element with individual padding properties', async () => {
@@ -127,7 +127,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render padding with text content', async () => {
@@ -143,7 +143,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render padding with border', async () => {
@@ -168,7 +168,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render padding with border-radius', async () => {
@@ -193,7 +193,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render zero padding', async () => {
@@ -217,7 +217,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render padding with flexbox column container', async () => {
@@ -249,7 +249,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render padding with flexbox row container', async () => {
@@ -281,7 +281,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render large padding values', async () => {
@@ -305,7 +305,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render asymmetric padding', async () => {
@@ -332,7 +332,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render padding with nested elements', async () => {
@@ -366,7 +366,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render padding with multiple text lines', async () => {
@@ -383,7 +383,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render padding with gradient background', async () => {
@@ -407,7 +407,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render padding with box-shadow', async () => {
@@ -432,7 +432,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render different padding on each side', async () => {
@@ -459,7 +459,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render padding with opacity', async () => {
@@ -484,7 +484,7 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render padding with transform', async () => {
@@ -509,6 +509,6 @@ describe('Padding', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })

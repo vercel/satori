@@ -44,7 +44,7 @@ describe('display', () => {
       </div>,
       { width: 100, height: 100, fonts: [] }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should lay out <div> elements as blocks', async () => {

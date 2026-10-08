@@ -23,7 +23,7 @@ describe('webkit-text-stroke', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should work nested text stroke', async () => {
@@ -44,7 +44,7 @@ describe('webkit-text-stroke', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should work nested and complex text stroke', async () => {
@@ -78,7 +78,7 @@ describe('webkit-text-stroke', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should accept the shorthand values in any order', async () => {
@@ -102,7 +102,7 @@ describe('webkit-text-stroke', () => {
       </div>,
       { width: 100, height: 120, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should use the current color by default', async () => {
@@ -135,7 +135,7 @@ describe('webkit-text-stroke', () => {
       </div>,
       { width: 100, height: 120, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should draw only the outline of transparent text', async () => {
@@ -157,7 +157,7 @@ describe('webkit-text-stroke', () => {
       </div>,
       { width: 160, height: 60, fonts }
     )
-    expect(toImage(svg, 160)).toMatchImageSnapshot()
+    expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
 
   it('should support relative widths', async () => {
@@ -178,7 +178,7 @@ describe('webkit-text-stroke', () => {
       </div>,
       { width: 100, height: 60, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should throw for invalid values', async () => {

@@ -18,6 +18,6 @@ describe('tw', () => {
       </div>,
       { width: 300, height: 100, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 })

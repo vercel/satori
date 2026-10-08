@@ -41,7 +41,7 @@ describe('order', () => {
       </div>,
       { width: 160, height: 80, fonts }
     )
-    expect(toImage(svg, 160)).toMatchImageSnapshot()
+    expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
 
   it('should paint flex items in order', async () => {
@@ -53,7 +53,7 @@ describe('order', () => {
       </div>,
       { width: 100, height: 40, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should throw for non-integer values', async () => {

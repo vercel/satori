@@ -34,7 +34,7 @@ describe('Minimal JSX runtime', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
 
     async function MyAsyncComponent() {
       await new Promise((resolve) => setTimeout(resolve, 0))
@@ -58,7 +58,7 @@ describe('Minimal JSX runtime', () => {
         fonts,
       }
     )
-    expect(toImage(svg2, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg2, 100)).toMatchImageSnapshot()
   })
 
   it('should support Fragment elements', async () => {
@@ -74,7 +74,7 @@ describe('Minimal JSX runtime', () => {
       height: 100,
       fonts,
     })
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should lay out the children of Fragment elements in their parent', async () => {
@@ -97,6 +97,6 @@ describe('Minimal JSX runtime', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })

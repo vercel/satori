@@ -44,7 +44,7 @@ describe('Text Decoration', () => {
         },
       }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly when `text-decoration-line: underline` and `text-align: right`', async () => {
@@ -84,7 +84,7 @@ describe('Text Decoration', () => {
         },
       }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly when `text-decoration-style: dotted`', async () => {
@@ -117,7 +117,7 @@ describe('Text Decoration', () => {
       </div>,
       { width: 200, height: 200, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly when `text-decoration-style: dashed`', async () => {
@@ -150,7 +150,7 @@ describe('Text Decoration', () => {
       </div>,
       { width: 200, height: 200, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly with `text-decoration` and `transform`', async () => {
@@ -185,7 +185,7 @@ describe('Text Decoration', () => {
         },
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('Should work correctly when `text-decoration-style: double`', async () => {
@@ -226,7 +226,7 @@ describe('Text Decoration', () => {
       </div>,
       { width: 200, height: 200, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should skip ink by default when `text-decoration-line: underline`', async () => {
@@ -249,7 +249,7 @@ describe('Text Decoration', () => {
       { width: 260, height: 120, fonts }
     )
 
-    expect(toImage(svg, 260)).toMatchImageSnapshot()
+    expect(await toImage(svg, 260)).toMatchImageSnapshot()
   })
 
   it('Should render continuous line when `text-decoration-skip-ink: none`', async () => {
@@ -273,7 +273,7 @@ describe('Text Decoration', () => {
       { width: 260, height: 120, fonts }
     )
 
-    expect(toImage(svg, 260)).toMatchImageSnapshot()
+    expect(await toImage(svg, 260)).toMatchImageSnapshot()
   })
 
   it('Should skip ink correctly with complex descenders', async () => {
@@ -296,7 +296,7 @@ describe('Text Decoration', () => {
       { width: 360, height: 160, fonts }
     )
 
-    expect(toImage(svg, 360)).toMatchImageSnapshot()
+    expect(await toImage(svg, 360)).toMatchImageSnapshot()
   })
 
   describe('lines, styles, thickness and offset', () => {
@@ -318,7 +318,7 @@ describe('Text Decoration', () => {
 
     it('should support the thickness in the shorthand', async () => {
       const svg = await render({ textDecoration: 'underline 6px red' })
-      expect(toImage(svg, 220)).toMatchImageSnapshot()
+      expect(await toImage(svg, 220)).toMatchImageSnapshot()
     })
 
     it('should draw several lines', async () => {
@@ -326,12 +326,12 @@ describe('Text Decoration', () => {
         textDecoration: 'underline overline line-through',
         textDecorationColor: 'blue',
       })
-      expect(toImage(svg, 220)).toMatchImageSnapshot()
+      expect(await toImage(svg, 220)).toMatchImageSnapshot()
     })
 
     it('should draw wavy lines', async () => {
       const svg = await render({ textDecoration: 'underline wavy blue' })
-      expect(toImage(svg, 220)).toMatchImageSnapshot()
+      expect(await toImage(svg, 220)).toMatchImageSnapshot()
     })
 
     it('should support percentages of the font size as thickness', async () => {
@@ -340,7 +340,7 @@ describe('Text Decoration', () => {
         textDecorationStyle: 'dotted',
         textDecorationThickness: '15%',
       })
-      expect(toImage(svg, 220)).toMatchImageSnapshot()
+      expect(await toImage(svg, 220)).toMatchImageSnapshot()
     })
 
     it('should offset the underline from the baseline', async () => {
@@ -348,7 +348,7 @@ describe('Text Decoration', () => {
         textDecoration: 'underline 2px red',
         textUnderlineOffset: '8px',
       })
-      expect(toImage(svg, 220)).toMatchImageSnapshot()
+      expect(await toImage(svg, 220)).toMatchImageSnapshot()
     })
 
     it('should reset the longhands with the shorthand', async () => {
@@ -418,7 +418,7 @@ describe('Text Decoration', () => {
         </div>,
         { width: 120, height: 110, fonts }
       )
-      expect(toImage(svg, 120)).toMatchImageSnapshot()
+      expect(await toImage(svg, 120)).toMatchImageSnapshot()
     })
 
     it('should throw for invalid values', async () => {

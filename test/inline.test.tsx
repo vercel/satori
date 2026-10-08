@@ -398,6 +398,6 @@ describe('Inline layout', () => {
       </div>,
       { width: 300, height: 60, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 })

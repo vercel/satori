@@ -45,7 +45,7 @@ describe('z-index', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should paint negative z-index above the background of the stacking context', async () => {
@@ -73,7 +73,7 @@ describe('z-index', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should paint positioned elements above static ones', async () => {
@@ -98,7 +98,7 @@ describe('z-index', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support z-index on static elements', async () => {
@@ -118,7 +118,7 @@ describe('z-index', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should keep z-index within its stacking context', async () => {
@@ -160,7 +160,7 @@ describe('z-index', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     }
   })
 
@@ -182,7 +182,7 @@ describe('z-index', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should throw for invalid values', async () => {

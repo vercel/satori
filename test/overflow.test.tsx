@@ -25,7 +25,7 @@ describe('Overflow', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should work with nested border, border-radius, padding', async () => {
@@ -64,7 +64,7 @@ describe('Overflow', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should work with ellipsis, nowrap', async () => {
@@ -113,7 +113,7 @@ describe('Overflow', () => {
       </div>,
       { width: 450, height: 450, fonts, embedFont: true }
     )
-    expect(toImage(svg, 450)).toMatchImageSnapshot()
+    expect(await toImage(svg, 450)).toMatchImageSnapshot()
   })
 
   it("should not work when overflow is not 'hidden' and overflow property should not be inherited", async () => {
@@ -160,7 +160,7 @@ describe('Overflow', () => {
       </div>,
       { width: 450, height: 450, fonts, embedFont: true }
     )
-    expect(toImage(svg, 450)).toMatchImageSnapshot()
+    expect(await toImage(svg, 450)).toMatchImageSnapshot()
   })
 
   describe('values', () => {
@@ -201,7 +201,7 @@ describe('Overflow', () => {
         </div>,
         { width: 420, height: 100, fonts }
       )
-      expect(toImage(svg, 420)).toMatchImageSnapshot()
+      expect(await toImage(svg, 420)).toMatchImageSnapshot()
     })
 
     it('should clip each axis', async () => {
@@ -215,7 +215,7 @@ describe('Overflow', () => {
         </div>,
         { width: 420, height: 100, fonts }
       )
-      expect(toImage(svg, 420)).toMatchImageSnapshot()
+      expect(await toImage(svg, 420)).toMatchImageSnapshot()
     })
 
     it('should extend the clip by overflowClipMargin', async () => {
@@ -233,7 +233,7 @@ describe('Overflow', () => {
         </div>,
         { width: 420, height: 110, fonts }
       )
-      expect(toImage(svg, 420)).toMatchImageSnapshot()
+      expect(await toImage(svg, 420)).toMatchImageSnapshot()
     })
 
     it('should only make scroll containers with values other than clip', async () => {
@@ -284,7 +284,7 @@ describe('Overflow', () => {
         </div>,
         { width: 300, height: 120, fonts }
       )
-      expect(toImage(svg, 300)).toMatchImageSnapshot()
+      expect(await toImage(svg, 300)).toMatchImageSnapshot()
     })
 
     it('should show an ellipsis with clip', async () => {
@@ -314,7 +314,7 @@ describe('Overflow', () => {
         </div>,
         { width: 300, height: 50, fonts }
       )
-      expect(toImage(svg, 300)).toMatchImageSnapshot()
+      expect(await toImage(svg, 300)).toMatchImageSnapshot()
     })
 
     it('should throw for invalid values', async () => {

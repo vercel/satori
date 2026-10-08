@@ -35,7 +35,7 @@ describe('backgroundClip', () => {
       }
     )
 
-    expect(toImage(svg)).toMatchImageSnapshot()
+    expect(await toImage(svg)).toMatchImageSnapshot()
   })
 
   it('should render background-clip:text compatible with transform', async () => {
@@ -67,7 +67,7 @@ describe('backgroundClip', () => {
       }
     )
 
-    expect(toImage(svg)).toMatchImageSnapshot()
+    expect(await toImage(svg)).toMatchImageSnapshot()
   })
 
   it('should render background-clip:text compatible with mask', async () => {
@@ -100,7 +100,7 @@ describe('backgroundClip', () => {
       }
     )
 
-    expect(toImage(svg)).toMatchImageSnapshot()
+    expect(await toImage(svg)).toMatchImageSnapshot()
   })
 
   it('should preserve color', async () => {
@@ -123,7 +123,7 @@ describe('backgroundClip', () => {
       }
     )
 
-    expect(toImage(svg)).toMatchImageSnapshot()
+    expect(await toImage(svg)).toMatchImageSnapshot()
   })
 
   it('should support -webkit-background-clip', async () => {
@@ -146,7 +146,7 @@ describe('backgroundClip', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support box values', async () => {
@@ -192,6 +192,6 @@ describe('backgroundClip', () => {
       </div>,
       { width: 300, height: 180, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 })

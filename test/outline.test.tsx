@@ -50,7 +50,7 @@ describe('outline', () => {
       </div>,
       { width: 480, height: 90, fonts }
     )
-    expect(toImage(svg, 480)).toMatchImageSnapshot()
+    expect(await toImage(svg, 480)).toMatchImageSnapshot()
   })
 
   it('should be clipped by ancestors, not by the element', async () => {
@@ -89,7 +89,7 @@ describe('outline', () => {
       </div>,
       { width: 170, height: 90, fonts }
     )
-    expect(toImage(svg, 170)).toMatchImageSnapshot()
+    expect(await toImage(svg, 170)).toMatchImageSnapshot()
   })
 
   it('should not draw outlines without a style', async () => {
@@ -100,6 +100,6 @@ describe('outline', () => {
       </div>,
       { width: 100, height: 130, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })

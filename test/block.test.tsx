@@ -25,7 +25,7 @@ describe('display: block', () => {
         <div style={{ height: 20, width: 50, background: 'blue' }} />
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should collapse the margins of siblings', async () => {
@@ -38,7 +38,7 @@ describe('display: block', () => {
         <div style={{ height: 20, marginTop: -10, background: 'blue' }} />
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should collapse the margins of a parent and its first child', async () => {
@@ -74,7 +74,7 @@ describe('display: block', () => {
         </div>
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should center children with auto margins', async () => {
@@ -106,7 +106,7 @@ describe('display: block', () => {
         />
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should resolve percentages against the containing block', async () => {
@@ -131,7 +131,7 @@ describe('display: block', () => {
         />
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should include padding and borders in the size of children', async () => {
@@ -157,7 +157,7 @@ describe('display: block', () => {
         />
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should size to the height of its content', async () => {
@@ -187,7 +187,7 @@ describe('display: block', () => {
         </div>
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should lay out flex children and flex parents', async () => {
@@ -211,7 +211,7 @@ describe('display: block', () => {
         <div style={{ display: 'block', width: 20, background: 'black' }} />
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should wrap text to the width of the block', async () => {
@@ -232,7 +232,7 @@ describe('display: block', () => {
       100,
       100
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should stack text children', async () => {
@@ -251,7 +251,7 @@ describe('display: block', () => {
         Second line
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should skip children with display: none', async () => {
@@ -262,7 +262,7 @@ describe('display: block', () => {
         <div style={{ height: 20, background: 'green' }} />
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should position absolute children', async () => {
@@ -290,6 +290,6 @@ describe('display: block', () => {
         <div style={{ height: 20, background: 'green' }} />
       </div>
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })

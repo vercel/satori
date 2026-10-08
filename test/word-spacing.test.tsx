@@ -23,6 +23,6 @@ describe('Word Spacing', () => {
       </div>,
       { width: 300, height: 110, fonts }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 })

@@ -30,7 +30,7 @@ describe('white-space', () => {
         }
       )
 
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should not render extra line breaks with `white-space: normal`', async () => {
@@ -48,7 +48,7 @@ describe('white-space', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should wrap automatically with `white-space: normal`', async () => {
@@ -66,7 +66,7 @@ describe('white-space', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 20)).toMatchImageSnapshot()
+      expect(await toImage(svg, 20)).toMatchImageSnapshot()
     })
 
     it('Should have line break before fast.!!!!!!!!!!!!!!!!!', async () => {
@@ -85,7 +85,7 @@ describe('white-space', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
   })
 
@@ -105,7 +105,7 @@ describe('white-space', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should always preserve extra line breaks with `white-space: pre`', async () => {
@@ -124,7 +124,7 @@ describe('white-space', () => {
           embedFont: false,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render line breaks correctly without separators', async () => {
@@ -144,7 +144,7 @@ describe('white-space', () => {
           embedFont: false,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should not wrap with `white-space: pre`', async () => {
@@ -163,7 +163,7 @@ describe('white-space', () => {
           embedFont: false,
         }
       )
-      expect(toImage(svg, 20)).toMatchImageSnapshot()
+      expect(await toImage(svg, 20)).toMatchImageSnapshot()
     })
   })
 
@@ -183,7 +183,7 @@ describe('white-space', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should always preserve extra line breaks with `white-space: pre-wrap`', async () => {
@@ -202,7 +202,7 @@ describe('white-space', () => {
           embedFont: false,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should automatically wrap with `white-space: pre-wrap`', async () => {
@@ -221,7 +221,7 @@ describe('white-space', () => {
           embedFont: false,
         }
       )
-      expect(toImage(svg, 20)).toMatchImageSnapshot()
+      expect(await toImage(svg, 20)).toMatchImageSnapshot()
     })
   })
 
@@ -242,7 +242,7 @@ describe('white-space', () => {
           embedFont: false,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -263,7 +263,7 @@ describe('white-space', () => {
           embedFont: false,
         }
       )
-      expect(toImage(svg, 20)).toMatchImageSnapshot()
+      expect(await toImage(svg, 20)).toMatchImageSnapshot()
     })
   })
 
@@ -274,7 +274,7 @@ describe('white-space', () => {
         height: 100,
         fonts,
       })
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render `\\n` as a line break with `pre`', async () => {
@@ -292,7 +292,7 @@ describe('white-space', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render consecutive line breaks with `pre`', async () => {
@@ -310,7 +310,7 @@ describe('white-space', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 })

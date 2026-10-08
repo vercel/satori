@@ -22,7 +22,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 400, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
 
     it('should not render ligatures when disabled', async () => {
@@ -41,7 +41,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 400, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
 
     it('should wrap using the shaped ligature width', async () => {
@@ -62,7 +62,7 @@ describe('OpenType Features', () => {
         { width: 120, height: 100, fonts, embedFont: true }
       )
 
-      expect(toImage(svg, 120)).toMatchImageSnapshot()
+      expect(await toImage(svg, 120)).toMatchImageSnapshot()
     })
   })
 
@@ -83,7 +83,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 500, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 500)).toMatchImageSnapshot()
+      expect(await toImage(svg, 500)).toMatchImageSnapshot()
     })
 
     it('should disable kerning when specified', async () => {
@@ -102,7 +102,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 500, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 500)).toMatchImageSnapshot()
+      expect(await toImage(svg, 500)).toMatchImageSnapshot()
     })
   })
 
@@ -123,7 +123,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 400, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
   })
 
@@ -144,7 +144,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 400, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
 
     it('should render lining numerals (lnum)', async () => {
@@ -163,7 +163,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 400, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
 
     it('should render tabular numerals (tnum)', async () => {
@@ -184,7 +184,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 200, height: 150, fonts, embedFont: true }
       )
-      expect(toImage(svg, 200)).toMatchImageSnapshot()
+      expect(await toImage(svg, 200)).toMatchImageSnapshot()
     })
 
     it('should render proportional numerals (pnum)', async () => {
@@ -205,7 +205,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 200, height: 150, fonts, embedFont: true }
       )
-      expect(toImage(svg, 200)).toMatchImageSnapshot()
+      expect(await toImage(svg, 200)).toMatchImageSnapshot()
     })
   })
 
@@ -226,7 +226,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 400, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
   })
 
@@ -249,7 +249,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 300, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 300)).toMatchImageSnapshot()
+      expect(await toImage(svg, 300)).toMatchImageSnapshot()
     })
 
     it('should render subscript (subs)', async () => {
@@ -270,7 +270,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 300, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 300)).toMatchImageSnapshot()
+      expect(await toImage(svg, 300)).toMatchImageSnapshot()
     })
   })
 
@@ -291,7 +291,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 450, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 450)).toMatchImageSnapshot()
+      expect(await toImage(svg, 450)).toMatchImageSnapshot()
     })
 
     it('should enable some features and disable others', async () => {
@@ -310,7 +310,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 400, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
   })
 
@@ -332,7 +332,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 400, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
   })
 
@@ -352,7 +352,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 300, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 300)).toMatchImageSnapshot()
+      expect(await toImage(svg, 300)).toMatchImageSnapshot()
     })
 
     it('should handle "normal" fontFeatureSettings', async () => {
@@ -370,7 +370,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 300, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 300)).toMatchImageSnapshot()
+      expect(await toImage(svg, 300)).toMatchImageSnapshot()
     })
 
     it('should handle invalid feature tags gracefully', async () => {
@@ -388,7 +388,7 @@ describe('OpenType Features', () => {
         </div>,
         { width: 400, height: 100, fonts, embedFont: true }
       )
-      expect(toImage(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
   })
 })

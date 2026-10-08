@@ -42,7 +42,7 @@ describe('Color', () => {
       />,
       { width: 160, height: 40, fonts }
     )
-    expect(toImage(svg, 160)).toMatchImageSnapshot()
+    expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
 
   it('should support color-mix(), relative colors and light-dark()', async () => {
@@ -70,7 +70,7 @@ describe('Color', () => {
       />,
       { width: 160, height: 40, fonts }
     )
-    expect(toImage(svg, 160)).toMatchImageSnapshot()
+    expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
 
   it('should convert colors in all properties', async () => {
@@ -135,7 +135,7 @@ describe('Color', () => {
       </div>,
       { width: 260, height: 90, fonts }
     )
-    expect(toImage(svg, 260)).toMatchImageSnapshot()
+    expect(await toImage(svg, 260)).toMatchImageSnapshot()
   })
 
   it('should interpolate gradients in color spaces', async () => {
@@ -170,7 +170,7 @@ describe('Color', () => {
       </div>,
       { width: 160, height: 128, fonts }
     )
-    expect(toImage(svg, 160)).toMatchImageSnapshot()
+    expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
 
   it('should keep colors with `convertColors: false`', async () => {

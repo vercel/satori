@@ -24,7 +24,7 @@ describe('Gradient', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support repeating linear-gradient', async () => {
@@ -44,7 +44,7 @@ describe('Gradient', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support linear-gradient with transparency', async () => {
@@ -63,7 +63,7 @@ describe('Gradient', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support linear-gradient with omitted orientation', async () => {
@@ -82,7 +82,7 @@ describe('Gradient', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support using background instead of backgroundImage', async () => {
@@ -100,7 +100,7 @@ describe('Gradient', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support multiple direction keywords', async () => {
@@ -118,7 +118,7 @@ describe('Gradient', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support other degree unit', async () => {
@@ -146,7 +146,7 @@ describe('Gradient', () => {
       )
 
       for (const svg of svgs) {
-        expect(toImage(svg, 100)).toMatchImageSnapshot()
+        expect(await toImage(svg, 100)).toMatchImageSnapshot()
       }
     })
   })
@@ -169,7 +169,7 @@ describe('Gradient', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should make sense if x of y is zero', async () => {
@@ -189,7 +189,7 @@ describe('Gradient', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support radial-gradient with unspecified <ending-shape>', async () => {
@@ -219,7 +219,7 @@ describe('Gradient', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support default value', async () => {
@@ -239,7 +239,7 @@ describe('Gradient', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support releative unit', async () => {
@@ -268,9 +268,9 @@ describe('Gradient', () => {
           )
         )
       )
-      svgs.forEach((svg) => {
-        expect(toImage(svg, 100)).toMatchImageSnapshot()
-      })
+      for (const svg of svgs) {
+        expect(await toImage(svg, 100)).toMatchImageSnapshot()
+      }
     })
 
     it('should support rg-size with rg-extent-keyword', async () => {
@@ -299,9 +299,9 @@ describe('Gradient', () => {
         )
       )
 
-      svgs.forEach((svg) => {
-        expect(toImage(svg, 100)).toMatchImageSnapshot()
-      })
+      for (const svg of svgs) {
+        expect(await toImage(svg, 100)).toMatchImageSnapshot()
+      }
     })
 
     it('should support explicitly setting rg-size', async () => {
@@ -329,9 +329,9 @@ describe('Gradient', () => {
         )
       )
 
-      svgs.forEach((svg) => {
-        expect(toImage(svg, 100)).toMatchImageSnapshot()
-      })
+      for (const svg of svgs) {
+        expect(await toImage(svg, 100)).toMatchImageSnapshot()
+      }
     })
   })
 
@@ -354,7 +354,7 @@ describe('Gradient', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should resolve gradient layers in the correct order', async () => {
@@ -376,7 +376,7 @@ describe('Gradient', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render gradient patterns in the correct object space', async () => {
@@ -404,7 +404,7 @@ describe('Gradient', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should calculate the gradient angle and length correctly', async () => {
@@ -424,7 +424,7 @@ describe('Gradient', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should calculate the gradient angle and length correctly with offset', async () => {
@@ -446,7 +446,7 @@ describe('Gradient', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should be able to render grid backgrounds', async () => {
@@ -473,7 +473,7 @@ describe('Gradient', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 300)).toMatchImageSnapshot()
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
   describe('repeating-linear-gradient', async () => {
@@ -500,9 +500,9 @@ describe('Gradient', () => {
           )
         )
       )
-      svgs.forEach((svg) => {
-        expect(toImage(svg, 100)).toMatchImageSnapshot()
-      })
+      for (const svg of svgs) {
+        expect(await toImage(svg, 100)).toMatchImageSnapshot()
+      }
     })
 
     it('should support degree', async () => {
@@ -531,9 +531,9 @@ describe('Gradient', () => {
         )
       )
 
-      svgs.forEach((svg) => {
-        expect(toImage(svg, 100)).toMatchImageSnapshot()
-      })
+      for (const svg of svgs) {
+        expect(await toImage(svg, 100)).toMatchImageSnapshot()
+      }
     })
 
     it('should support background-size and background-repeat', async () => {
@@ -553,7 +553,7 @@ describe('Gradient', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support multiple repeating-linear-gradient', async () => {
@@ -573,7 +573,7 @@ describe('Gradient', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should compute correct cycle', async () => {
@@ -599,9 +599,9 @@ describe('Gradient', () => {
           )
         )
       )
-      svgs.forEach((svg) => {
-        expect(toImage(svg, 100)).toMatchImageSnapshot()
-      })
+      for (const svg of svgs) {
+        expect(await toImage(svg, 100)).toMatchImageSnapshot()
+      }
     })
   })
 
@@ -633,9 +633,9 @@ describe('Gradient', () => {
           )
         )
       )
-      svgs.forEach((svg) => {
-        expect(toImage(svg, 100)).toMatchImageSnapshot()
-      })
+      for (const svg of svgs) {
+        expect(await toImage(svg, 100)).toMatchImageSnapshot()
+      }
     })
   })
 
@@ -654,7 +654,7 @@ describe('Gradient', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support color stops with two positions', async () => {
@@ -695,7 +695,7 @@ describe('Gradient', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support conic gradients', async () => {
@@ -735,6 +735,6 @@ describe('Gradient', () => {
       </div>,
       { width: 240, height: 160, fonts }
     )
-    expect(toImage(svg, 240)).toMatchImageSnapshot()
+    expect(await toImage(svg, 240)).toMatchImageSnapshot()
   })
 })

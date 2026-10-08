@@ -23,7 +23,7 @@ describe('Border', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -35,7 +35,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should fallback border color to the current color', async () => {
@@ -50,7 +50,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support specifying `borderColor`', async () => {
@@ -65,7 +65,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support overriding borderColor', async () => {
@@ -80,7 +80,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -92,7 +92,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -104,7 +104,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -164,7 +164,7 @@ describe('Border', () => {
           height: 54,
           fonts,
         })
-        expect(toImage(svg, 540)).toMatchImageSnapshot()
+        expect(await toImage(svg, 540)).toMatchImageSnapshot()
       })
     }
 
@@ -207,7 +207,7 @@ describe('Border', () => {
         </div>,
         { width: 340, height: 74, fonts }
       )
-      expect(toImage(svg, 340)).toMatchImageSnapshot()
+      expect(await toImage(svg, 340)).toMatchImageSnapshot()
     })
 
     it('should not draw or lay out borders without a style', async () => {
@@ -242,7 +242,7 @@ describe('Border', () => {
         </div>,
         { width: 120, height: 40, fonts }
       )
-      expect(toImage(svg, 120)).toMatchImageSnapshot()
+      expect(await toImage(svg, 120)).toMatchImageSnapshot()
     })
 
     it('should throw for invalid styles', async () => {
@@ -283,7 +283,7 @@ describe('Border', () => {
         </div>,
         { width: 400, height: 70, fonts }
       )
-      expect(toImage(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
   })
 
@@ -304,7 +304,7 @@ describe('Border', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support radius for a certain corner', async () => {
@@ -325,7 +325,7 @@ describe('Border', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should not exceed the length of the short side', async () => {
@@ -344,7 +344,7 @@ describe('Border', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support percentage border radius', async () => {
@@ -363,7 +363,7 @@ describe('Border', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support vw vh em and rem units', async () => {
@@ -391,7 +391,7 @@ describe('Border', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support slash and 2-value corner', async () => {
@@ -420,7 +420,7 @@ describe('Border', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -439,7 +439,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support non-complete border', async () => {
@@ -454,7 +454,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support advanced border with radius', async () => {
@@ -474,7 +474,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should join sides with different colors diagonally', async () => {
@@ -529,7 +529,7 @@ describe('Border', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -558,7 +558,7 @@ describe('Border', () => {
         </div>
       )
       const svg = await satori(element, { width: 260, height: 50, fonts })
-      expect(toImage(svg, 260)).toMatchImageSnapshot()
+      expect(await toImage(svg, 260)).toMatchImageSnapshot()
 
       // With 2 device pixels per pixel, half pixels are kept.
       const scaled = await satori(element, {
@@ -567,7 +567,7 @@ describe('Border', () => {
         fonts,
         pointScaleFactor: 2,
       })
-      expect(toImage(scaled, 520)).toMatchImageSnapshot()
+      expect(await toImage(scaled, 520)).toMatchImageSnapshot()
     })
   })
 })

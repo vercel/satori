@@ -145,7 +145,7 @@ describe('3D transforms', () => {
       </Row>,
       { width: 360, height: 120, fonts }
     )
-    expect(toImage(svg, 360)).toMatchImageSnapshot()
+    expect(await toImage(svg, 360)).toMatchImageSnapshot()
   })
 
   it('should support matrix(), matrix3d() and 3D transform functions', async () => {
@@ -189,7 +189,7 @@ describe('3D transforms', () => {
       </Row>,
       { width: 420, height: 120, fonts }
     )
-    expect(toImage(svg, 420)).toMatchImageSnapshot()
+    expect(await toImage(svg, 420)).toMatchImageSnapshot()
   })
 
   it('should support all angle units', async () => {
@@ -224,7 +224,7 @@ describe('3D transforms', () => {
       </Row>,
       { width: 420, height: 100, fonts }
     )
-    expect(toImage(svg, 420)).toMatchImageSnapshot()
+    expect(await toImage(svg, 420)).toMatchImageSnapshot()
   })
 
   it('should support relative lengths and percentages', async () => {
@@ -260,7 +260,7 @@ describe('3D transforms', () => {
       </Row>,
       { width: 420, height: 120, fonts }
     )
-    expect(toImage(svg, 420)).toMatchImageSnapshot()
+    expect(await toImage(svg, 420)).toMatchImageSnapshot()
   })
 
   it('should support a depth in transform-origin', async () => {
@@ -286,7 +286,7 @@ describe('3D transforms', () => {
       </Row>,
       { width: 360, height: 120, fonts }
     )
-    expect(toImage(svg, 360)).toMatchImageSnapshot()
+    expect(await toImage(svg, 360)).toMatchImageSnapshot()
   })
 
   it('should hide back faces with backface-visibility: hidden', async () => {
@@ -322,7 +322,7 @@ describe('3D transforms', () => {
       </Row>,
       { width: 440, height: 120, fonts }
     )
-    expect(toImage(svg, 440)).toMatchImageSnapshot()
+    expect(await toImage(svg, 440)).toMatchImageSnapshot()
   })
 
   it('should flatten children unless transform-style is preserve-3d', async () => {
@@ -357,7 +357,7 @@ describe('3D transforms', () => {
       </Row>,
       { width: 360, height: 120, fonts }
     )
-    expect(toImage(svg, 360)).toMatchImageSnapshot()
+    expect(await toImage(svg, 360)).toMatchImageSnapshot()
   })
 
   it('should draw preserve-3d children sorted by depth', async () => {
@@ -401,7 +401,7 @@ describe('3D transforms', () => {
       </Row>,
       { width: 360, height: 160, fonts }
     )
-    expect(toImage(svg, 360)).toMatchImageSnapshot()
+    expect(await toImage(svg, 360)).toMatchImageSnapshot()
   })
 
   it('should draw a cube with preserve-3d', async () => {
@@ -412,7 +412,7 @@ describe('3D transforms', () => {
       </Row>,
       { width: 200, height: 200, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should approximate perspective', async () => {
@@ -434,7 +434,7 @@ describe('3D transforms', () => {
       </Row>,
       { width: 360, height: 160, fonts }
     )
-    expect(toImage(svg, 360)).toMatchImageSnapshot()
+    expect(await toImage(svg, 360)).toMatchImageSnapshot()
   })
 })
 
@@ -450,7 +450,7 @@ describe('3D transforms with perspective in satori/experimental', () => {
       </Row>,
       { width: 320, height: 200, fonts }
     )
-    expect(toImage(svg, 320)).toMatchImageSnapshot()
+    expect(await toImage(svg, 320)).toMatchImageSnapshot()
   })
 
   it('should support perspective() and perspective-origin', async () => {
@@ -479,7 +479,7 @@ describe('3D transforms with perspective in satori/experimental', () => {
       </Row>,
       { width: 480, height: 200, fonts }
     )
-    expect(toImage(svg, 480)).toMatchImageSnapshot()
+    expect(await toImage(svg, 480)).toMatchImageSnapshot()
   })
 
   it('should draw each face of a preserve-3d cube with perspective', async () => {
@@ -489,7 +489,7 @@ describe('3D transforms with perspective in satori/experimental', () => {
       </Row>,
       { width: 200, height: 200, fonts }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should keep ancestor clipping around elements with perspective', async () => {
@@ -518,6 +518,6 @@ describe('3D transforms with perspective in satori/experimental', () => {
       </Row>,
       { width: 320, height: 200, fonts }
     )
-    expect(toImage(svg, 320)).toMatchImageSnapshot()
+    expect(await toImage(svg, 320)).toMatchImageSnapshot()
   })
 })

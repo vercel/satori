@@ -30,7 +30,7 @@ describe('CSS Variables', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support CSS variable inheritance', async () => {
@@ -64,7 +64,7 @@ describe('CSS Variables', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support CSS variable override in children', async () => {
@@ -99,7 +99,7 @@ describe('CSS Variables', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support CSS variable fallback values', async () => {
@@ -117,7 +117,7 @@ describe('CSS Variables', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support nested CSS variables', async () => {
@@ -137,7 +137,7 @@ describe('CSS Variables', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support CSS variables with dimensions', async () => {
@@ -156,7 +156,7 @@ describe('CSS Variables', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support multiple CSS variables in nested inheritance', async () => {
@@ -191,7 +191,7 @@ describe('CSS Variables', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support CSS variables with border properties', async () => {
@@ -213,7 +213,7 @@ describe('CSS Variables', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should handle undefined variables with fallback chain', async () => {
@@ -232,7 +232,7 @@ describe('CSS Variables', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support CSS variables with percentage values', async () => {
@@ -252,7 +252,7 @@ describe('CSS Variables', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support CSS variable for text color', async () => {
@@ -283,7 +283,7 @@ describe('CSS Variables', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should support CSS variable for inherited text color', async () => {
@@ -318,6 +318,6 @@ describe('CSS Variables', () => {
         fonts,
       }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 })

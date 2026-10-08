@@ -40,6 +40,6 @@ describe('place-*', () => {
       </div>,
       { width: 310, height: 100, fonts }
     )
-    expect(toImage(svg, 310)).toMatchImageSnapshot()
+    expect(await toImage(svg, 310)).toMatchImageSnapshot()
   })
 })
