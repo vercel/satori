@@ -12,7 +12,7 @@ import {
   isString,
   lengthToNumber,
 } from '../utils.js'
-import { getYoga, TYoga, YogaNode } from '../yoga.js'
+import { LayoutNode } from '../layout-engine/index.js'
 import buildText, { container } from '../builder/text.js'
 import { buildDropShadow } from '../builder/shadow.js'
 import buildDecoration from '../builder/text-decoration.js'
@@ -47,8 +47,6 @@ export default async function* buildTextNodes(
   content: string,
   context: LayoutContext
 ): AsyncGenerator<{ word: string; locale?: Locale }[], string, [any, any]> {
-  const Yoga = await getYoga()
-
   const {
     parentStyle,
     inheritedStyle,
@@ -75,12 +73,11 @@ export default async function* buildTextNodes(
     fontFeatureSettings,
     _inheritedBackgroundClipTextPath,
     _inheritedBackgroundClipTextHasBackground,
-    flexShrink,
   } = parentStyle
 
   const {
-    words,
-    requiredBreaks,
+    words: segmentedWords,
+    requiredBreaks: segmentedRequiredBreaks,
     allowSoftWrap,
     allowBreakWord,
     processedContent,
@@ -89,12 +86,24 @@ export default async function* buildTextNodes(
     blockEllipsis,
   } = preprocess(content, parentStyle, locale)
 
-  const textContainer = createTextContainerNode(Yoga, textAlign)
-  parent.insertChild(textContainer, parent.getChildCount())
+  v(
+    textAlign,
+    {
+      left: true,
+      right: true,
+      center: true,
+      justify: true,
+      // We don't have other writing modes yet.
+      start: true,
+      end: true,
+    },
+    true,
+    'textAlign'
+  )
 
-  if (isUndefined(flexShrink)) {
-    parent.setFlexShrink(1)
-  }
+  // Like the anonymous flex item around text in CSS.
+  const textContainer = new LayoutNode({ flexShrink: 1 })
+  parent.insertChild(textContainer)
 
   // Get the correct font according to the container style.
   // https://www.w3.org/TR/CSS2/visudet.html
@@ -211,9 +220,15 @@ export default async function* buildTextNodes(
     let currentBaselineOffset = 0
 
     lineWidths = []
+    baselines = []
     lineSegmentNumber = [0]
     texts = []
     wordPositionInLayout = []
+
+    // The text is laid out with several widths, and words may be broken for
+    // one of them, so keep the original words.
+    const words = segmentedWords.slice()
+    const requiredBreaks = segmentedRequiredBreaks.slice()
 
     // We naively implement the width calculation without proper kerning.
     // @TODO: Support different writing modes.
@@ -261,13 +276,21 @@ export default async function* buildTextNodes(
       // - we have break-word
       // - the word is wider than the container width
       // - the word will be put at the beginning of the line
+      // A single grapheme can't be broken, even if it's wider than the
+      // container, e.g. when measuring the min-content width.
       const needToBreakWord =
         allowBreakWord && w > width && (!currentWidth || willWrap || forceBreak)
+      const chars = needToBreakWord ? segment(word, 'grapheme') : undefined
 
-      if (needToBreakWord) {
+      if (chars && chars.length > 1) {
         // Break the word into multiple segments and continue the loop.
-        const chars = segment(word, 'grapheme')
         words.splice(i, 1, ...chars)
+        requiredBreaks.splice(
+          i,
+          1,
+          forceBreak,
+          ...chars.slice(1).map(() => false)
+        )
         if (currentWidth > 0) {
           // Start a new line, spaces can be ignored.
           lineWidths.push(currentWidth - prevLineEndingSpacesWidth)
@@ -398,7 +421,7 @@ export default async function* buildTextNodes(
   // size, because the container might have a fixed width or height or being
   // expanded by its parent.
   let measuredTextSize = { width: 0, height: 0 }
-  textContainer.setMeasureFunc((containerWidth) => {
+  const measure = (containerWidth: number) => {
     const { width, height } = flow(containerWidth)
 
     // When doing `text-wrap: balance`, we reflow the text multiple times
@@ -457,13 +480,10 @@ export default async function* buildTextNodes(
 
     const _width = Math.ceil(width)
     measuredTextSize = { width: _width, height }
-    // This may be a temporary fix, I didn't dig deep into yoga.
-    // But when the return value of width here doesn't change (assuming the value of width is 216.9),
-    // when we later get the width through `parent.getComputedWidth()`, sometimes it returns 216 and sometimes 217.
-    // I'm not sure if this is a yoga bug, but it seems related to the entire page width.
-    // So I use Math.ceil.
+    // Round up, so that rounding the layout doesn't make the text wrap.
     return { width: _width, height }
-  })
+  }
+  textContainer.measure = measure
 
   const [x, y] = yield
 
@@ -478,7 +498,11 @@ export default async function* buildTextNodes(
     top: containerTop,
     width: containerWidth,
     height: containerHeight,
-  } = textContainer.getComputedLayout()
+  } = textContainer.layout
+
+  // The layout engine may have measured the text with other widths last, so
+  // lay it out again with the final width.
+  measure(containerWidth)
 
   // Convert textIndent to number if it's a string (e.g., percentage)
   const textIndentNumber =
@@ -492,12 +516,7 @@ export default async function* buildTextNodes(
         ) || 0
       : textIndent
 
-  const parentContainerInnerWidth =
-    parent.getComputedWidth() -
-    parent.getComputedPadding(Yoga.EDGE_LEFT) -
-    parent.getComputedPadding(Yoga.EDGE_RIGHT) -
-    parent.getComputedBorder(Yoga.EDGE_LEFT) -
-    parent.getComputedBorder(Yoga.EDGE_RIGHT)
+  const parentContainerInnerWidth = parent.contentWidth
 
   // Attach offset to the current node.
   const left = x + containerLeft
@@ -967,30 +986,6 @@ export default async function* buildTextNodes(
   }
 
   return result
-}
-
-function createTextContainerNode(Yoga: TYoga, textAlign: string): YogaNode {
-  // Create a container node for this text fragment.
-  const textContainer = Yoga.Node.create()
-  textContainer.setAlignItems(Yoga.ALIGN_BASELINE)
-  textContainer.setJustifyContent(
-    v(
-      textAlign,
-      {
-        left: Yoga.JUSTIFY_FLEX_START,
-        right: Yoga.JUSTIFY_FLEX_END,
-        center: Yoga.JUSTIFY_CENTER,
-        justify: Yoga.JUSTIFY_SPACE_BETWEEN,
-        // We don't have other writing modes yet.
-        start: Yoga.JUSTIFY_FLEX_START,
-        end: Yoga.JUSTIFY_FLEX_END,
-      },
-      Yoga.JUSTIFY_FLEX_START,
-      'textAlign'
-    )
-  )
-
-  return textContainer
 }
 
 function detectTabs(text: string):

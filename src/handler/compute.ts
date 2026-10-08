@@ -1,5 +1,5 @@
 /**
- * Handler to update the Yoga node properties with the given element type and
+ * Handler to update the layout node style with the given element type and
  * style. Each supported element has its own preset styles, so this function
  * also returns the inherited style for children of the element.
  */
@@ -14,8 +14,15 @@ import {
   parseViewBox,
   v,
 } from '../utils.js'
-import { getYoga, YogaNode } from '../yoga.js'
+import type { LayoutNode, LayoutStyle, Length } from '../layout-engine/index.js'
 import { resolveImageData } from './image.js'
+import {
+  parseGridAutoFlow,
+  parseGridAutoTracks,
+  parseGridLine,
+  parseGridTemplateAreas,
+  parseGridTrackList,
+} from '../parser/grid.js'
 
 type SatoriElement = keyof typeof presets
 
@@ -26,7 +33,7 @@ type SatoriElement = keyof typeof presets
  * rendered.
  */
 export type ReplacedElementHandler = (
-  node: YogaNode,
+  node: LayoutNode,
   style: SerializedStyle,
   props: Record<string, any>
 ) => Promise<void>
@@ -38,7 +45,7 @@ export type ReplacedElementHandlers = Record<string, ReplacedElementHandler>
  * `width`/`height` attributes and natural aspect ratio.
  */
 export function setReplacedElementSize(
-  node: YogaNode,
+  node: LayoutNode,
   style: SerializedStyle,
   naturalWidth: number,
   naturalHeight: number,
@@ -75,7 +82,7 @@ export function setReplacedElementSize(
   // When no content size is defined, we use the image size as the content size.
   if (contentBoxWidth === undefined && contentBoxHeight === undefined) {
     contentBoxWidth = '100%'
-    node.setAspectRatio(1 / r)
+    node.style.aspectRatio = 1 / r
   } else {
     // If only one sisde is not defined, we can calculate the other one.
     if (contentBoxWidth === undefined) {
@@ -84,7 +91,7 @@ export function setReplacedElementSize(
       } else {
         // If it uses a relative value (e.g. 50%), we can rely on aspect ratio.
         // Note: this doesn't work well if there are paddings or borders.
-        node.setAspectRatio(1 / r)
+        node.style.aspectRatio = 1 / r
       }
     } else if (contentBoxHeight === undefined) {
       if (typeof contentBoxWidth === 'number') {
@@ -92,7 +99,7 @@ export function setReplacedElementSize(
       } else {
         // If it uses a relative value (e.g. 50%), we can rely on aspect ratio.
         // Note: this doesn't work well if there are paddings or borders.
-        node.setAspectRatio(1 / r)
+        node.style.aspectRatio = 1 / r
       }
     }
   }
@@ -107,16 +114,27 @@ export function setReplacedElementSize(
   style.__naturalHeight = naturalHeight
 }
 
+// Values of `align-items`, `align-self`, `justify-items` and `justify-self`.
+const ITEM_ALIGNMENT = {
+  stretch: 'stretch',
+  center: 'center',
+  start: 'start',
+  end: 'end',
+  'self-start': 'start',
+  'self-end': 'end',
+  'flex-start': 'flex-start',
+  'flex-end': 'flex-end',
+  baseline: 'baseline',
+} as const
+
 export default async function compute(
-  node: YogaNode,
+  node: LayoutNode,
   type: SatoriElement | string,
   inheritedStyle: SerializedStyle,
   definedStyle: Record<string, string | number>,
   props: Record<string, any>,
   replacedElements?: ReplacedElementHandlers
 ): Promise<[SerializedStyle, SerializedStyle]> {
-  const Yoga = await getYoga()
-
   // Extend the default style with defined and inherited styles.
   const style: SerializedStyle = Object.assign(
     {},
@@ -207,245 +225,274 @@ export default async function compute(
     if (!style.height && height) style.height = height
   }
 
-  // Set properties for Yoga.
-  node.setDisplay(
-    v(
-      style.display,
-      {
-        flex: Yoga.DISPLAY_FLEX,
-        block: Yoga.DISPLAY_FLEX,
-        contents: Yoga.DISPLAY_CONTENTS,
-        none: Yoga.DISPLAY_NONE,
-        '-webkit-box': Yoga.DISPLAY_FLEX,
-      },
-      Yoga.DISPLAY_FLEX,
-      'display'
-    )
+  // Set the layout style.
+  const layout: LayoutStyle = node.style
+
+  layout.display = v(
+    style.display,
+    {
+      flex: 'flex',
+      block: 'block',
+      grid: 'grid',
+      contents: 'contents',
+      none: 'none',
+      '-webkit-box': 'flex',
+    },
+    'flex',
+    'display'
   )
 
-  node.setAlignContent(
+  // Unlike CSS, `align-content` defaults to `flex-start` in flex containers.
+  // In block containers, other values prevent margins from collapsing.
+  layout.alignContent =
     v(
       style.alignContent,
       {
-        stretch: Yoga.ALIGN_STRETCH,
-        center: Yoga.ALIGN_CENTER,
-        'flex-start': Yoga.ALIGN_FLEX_START,
-        'flex-end': Yoga.ALIGN_FLEX_END,
-        'space-between': Yoga.ALIGN_SPACE_BETWEEN,
-        'space-around': Yoga.ALIGN_SPACE_AROUND,
-        baseline: Yoga.ALIGN_BASELINE,
-        normal: Yoga.ALIGN_AUTO,
+        stretch: 'stretch',
+        center: 'center',
+        start: 'start',
+        end: 'end',
+        'flex-start': 'flex-start',
+        'flex-end': 'flex-end',
+        'space-between': 'space-between',
+        'space-around': 'space-around',
+        'space-evenly': 'space-evenly',
+        baseline: 'flex-start',
+        normal: null,
       },
-      Yoga.ALIGN_AUTO,
+      layout.display === 'flex' ? 'flex-start' : null,
       'alignContent'
-    )
-  )
+    ) ?? undefined
 
-  node.setAlignItems(
+  layout.alignItems =
     v(
       style.alignItems,
       {
-        stretch: Yoga.ALIGN_STRETCH,
-        center: Yoga.ALIGN_CENTER,
-        'flex-start': Yoga.ALIGN_FLEX_START,
-        'flex-end': Yoga.ALIGN_FLEX_END,
-        baseline: Yoga.ALIGN_BASELINE,
-        normal: Yoga.ALIGN_AUTO,
+        ...ITEM_ALIGNMENT,
+        normal: null,
       },
-      Yoga.ALIGN_STRETCH,
+      'stretch',
       'alignItems'
-    )
-  )
-  node.setAlignSelf(
+    ) ?? undefined
+  layout.alignSelf =
     v(
       style.alignSelf,
       {
-        stretch: Yoga.ALIGN_STRETCH,
-        center: Yoga.ALIGN_CENTER,
-        'flex-start': Yoga.ALIGN_FLEX_START,
-        'flex-end': Yoga.ALIGN_FLEX_END,
-        baseline: Yoga.ALIGN_BASELINE,
-        normal: Yoga.ALIGN_AUTO,
+        ...ITEM_ALIGNMENT,
+        normal: null,
+        auto: null,
       },
-      Yoga.ALIGN_AUTO,
+      undefined,
       'alignSelf'
-    )
-  )
-  node.setJustifyContent(
+    ) ?? undefined
+  // Unlike CSS, `justify-content` defaults to `flex-start` in flex containers.
+  layout.justifyContent =
     v(
       style.justifyContent,
       {
-        center: Yoga.JUSTIFY_CENTER,
-        'flex-start': Yoga.JUSTIFY_FLEX_START,
-        'flex-end': Yoga.JUSTIFY_FLEX_END,
-        'space-between': Yoga.JUSTIFY_SPACE_BETWEEN,
-        'space-around': Yoga.JUSTIFY_SPACE_AROUND,
+        center: 'center',
+        start: 'start',
+        end: 'end',
+        left: 'start',
+        right: 'end',
+        'flex-start': 'flex-start',
+        'flex-end': 'flex-end',
+        stretch: 'stretch',
+        'space-between': 'space-between',
+        'space-around': 'space-around',
+        'space-evenly': 'space-evenly',
+        normal: null,
       },
-      Yoga.JUSTIFY_FLEX_START,
+      layout.display === 'flex' ? 'flex-start' : null,
       'justifyContent'
-    )
-  )
-  // @TODO: node.setAspectRatio
+    ) ?? undefined
+  layout.justifyItems =
+    v(
+      style.justifyItems,
+      {
+        ...ITEM_ALIGNMENT,
+        left: 'start',
+        right: 'end',
+        normal: null,
+        legacy: null,
+      },
+      undefined,
+      'justifyItems'
+    ) ?? undefined
+  layout.justifySelf =
+    v(
+      style.justifySelf,
+      {
+        ...ITEM_ALIGNMENT,
+        left: 'start',
+        right: 'end',
+        normal: null,
+        auto: null,
+      },
+      undefined,
+      'justifySelf'
+    ) ?? undefined
 
-  node.setFlexDirection(
-    v(
-      style.flexDirection,
-      {
-        row: Yoga.FLEX_DIRECTION_ROW,
-        column: Yoga.FLEX_DIRECTION_COLUMN,
-        'row-reverse': Yoga.FLEX_DIRECTION_ROW_REVERSE,
-        'column-reverse': Yoga.FLEX_DIRECTION_COLUMN_REVERSE,
-      },
-      Yoga.FLEX_DIRECTION_ROW,
-      'flexDirection'
+  if (layout.display === 'grid') {
+    const fontSize = (style.fontSize ?? inheritedStyle.fontSize) as number
+    const resolveLength = (length: string) =>
+      lengthToNumber(length, fontSize, 0, inheritedStyle)
+    layout.gridTemplateColumns = parseGridTrackList(
+      style.gridTemplateColumns,
+      resolveLength,
+      'gridTemplateColumns'
     )
+    layout.gridTemplateRows = parseGridTrackList(
+      style.gridTemplateRows,
+      resolveLength,
+      'gridTemplateRows'
+    )
+    layout.gridAutoColumns = parseGridAutoTracks(
+      style.gridAutoColumns,
+      resolveLength,
+      'gridAutoColumns'
+    )
+    layout.gridAutoRows = parseGridAutoTracks(
+      style.gridAutoRows,
+      resolveLength,
+      'gridAutoRows'
+    )
+    layout.gridAutoFlow = parseGridAutoFlow(style.gridAutoFlow as string)
+    layout.gridTemplateAreas = parseGridTemplateAreas(
+      style.gridTemplateAreas as string
+    )
+  }
+  for (const line of [
+    'gridRowStart',
+    'gridRowEnd',
+    'gridColumnStart',
+    'gridColumnEnd',
+  ] as const) {
+    layout[line] = parseGridLine(style[line], line)
+  }
+
+  layout.flexDirection = v(
+    style.flexDirection,
+    {
+      row: 'row',
+      column: 'column',
+      'row-reverse': 'row-reverse',
+      'column-reverse': 'column-reverse',
+    },
+    'row',
+    'flexDirection'
   )
-  node.setFlexWrap(
-    v(
-      style.flexWrap,
-      {
-        wrap: Yoga.WRAP_WRAP,
-        nowrap: Yoga.WRAP_NO_WRAP,
-        'wrap-reverse': Yoga.WRAP_WRAP_REVERSE,
-      },
-      Yoga.WRAP_NO_WRAP,
-      'flexWrap'
-    )
+  layout.flexWrap = v(
+    style.flexWrap,
+    {
+      wrap: 'wrap',
+      nowrap: 'nowrap',
+      'wrap-reverse': 'wrap-reverse',
+    },
+    'nowrap',
+    'flexWrap'
   )
 
   if (typeof style.gap !== 'undefined') {
-    node.setGap(Yoga.GUTTER_ALL, style.gap)
+    layout.rowGap = layout.columnGap = style.gap as number
   }
-
   if (typeof style.rowGap !== 'undefined') {
-    node.setGap(Yoga.GUTTER_ROW, style.rowGap)
+    layout.rowGap = style.rowGap as number
   }
-
   if (typeof style.columnGap !== 'undefined') {
-    node.setGap(Yoga.GUTTER_COLUMN, style.columnGap)
+    layout.columnGap = style.columnGap as number
   }
-
-  // @TODO: node.setFlex
 
   if (typeof style.flexBasis !== 'undefined') {
-    node.setFlexBasis(asPointAutoPercentageLength(style.flexBasis, 'flexBasis'))
+    layout.flexBasis = asPointAutoPercentageLength(style.flexBasis, 'flexBasis')
   }
-  node.setFlexGrow(typeof style.flexGrow === 'undefined' ? 0 : style.flexGrow)
-  node.setFlexShrink(
-    typeof style.flexShrink === 'undefined' ? 0 : style.flexShrink
-  )
+  layout.flexGrow = typeof style.flexGrow === 'undefined' ? 0 : style.flexGrow
+  layout.flexShrink =
+    typeof style.flexShrink === 'undefined' ? 1 : style.flexShrink
 
   if (typeof style.maxHeight !== 'undefined') {
-    node.setMaxHeight(asPointPercentageLength(style.maxHeight, 'maxHeight'))
+    layout.maxHeight = asPointPercentageLength(style.maxHeight, 'maxHeight')
   }
   if (typeof style.maxWidth !== 'undefined') {
-    node.setMaxWidth(asPointPercentageLength(style.maxWidth, 'maxWidth'))
+    layout.maxWidth = asPointPercentageLength(style.maxWidth, 'maxWidth')
   }
   if (typeof style.minHeight !== 'undefined') {
-    node.setMinHeight(asPointPercentageLength(style.minHeight, 'minHeight'))
+    layout.minHeight = asPointPercentageLength(style.minHeight, 'minHeight')
   }
   if (typeof style.minWidth !== 'undefined') {
-    node.setMinWidth(asPointPercentageLength(style.minWidth, 'minWidth'))
+    layout.minWidth = asPointPercentageLength(style.minWidth, 'minWidth')
   }
 
-  node.setOverflow(
-    v(
-      style.overflow,
-      {
-        visible: Yoga.OVERFLOW_VISIBLE,
-        hidden: Yoga.OVERFLOW_HIDDEN,
-      },
-      Yoga.OVERFLOW_VISIBLE,
-      'overflow'
-    )
+  layout.overflow = v(
+    style.overflow,
+    {
+      visible: 'visible',
+      hidden: 'hidden',
+    },
+    'visible',
+    'overflow'
   )
 
-  node.setMargin(
-    Yoga.EDGE_TOP,
-    asPointAutoPercentageLength(style.marginTop || 0)
-  )
-  node.setMargin(
-    Yoga.EDGE_BOTTOM,
-    asPointAutoPercentageLength(style.marginBottom || 0)
-  )
-  node.setMargin(
-    Yoga.EDGE_LEFT,
-    asPointAutoPercentageLength(style.marginLeft || 0)
-  )
-  node.setMargin(
-    Yoga.EDGE_RIGHT,
-    asPointAutoPercentageLength(style.marginRight || 0)
+  layout.marginTop = asPointAutoPercentageLength(style.marginTop || 0)
+  layout.marginBottom = asPointAutoPercentageLength(style.marginBottom || 0)
+  layout.marginLeft = asPointAutoPercentageLength(style.marginLeft || 0)
+  layout.marginRight = asPointAutoPercentageLength(style.marginRight || 0)
+
+  layout.borderTopWidth = (style.borderTopWidth as number) || 0
+  layout.borderBottomWidth = (style.borderBottomWidth as number) || 0
+  layout.borderLeftWidth = (style.borderLeftWidth as number) || 0
+  layout.borderRightWidth = (style.borderRightWidth as number) || 0
+
+  layout.paddingTop = (style.paddingTop as Length) || 0
+  layout.paddingBottom = (style.paddingBottom as Length) || 0
+  layout.paddingLeft = (style.paddingLeft as Length) || 0
+  layout.paddingRight = (style.paddingRight as Length) || 0
+
+  layout.boxSizing = v(
+    style.boxSizing,
+    {
+      'border-box': 'border-box',
+      'content-box': 'content-box',
+    },
+    'border-box',
+    'boxSizing'
   )
 
-  node.setBorder(Yoga.EDGE_TOP, style.borderTopWidth || 0)
-  node.setBorder(Yoga.EDGE_BOTTOM, style.borderBottomWidth || 0)
-  node.setBorder(Yoga.EDGE_LEFT, style.borderLeftWidth || 0)
-  node.setBorder(Yoga.EDGE_RIGHT, style.borderRightWidth || 0)
-
-  node.setPadding(Yoga.EDGE_TOP, style.paddingTop || 0)
-  node.setPadding(Yoga.EDGE_BOTTOM, style.paddingBottom || 0)
-  node.setPadding(Yoga.EDGE_LEFT, style.paddingLeft || 0)
-  node.setPadding(Yoga.EDGE_RIGHT, style.paddingRight || 0)
-
-  node.setBoxSizing(
-    v(
-      style.boxSizing,
-      {
-        'border-box': Yoga.BOX_SIZING_BORDER_BOX,
-        'content-box': Yoga.BOX_SIZING_CONTENT_BOX,
-      },
-      Yoga.BOX_SIZING_BORDER_BOX,
-      'boxSizing'
-    )
+  const position = v(
+    style.position,
+    {
+      absolute: 'absolute',
+      relative: 'relative',
+      static: 'static',
+      // Laid out in its containing block, see `fixed-position.ts`.
+      fixed: 'fixed',
+    },
+    'relative',
+    'position'
   )
+  layout.position =
+    position === 'absolute' || position === 'fixed' ? 'absolute' : 'relative'
 
-  node.setPositionType(
-    v(
-      style.position,
-      {
-        absolute: Yoga.POSITION_TYPE_ABSOLUTE,
-        relative: Yoga.POSITION_TYPE_RELATIVE,
-        static: Yoga.POSITION_TYPE_STATIC,
-        // Laid out in its containing block, see `fixed-position.ts`.
-        fixed: Yoga.POSITION_TYPE_ABSOLUTE,
-      },
-      Yoga.POSITION_TYPE_RELATIVE,
-      'position'
-    )
-  )
-
-  if (typeof style.top !== 'undefined') {
-    node.setPosition(Yoga.EDGE_TOP, asPointPercentageLength(style.top, 'top'))
-  }
-  if (typeof style.bottom !== 'undefined') {
-    node.setPosition(
-      Yoga.EDGE_BOTTOM,
-      asPointPercentageLength(style.bottom, 'bottom')
-    )
-  }
-  if (typeof style.left !== 'undefined') {
-    node.setPosition(
-      Yoga.EDGE_LEFT,
-      asPointPercentageLength(style.left, 'left')
-    )
-  }
-  if (typeof style.right !== 'undefined') {
-    node.setPosition(
-      Yoga.EDGE_RIGHT,
-      asPointPercentageLength(style.right, 'right')
-    )
+  // Static elements ignore insets.
+  if (position !== 'static') {
+    for (const edge of ['top', 'bottom', 'left', 'right'] as const) {
+      if (typeof style[edge] !== 'undefined') {
+        layout[edge] = asPointPercentageLength(style[edge], edge)
+      }
+    }
   }
 
-  if (typeof style.height !== 'undefined') {
-    node.setHeight(asPointAutoPercentageLength(style.height, 'height'))
-  } else {
-    node.setHeightAuto()
-  }
-  if (typeof style.width !== 'undefined') {
-    node.setWidth(asPointAutoPercentageLength(style.width, 'width'))
-  } else {
-    node.setWidthAuto()
-  }
+  layout.height =
+    typeof style.height !== 'undefined'
+      ? asPointAutoPercentageLength(style.height, 'height')
+      : 'auto'
+  layout.width =
+    typeof style.width !== 'undefined'
+      ? asPointAutoPercentageLength(style.width, 'width')
+      : 'auto'
+
+  layout.replaced =
+    type === 'img' || type === 'svg' || !!replacedElements?.[type]
 
   return [style, inheritable(style)]
 }

@@ -7,7 +7,8 @@ import type { ProjectPlane } from './builder/transform.js'
 import layout from './layout.js'
 import FontLoader, { FontOptions } from './font.js'
 import svg from './builder/svg.js'
-import { getYoga, TYoga } from './yoga.js'
+import { getLayoutEngine } from './layout-engine/wasm.js'
+import { LayoutNode } from './layout-engine/index.js'
 import { detectLanguageCode, LangCode, Locale } from './language.js'
 import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
@@ -117,10 +118,11 @@ export async function render(
   { replacedElements, projectPlane }: RenderExtensions = {}
 ): Promise<string> {
   // Initialize the layout and shaping engines together.
-  const [Yoga] = await Promise.all([getYoga(), initHarfBuzz()])
-  if (!Yoga || !Yoga.Node) {
+  const [layoutEngine] = await Promise.all([getLayoutEngine(), initHarfBuzz()])
+  if (!layoutEngine) {
     throw new Error(
-      'Satori is not initialized: expect `yoga` to be loaded, got ' + Yoga
+      'Satori is not initialized: expect the layout engine to be loaded, got ' +
+        layoutEngine
     )
   }
 
@@ -131,15 +133,16 @@ export async function render(
   const definedWidth = 'width' in options ? options.width : undefined
   const definedHeight = 'height' in options ? options.height : undefined
 
-  const root = getRootNode(Yoga, options.pointScaleFactor)
-  if (definedWidth) root.setWidth(definedWidth)
-  if (definedHeight) root.setHeight(definedHeight)
-  root.setFlexDirection(Yoga.FLEX_DIRECTION_ROW)
-  root.setFlexWrap(Yoga.WRAP_WRAP)
-  root.setAlignContent(Yoga.ALIGN_AUTO)
-  root.setAlignItems(Yoga.ALIGN_FLEX_START)
-  root.setJustifyContent(Yoga.JUSTIFY_FLEX_START)
-  root.setOverflow(Yoga.OVERFLOW_HIDDEN)
+  const root = new LayoutNode({
+    width: definedWidth || 'auto',
+    height: definedHeight || 'auto',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignContent: 'flex-start',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    overflow: 'hidden',
+  })
 
   // Use a null-prototype object so that text matching Object.prototype property
   // names (e.g. "constructor", "toString") doesn't inherit truthy values from
@@ -261,33 +264,23 @@ export async function render(
   }
 
   await handler.next()
-  root.calculateLayout(definedWidth, definedHeight, Yoga.DIRECTION_LTR)
+  const layoutOptions = {
+    width: definedWidth,
+    height: definedHeight,
+    pointScaleFactor: options.pointScaleFactor,
+  }
+  layoutEngine.computeLayout(root, layoutOptions)
   // The static position of a fixed element depends on its size.
-  if (sizeStaticPositionPlaceholders(Yoga, fixedElements)) {
-    root.calculateLayout(definedWidth, definedHeight, Yoga.DIRECTION_LTR)
+  if (sizeStaticPositionPlaceholders(fixedElements)) {
+    layoutEngine.computeLayout(root, layoutOptions)
   }
 
   const content = (await handler.next([0, 0])).value as string
 
-  const computedWidth = root.getComputedWidth()
-  const computedHeight = root.getComputedHeight()
-
-  root.freeRecursive()
+  const computedWidth = root.layout.width
+  const computedHeight = root.layout.height
 
   return svg({ width: computedWidth, height: computedHeight, content })
-}
-
-function getRootNode(
-  Yoga: TYoga,
-  pointScaleFactor?: SatoriOptions['pointScaleFactor']
-) {
-  if (!pointScaleFactor) {
-    return Yoga.Node.create()
-  } else {
-    const config = Yoga.Config.create()
-    config.setPointScaleFactor(pointScaleFactor)
-    return Yoga.Node.createWithConfig(config)
-  }
 }
 
 function convertToLanguageCodes(

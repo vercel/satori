@@ -8,9 +8,6 @@ patchedDependencies:
   harfbuzzjs@0.10.0:
     hash: 4d5fe9c2103e6cad08530ac6cf0d662d8f70ec4d9a741d0729e3c562569d337a
     path: patches/harfbuzzjs@0.10.0.patch
-  yoga-layout@3.2.1:
-    hash: 7591c1773fe3dfdcc65257d2ea478c1f665ef46b4f5089e60926b05b0854807c
-    path: patches/yoga-layout@3.2.1.patch
 
 importers:
 
@@ -52,9 +49,6 @@ importers:
       postcss-value-parser:
         specifier: ^4.2.0
         version: 4.2.0
-      yoga-layout:
-        specifier: ^3.2.1
-        version: 3.2.1(patch_hash=7591c1773fe3dfdcc65257d2ea478c1f665ef46b4f5089e60926b05b0854807c)
     devDependencies:
       '@resvg/resvg-js':
         specifier: ^2.1.0
@@ -5447,9 +5441,6 @@ packages:
   yocto-queue@1.0.0:
     resolution: {integrity: sha512-9bnSc/HEW2uRy67wc+T8UwauLuPJVn28jb+GtJY16iiKWyvmYJRXVT4UamsAEGQfPohgr2q4Tq0sQbQlxTfi1g==}
     engines: {node: '>=12.20'}
-
-  yoga-layout@3.2.1:
-    resolution: {integrity: sha512-0LPOt3AxKqMdFBZA3HBAt/t/8vIKq7VaQYbuA8WxCgung+p9TVyKRYdpvCb80HcdTN2NkbIKbhNwKUfm3tQywQ==}
 
 snapshots:
 
@@ -11428,5 +11419,3 @@ snapshots:
   yocto-queue@0.1.0: {}
 
   yocto-queue@1.0.0: {}
-
-  yoga-layout@3.2.1(patch_hash=7591c1773fe3dfdcc65257d2ea478c1f665ef46b4f5089e60926b05b0854807c): {}

@@ -1,18 +1,15 @@
-import { loadYoga as loadYogaUntyped, type Yoga } from 'yoga-layout/load'
+/**
+ * Loads the layout engine from a WebAssembly module provided by the user, for
+ * `satori/standalone`.
+ */
 
-const loadYoga = loadYogaUntyped as (options: {
-  wasmBinary?: ArrayBuffer | ArrayBufferLike
-  instantiateWasm?: (
-    imports: WebAssembly.Imports,
-    successCallback: (instance: WebAssembly.Instance) => void
-  ) => WebAssembly.Exports | false | undefined
-}) => Promise<Yoga>
+import { createLayoutEngine, type LayoutEngine } from './index.js'
 
-let resolveYoga: (yoga: Yoga) => void
-let rejectYoga: (error: unknown) => void
-const yogaPromise: Promise<Yoga> = new Promise((resolve, reject) => {
-  resolveYoga = resolve
-  rejectYoga = reject
+let resolveEngine: (engine: LayoutEngine) => void
+let rejectEngine: (error: unknown) => void
+const enginePromise: Promise<LayoutEngine> = new Promise((resolve, reject) => {
+  resolveEngine = resolve
+  rejectEngine = reject
 })
 
 export type InitInput =
@@ -77,21 +74,15 @@ async function loadWasm(
 }
 
 export function init(input: InitInput) {
-  loadYoga({
-    instantiateWasm(imports, successCallback) {
-      loadWasm(input, imports)
-        .then(({ instance }) => {
-          successCallback(instance)
-        })
-        .catch(rejectYoga)
-
-      return {}
-    },
-  })
-    .then(resolveYoga)
-    .catch(rejectYoga)
+  const engine = createLayoutEngine()
+  loadWasm(input, engine.imports)
+    .then(({ instance }) => {
+      engine.setInstance(instance)
+      resolveEngine(engine)
+    })
+    .catch(rejectEngine)
 }
 
-export function getYoga() {
-  return yogaPromise
+export function getLayoutEngine() {
+  return enginePromise
 }
