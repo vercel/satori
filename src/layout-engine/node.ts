@@ -129,6 +129,8 @@ export interface LayoutStyle {
   flexBasis?: Length
   flexGrow?: number
   flexShrink?: number
+  /** The order of flex and grid items, see `encodeTree()`. */
+  order?: number
   gridTemplateColumns?: GridTrackList
   gridTemplateRows?: GridTrackList
   gridAutoColumns?: GridTrackSize[]

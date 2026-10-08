@@ -892,7 +892,8 @@ export class Paragraph {
   renderRun(run: TextRun, x: number, y: number) {
     this.finalize()
     const pieces = this.pieces.get(run)
-    if (!pieces?.length) return ''
+    // Hidden text takes up space, but isn't drawn.
+    if (!pieces?.length || run.style.visibility === 'hidden') return ''
 
     const { style, inheritedStyle, id } = run
     const { engine, isImage } = this.runState(run)

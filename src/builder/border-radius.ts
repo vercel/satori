@@ -267,28 +267,22 @@ export function getBorderRadiusClipPath(
   return [defs, rectClipId]
 }
 
-export default function radius(
+/**
+ * Resolves the radii of the corners of a box, `[horizontal, vertical]` in px
+ * from the top left clockwise, reduced so they don't overlap. Returns
+ * `undefined` if no corner is rounded.
+ */
+export function resolveBorderRadii(
   {
-    left,
-    top,
     width,
     height,
   }: {
-    left: number
-    top: number
     width: number
     height: number
   },
   style: Record<string, any>,
-  partialSides?: boolean[],
-  /** Whether partial sides include the whole corners at their ends. */
-  fullCorners = false,
-  /**
-   * Insets for the inner edge of a border, `[top, right, bottom, left]`.
-   * The radii are reduced by them.
-   */
-  inset?: number[]
-) {
+  keepSquare = false
+): [number, number][] | undefined {
   let {
     borderTopLeftRadius,
     borderTopRightRadius,
@@ -337,13 +331,13 @@ export default function radius(
   )
 
   if (
-    !partialSides &&
+    !keepSquare &&
     !radiusZeroOrNull(borderTopLeftRadius) &&
     !radiusZeroOrNull(borderTopRightRadius) &&
     !radiusZeroOrNull(borderBottomLeftRadius) &&
     !radiusZeroOrNull(borderBottomRightRadius)
   ) {
-    return ''
+    return undefined
   }
   borderTopLeftRadius ||= [0, 0]
   borderTopRightRadius ||= [0, 0]
@@ -420,13 +414,62 @@ export default function radius(
     }
   }
 
+  return [
+    borderTopLeftRadius,
+    borderTopRightRadius,
+    borderBottomRightRadius,
+    borderBottomLeftRadius,
+  ]
+}
+
+export default function radius(
+  {
+    left,
+    top,
+    width,
+    height,
+  }: {
+    left: number
+    top: number
+    width: number
+    height: number
+  },
+  style: Record<string, any>,
+  partialSides?: boolean[],
+  /** Whether partial sides include the whole corners at their ends. */
+  fullCorners = false,
+  /**
+   * Insets for the inner edge of a border, `[top, right, bottom, left]`.
+   * The radii are reduced by them.
+   */
+  inset?: number[]
+) {
+  const radii = resolveBorderRadii({ width, height }, style, !!partialSides)
+  if (!radii) return ''
+  let [
+    borderTopLeftRadius,
+    borderTopRightRadius,
+    borderBottomRightRadius,
+    borderBottomLeftRadius,
+  ] = radii
+  const cornerShapes = [
+    resolveCornerShape(style.cornerTopLeftShape),
+    resolveCornerShape(style.cornerTopRightShape),
+    resolveCornerShape(style.cornerBottomRightShape),
+    resolveCornerShape(style.cornerBottomLeftShape),
+  ]
+
   if (inset) {
     const [t, r, b, l] = inset
     left += l
     top += t
     width = Math.max(0, width - l - r)
     height = Math.max(0, height - t - b)
-    const reduce = (corner: number[], x: number, y: number) => [
+    const reduce = (
+      corner: number[],
+      x: number,
+      y: number
+    ): [number, number] => [
       Math.max(0, corner[0] - x),
       Math.max(0, corner[1] - y),
     ]

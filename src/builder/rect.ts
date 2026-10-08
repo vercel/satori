@@ -663,7 +663,12 @@ export default async function rect(
 
   // Shadows and content are drawn as a group with the opacity, so e.g. a
   // shadow under the element doesn't show through it.
-  let shapes = (shadow ? shadow[0] : '') + content + (shadow ? shadow[1] : '')
+  // A hidden element isn't drawn, but its descendants still use the
+  // definitions, e.g. of its `overflow` clip.
+  let shapes =
+    style.visibility === 'hidden'
+      ? ''
+      : (shadow ? shadow[0] : '') + content + (shadow ? shadow[1] : '')
   if (drawn) drawn.shapes = !!shapes
   if (opacity !== 1 && !useFillOpacity) {
     shapes = buildXMLString('g', { opacity }, shapes)

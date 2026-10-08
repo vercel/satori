@@ -108,6 +108,161 @@ describe('Border', () => {
     })
   })
 
+  describe('border-style values', () => {
+    const row = (lineStyle: string) => (
+      <div
+        style={{
+          display: 'flex',
+          gap: 8,
+          padding: 4,
+          alignItems: 'flex-start',
+        }}
+      >
+        {[1, 2, 3, 6, 10].map((width) => (
+          <div
+            style={{
+              width: 56,
+              height: 34,
+              border: `${width}px ${lineStyle} #3366cc`,
+            }}
+          />
+        ))}
+        <div
+          style={{
+            width: 56,
+            height: 34,
+            border: `8px ${lineStyle} #3366cc`,
+            borderRadius: 14,
+          }}
+        />
+        <div
+          style={{ width: 56, height: 34, border: `8px ${lineStyle} black` }}
+        />
+        <div
+          style={{
+            width: 56,
+            height: 34,
+            border: `8px ${lineStyle} white`,
+            background: '#ccc',
+          }}
+        />
+      </div>
+    )
+
+    for (const lineStyle of [
+      'dotted',
+      'dashed',
+      'double',
+      'groove',
+      'ridge',
+      'inset',
+      'outset',
+    ]) {
+      it(`should support ${lineStyle} borders`, async () => {
+        const svg = await satori(row(lineStyle), {
+          width: 540,
+          height: 54,
+          fonts,
+        })
+        expect(toImage(svg, 540)).toMatchImageSnapshot()
+      })
+    }
+
+    it('should support styles, widths and colors per side', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            padding: 6,
+            alignItems: 'flex-start',
+          }}
+        >
+          <div
+            style={{
+              width: 90,
+              height: 60,
+              borderWidth: 8,
+              borderStyle: 'solid dotted double dashed',
+              borderColor: 'red green blue orange',
+            }}
+          />
+          <div
+            style={{
+              width: 90,
+              height: 60,
+              borderWidth: 'thin medium thick 7px',
+              borderStyle: 'solid',
+              borderColor: 'black',
+            }}
+          />
+          <div
+            style={{
+              width: 90,
+              height: 60,
+              border: '6px groove gold',
+              borderRadius: 20,
+            }}
+          />
+        </div>,
+        { width: 340, height: 74, fonts }
+      )
+      expect(toImage(svg, 340)).toMatchImageSnapshot()
+    })
+
+    it('should not draw or lay out borders without a style', async () => {
+      const svg = await satori(
+        <div style={{ display: 'flex', background: '#eee' }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderWidth: 10,
+              borderStyle: 'none',
+              background: 'teal',
+            }}
+          />
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              border: '10px hidden red',
+              background: 'pink',
+            }}
+          />
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              border: '10px solid red',
+              borderLeftStyle: 'none',
+              background: 'gold',
+            }}
+          />
+        </div>,
+        { width: 120, height: 40, fonts }
+      )
+      expect(toImage(svg, 120)).toMatchImageSnapshot()
+    })
+
+    it('should throw for invalid styles', async () => {
+      await expect(
+        satori(<div style={{ border: '1px wavy red' }} />, {
+          width: 100,
+          height: 100,
+          fonts,
+        })
+      ).rejects.toThrowError('Invalid value')
+      await expect(
+        satori(<div style={{ borderStyle: 'solid wavy' }} />, {
+          width: 100,
+          height: 100,
+          fonts,
+        })
+      ).rejects.toThrowError('Invalid line style')
+    })
+  })
+
   describe('border-radius', () => {
     it('should support the shorthand', async () => {
       const svg = await satori(

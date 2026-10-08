@@ -104,6 +104,68 @@ function parseLineWidth(value: string) {
   }
 }
 
+const BORDER_STYLES = new Set([
+  'none',
+  'hidden',
+  'dotted',
+  'dashed',
+  'solid',
+  'double',
+  'groove',
+  'ridge',
+  'inset',
+  'outset',
+])
+const OUTLINE_STYLES = new Set([
+  ...[...BORDER_STYLES].filter((style) => style !== 'hidden'),
+  'auto',
+])
+
+function checkLineWidth(value: string | number) {
+  if (typeof value === 'number') {
+    if (value < 0) throw new Error(`Invalid line width: "${value}".`)
+    return value + 'px'
+  }
+  const width = parseLineWidth(value) ?? (MATH_FUNCTION.test(value) && value)
+  if (!width) throw new Error(`Invalid line width: "${value}".`)
+  return width
+}
+
+function checkLineStyle(value: string | number, styles: Set<string>) {
+  const style = String(value).trim().toLowerCase()
+  if (!styles.has(style)) throw new Error(`Invalid line style: "${value}".`)
+  return style
+}
+
+/**
+ * Parses `<line-width> || <line-style> || <color>`, the values of `border` and
+ * `outline` in any order.
+ */
+function parseLineShorthand(value: string | number, styles: Set<string>) {
+  if (typeof value === 'number') return { width: checkLineWidth(value) }
+  let width: string | undefined
+  let style: string | undefined
+  let color: string | undefined
+  for (const token of splitValues(value)) {
+    const lower = token.toLowerCase()
+    const lineWidth =
+      parseLineWidth(token) ?? (MATH_FUNCTION.test(token) && token)
+    if (width === undefined && lineWidth) {
+      width = lineWidth
+    } else if (style === undefined && styles.has(lower)) {
+      style = lower
+    } else if (
+      color === undefined &&
+      (lower === 'transparent' || cssColorParse(token))
+    ) {
+      color = token
+    } else {
+      throw new Error(`Invalid value: "${value}".`)
+    }
+  }
+  return { width, style, color }
+}
+
 function purify(name: string, value?: string | number) {
   const num = Number(value)
   if (isNaN(num)) return value
@@ -144,6 +206,57 @@ function expandEdges(
   return { [top]: t, [right]: r, [bottom]: b, [left]: l }
 }
 
+// Keywords that are combined with the next one in alignment values, e.g.
+// `first baseline` and `safe center`.
+const ALIGNMENT_PREFIXES = new Set(['first', 'last', 'safe', 'unsafe'])
+
+/** Splits the values of a `place-*` shorthand. */
+function splitAlignmentValues(value: string) {
+  const tokens = value.trim().toLowerCase().split(/\s+/)
+  const values: string[] = []
+  for (let i = 0; i < tokens.length; i++) {
+    if (ALIGNMENT_PREFIXES.has(tokens[i]) && i + 1 < tokens.length) {
+      values.push(tokens[i] + ' ' + tokens[++i])
+    } else {
+      values.push(tokens[i])
+    }
+  }
+  if (!values[0] || values.length > 2) {
+    throw new Error(`Invalid value: "${value}".`)
+  }
+  return values
+}
+
+const RATIO =
+  /^(\d*\.?\d+(?:e[+-]?\d+)?)(?:\s*\/\s*(\d*\.?\d+(?:e[+-]?\d+)?))?$/
+
+/**
+ * Parses `aspect-ratio`: `auto`, a ratio, or both. A ratio with a zero is
+ * degenerate and behaves as `auto`.
+ * https://drafts.csswg.org/css-sizing-4/#aspect-ratio
+ */
+function parseAspectRatio(value: string | number) {
+  if (typeof value === 'number') {
+    if (value < 0) throw new Error(`Invalid aspect ratio: "${value}".`)
+    return { aspectRatio: value > 0 ? value : 'auto' }
+  }
+  const tokens = value.trim().toLowerCase().split(/\s+/)
+  const auto = tokens.includes('auto')
+  const ratio = tokens.filter((token) => token !== 'auto').join(' ')
+  if (!ratio && auto && tokens.length === 1) return { aspectRatio: 'auto' }
+  const match = RATIO.exec(ratio)
+  if (!match || tokens.length - (auto ? 1 : 0) > 3) {
+    throw new Error(`Invalid aspect ratio: "${value}".`)
+  }
+  const width = Number(match[1])
+  const height = match[2] === undefined ? 1 : Number(match[2])
+  return {
+    aspectRatio: width > 0 && height > 0 ? width / height : 'auto',
+    // With `auto`, elements with a natural ratio keep it, see `compute()`.
+    ...(auto ? { _aspectRatioAuto: true } : {}),
+  }
+}
+
 function handleSpecialCase(
   name: string,
   value: string | number,
@@ -152,6 +265,31 @@ function handleSpecialCase(
 ) {
   if (name === 'inset') {
     return expandEdges(value, ['top', 'right', 'bottom', 'left'])
+  }
+
+  // `place-content`, `place-items` and `place-self` set the alignment on both
+  // axes. Without a second value, `justify-content` can't be `baseline`, so
+  // it's `start`.
+  // https://drafts.csswg.org/css-align-3/#place-content
+  if (
+    name === 'placeContent' ||
+    name === 'placeItems' ||
+    name === 'placeSelf'
+  ) {
+    const [align, justify] = splitAlignmentValues(String(value))
+    const subject = name.slice(5)
+    return {
+      [`align${subject}`]: align,
+      [`justify${subject}`]:
+        justify ??
+        (name === 'placeContent' && align.endsWith('baseline')
+          ? 'start'
+          : align),
+    }
+  }
+
+  if (name === 'aspectRatio') {
+    return parseAspectRatio(value)
   }
 
   // Shorthands with math functions, which aren't parsed by
@@ -260,47 +398,61 @@ function handleSpecialCase(
     return { [properties[0]]: first, [properties[1]]: second }
   }
 
-  if (/^border(Top|Right|Bottom|Left)?$/.test(name)) {
-    const resolved = getStylesForProperty('border', value, true)
-
-    // Border width should be default to 3px (medium) instead of 1px:
-    // https://w3c.github.io/csswg-drafts/css-backgrounds-3/#border-width
-    // Although on Chrome it will be displayed as 1.5px but let's stick to the
-    // spec.
-    if (resolved.borderWidth === 1 && !String(value).includes('1px')) {
-      resolved.borderWidth = 3
-    }
-
-    // A trick to fix `border: 1px solid` to not use `black` but the inherited
-    // `color` value. This is necessary because css-to-react-native automatically
-    // fallbacks to default color values.
-    if (resolved.borderColor === 'black' && !String(value).includes('black')) {
-      resolved.borderColor = currentColor
-    }
-
+  // `border`, `borderTop`, ... and `outline`.
+  // https://drafts.csswg.org/css-backgrounds-3/#border-shorthands
+  const shorthand = /^(border(Top|Right|Bottom|Left)?|outline)$/.exec(name)
+  if (shorthand) {
+    const isOutline = name === 'outline'
+    const { width, style, color } = parseLineShorthand(
+      value,
+      isOutline ? OUTLINE_STYLES : BORDER_STYLES
+    )
+    // The initial values: a `medium` width, the current color, and no
+    // style for outlines. Borders are `solid`, unlike in CSS.
     const purified = {
-      Width: purify(name + 'Width', resolved.borderWidth),
-      Style: v(
-        resolved.borderStyle,
-        {
-          solid: 'solid',
-          dashed: 'dashed',
-        },
-        'solid',
-        name + 'Style'
-      ),
-      Color: resolved.borderColor,
+      Width: width ?? LINE_WIDTH_KEYWORDS.medium,
+      Style: style ?? (isOutline ? 'none' : 'solid'),
+      Color: color ?? currentColor,
     }
-
     const full = {}
-    for (const k of name === 'border'
-      ? ['Top', 'Right', 'Bottom', 'Left']
-      : [name.slice(6)]) {
-      for (const p in purified) {
-        full['border' + k + p] = purified[p]
-      }
+    const sides = isOutline
+      ? ['outline']
+      : name === 'border'
+      ? ['borderTop', 'borderRight', 'borderBottom', 'borderLeft']
+      : [name]
+    for (const side of sides) {
+      for (const p in purified) full[side + p] = purified[p]
     }
     return full
+  }
+
+  if (name === 'borderWidth' || name === 'borderStyle') {
+    const property = name.slice(6)
+    const sides = expandEdges(
+      value,
+      ['Top', 'Right', 'Bottom', 'Left'].map(
+        (side) => `border${side}${property}`
+      )
+    )
+    for (const side in sides) {
+      sides[side] =
+        property === 'Width'
+          ? checkLineWidth(sides[side])
+          : checkLineStyle(sides[side], BORDER_STYLES)
+    }
+    return sides
+  }
+
+  if (/^(border(Top|Right|Bottom|Left)|outline)Width$/.test(name)) {
+    return { [name]: checkLineWidth(value) }
+  }
+
+  if (/^border(Top|Right|Bottom|Left)Style$/.test(name)) {
+    return { [name]: checkLineStyle(value, BORDER_STYLES) }
+  }
+
+  if (name === 'outlineStyle') {
+    return { [name]: checkLineStyle(value, OUTLINE_STYLES) }
   }
 
   if (name === 'boxShadow') {
@@ -1009,7 +1161,7 @@ function convertCurrentColorToActualValue(
 }
 
 const COLOR_PROPERTY =
-  /^(color|background|textShadow|boxShadow|textDecoration|WebkitTextStroke|border(Top|Right|Bottom|Left)?)$|Color$/
+  /^(color|background|textShadow|boxShadow|textDecoration|WebkitTextStroke|border(Top|Right|Bottom|Left)?|outline)$|Color$/
 const COLOR_ALIASES = { cyan: 'aqua', magenta: 'fuchsia' }
 
 /**
