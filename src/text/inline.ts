@@ -356,6 +356,7 @@ export class Paragraph {
       const { measureText } = genMeasurer(engine, isImage, {
         fontSize: run.style.fontSize as number,
         letterSpacing: run.style.letterSpacing as number,
+        wordSpacing: run.style.wordSpacing as number,
         fontFeatureSettings: run.style.fontFeatureSettings as string,
       })
       let shift = 0
@@ -994,6 +995,7 @@ export class Paragraph {
     const top = y + this.node.layout.top + dy
     const fontSize = style.fontSize as number
     const letterSpacing = style.letterSpacing as number
+    const wordSpacing = style.wordSpacing as number
     const fontFeatureSettings = style.fontFeatureSettings as string
     const clipPathId = inheritedStyle._inheritedClipPathId as string | undefined
     const maskId = inheritedStyle._inheritedMaskId as string | undefined
@@ -1097,6 +1099,7 @@ export class Paragraph {
           : engine.measure(part, {
               fontSize,
               letterSpacing,
+              wordSpacing,
               fontFeatureSettings,
             })
         if (isImage(part) || !embedFont) {
@@ -1128,6 +1131,7 @@ export class Paragraph {
               left: pieceX,
               top: baseline,
               letterSpacing,
+              wordSpacing,
               fontFeatureSettings,
             },
             band

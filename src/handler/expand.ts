@@ -20,7 +20,11 @@ import { isString, lengthToNumber, v, splitEffects } from '../utils.js'
 import { MaskProperty, parseMask } from '../parser/mask.js'
 import { splitCornerShapeValues } from '../parser/corner-shape.js'
 import { parseBackdropFilter } from '../parser/backdrop-filter.js'
-import { expandGridPlacement } from '../parser/grid.js'
+import {
+  expandGrid,
+  expandGridPlacement,
+  expandGridTemplate,
+} from '../parser/grid.js'
 import { expandBackground } from '../parser/background.js'
 import parseTransform, {
   resolveTransform,
@@ -176,6 +180,46 @@ function purify(name: string, value?: string | number) {
 }
 
 /** Splits a value at the spaces that aren't in parentheses. */
+const ANGLE = /^[+-]?(\d+\.?\d*|\.\d+)(deg|rad|grad|turn)$|^0$/i
+
+/**
+ * Parses `translate`, `rotate` and `scale` into transform functions.
+ *
+ * @see https://www.w3.org/TR/css-transforms-2/#individual-transforms
+ */
+function parseIndividualTransform(
+  name: 'translate' | 'rotate' | 'scale',
+  value: string | number
+): TransformFunction[] {
+  const invalid = () => {
+    throw new Error(`Invalid \`${name}\` value: "${value}".`)
+  }
+  if (typeof value === 'number') {
+    if (name === 'rotate' && value !== 0) invalid()
+    value = name === 'translate' ? `${value}px` : String(value)
+  }
+  const parts = splitValues(value.trim())
+  if (parts.length === 1 && parts[0].toLowerCase() === 'none') return []
+  if (!parts.length) invalid()
+  if (name === 'translate' || name === 'scale') {
+    if (parts.length > 3) invalid()
+    const fn = parts.length === 3 ? `${name}3d` : name
+    return parseTransform(`${fn}(${parts.join(', ')})`)
+  }
+  // `[x | y | z | <number>{3}] && <angle>`
+  const angleIndex = parts.findIndex((part) => ANGLE.test(part))
+  if (angleIndex === -1) invalid()
+  const angle = parts[angleIndex]
+  const axis = parts.filter((_, i) => i !== angleIndex)
+  if (axis.length === 0) return parseTransform(`rotate(${angle})`)
+  if (angleIndex !== 0 && angleIndex !== parts.length - 1) invalid()
+  if (axis.length === 1 && /^[xyz]$/i.test(axis[0])) {
+    return parseTransform(`rotate${axis[0].toUpperCase()}(${angle})`)
+  }
+  if (axis.length !== 3) invalid()
+  return parseTransform(`rotate3d(${axis.join(', ')}, ${angle})`)
+}
+
 function splitValues(value: string) {
   const values: string[] = []
   let depth = 0
@@ -518,6 +562,15 @@ function handleSpecialCase(
         currentColor
       ),
     }
+  }
+
+  if (name === 'grid' || name === 'gridTemplate') {
+    if (typeof value !== 'string') throw new Error(`Invalid \`${name}\` value.`)
+    return name === 'grid' ? expandGrid(value) : expandGridTemplate(value)
+  }
+
+  if (name === 'translate' || name === 'rotate' || name === 'scale') {
+    return { [name]: parseIndividualTransform(name, value) }
   }
 
   if (name === 'transform') {
@@ -1032,6 +1085,22 @@ export default function expand(
       serializedStyle.transformOrigin as any,
       baseFontSize
     )
+  }
+
+  // `translate`, `rotate` and `scale` are applied before `transform`, in this
+  // order.
+  const individualTransforms = (
+    ['translate', 'rotate', 'scale'] as const
+  ).flatMap((prop) => {
+    const functions = serializedStyle[prop]
+    delete serializedStyle[prop]
+    return Array.isArray(functions) ? functions : []
+  })
+  if (individualTransforms.length) {
+    serializedStyle.transform = [
+      ...individualTransforms,
+      ...((serializedStyle.transform as unknown as TransformFunction[]) || []),
+    ] as any
   }
 
   if (serializedStyle.perspectiveOrigin) {

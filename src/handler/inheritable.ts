@@ -9,6 +9,7 @@ const list = new Set([
   'fontWeight',
   'fontFeatureSettings',
   'letterSpacing',
+  'wordSpacing',
   'lineHeight',
   'textAlign',
   'textIndent',

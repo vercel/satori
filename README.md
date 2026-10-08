@@ -208,7 +208,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>position</code></td>
-<td>Positioned inline elements (with <code>display: inline</code>) aren't the containing block of their absolutely positioned descendants, the nearest positioned block is. <code>sticky</code> isn't supported and throws.</td>
+<td>Positioned inline elements (with <code>display: inline</code>) aren't the containing block of their absolutely positioned descendants, the nearest positioned block is. Sticky inline elements aren't moved.</td>
 <td></td>
 </tr>
 
@@ -305,7 +305,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>gridRow</code>, <code>gridColumn</code>, <code>gridArea</code> and their longhands</td><td>Supported</td><td></td></tr>
 <tr><td><code>justifyItems</code>, <code>justifySelf</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>placeItems</code>, <code>placeContent</code>, <code>placeSelf</code></td><td>Supported</td><td></td></tr>
-<tr><td>Shorthands (<code>grid</code>, <code>gridTemplate</code>)</td><td>Not supported</td><td></td></tr>
+<tr><td>Shorthands (<code>grid</code>, <code>gridTemplate</code>)</td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="6">Font</td></tr>
 <tr><td><code>fontFamily</code></td><td>Only the fonts passed in the <code>fonts</code> option are used. After the listed families, the other loaded fonts are used as fallbacks in the order they were passed, so generic families like <code>serif</code> don't select a font</td><td></td></tr>
@@ -325,6 +325,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>textShadow</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>lineHeight</code></td><td>Line heights are rounded to whole pixels</td><td></td></tr>
 <tr><td><code>letterSpacing</code></td><td>Isn't added after the last character</td><td></td></tr>
+<tr><td><code>wordSpacing</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>whiteSpace</code></td><td><code>break-spaces</code> is laid out like <code>pre-wrap</code></td><td></td></tr>
 <tr><td><code>wordBreak</code></td><td><code>auto-phrase</code> is laid out like <code>normal</code></td><td></td></tr>
 <tr><td><code>overflowWrap</code></td><td>Not supported, use <code>wordBreak: break-word</code></td><td></td></tr>
@@ -349,7 +350,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td>Matrix (<code>matrix</code>, <code>matrix3d</code>)</td><td>Supported</td><td></td></tr>
 <tr><td>Perspective (<code>perspective</code>)</td><td>Approximated, see the notes below</td><td></td></tr>
 <tr><td>The <code>transform</code> attribute of inline <code>&lt;svg&gt;</code></td><td>Supported</td><td></td></tr>
-<tr><td>Individual properties (<code>translate</code>, <code>rotate</code>, <code>scale</code>)</td><td>Not supported</td><td></td></tr>
+<tr><td>Individual properties (<code>translate</code>, <code>rotate</code>, <code>scale</code>)</td><td>Supported</td><td></td></tr>
 
 <tr>
 <td colspan="2"><code>transformOrigin</code></td>
@@ -497,7 +498,7 @@ Note:
 
 1. In 3D transforms, elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
 2. Percentages in `calc()`, `min()`, `max()` and `clamp()` only work in sizes, margins, paddings, insets, gaps, `flexBasis` and translations. Elsewhere, values with them are ignored.
-3. Properties that aren't listed are ignored, for example `columns`, `direction`, `writingMode`, `wordSpacing`, `fontVariant`, `fontStretch` and `fontKerning`.
+3. Properties that aren't listed are ignored, for example `columns`, `direction`, `writingMode`, `fontVariant`, `fontStretch` and `fontKerning`.
 4. Invalid values throw an error, which fails the whole render, unless they're ignored with [`onStyleError`](#invalid-styles).
 
 #### Perspective (experimental)

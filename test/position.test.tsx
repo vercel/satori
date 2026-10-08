@@ -536,4 +536,117 @@ describe('Position', () => {
       expect(toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
+
+  describe('sticky', () => {
+    it('should stick to the viewport and scroll containers', async () => {
+      const box = (background: string, style = {}) => ({ background, ...style })
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            gap: 10,
+            height: 300,
+            alignItems: 'flex-start',
+          }}
+        >
+          <div style={{ width: 40, height: 200, background: '#eee' }}>
+            <div
+              style={box('red', { position: 'sticky', top: 20, height: 20 })}
+            />
+          </div>
+          {/* Kept in the containing block. */}
+          <div
+            style={{ width: 40, height: 40, marginTop: 10, background: '#ddd' }}
+          >
+            <div
+              style={box('green', {
+                position: 'sticky',
+                top: 40,
+                height: 20,
+                marginBottom: 4,
+              })}
+            />
+          </div>
+          {/* In the content box of the nearest scroll container. */}
+          <div
+            style={{
+              width: 60,
+              height: 90,
+              marginTop: 15,
+              overflow: 'hidden',
+              padding: 5,
+              background: '#ccc',
+              border: '3px solid gray',
+            }}
+          >
+            <div style={{ height: 15 }} />
+            <div
+              style={box('blue', { position: 'sticky', top: 30, height: 15 })}
+            />
+            <div style={{ height: 200 }} />
+          </div>
+          <div
+            style={{
+              width: 40,
+              height: 250,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-end',
+              background: '#eee',
+            }}
+          >
+            <div
+              style={box('orange', {
+                position: 'sticky',
+                bottom: 10,
+                height: 20,
+              })}
+            />
+          </div>
+          <div
+            style={{
+              width: 80,
+              height: 40,
+              overflow: 'hidden',
+              display: 'flex',
+              background: '#ddd',
+            }}
+          >
+            <div style={{ width: 30, flexShrink: 0 }} />
+            <div
+              style={box('purple', {
+                position: 'sticky',
+                left: 40,
+                width: 20,
+                flexShrink: 0,
+              })}
+            />
+            <div style={{ width: 200, flexShrink: 0 }} />
+          </div>
+          {/* The containing block of absolutely positioned descendants. */}
+          <div style={{ width: 40, height: 200, background: '#eee' }}>
+            <div
+              style={box('teal', {
+                position: 'sticky',
+                top: '30%',
+                height: 20,
+              })}
+            >
+              <div
+                style={box('yellow', {
+                  position: 'absolute',
+                  left: 5,
+                  top: 5,
+                  width: 10,
+                  height: 10,
+                })}
+              />
+            </div>
+          </div>
+        </div>,
+        { width: 400, height: 120, fonts }
+      )
+      expect(toImage(svg, 400)).toMatchImageSnapshot()
+    })
+  })
 })
