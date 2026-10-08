@@ -237,4 +237,18 @@ describe('Basic', () => {
       expect(svg).toMatch(/<path\b/)
     }
   })
+
+  it('should ignore undefined and null style values', async () => {
+    const style = { width: 10, height: 10, background: 'red' }
+    const expected = await satori(<div style={style} />, {
+      width: 10,
+      height: 10,
+      fonts,
+    })
+    const svg = await satori(
+      <div style={{ ...style, color: undefined, margin: null as any }} />,
+      { width: 10, height: 10, fonts }
+    )
+    expect(svg).toBe(expected)
+  })
 })
