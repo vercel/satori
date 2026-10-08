@@ -461,7 +461,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 Note:
 
-1. 3D transforms are drawn like in browsers, with two differences. Elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
+1. In 3D transforms, elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
 2. `calc()`, `min()`, `max()` and `clamp()` aren't supported. Lengths with them are ignored, and transforms with them throw.
 3. Properties that aren't listed are ignored, for example `aspectRatio`, `visibility`, `outline`, `float`, `columns`, `direction`, `writingMode`, `wordSpacing`, `fontVariant`, `fontStretch` and `fontKerning`.
 4. Invalid values throw an error, which fails the whole render.
