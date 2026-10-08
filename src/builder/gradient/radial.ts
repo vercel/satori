@@ -5,7 +5,11 @@ import {
   ColorStop,
 } from 'css-gradient-parser'
 import { buildXMLString, lengthToNumber } from '../../utils.js'
-import { expandColorStops, normalizeStops } from './utils.js'
+import {
+  expandColorStops,
+  extractInterpolationMethod,
+  normalizeStops,
+} from './utils.js'
 
 export function buildRadialGradient(
   {
@@ -26,13 +30,14 @@ export function buildRadialGradient(
   inheritableStyle: Record<string, number | string>,
   from?: 'background' | 'mask'
 ) {
+  const [gradient, method] = extractInterpolationMethod(image)
   const {
     shape,
     stops: colorStops,
     position,
     size,
     repeating,
-  } = parseRadialGradient(expandColorStops(image))
+  } = parseRadialGradient(expandColorStops(gradient))
   const [xDelta, yDelta] = dimensions
 
   let cx: number = xDelta / 2
@@ -61,7 +66,8 @@ export function buildRadialGradient(
     colorStops,
     inheritableStyle,
     repeating,
-    from
+    from,
+    method
   )
 
   const gradientId = `satori_radial_${id}`

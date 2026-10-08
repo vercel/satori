@@ -4,7 +4,7 @@ import { hasIntrinsicSize, resolveImageData } from '../handler/image.js'
 import { buildLinearGradient } from './gradient/linear.js'
 import { buildRadialGradient } from './gradient/radial.js'
 import { buildConicGradient } from './gradient/conic.js'
-import cssColorParse from 'parse-css-color'
+import { isColor } from '../parser/color.js'
 
 interface Background {
   attachment?: string
@@ -323,11 +323,8 @@ function buildColorLayer(
   width: number,
   height: number
 ) {
-  if (cssColorParse(image)) {
-    const colorObj = cssColorParse(image)
-    const [r, g, b, a] = colorObj.values
-    const alpha = a !== undefined ? a : 1
-    const color = `rgba(${r},${g},${b},${alpha})`
+  if (isColor(image)) {
+    const color = image
 
     return [
       `satori_bi${id}`,

@@ -7,6 +7,10 @@ import { getPropertyName, getStylesForProperty } from 'css-to-react-native'
 import { parseElementStyle } from 'css-background-parser'
 import { parse as parseBoxShadow } from 'css-box-shadow'
 import cssColorParse from 'parse-css-color'
+import {
+  convertColors as convertColorValues,
+  isColor,
+} from '../parser/color.js'
 import valueParser from 'postcss-value-parser'
 
 import parseTransformOrigin, {
@@ -154,10 +158,7 @@ function parseLineShorthand(value: string | number, styles: Set<string>) {
       width = lineWidth
     } else if (style === undefined && styles.has(lower)) {
       style = lower
-    } else if (
-      color === undefined &&
-      (lower === 'transparent' || cssColorParse(token))
-    ) {
+    } else if (color === undefined && isColor(token)) {
       color = token
     } else {
       throw new Error(`Invalid value: "${value}".`)
@@ -717,7 +718,7 @@ function handleSpecialCase(
         decorationStyle = keyword
       } else if (isTextDecorationLength(keyword) && thickness === undefined) {
         thickness = keyword
-      } else if (color === undefined && cssColorParse(part)) {
+      } else if (color === undefined && isColor(part)) {
         color = part
       } else {
         throw new Error('Invalid `textDecoration` value.')
@@ -883,7 +884,8 @@ const VALID_IMAGE =
 export default function expand(
   style: Record<string, string | number> | undefined,
   inheritedStyle: SerializedStyle,
-  onStyleError?: (error: Error) => void
+  onStyleError?: (error: Error) => void,
+  convertColors = true
 ): SerializedStyle {
   const serializedStyle: SerializedStyle = {}
 
@@ -915,14 +917,20 @@ export default function expand(
 
   if (processableStyle) {
     // Resolve CSS variables in color property before processing
-    const resolvedColor = processableStyle.color
-      ? resolveVariables(processableStyle.color, mergedVariables)
+    let resolvedColor = processableStyle.color
+      ? String(resolveVariables(processableStyle.color, mergedVariables))
       : undefined
+    // `currentColor` in `color` is the inherited color.
+    if (resolvedColor && resolvedColor.toLowerCase() !== 'currentcolor') {
+      resolvedColor = convertColors
+        ? convertColorValues(resolvedColor, String(inheritedStyle.color))
+        : convertCurrentColorToActualValue(
+            resolvedColor,
+            String(inheritedStyle.color)
+          )
+    }
 
-    const currentColor = getCurrentColor(
-      resolvedColor as string,
-      inheritedStyle.color
-    )
+    const currentColor = getCurrentColor(resolvedColor, inheritedStyle.color)
 
     serializedStyle.color = currentColor
 
@@ -946,9 +954,13 @@ export default function expand(
         processableStyle[prop],
         mergedVariables
       )
+      // Colors are converted to be parsed. When they're kept, the converted
+      // ones are replaced by the original ones afterwards.
+      const kept = convertColors ? undefined : new Map<string, string>()
       const value = normalizeColorKeywords(
         name,
-        preprocess(resolvedValue, currentColor)
+        preprocess(resolvedValue, currentColor, kept),
+        convertColors
       )
 
       try {
@@ -961,7 +973,10 @@ export default function expand(
             currentColor
           )
 
-        Object.assign(serializedStyle, resolvedStyle)
+        Object.assign(
+          serializedStyle,
+          kept?.size ? restoreColors(resolvedStyle, kept) : resolvedStyle
+        )
       } catch (err) {
         // Attach the rule itself if it's not included in the error message.
         const error = new Error(
@@ -1202,7 +1217,11 @@ const COLOR_ALIASES = { cyan: 'aqua', magenta: 'fuchsia' }
  * `css-to-react-native`, so they're lowercased and aliased in values with
  * colors.
  */
-function normalizeColorKeywords(name: string, value: string | number) {
+function normalizeColorKeywords(
+  name: string,
+  value: string | number,
+  convertColors: boolean
+) {
   if (typeof value !== 'string' || !COLOR_PROPERTY.test(name)) return value
   const parsed = valueParser(value)
   let changed = false
@@ -1212,11 +1231,12 @@ function normalizeColorKeywords(name: string, value: string | number) {
     }
     if (node.type !== 'word' || !/^[a-z]+$/i.test(node.value)) return
     const lower = node.value.toLowerCase()
-    const keyword = COLOR_ALIASES[lower] ?? lower
-    if (
-      keyword !== node.value &&
-      (COLOR_ALIASES[lower] || lower === 'transparent' || cssColorParse(lower))
-    ) {
+    // `rebeccapurple` was added in CSS Color 4.
+    const keyword =
+      convertColors && lower === 'rebeccapurple'
+        ? '#663399'
+        : COLOR_ALIASES[lower] ?? lower
+    if (keyword !== node.value && (COLOR_ALIASES[lower] || isColor(lower))) {
       node.value = keyword
       changed = true
     }
@@ -1226,11 +1246,37 @@ function normalizeColorKeywords(name: string, value: string | number) {
 
 function preprocess(
   value: string | number,
-  currentColor: string
+  currentColor: string,
+  kept?: Map<string, string>
 ): string | number {
   if (isString(value)) {
     value = convertCurrentColorToActualValue(value, currentColor)
+    value = convertColorValues(
+      value,
+      currentColor,
+      kept && ((converted, original) => kept.set(converted, original))
+    )
   }
 
+  return value
+}
+
+/** Replaces converted colors in parsed styles by their original values. */
+function restoreColors<T>(value: T, kept: Map<string, string>): T {
+  if (typeof value === 'string') {
+    let restored: string = value
+    for (const [converted, original] of kept) {
+      restored = restored.split(converted).join(original)
+    }
+    return restored as T
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => restoreColors(item, kept)) as T
+  }
+  if (value && typeof value === 'object') {
+    const restored = {} as T
+    for (const key in value) restored[key] = restoreColors(value[key], kept)
+    return restored
+  }
   return value
 }
