@@ -202,7 +202,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>display</code></td>
-<td>Supported, with these differences: list markers aren't drawn, so <code>list-item</code> is laid out like <code>block</code>. <code>table</code>, <code>ruby</code> and their inner values, and two-value syntax like <code>inline flow-root</code>, aren't supported and throw. <code>-webkit-box</code> is laid out like <code>flex</code>, to support <code>WebkitLineClamp</code>. The top-level element is laid out as a block, like the root element of a page. Form controls like <code>button</code> are inline instead of <code>inline-block</code>, and have no default styles.</td>
+<td>Supported, with these differences: <code>table</code>, <code>ruby</code> and their inner values, and two-value syntax like <code>inline flow-root</code>, aren't supported and throw. <code>-webkit-box</code> is laid out like <code>flex</code>, to support <code>WebkitLineClamp</code>. The top-level element is laid out as a block, like the root element of a page. Form controls like <code>button</code> are inline instead of <code>inline-block</code>, and have no default styles.</td>
 <td></td>
 </tr>
 
@@ -306,6 +306,13 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>justifyItems</code>, <code>justifySelf</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>placeItems</code>, <code>placeContent</code>, <code>placeSelf</code></td><td>Supported</td><td></td></tr>
 <tr><td>Shorthands (<code>grid</code>, <code>gridTemplate</code>)</td><td>Supported</td><td></td></tr>
+
+<tr><td rowspan="6">List</td></tr>
+<tr><td><code>listStyleType</code></td><td>The Chinese, Japanese, Korean and Ethiopic counter styles, <code>symbols()</code> and names of <code>@counter-style</code> rules are drawn like <code>decimal</code>. Markers can't be styled, since <code>::marker</code> isn't supported</td><td></td></tr>
+<tr><td><code>listStylePosition</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>listStyleImage</code></td><td>Only <code>url()</code> is supported, not gradients</td><td></td></tr>
+<tr><td>Shorthand (<code>listStyle</code>)</td><td>Supported</td><td></td></tr>
+<tr><td><code>counterReset</code>, <code>counterIncrement</code>, <code>counterSet</code></td><td>Counters other than <code>list-item</code> aren't displayed, since <code>content</code> and <code>counter()</code> aren't supported. Where a marker is placed, and how many items a <code>reversed()</code> counter counts, are found from the <code>style</code> prop and the default styles of elements, not their <code>tw</code> classes</td><td></td></tr>
 
 <tr><td rowspan="6">Font</td></tr>
 <tr><td><code>fontFamily</code></td><td>Only the fonts passed in the <code>fonts</code> option are used. After the listed families, the other loaded fonts are used as fallbacks in the order they were passed, so generic families like <code>serif</code> don't select a font</td><td></td></tr>

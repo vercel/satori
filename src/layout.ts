@@ -14,6 +14,12 @@ import {
 } from './utils.js'
 import { LayoutNode } from './layout-engine/index.js'
 import { getStickyOffset } from './sticky-position.js'
+import {
+  applyCounters,
+  findMarkerTarget,
+  getListMarker,
+  type Counters,
+} from './list-marker.js'
 import { SVGNodeToImage } from './handler/preprocess.js'
 import { svgTransformToCSS } from './parser/svg-transform.js'
 import computeStyle from './handler/compute.js'
@@ -141,6 +147,14 @@ export interface LayoutContext {
   absoluteContainingBlock?: FixedContainingBlock
   /** Collects the out-of-flow elements laid out in their containing block. */
   fixedElements: FixedElement[]
+  /** The counters in scope, see `list-marker.ts`. */
+  counters: Counters
+  /** Whether it's in an element with `display: none`, without counters. */
+  countersHidden?: boolean
+  /** The number of lists the element is in, for their default styles. */
+  listDepth?: number
+  /** Markers of list items to be placed at the start of its first line. */
+  markers?: ReactElement[]
   /** The parent, the containing block of sticky children. */
   parentBox?: PositionedBox
   /**
@@ -317,8 +331,21 @@ export default async function* layout(
     context.replacedElements,
     context.onStyleError,
     context.convertColors,
-    context.pointScaleFactor
+    context.pointScaleFactor,
+    context.listDepth
   )
+
+  // Counters are changed in tree order, by elements that are displayed.
+  const countersHidden =
+    context.countersHidden || computedStyle.__outerDisplay === 'none'
+  if (!countersHidden) {
+    applyCounters(
+      context.counters,
+      computedStyle,
+      id.slice(0, Math.max(0, id.lastIndexOf('-'))),
+      [].concat(children ?? []).flat()
+    )
+  }
 
   // Elements are blockified in flex and grid containers, as the root
   // element, and when they're out of flow. Inline elements without a box are
@@ -587,6 +614,45 @@ export default async function* layout(
     isReplaced || type === 'svg' ? [] : normalizeChildren(children)
   const iterators: ReturnType<typeof layout>[] = []
 
+  // The markers of list items are placed at the start of the first line of
+  // their block container: before its first in-flow child, or in the first
+  // line of that child if it's a block container too.
+  let markers = context.markers
+  if (computedStyle.__listItem && !countersHidden && !isReplaced) {
+    const engine = font.getEngine(
+      computedStyle.fontSize as number,
+      computedStyle.lineHeight as number,
+      computedStyle as any,
+      newLocale
+    )
+    markers = [
+      ...(markers || []),
+      ...getListMarker(
+        computedStyle,
+        context.counters.value('list-item'),
+        Math.round(engine.ascent('0'))
+      ),
+    ]
+  }
+  let markerTarget = -1
+  if (markers?.length && !isReplaced && type !== 'svg') {
+    const isItemContainer =
+      computedStyle.__innerDisplay === 'flex' ||
+      computedStyle.__innerDisplay === 'grid'
+    const target = findMarkerTarget(normalizedChildren, isItemContainer)
+    if (target.nested) {
+      markerTarget = target.index
+    } else if (target.wrap) {
+      normalizedChildren[target.index] = {
+        type: 'span',
+        key: null,
+        props: { children: [...markers, normalizedChildren[target.index]] },
+      } as any
+    } else if (!isItemContainer) {
+      normalizedChildren.splice(target.index, 0, ...markers)
+    }
+  }
+
   // Children of a block container take part in its inline content, and
   // children of inline boxes in the one of their block container.
   const isBlockContainer =
@@ -644,6 +710,12 @@ export default async function* layout(
       fixedContainingBlock,
       absoluteContainingBlock,
       fixedElements: context.fixedElements,
+      counters: context.counters,
+      countersHidden,
+      listDepth:
+        (context.listDepth || 0) +
+        (['ul', 'ol', 'menu', 'dir'].includes(type) ? 1 : 0),
+      markers: i - 1 === markerTarget ? markers : undefined,
       parentBox,
       scrollport,
       floats: context.floats,
@@ -662,6 +734,8 @@ export default async function* layout(
     iterators.push(iter)
   }
   if (inlineBox) context.inline.closeBox(inlineBox)
+  // Counters created by the children are out of scope.
+  context.counters.closeScope(id)
   yield segmentsMissingFont
   for (const iter of iterators) await iter.next()
 

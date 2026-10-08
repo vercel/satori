@@ -119,7 +119,7 @@ export default {
     fontWeight: 'bold',
   },
   // Tables
-  // Lists, without markers
+  // Lists, see `getListPresets()` for their list styles
   ul: {
     display: DEFAULT_DISPLAY,
     marginTop: '1em',
@@ -133,6 +133,12 @@ export default {
     paddingLeft: 40,
   },
   menu: {
+    display: DEFAULT_DISPLAY,
+    marginTop: '1em',
+    marginBottom: '1em',
+    paddingLeft: 40,
+  },
+  dir: {
     display: DEFAULT_DISPLAY,
     marginTop: '1em',
     marginBottom: '1em',

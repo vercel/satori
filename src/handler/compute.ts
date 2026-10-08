@@ -123,7 +123,7 @@ const DISPLAY_TYPES: Record<
 > = {
   block: ['block', 'block'],
   'flow-root': ['block', 'flow-root'],
-  // Markers aren't drawn.
+  // With a marker, see `getListMarkers()`.
   'list-item': ['block', 'block'],
   flex: ['block', 'flex'],
   '-webkit-box': ['block', 'flex'],
@@ -134,6 +134,67 @@ const DISPLAY_TYPES: Record<
   'inline-grid': ['inline', 'grid'],
   contents: ['contents', 'contents'],
   none: ['none', 'none'],
+}
+
+const LIST_ELEMENTS = new Set(['ul', 'ol', 'menu', 'dir'])
+const LIST_TYPES: Record<string, string> = {
+  '1': 'decimal',
+  a: 'lower-alpha',
+  A: 'upper-alpha',
+  i: 'lower-roman',
+  I: 'upper-roman',
+  disc: 'disc',
+  circle: 'circle',
+  square: 'square',
+}
+
+/**
+ * The list styles of the user agent stylesheet, and the `type`, `start`,
+ * `reversed` and `value` attributes of lists. `listDepth` is the number of
+ * lists the element is in.
+ */
+function getListPresets(
+  type: string,
+  props: Record<string, any>,
+  listDepth: number
+) {
+  const preset: Record<string, string | number> = {}
+  if (LIST_ELEMENTS.has(type)) {
+    preset.listStyleType =
+      type === 'ol'
+        ? 'decimal'
+        : listDepth === 0
+        ? 'disc'
+        : listDepth === 1
+        ? 'circle'
+        : 'square'
+    // Nested lists have no vertical margins.
+    if (listDepth > 0) preset.marginTop = preset.marginBottom = 0
+    preset.counterReset = 'list-item'
+  }
+  if (
+    (type === 'ol' || type === 'ul' || type === 'li') &&
+    typeof props?.type === 'string' &&
+    LIST_TYPES[props.type]
+  ) {
+    preset.listStyleType = LIST_TYPES[props.type]
+  }
+  if (type === 'ol') {
+    const start = parseInt(props?.start, 10)
+    const reversed = props?.reversed !== undefined && props.reversed !== false
+    if (reversed) {
+      preset.counterReset = Number.isNaN(start)
+        ? 'reversed(list-item)'
+        : `reversed(list-item) ${start + 1}`
+    } else if (!Number.isNaN(start)) {
+      preset.counterReset = `list-item ${start - 1}`
+    }
+  }
+  if (type === 'li' && props?.value !== undefined) {
+    const value = parseInt(props.value, 10)
+    if (!Number.isNaN(value)) preset.counterSet = `list-item ${value}`
+  }
+  return preset
 }
 
 /**
@@ -159,7 +220,8 @@ export default async function compute(
   replacedElements?: ReplacedElementHandlers,
   onStyleError?: (error: Error) => void,
   convertColors = true,
-  pointScaleFactor?: number
+  pointScaleFactor?: number,
+  listDepth = 0
 ): Promise<[SerializedStyle, SerializedStyle]> {
   // With `onStyleError`, invalid values are reported and replaced by the
   // fallback, as if the declaration wasn't there.
@@ -179,7 +241,10 @@ export default async function compute(
   // agent stylesheet, the preset is computed together with the defined style,
   // e.g. `em` margins use the defined font size. Defined properties come after
   // the remaining preset ones, so they override them in order.
-  const presetStyle = { ...presets[type] }
+  const presetStyle = {
+    ...presets[type],
+    ...getListPresets(type, props, listDepth),
+  }
   for (const prop in definedStyle) delete presetStyle[prop]
   const style: SerializedStyle = Object.assign(
     {},
@@ -221,7 +286,8 @@ export default async function compute(
       style,
       imageWidth,
       imageHeight,
-      props.width,
+      // Images of list markers have their natural size.
+      props.width ?? (props.__marker ? imageWidth : undefined),
       props.height
     )
     style.__src = resolvedSrc
@@ -327,6 +393,7 @@ export default async function compute(
   ) as [OuterDisplay, LayoutStyle['display'] | 'inline']
   style.__outerDisplay = outerDisplay
   style.__innerDisplay = innerDisplay
+  style.__listItem = (style.display === 'list-item') as any
   layout.display = innerDisplay === 'inline' ? 'block' : innerDisplay
 
   // `align-content` defaults to `normal`. In block containers, other values

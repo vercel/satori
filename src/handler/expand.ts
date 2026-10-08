@@ -180,6 +180,81 @@ function purify(name: string, value?: string | number) {
 }
 
 /** Splits a value at the spaces that aren't in parentheses. */
+/** A counter of `counter-reset`, `counter-increment` or `counter-set`. */
+export interface CounterChange {
+  name: string
+  /** Omitted for `reversed()` counters without a value. */
+  value?: number
+  reversed?: boolean
+}
+
+/**
+ * Parses `none` or `[<counter-name> <integer>?]+`, where `counter-reset` also
+ * accepts `reversed(<counter-name>)`.
+ */
+function parseCounters(
+  name: 'counterReset' | 'counterIncrement' | 'counterSet',
+  value: string | number
+): CounterChange[] {
+  const tokens = String(value).trim().split(/\s+/)
+  if (tokens.length === 1 && tokens[0].toLowerCase() === 'none') return []
+  const counters: CounterChange[] = []
+  const invalid = () => {
+    throw new Error(`Invalid \`${name}\` value: "${value}".`)
+  }
+  // Whether the last counter can be followed by its value.
+  let canTakeValue = false
+  for (const token of tokens) {
+    const reversed = /^reversed\(\s*([^()\s]+)\s*\)$/i.exec(token)
+    if (/^[+-]?\d+$/.test(token)) {
+      if (!canTakeValue) invalid()
+      counters[counters.length - 1].value = parseInt(token, 10)
+      canTakeValue = false
+    } else if (reversed && name === 'counterReset') {
+      counters.push({ name: reversed[1], reversed: true })
+      canTakeValue = true
+    } else if (/^-?[_a-zA-Z][\w-]*$/.test(token) && token !== 'none') {
+      counters.push({
+        name: token,
+        value: name === 'counterIncrement' ? 1 : 0,
+      })
+      canTakeValue = true
+    } else {
+      invalid()
+    }
+  }
+  return counters
+}
+
+/**
+ * Parses `list-style`: a position, an image and a type in any order. `none`
+ * sets the type, and the image unless one is given.
+ */
+function parseListStyle(value: string) {
+  let position: string | undefined
+  let image: string | undefined
+  let type: string | undefined
+  let nones = 0
+  for (const token of splitValues(value.trim())) {
+    const lower = token.toLowerCase()
+    if (lower === 'none') nones++
+    else if ((lower === 'inside' || lower === 'outside') && !position) {
+      position = lower
+    } else if (/^url\(/i.test(token) && !image) image = token
+    else if (!type) type = token
+    else throw new Error(`Invalid \`listStyle\` value: "${value}".`)
+  }
+  if (nones > (image ? 0 : 1) + (type ? 0 : 1)) {
+    throw new Error(`Invalid \`listStyle\` value: "${value}".`)
+  }
+  if (nones && !type) type = 'none'
+  return {
+    listStylePosition: position ?? 'outside',
+    listStyleImage: image ?? 'none',
+    listStyleType: type ?? 'disc',
+  }
+}
+
 const ANGLE = /^[+-]?(\d+\.?\d*|\.\d+)(deg|rad|grad|turn)$|^0$/i
 
 /**
@@ -567,6 +642,26 @@ function handleSpecialCase(
   if (name === 'grid' || name === 'gridTemplate') {
     if (typeof value !== 'string') throw new Error(`Invalid \`${name}\` value.`)
     return name === 'grid' ? expandGrid(value) : expandGridTemplate(value)
+  }
+
+  if (name === 'listStyle') {
+    return parseListStyle(String(value))
+  }
+
+  if (name === 'listStylePosition') {
+    const position = String(value).trim().toLowerCase()
+    if (position !== 'inside' && position !== 'outside') {
+      throw new Error(`Invalid \`listStylePosition\` value: "${value}".`)
+    }
+    return { listStylePosition: position }
+  }
+
+  if (
+    name === 'counterReset' ||
+    name === 'counterIncrement' ||
+    name === 'counterSet'
+  ) {
+    return { [name]: parseCounters(name, value) }
   }
 
   if (name === 'translate' || name === 'rotate' || name === 'scale') {
@@ -997,7 +1092,8 @@ export default function expand(
         continue
       }
 
-      if (prop === 'color') {
+      // Like in React, `undefined` and `null` values are ignored.
+      if (prop === 'color' || processableStyle[prop] == null) {
         continue
       }
 

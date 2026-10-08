@@ -1,3 +1,4 @@
+import { Counters } from './list-marker.js'
 import type { ReactNode } from 'react'
 import type { TwConfig } from 'twrnc'
 import type { SatoriNode } from './layout.js'
@@ -210,6 +211,7 @@ export async function render(
     projectPlane,
     // Fixed elements are positioned relative to the viewport by default.
     fixedContainingBlock: { node: root, offset: { left: 0, top: 0 } },
+    counters: new Counters(),
     // Sticky elements stick to the viewport by default.
     parentBox: { node: root, offset: { left: 0, top: 0 } },
     scrollport: { node: root, offset: { left: 0, top: 0 } },
