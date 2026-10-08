@@ -19,7 +19,11 @@ import buildText, {
   getTextStrokeAttributes,
 } from '../builder/text.js'
 import { buildDropShadow } from '../builder/shadow.js'
-import buildDecoration from '../builder/text-decoration.js'
+import buildDecoration, {
+  getDecorationLines,
+  getDecorationThickness,
+  getUnderlineY,
+} from '../builder/text-decoration.js'
 import type { GlyphBox } from '../font.js'
 import { Locale } from '../language.js'
 import { HorizontalEllipsis, Space, Tab } from './characters.js'
@@ -527,7 +531,7 @@ export default async function* buildTextNodes(
   const left = x + containerLeft
   const top = y + containerTop
 
-  const { matrix, opacity } = container(
+  const { matrix } = container(
     {
       left: containerLeft,
       top: containerTop,
@@ -597,7 +601,7 @@ export default async function* buildTextNodes(
     const width = layout.width
     const line = layout.line
     const shouldCollectDecorationBoxes =
-      parentStyle.textDecorationLine === 'underline' &&
+      getDecorationLines(parentStyle).includes('underline') &&
       (parentStyle.textDecorationSkipInk || 'auto') !== 'none'
 
     if (line === skippedLine) {
@@ -644,16 +648,15 @@ export default async function* buildTextNodes(
     const baselineDelta = baselineOfLine - baselineOfWord
 
     const buildUnderlineBand = (offset: number) => {
-      if (
-        !shouldCollectDecorationBoxes ||
-        parentStyle.textDecorationLine !== 'underline'
-      ) {
-        return undefined
-      }
-      const baseline = top + offset + baselineDelta + baselineOfWord
+      if (!shouldCollectDecorationBoxes) return undefined
+      const strokeWidth = getDecorationThickness(parentStyle)
       return {
-        underlineY: baseline + baselineOfWord * 0.1,
-        strokeWidth: Math.max(1, fontSize * 0.1),
+        underlineY:
+          top +
+          offset +
+          baselineDelta +
+          getUnderlineY(parentStyle, baselineOfWord, strokeWidth),
+        strokeWidth,
       }
     }
 
@@ -873,7 +876,6 @@ export default async function* buildTextNodes(
           width,
           height: heightOfWord,
           matrix,
-          opacity,
           image,
           clipPathId,
           debug,
@@ -890,7 +892,7 @@ export default async function* buildTextNodes(
     }
   }
 
-  if (parentStyle.textDecorationLine) {
+  if (getDecorationLines(parentStyle).length) {
     decorationShape = Object.entries(decorationLines)
       .map(([lineIndex, deco]) => {
         if (!deco) return ''
@@ -912,12 +914,26 @@ export default async function* buildTextNodes(
       .join('')
   }
 
+  // The opacity of the parent if it only has this text, see `layout()`. A
+  // single path without stroke or filters is one fill operation, so
+  // `fill-opacity` looks the same as drawing it as a group with `opacity`,
+  // and avoids the compositing surface of a group in rasterizers.
+  const textOpacity = (parentStyle._textOpacity as number | undefined) ?? 1
+  const fillOpacity =
+    textOpacity < 1 &&
+    !result &&
+    !filter &&
+    !cssFilter &&
+    !decorationShape &&
+    !getTextStrokeAttributes(parentStyle).stroke
+      ? textOpacity
+      : undefined
+
   // Embed the font as path.
   if (mergedPath) {
     const strokeAttributes = getTextStrokeAttributes(parentStyle)
     const path =
-      (!isFullyTransparent(fillColor) || strokeAttributes.stroke || filter) &&
-      opacity !== 0
+      !isFullyTransparent(fillColor) || strokeAttributes.stroke || filter
         ? buildXMLString('path', {
             fill:
               filter &&
@@ -928,15 +944,7 @@ export default async function* buildTextNodes(
                 : fillColor,
             d: mergedPath,
             transform: matrix ? matrix : undefined,
-            // A single path is one fill operation, so `fill-opacity` is
-            // visually identical to `opacity` when there is no stroke or
-            // filter, and avoids the isolated-group compositing surface in
-            // rasterizers. With a filter (e.g. text-shadow), `fill-opacity`
-            // applies before filtering while `opacity` applies after, so we
-            // must keep `opacity` there.
-            [strokeAttributes.stroke || cssFilter || filter
-              ? 'opacity'
-              : 'fill-opacity']: opacity !== 1 ? opacity : undefined,
+            'fill-opacity': fillOpacity,
             style: cssFilter ? `filter:${cssFilter}` : undefined,
             ...strokeAttributes,
           })
@@ -972,6 +980,10 @@ export default async function* buildTextNodes(
     result += filter
       ? buildXMLString('g', { filter: `url(#satori_s-${id})` }, decorationShape)
       : decorationShape
+  }
+
+  if (textOpacity < 1 && fillOpacity === undefined && result) {
+    result = buildXMLString('g', { opacity: textOpacity }, result)
   }
 
   // Attach information to the parent node.

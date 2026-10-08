@@ -180,7 +180,6 @@ export async function render(
       fontStyle: 'normal',
       lineHeight: 'normal',
       color: 'black',
-      opacity: 1,
       whiteSpace: 'normal',
 
       // Special style properties:

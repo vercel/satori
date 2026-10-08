@@ -27,12 +27,15 @@ export default async function buildMaskImage(
   for (let i = 0; i < length; i++) {
     const m = maskImage[i]
 
-    const [_id, def] = await buildBackgroundImage(
+    const layer = await buildBackgroundImage(
       { id: `${miId}-${i}`, left, top, width, height },
       m,
       inheritedStyle,
       'mask'
     )
+    // A `none` layer doesn't mask the element.
+    if (!layer) continue
+    const [_id, def] = layer
 
     mask +=
       def +

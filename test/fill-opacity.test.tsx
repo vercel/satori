@@ -93,7 +93,7 @@ describe('Opacity to fill-opacity optimization', () => {
     expect(toImage(svg, 200)).toMatchImageSnapshot()
   })
 
-  it('should render nested opacity multiplicatively', async () => {
+  it('should render nested opacity as nested groups', async () => {
     const svg = await satori(
       <div
         style={{
@@ -114,7 +114,9 @@ describe('Opacity to fill-opacity optimization', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(svg).toContain('fill-opacity="0.25"')
+    // The child is a single shape, so it uses `fill-opacity` in the group.
+    expect(svg).toContain('<g opacity="0.5">')
+    expect(svg).toContain('fill-opacity="0.5"')
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
 })

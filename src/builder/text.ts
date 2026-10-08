@@ -20,7 +20,6 @@ export function container(
   style: Record<string, number | string>
 ) {
   let matrix = ''
-  let opacity = 1
 
   if (style.transform) {
     matrix = transform(
@@ -36,11 +35,7 @@ export function container(
     )
   }
 
-  if (style.opacity !== undefined) {
-    opacity = +style.opacity
-  }
-
-  return { matrix, opacity }
+  return { matrix }
 }
 
 /** The color glyphs are filled with. */
@@ -76,7 +71,6 @@ export default function buildText(
     width,
     height,
     matrix,
-    opacity,
     image,
     clipPathId,
     debug,
@@ -91,7 +85,6 @@ export default function buildText(
     width: number
     height: number
     matrix: string
-    opacity: number
     image: string | null
     clipPathId?: string
     debug?: boolean
@@ -128,10 +121,7 @@ export default function buildText(
       style: style.filter ? `filter:${style.filter}` : undefined,
     }
     const imageMarkup =
-      buildXMLString('image', {
-        ...shapeProps,
-        opacity: opacity !== 1 ? opacity : undefined,
-      }) + (decorationShape || '')
+      buildXMLString('image', shapeProps) + (decorationShape || '')
     return [
       (filter
         ? filter +
@@ -164,7 +154,6 @@ export default function buildText(
       {
         ...shapeProps,
         fill: getTextFillColor(style),
-        opacity: opacity !== 1 ? opacity : undefined,
       },
       escapeHTML(content)
     ) + (decorationShape || '')

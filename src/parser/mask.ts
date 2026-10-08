@@ -22,7 +22,7 @@ export function parseMask(
 
   const common = {
     position: getMaskProperty(style, 'position') || '0% 0%',
-    size: getMaskProperty(style, 'size') || '100% 100%',
+    size: getMaskProperty(style, 'size') || 'auto',
     repeat: getMaskProperty(style, 'repeat') || 'repeat',
     origin: getMaskProperty(style, 'origin') || 'border-box',
     clip: getMaskProperty(style, 'origin') || 'border-box',

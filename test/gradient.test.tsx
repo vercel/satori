@@ -656,4 +656,45 @@ describe('Gradient', () => {
     )
     expect(toImage(svg, 100)).toMatchImageSnapshot()
   })
+
+  it('should support color stops with two positions', async () => {
+    const svg = await satori(
+      <div style={{ display: 'flex', flexWrap: 'wrap', width: 100 }}>
+        <div
+          style={{
+            width: 50,
+            height: 50,
+            backgroundImage:
+              'linear-gradient(90deg, red 0 30%, blue 30% 60%, green 60%)',
+          }}
+        />
+        <div
+          style={{
+            width: 50,
+            height: 50,
+            backgroundImage:
+              'repeating-linear-gradient(45deg, #ccc 0 5px, #fff 5px 10px)',
+          }}
+        />
+        <div
+          style={{
+            width: 50,
+            height: 50,
+            backgroundImage:
+              'repeating-radial-gradient(circle, #ccc 0 5px, #fff 5px 10px)',
+          }}
+        />
+        <div
+          style={{
+            width: 50,
+            height: 50,
+            backgroundImage:
+              'radial-gradient(rgb(255, 0, 0) 0 20%, rgba(0, 0, 255, 0.5) 20% 50%, transparent 50%)',
+          }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })

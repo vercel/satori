@@ -1,6 +1,43 @@
 import { lengthToNumber } from '../../utils.js'
 import cssColorParse from 'parse-css-color'
 import type { ColorStop } from 'css-gradient-parser'
+import valueParser from 'postcss-value-parser'
+
+const POSITION =
+  /^[+-]?(\d+\.?\d*|\.\d+)(px|em|rem|vw|vh|%|deg|turn|rad|grad)?$/i
+
+/**
+ * Expands color stops with two positions, e.g. `red 0 50%`, into two stops
+ * with the color, which is how they're defined and the only form
+ * `css-gradient-parser` supports.
+ */
+export function expandColorStops(gradient: string) {
+  const [fn] = valueParser(gradient).nodes
+  if (fn?.type !== 'function') return gradient
+
+  const args: string[][] = [[]]
+  for (const node of fn.nodes) {
+    if (node.type === 'div' && node.value === ',') args.push([])
+    else if (node.type !== 'space' && node.type !== 'comment') {
+      args[args.length - 1].push(valueParser.stringify(node))
+    }
+  }
+  let changed = false
+  const expanded = args.map((tokens) => {
+    const [color, start, end] = tokens
+    if (
+      tokens.length === 3 &&
+      cssColorParse(color) &&
+      POSITION.test(start) &&
+      POSITION.test(end)
+    ) {
+      changed = true
+      return `${color} ${start}, ${color} ${end}`
+    }
+    return tokens.join(' ')
+  })
+  return changed ? `${fn.value}(${expanded.join(', ')})` : gradient
+}
 
 interface Stop {
   color: string

@@ -18,6 +18,7 @@ import { MaskProperty, parseMask } from '../parser/mask.js'
 import { splitCornerShapeValues } from '../parser/corner-shape.js'
 import { parseBackdropFilter } from '../parser/backdrop-filter.js'
 import { expandGridPlacement } from '../parser/grid.js'
+import { expandBackground } from '../parser/background.js'
 import parseTransform, {
   resolveTransform,
   type TransformFunction,
@@ -58,6 +59,37 @@ function handleFallbackColor(
     parsed.textDecorationColor = currentColor
   }
   return parsed
+}
+
+const TEXT_DECORATION_LINES = ['underline', 'overline', 'line-through', 'blink']
+const TEXT_DECORATION_STYLES = ['solid', 'double', 'dotted', 'dashed', 'wavy']
+
+/** `none`, or any of the lines. `blink` is valid, but not drawn. */
+function parseTextDecorationLine(lines: string[]) {
+  if (lines.includes('none')) {
+    if (lines.length > 1) throw new Error('Invalid `textDecorationLine` value.')
+    return 'none'
+  }
+  if (
+    !lines.length ||
+    new Set(lines).size !== lines.length ||
+    lines.some((line) => !TEXT_DECORATION_LINES.includes(line))
+  ) {
+    throw new Error('Invalid `textDecorationLine` value.')
+  }
+  return lines.filter((line) => line !== 'blink').join(' ') || 'none'
+}
+
+/**
+ * Values of `text-decoration-thickness` and `text-underline-offset`: `auto`,
+ * `from-font` (only the thickness), a length or a percentage.
+ */
+function isTextDecorationLength(value: string) {
+  return (
+    value === 'auto' ||
+    value === 'from-font' ||
+    /^[+-]?(\d+\.?\d*|\.\d+)(px|em|rem|vw|vh|%)?$/.test(value)
+  )
 }
 
 const LINE_WIDTH_KEYWORDS = { thin: '1px', medium: '3px', thick: '5px' }
@@ -244,15 +276,17 @@ function handleSpecialCase(
   }
 
   if (name === 'background') {
-    value = value.toString().trim()
-    if (
-      /^(linear-gradient|radial-gradient|url|repeating-linear-gradient|repeating-radial-gradient)\(/.test(
-        value
-      )
-    ) {
-      return getStylesForProperty('backgroundImage', value, true)
-    }
-    return getStylesForProperty('background', value, true)
+    return expandBackground(String(value).trim())
+  }
+
+  // Parsed by `css-background-parser` as lists of strings.
+  if (
+    name === 'backgroundPosition' ||
+    name === 'backgroundSize' ||
+    name === 'backgroundRepeat' ||
+    name === 'backgroundOrigin'
+  ) {
+    return { [name]: typeof value === 'number' ? `${value}px` : String(value) }
   }
 
   if (name === 'textShadow') {
@@ -409,6 +443,74 @@ function handleSpecialCase(
     return { [name]: value }
   }
 
+  if (name === 'textDecoration') {
+    // `<line> || <style> || <color> || <thickness>`. Like other shorthands,
+    // omitted values are reset to their initial values.
+    const lines: string[] = []
+    let decorationStyle: string | undefined
+    let color: string | undefined
+    let thickness: string | undefined
+    const parts = valueParser(String(value))
+      .nodes.filter((node) => node.type !== 'space')
+      .map((node) => valueParser.stringify(node))
+    for (const part of parts) {
+      const keyword = part.toLowerCase()
+      if (
+        [...TEXT_DECORATION_LINES, 'none'].includes(keyword) &&
+        !lines.includes(keyword)
+      ) {
+        lines.push(keyword)
+      } else if (
+        TEXT_DECORATION_STYLES.includes(keyword) &&
+        decorationStyle === undefined
+      ) {
+        decorationStyle = keyword
+      } else if (isTextDecorationLength(keyword) && thickness === undefined) {
+        thickness = keyword
+      } else if (color === undefined && cssColorParse(part)) {
+        color = part
+      } else {
+        throw new Error('Invalid `textDecoration` value.')
+      }
+    }
+    return {
+      textDecorationLine: parseTextDecorationLine(lines),
+      textDecorationStyle: decorationStyle ?? 'solid',
+      textDecorationColor: color ?? currentColor,
+      textDecorationThickness: thickness ?? 'auto',
+    }
+  }
+
+  if (name === 'textDecorationLine') {
+    return {
+      textDecorationLine: parseTextDecorationLine(
+        String(value).trim().toLowerCase().split(/\s+/)
+      ),
+    }
+  }
+
+  if (name === 'textDecorationStyle') {
+    return {
+      textDecorationStyle: v(
+        String(value).trim().toLowerCase(),
+        Object.fromEntries(TEXT_DECORATION_STYLES.map((s) => [s, s])),
+        'solid',
+        'textDecorationStyle'
+      ),
+    }
+  }
+
+  if (name === 'textDecorationThickness' || name === 'textUnderlineOffset') {
+    const normalized = purify(name, String(value).trim().toLowerCase())
+    if (
+      !isTextDecorationLength(String(normalized)) ||
+      (name === 'textUnderlineOffset' && normalized === 'from-font')
+    ) {
+      throw new Error(`Invalid \`${name}\` value.`)
+    }
+    return { [name]: normalized }
+  }
+
   if (name === 'textDecorationSkipInk') {
     const normalized = value.toString().trim().toLowerCase()
     if (!['auto', 'none', 'all'].includes(normalized)) {
@@ -563,7 +665,10 @@ export default function expand(
         processableStyle[prop],
         mergedVariables
       )
-      const value = preprocess(resolvedValue, currentColor)
+      const value = normalizeColorKeywords(
+        name,
+        preprocess(resolvedValue, currentColor)
+      )
 
       try {
         const resolvedStyle =
@@ -659,9 +764,8 @@ export default function expand(
       }
     }
 
-    // Inherit the opacity.
     if (prop === 'opacity' && typeof value === 'number') {
-      serializedStyle.opacity = value * inheritedStyle.opacity
+      serializedStyle.opacity = Math.min(Math.max(value, 0), 1)
     }
 
     if (prop === 'transform') {
@@ -756,6 +860,37 @@ function convertCurrentColorToActualValue(
   currentColor: string
 ): string {
   return value.replace(/currentcolor/gi, currentColor)
+}
+
+const COLOR_PROPERTY =
+  /^(color|background|textShadow|boxShadow|textDecoration|WebkitTextStroke|border(Top|Right|Bottom|Left)?)$|Color$/
+const COLOR_ALIASES = { cyan: 'aqua', magenta: 'fuchsia' }
+
+/**
+ * Color keywords are case-insensitive, and some aren't supported by
+ * `css-to-react-native`, so they're lowercased and aliased in values with
+ * colors.
+ */
+function normalizeColorKeywords(name: string, value: string | number) {
+  if (typeof value !== 'string' || !COLOR_PROPERTY.test(name)) return value
+  const parsed = valueParser(value)
+  let changed = false
+  parsed.walk((node) => {
+    if (node.type === 'function' && node.value.toLowerCase() === 'url') {
+      return false
+    }
+    if (node.type !== 'word' || !/^[a-z]+$/i.test(node.value)) return
+    const lower = node.value.toLowerCase()
+    const keyword = COLOR_ALIASES[lower] ?? lower
+    if (
+      keyword !== node.value &&
+      (COLOR_ALIASES[lower] || lower === 'transparent' || cssColorParse(lower))
+    ) {
+      node.value = keyword
+      changed = true
+    }
+  })
+  return changed ? parsed.toString() : value
 }
 
 function preprocess(
