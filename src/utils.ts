@@ -63,6 +63,26 @@ export function normalizeChildren(children: any) {
   return res
 }
 
+// A number with an optional unit, e.g. `10px`, `-.5em` or `50%`.
+const DIMENSION = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z]*|%)$/i
+
+// Absolute lengths in px: https://www.w3.org/TR/css-values-4/#absolute-lengths
+const ABSOLUTE_LENGTHS: Record<string, number> = {
+  px: 1,
+  in: 96,
+  cm: 96 / 2.54,
+  mm: 96 / 25.4,
+  q: 96 / 101.6,
+  pt: 96 / 72,
+  pc: 16,
+}
+
+const ANGLES = new Set(['deg', 'rad', 'turn', 'grad'])
+
+/**
+ * Converts a length to px, or an angle to degrees. Percentages are of
+ * `baseLength` if `percentage` is set. Returns `undefined` for other values.
+ */
 export function lengthToNumber(
   length: string | number,
   baseFontSize: number,
@@ -71,47 +91,39 @@ export function lengthToNumber(
   percentage = false
 ): number | undefined {
   if (typeof length === 'number') return length
+  if (typeof length !== 'string') return
 
-  // Convert em and rem values to number (px), convert rad to deg.
-  try {
-    length = length.trim()
+  const match = DIMENSION.exec(length.trim())
+  if (!match) return
 
-    // Not length: `1px/2px`, `1px 2px`, `1px, 2px`, `calc(1px)`.
-    if (/[ /\(,]/.test(length)) return
+  const value = parseFloat(match[1])
+  const unit = match[2].toLowerCase()
+  if (!unit) return value
+  if (unit in ABSOLUTE_LENGTHS) return value * ABSOLUTE_LENGTHS[unit]
 
-    // Just a number as string: '100'
-    if (length === String(+length)) return +length
-
-    const parsed = new CssDimension(length)
-    if (parsed.type === 'length') {
-      switch (parsed.unit) {
-        case 'em':
-          return parsed.value * baseFontSize
-        case 'rem':
-          return parsed.value * 16
-        case 'vw':
-          return ~~(
-            (parsed.value * (inheritedStyle._viewportWidth as number)) /
-            100
-          )
-        case 'vh':
-          return ~~(
-            (parsed.value * (inheritedStyle._viewportHeight as number)) /
-            100
-          )
-        default:
-          return parsed.value
-      }
-    } else if (parsed.type === 'angle') {
-      return calcDegree(length)
-    } else if (parsed.type === 'percentage') {
-      if (percentage) {
-        return (parsed.value / 100) * baseLength
-      }
-    }
-  } catch {
-    // Not a length unit, silently ignore.
+  const viewportWidth = inheritedStyle._viewportWidth as number
+  const viewportHeight = inheritedStyle._viewportHeight as number
+  switch (unit) {
+    case 'em':
+      return value * baseFontSize
+    case 'rem':
+      return value * 16
+    // The x-height and the width of `0` are about half the font size.
+    case 'ex':
+    case 'ch':
+      return value * baseFontSize * 0.5
+    case 'vw':
+      return ~~((value * viewportWidth) / 100)
+    case 'vh':
+      return ~~((value * viewportHeight) / 100)
+    case 'vmin':
+      return ~~((value * Math.min(viewportWidth, viewportHeight)) / 100)
+    case 'vmax':
+      return ~~((value * Math.max(viewportWidth, viewportHeight)) / 100)
+    case '%':
+      return percentage ? (value / 100) * baseLength : undefined
   }
+  if (ANGLES.has(unit)) return calcDegree(value + unit)
 }
 
 export function calcDegree(deg: string) {
@@ -151,9 +163,6 @@ export function v(
   return value
 }
 
-let wordSegmenter
-let graphemeSegmenter
-
 // Implementation modified from
 // https://github.com/niklasvh/html2canvas/blob/6521a487d78172f7179f7c973c1a3af40eb92009/src/css/layout/text.ts
 // https://drafts.csswg.org/css-text/#word-separator
@@ -161,7 +170,32 @@ export const wordSeparators = [
   0x0020, 0x00a0, 0x1361, 0x10100, 0x10101, 0x1039, 0x1091, 0xa,
 ].map((point) => String.fromCodePoint(point))
 
-const segmentCache = new Map<string, string[]>()
+const segmenters = new Map<string, Intl.Segmenter>()
+
+function getSegmenter(granularity: 'word' | 'grapheme', locale?: string) {
+  const key = `${granularity}:${locale || ''}`
+  let segmenter = segmenters.get(key)
+  if (!segmenter) {
+    if (!(typeof Intl !== 'undefined' && 'Segmenter' in Intl)) {
+      // https://caniuse.com/mdn-javascript_builtins_intl_segments
+      throw new Error(
+        'Intl.Segmenter does not exist, please use import a polyfill.'
+      )
+    }
+    try {
+      segmenter = new Intl.Segmenter(locale, { granularity })
+    } catch {
+      // An invalid locale.
+      segmenter = new Intl.Segmenter(undefined, { granularity })
+    }
+    segmenters.set(key, segmenter)
+  }
+  return segmenter
+}
+
+// Segments by granularity and locale, then by content. Looking up the content
+// directly avoids building a key from it.
+const segmentCaches = new Map<string, Map<string, string[]>>()
 const MAX_SEGMENT_CACHE_SIZE = 500
 
 export function segment(
@@ -169,31 +203,23 @@ export function segment(
   granularity: 'word' | 'grapheme',
   locale?: string
 ): string[] {
-  const cacheKey = `${granularity}:${locale || ''}:${content}`
-
-  if (segmentCache.has(cacheKey)) {
-    return segmentCache.get(cacheKey)!
+  const cacheKey = `${granularity}:${locale || ''}`
+  let cache = segmentCaches.get(cacheKey)
+  if (!cache) {
+    cache = new Map()
+    segmentCaches.set(cacheKey, cache)
   }
-  if (!wordSegmenter || !graphemeSegmenter) {
-    if (!(typeof Intl !== 'undefined' && 'Segmenter' in Intl)) {
-      // https://caniuse.com/mdn-javascript_builtins_intl_segments
-      throw new Error(
-        'Intl.Segmenter does not exist, please use import a polyfill.'
-      )
-    }
-
-    wordSegmenter = new Intl.Segmenter(locale, { granularity: 'word' })
-    graphemeSegmenter = new Intl.Segmenter(locale, {
-      granularity: 'grapheme',
-    })
-  }
+  const cached = cache.get(content)
+  if (cached) return cached
 
   let result: string[]
 
   if (granularity === 'grapheme') {
-    result = [...graphemeSegmenter.segment(content)].map((seg) => seg.segment)
+    result = [...getSegmenter('grapheme', locale).segment(content)].map(
+      (seg) => seg.segment
+    )
   } else {
-    const segmented = [...wordSegmenter.segment(content)].map(
+    const segmented = [...getSegmenter('word', locale).segment(content)].map(
       (seg) => seg.segment
     ) as string[]
 
@@ -220,12 +246,10 @@ export function segment(
     result = output
   }
 
-  if (segmentCache.size >= MAX_SEGMENT_CACHE_SIZE) {
-    const firstKey = segmentCache.keys().next().value
-    segmentCache.delete(firstKey)
+  if (cache.size >= MAX_SEGMENT_CACHE_SIZE) {
+    cache.delete(cache.keys().next().value)
   }
-
-  segmentCache.set(cacheKey, result)
+  cache.set(content, result)
   return result
 }
 

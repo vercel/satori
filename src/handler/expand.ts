@@ -9,7 +9,6 @@ import { parse as parseBoxShadow } from 'css-box-shadow'
 import cssColorParse from 'parse-css-color'
 import valueParser from 'postcss-value-parser'
 
-import CssDimension from '../vendor/parse-css-dimension/index.js'
 import parseTransformOrigin, {
   ParsedTransformOrigin,
 } from '../transform-origin.js'
@@ -710,7 +709,8 @@ export default function expand(
   // Calculate the base font size.
   const baseFontSize = calcBaseFontSize(
     serializedStyle.fontSize,
-    inheritedStyle.fontSize
+    inheritedStyle.fontSize as number,
+    inheritedStyle
   )
   if (typeof serializedStyle.fontSize !== 'undefined') {
     serializedStyle.fontSize = baseFontSize
@@ -812,23 +812,37 @@ export default function expand(
   return serializedStyle
 }
 
+// https://www.w3.org/TR/css-fonts-4/#absolute-size-mapping
+const ABSOLUTE_FONT_SIZES: Record<string, number> = {
+  'xx-small': 9,
+  'x-small': 10,
+  small: 13,
+  medium: 16,
+  large: 18,
+  'x-large': 24,
+  'xx-large': 32,
+  'xxx-large': 48,
+}
+
 function calcBaseFontSize(
-  size: number | string,
-  inheritedSize: number
+  size: number | string | undefined,
+  inheritedSize: number,
+  inheritedStyle: Record<string, string | number>
 ): number {
   if (typeof size === 'number') return size
+  if (typeof size !== 'string') return inheritedSize
 
-  try {
-    const parsed = new CssDimension(size)
-    switch (parsed.unit) {
-      case 'em':
-        return parsed.value * inheritedSize
-      case 'rem':
-        return parsed.value * 16
-    }
-  } catch (err) {
-    return inheritedSize
-  }
+  const keyword = size.trim().toLowerCase()
+  if (keyword in ABSOLUTE_FONT_SIZES) return ABSOLUTE_FONT_SIZES[keyword]
+  // Relative sizes scale by 1.2: https://www.w3.org/TR/css-fonts-4/#relative-size-value
+  if (keyword === 'larger') return inheritedSize * 1.2
+  if (keyword === 'smaller') return inheritedSize / 1.2
+
+  // `em` and percentages are relative to the inherited font size.
+  return (
+    lengthToNumber(size, inheritedSize, inheritedSize, inheritedStyle, true) ??
+    inheritedSize
+  )
 }
 
 /**
