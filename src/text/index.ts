@@ -434,7 +434,7 @@ export default async function* buildTextNodes(
   // size, because the container might have a fixed width or height or being
   // expanded by its parent.
   let measuredTextSize = { width: 0, height: 0 }
-  const measure = (containerWidth: number) => {
+  const layoutText = (containerWidth: number) => {
     const { width, height } = flow(containerWidth)
 
     // When doing `text-wrap: balance`, we reflow the text multiple times
@@ -496,10 +496,28 @@ export default async function* buildTextNodes(
     // Round up, so that rounding the layout doesn't make the text wrap.
     return { width: _width, height }
   }
+
+  // The layout engine measures the text several times, often with the same
+  // width. The size only depends on the width, so cache it. `flowedWidth` is
+  // the width that the line state, e.g. `lineWidths`, was computed for.
+  const measureCache = new Map<
+    number,
+    { width: number; height: number; lastBaseline: number }
+  >()
+  let flowedWidth: number | undefined
+  const measure = (containerWidth: number) => {
+    let cached = measureCache.get(containerWidth)
+    if (!cached) {
+      cached = { ...layoutText(containerWidth), lastBaseline }
+      flowedWidth = containerWidth
+      measureCache.set(containerWidth, cached)
+    }
+    return { width: cached.width, height: cached.height }
+  }
   textContainer.measure = measure
   textContainer.lastBaseline = (width) => {
     measure(width)
-    return lastBaseline
+    return measureCache.get(width).lastBaseline
   }
 
   const [x, y] = yield
@@ -520,7 +538,7 @@ export default async function* buildTextNodes(
 
   // The layout engine may have measured the text with other widths last, so
   // lay it out again with the final width.
-  measure(containerWidth)
+  if (flowedWidth !== containerWidth) layoutText(containerWidth)
 
   // Convert textIndent to number if it's a string (e.g., percentage)
   const textIndentNumber =

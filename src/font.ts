@@ -934,7 +934,7 @@ export default class FontLoader {
     const cursorY = top
     let hasRenderedGlyph = false
 
-    const fullPath = new opentype.Path()
+    let path = ''
 
     // Process each font segment
     for (const [, font, glyphs] of shapedRuns) {
@@ -963,16 +963,22 @@ export default class FontLoader {
           const gX = cursorX + shapedGlyph.dx * scale
           const gY = cursorY + shapedGlyph.dy * scale
 
-          // Get the glyph path and transform it
-          const glyphPath = glyph.getPath(gX, gY, fontSize, {})
+          // Like `glyph.getPath()`, scaled by the units per em of the path.
+          path += glyphPathData(
+            glyph.path.commands,
+            gX,
+            gY,
+            fontSize / (glyph.path.unitsPerEm || 1000)
+          )
 
           // Compute band boxes for text decoration skip-ink
-          const bandBoxes = band ? computeBandBox(glyphPath.commands, band) : []
-          if (bandBoxes.length) {
-            boxes.push(...bandBoxes)
+          if (band) {
+            const bandBoxes = computeBandBox(
+              glyph.getPath(gX, gY, fontSize, {}).commands,
+              band
+            )
+            if (bandBoxes.length) boxes.push(...bandBoxes)
           }
-
-          fullPath.extend(glyphPath)
         }
 
         // Advance cursor by the shaped advance. Letter spacing is added before
@@ -982,11 +988,52 @@ export default class FontLoader {
       }
     }
 
-    return {
-      path: fullPath.toPathData(1),
-      boxes,
+    return { path, boxes }
+  }
+}
+
+// Rounds to 0.1px, half away from zero like `toPathData(1)` of opentype.js.
+const round = (value: number) =>
+  (value < 0 ? -Math.round(-value * 10) : Math.round(value * 10)) / 10
+
+/**
+ * The SVG path data of a glyph, from its commands in font units, positioned at
+ * the baseline and scaled to px. Faster than transforming and serializing
+ * opentype.js paths.
+ */
+function glyphPathData(
+  commands: opentype.Path['commands'],
+  x: number,
+  y: number,
+  scale: number
+) {
+  let data = ''
+  for (const command of commands) {
+    switch (command.type) {
+      case 'M':
+      case 'L':
+        data += `${command.type}${round(x + command.x * scale)} ${round(
+          y - command.y * scale
+        )}`
+        break
+      case 'Q':
+        data += `Q${round(x + command.x1 * scale)} ${round(
+          y - command.y1 * scale
+        )} ${round(x + command.x * scale)} ${round(y - command.y * scale)}`
+        break
+      case 'C':
+        data += `C${round(x + command.x1 * scale)} ${round(
+          y - command.y1 * scale
+        )} ${round(x + command.x2 * scale)} ${round(
+          y - command.y2 * scale
+        )} ${round(x + command.x * scale)} ${round(y - command.y * scale)}`
+        break
+      case 'Z':
+        data += 'Z'
+        break
     }
   }
+  return data
 }
 
 function getLangFromFontName(name: string): Locale | undefined {
