@@ -7,40 +7,15 @@ describe('Error', () => {
   let fonts
   initFonts((f) => (fonts = f))
 
-  it('should throw if flex missing on div that has children', async () => {
-    let error = new Error()
-    try {
-      await satori(
-        <div>
-          Test <span>satori</span> with space
-        </div>,
-        {
-          width: 10,
-          height: 10,
-          fonts,
-        }
-      )
-    } catch (err) {
-      error = err
-    }
-    expect(error?.message).toBe(
-      'Expected <div> to have explicit "display: flex", "display: block", "display: grid", "display: contents", or "display: none" if it has more than one child node.'
-    )
-  })
-
-  it('should throw if display inline-block on div that has children', async () => {
-    const result = satori(
-      <div style={{ display: 'inline-block' }}>
-        Test <span>satori</span> with space
-      </div>,
-      {
+  it('should throw for unsupported display values', async () => {
+    await expect(
+      satori(<div style={{ display: 'table' }}>Test</div>, {
         width: 10,
         height: 10,
         fonts,
-      }
-    )
-    expect(result).rejects.toThrowError(
-      `Invalid value for CSS property "display". Allowed values: "flex" | "block" | "grid" | "contents" | "none" | "-webkit-box". Received: "inline-block".`
+      })
+    ).rejects.toThrowError(
+      `Invalid value for CSS property "display". Allowed values: "block" | "flow-root" | "list-item" | "flex" | "-webkit-box" | "grid" | "inline" | "inline-block" | "inline-flex" | "inline-grid" | "contents" | "none". Received: "table".`
     )
   })
 

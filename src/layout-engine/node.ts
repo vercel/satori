@@ -188,6 +188,11 @@ export class LayoutNode {
   parent: LayoutNode | null = null
   /** Measures the node, which must not have children. */
   measure: MeasureFunction | null = null
+  /**
+   * The baseline of the last line of a measured node with a width, e.g. the
+   * baseline of an `inline-block` element.
+   */
+  lastBaseline?: (width: number) => number | undefined
   /** Set by `computeLayout`. */
   layout: ComputedLayout = emptyLayout()
 

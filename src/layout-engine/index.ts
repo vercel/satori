@@ -134,8 +134,13 @@ export function createLayoutEngine(): LayoutEngine {
     computeLayout(root, { width, height, pointScaleFactor = 1 } = {}) {
       if (!exports) throw new Error('The layout engine is not initialized.')
 
-      scale = pointScaleFactor || 1
-      const encoded = encodeTree(root, scale)
+      // Measuring a node may lay out another tree, e.g. an atomic inline, so
+      // restore the tree being laid out afterwards.
+      const outerNodes = nodes
+      const outerScale = scale
+      const layoutScale = pointScaleFactor || 1
+      scale = layoutScale
+      const encoded = encodeTree(root, layoutScale)
       nodes = encoded.nodes
 
       const { data } = encoded
@@ -148,13 +153,14 @@ export function createLayoutEngine(): LayoutEngine {
         output = exports.compute(
           ptr,
           data.length,
-          width === undefined ? Infinity : width * scale,
-          height === undefined ? Infinity : height * scale,
+          width === undefined ? Infinity : width * layoutScale,
+          height === undefined ? Infinity : height * layoutScale,
           0
         )
       } finally {
         exports.dealloc(ptr, data.length)
-        nodes = []
+        nodes = outerNodes
+        scale = outerScale
       }
 
       const result = new Float32Array(
@@ -163,25 +169,25 @@ export function createLayoutEngine(): LayoutEngine {
         encoded.nodes.length * OUTPUT_STRIDE
       )
       const edges = (offset: number): Edges => ({
-        left: result[offset] / scale,
-        right: result[offset + 1] / scale,
-        top: result[offset + 2] / scale,
-        bottom: result[offset + 3] / scale,
+        left: result[offset] / layoutScale,
+        right: result[offset + 1] / layoutScale,
+        top: result[offset + 2] / layoutScale,
+        bottom: result[offset + 3] / layoutScale,
       })
       encoded.nodes.forEach((node, index) => {
         const offset = index * OUTPUT_STRIDE
         node.layout = {
-          left: result[offset] / scale,
-          top: result[offset + 1] / scale,
-          width: result[offset + 2] / scale,
-          height: result[offset + 3] / scale,
+          left: result[offset] / layoutScale,
+          top: result[offset + 1] / layoutScale,
+          width: result[offset + 2] / layoutScale,
+          height: result[offset + 3] / layoutScale,
           padding: edges(offset + 4),
           border: edges(offset + 8),
           margin: edges(offset + 12),
         }
       })
       if (pointScaleFactor !== 0) {
-        roundLayouts(encoded.nodes, encoded.childIndices, scale)
+        roundLayouts(encoded.nodes, encoded.childIndices, layoutScale)
       }
       // `display: contents` nodes have no box. Their children are positioned
       // relative to the parent, so they're at its origin.

@@ -133,14 +133,12 @@ export async function render(
   const definedWidth = 'width' in options ? options.width : undefined
   const definedHeight = 'height' in options ? options.height : undefined
 
+  // Like the initial containing block, the root element is laid out in a
+  // block formatting context.
   const root = new LayoutNode({
+    display: 'flow-root',
     width: definedWidth || 'auto',
     height: definedHeight || 'auto',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignContent: 'flex-start',
-    alignItems: 'flex-start',
-    justifyContent: 'flex-start',
     overflow: 'hidden',
   })
 
@@ -198,6 +196,12 @@ export async function render(
     // Fixed elements are positioned relative to the viewport by default.
     fixedContainingBlock: { node: root, offset: { left: 0, top: 0 } },
     fixedElements,
+    formattingContext: 'root',
+    computeLayout: (node, { width }) =>
+      layoutEngine.computeLayout(node, {
+        width,
+        pointScaleFactor: options.pointScaleFactor,
+      }),
     getTwStyles: (tw, style) => {
       const twToStyles = getTw({
         width: definedWidth,

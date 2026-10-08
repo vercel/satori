@@ -157,6 +157,9 @@ export type FontEngine = {
   has: (s: string) => boolean
   baseline: (s?: string, resolvedFont?: any) => number
   height: (s?: string, resolvedFont?: any) => number
+  /** The ascent and descent of the content area, without the leading. */
+  ascent: (s?: string) => number
+  descent: (s?: string) => number
   measure: (
     s: string,
     style: {
@@ -779,6 +782,10 @@ export default class FontLoader {
       ) => {
         return height(resolvedFont)
       },
+      ascent: (s?: string) =>
+        ascender(typeof s === 'undefined' ? fonts[0] : resolveFont(s)),
+      descent: (s?: string) =>
+        -descender(typeof s === 'undefined' ? fonts[0] : resolveFont(s)),
       measure: (
         s: string,
         style: {

@@ -18,10 +18,20 @@ import { svgTransformToCSS } from './parser/svg-transform.js'
 import computeStyle from './handler/compute.js'
 import FontLoader from './font.js'
 import buildTextNodes from './text/index.js'
+import {
+  buildInlineText,
+  InlineFormatting,
+  type AtomicInline,
+  type InlineBox,
+  type InlineEnv,
+} from './text/inline.js'
 import rect from './builder/rect.js'
 import { Locale, normalizeLocale } from './language.js'
 import { SerializedStyle } from './handler/expand.js'
-import type { ReplacedElementHandlers } from './handler/compute.js'
+import type {
+  OuterDisplay,
+  ReplacedElementHandlers,
+} from './handler/compute.js'
 import type { ParsedTransformOrigin } from './transform-origin.js'
 import type { TransformFunction } from './parser/transform.js'
 import {
@@ -114,6 +124,19 @@ export interface LayoutContext {
    * element has none, and establishes the root stacking context.
    */
   stackingContext?: StackingContext
+  /**
+   * How the parent lays out its children. Elements are blockified unless
+   * they're in a block container.
+   */
+  formattingContext?: 'block' | 'flex' | 'grid' | 'root'
+  /** The inline content of the block container the element is in. */
+  inline?: InlineFormatting
+  /** Lays out a tree on its own, for atomic inlines. */
+  computeLayout?: InlineEnv['computeLayout']
+  /** The node of a paragraph to lay out text in, see `buildInlineText()`. */
+  textNode?: LayoutNode
+  /** Whether the text fills the width of a block container. */
+  blockParagraph?: boolean
 }
 
 export interface SatoriNode {
@@ -161,8 +184,10 @@ export default async function* layout(
     let iter: ReturnType<typeof layout>
 
     if (!isReactElement(element)) {
-      // Process as text node.
-      iter = buildTextNodes(String(element), context)
+      // Process as text node. In a block container, it's inline content.
+      iter = context.inline
+        ? buildInlineText(String(element), context)
+        : buildTextNodes(String(element), context)
       yield (await iter.next()).value as { word: string; locale?: Locale }[]
     } else {
       if (isClass(element.type as Function)) {
@@ -202,6 +227,14 @@ export default async function* layout(
       'dangerouslySetInnerHTML property is not supported. See documentation for more information https://github.com/vercel/satori#jsx.'
     )
   }
+  // A line break in inline content.
+  if (type === 'br') {
+    context.inline?.addBreak()
+    yield []
+    yield
+    return ''
+  }
+
   let { style, children, tw, lang: _newLocale = locale } = props || {}
   const newLocale = normalizeLocale(_newLocale)
 
@@ -233,6 +266,40 @@ export default async function* layout(
     context.replacedElements
   )
 
+  // Elements are blockified in flex and grid containers, as the root
+  // element, and when they're out of flow. Inline elements without a box are
+  // laid out by the paragraphs of their block container, and atomic inlines
+  // on their own.
+  const isOutOfFlow =
+    computedStyle.position === 'absolute' || computedStyle.position === 'fixed'
+  let outerDisplay = computedStyle.__outerDisplay as OuterDisplay
+  if (
+    outerDisplay === 'inline' &&
+    (context.formattingContext !== 'block' || isOutOfFlow || !context.inline)
+  ) {
+    outerDisplay = 'block'
+  }
+  const isReplacedElement =
+    type === 'img' || type === 'svg' || !!context.replacedElements?.[type]
+  const isInlineBox =
+    outerDisplay === 'inline' &&
+    computedStyle.__innerDisplay === 'inline' &&
+    !isReplacedElement
+  const atomicInline: AtomicInline | undefined =
+    outerDisplay === 'inline' && !isInlineBox
+      ? { node, style: computedStyle }
+      : undefined
+  const isContents = outerDisplay === 'contents' && !!context.inline
+  let inlineBox: InlineBox | undefined
+  if (isInlineBox) {
+    // `transform` and `overflow` don't apply to inline boxes.
+    computedStyle.transform = inheritedStyle.transform
+    newInheritableStyle.transform = inheritedStyle.transform
+    computedStyle.overflow = 'visible'
+    computedStyle.clipPath = undefined
+    inlineBox = { style: computedStyle, fragments: [], paragraphs: [] }
+  }
+
   // A fixed element is laid out in its containing block. Without a box, it's
   // not positioned.
   const fixedElement =
@@ -254,7 +321,15 @@ export default async function* layout(
       s._inheritedClipPathId = clipPathId
       s._inheritedMaskId = maskId
     }
-  } else {
+  } else if (inlineBox) {
+    context.inline.openBox(inlineBox)
+  } else if (atomicInline) {
+    context.inline.addAtomic(atomicInline)
+  } else if (!isContents) {
+    // A block-level box ends the paragraph before it.
+    if (outerDisplay === 'block' && !isOutOfFlow) {
+      context.inline?.breakForBlock()
+    }
     parent.insertChild(node)
   }
 
@@ -388,9 +463,39 @@ export default async function* layout(
   // 2. Do layout recursively for its children.
   // Children of replaced elements, e.g. the fallback content of a <canvas>,
   // are never rendered.
+  // The content of SVG elements is drawn as an image.
   const isReplaced = !!context.replacedElements?.[type]
-  const normalizedChildren = isReplaced ? [] : normalizeChildren(children)
+  const normalizedChildren =
+    isReplaced || type === 'svg' ? [] : normalizeChildren(children)
   const iterators: ReturnType<typeof layout>[] = []
+
+  // Children of a block container take part in its inline content, and
+  // children of inline boxes in the one of their block container.
+  const isBlockContainer =
+    !inlineBox &&
+    !isContents &&
+    !isReplacedElement &&
+    (node.style.display === 'block' || node.style.display === 'flow-root')
+  const childInline = isBlockContainer
+    ? new InlineFormatting(node, computedStyle, {
+        font,
+        embedFont,
+        debug,
+        graphemeImages,
+        computeLayout: context.computeLayout,
+      })
+    : inlineBox || isContents
+    ? context.inline
+    : undefined
+  const childFormattingContext: LayoutContext['formattingContext'] =
+    isBlockContainer
+      ? 'block'
+      : inlineBox || outerDisplay === 'contents'
+      ? context.formattingContext
+      : node.style.display === 'grid'
+      ? 'grid'
+      : 'flex'
+  const childParent = inlineBox || isContents ? context.inline.container : node
 
   let i = 0
   const segmentsMissingFont: { word: string; locale?: string }[] = []
@@ -400,7 +505,7 @@ export default async function* layout(
       parentStyle: computedStyle,
       inheritedStyle: newInheritableStyle,
       isInheritingTransform: true,
-      parent: node,
+      parent: childParent,
       font,
       embedFont,
       debug,
@@ -415,6 +520,9 @@ export default async function* layout(
       fixedContainingBlock,
       fixedElements: context.fixedElements,
       stackingContext,
+      formattingContext: childFormattingContext,
+      inline: childInline,
+      computeLayout: context.computeLayout,
     })
     if (canLoadAdditionalAssets) {
       segmentsMissingFont.push(...(((await iter.next()).value as any) || []))
@@ -423,11 +531,14 @@ export default async function* layout(
     }
     iterators.push(iter)
   }
+  if (inlineBox) context.inline.closeBox(inlineBox)
   yield segmentsMissingFont
   for (const iter of iterators) await iter.next()
 
   // 3. Post-process the node.
   const [x, y] = yield
+  // Atomic inlines are positioned by their paragraph.
+  atomicInline?.paragraph?.finalize()
   let { left, top, width, height } = node.layout
   if (fixedElement) {
     ;[left, top] = getFixedElementPosition(fixedElement, x, y)
@@ -558,22 +669,44 @@ export default async function* layout(
       computedStyle,
       newInheritableStyle
     )
-  } else {
-    const display = style?.display
-    if (
-      type === 'div' &&
-      children &&
-      typeof children !== 'string' &&
-      display !== 'flex' &&
-      display !== 'block' &&
-      display !== 'grid' &&
-      display !== 'none' &&
-      display !== 'contents'
-    ) {
-      throw new Error(
-        `Expected <div> to have explicit "display: flex", "display: block", "display: grid", "display: contents", or "display: none" if it has more than one child node.`
+  } else if (inlineBox) {
+    // Each line has a fragment of the box. The edges are only drawn where the
+    // box starts and ends.
+    for (const paragraph of inlineBox.paragraphs) paragraph.finalize()
+    drawn.shapes = false
+    for (const [index, fragment] of inlineBox.fragments.entries()) {
+      const fragmentStyle = { ...computedStyle }
+      if (!fragment.first) {
+        fragmentStyle.borderLeftWidth = 0
+        fragmentStyle.paddingLeft = 0
+        fragmentStyle.borderTopLeftRadius = 0
+        fragmentStyle.borderBottomLeftRadius = 0
+      }
+      if (!fragment.last) {
+        fragmentStyle.borderRightWidth = 0
+        fragmentStyle.paddingRight = 0
+        fragmentStyle.borderTopRightRadius = 0
+        fragmentStyle.borderBottomRightRadius = 0
+      }
+      const fragmentDrawn = { shapes: true }
+      baseRenderResult += await rect(
+        {
+          id: `${id}-${index}`,
+          left: left + fragment.paragraph.node.layout.left + fragment.left,
+          top: top + fragment.paragraph.node.layout.top + fragment.top,
+          width: fragment.width,
+          height: fragment.height,
+          isInheritingTransform,
+          debug,
+          opacity: rectOpacity,
+          drawn: fragmentDrawn,
+        },
+        fragmentStyle,
+        newInheritableStyle
       )
+      drawn.shapes ||= fragmentDrawn.shapes
     }
+  } else {
     baseRenderResult = await rect(
       {
         id,
@@ -626,8 +759,9 @@ export default async function* layout(
   // Children in the same 3D rendering context were added to `planes` and
   // returned nothing, so this is the element's own plane, including the
   // descendants flattened onto it.
+  // An element without a box draws nothing, including its descendants.
   let result =
-    isHidden || opacity === 0
+    isHidden || opacity === 0 || node.style.display === 'none'
       ? ''
       : depsRenderResult +
         baseRenderResult +
