@@ -1,5 +1,5 @@
 import { Locale } from '../language.js'
-import { isNumber, segment, splitByBreakOpportunities } from '../utils.js'
+import { segment, splitByBreakOpportunities } from '../utils.js'
 import { HorizontalEllipsis, Space } from './characters.js'
 import { SerializedStyle } from '../handler/expand.js'
 
@@ -223,14 +223,13 @@ function processTextOverflow(
     }
   }
 
+  // Like in browsers, `-webkit-line-clamp` always ends in an ellipsis.
   if (
-    textOverflow === 'ellipsis' &&
     display === '-webkit-box' &&
     WebkitBoxOrient === 'vertical' &&
-    isNumber(WebkitLineClamp) &&
-    WebkitLineClamp > 0
+    Number(WebkitLineClamp) > 0
   ) {
-    return [WebkitLineClamp, HorizontalEllipsis]
+    return [Number(WebkitLineClamp), HorizontalEllipsis]
   }
 
   if (textOverflow === 'ellipsis' && overflow === 'hidden' && !allowSoftWrap) {

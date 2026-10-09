@@ -735,7 +735,6 @@ export default async function* buildTextNodes(
         _blockEllipsis = HorizontalEllipsis
         ellipsisWidth = measureGrapheme(_blockEllipsis)
       }
-      const spaceWidth = measureGrapheme(Space)
       const isNotLastLine = line < lineWidths.length - 1
       const isLastAllowedLine = line + 1 === lineLimit
 
@@ -771,11 +770,18 @@ export default async function* buildTextNodes(
         isLastAllowedLine &&
         (isNotLastLine || lineWidths[line] > parentContainerInnerWidth)
       ) {
+        // Like in browsers, the last line keeps its words, and characters are
+        // only removed when the ellipsis doesn't fit after them.
+        // https://drafts.csswg.org/css-overflow-4/#block-ellipsis
         if (
-          leftOffset + width + ellipsisWidth + spaceWidth >
-          parentContainerInnerWidth
+          leftOffset + width + ellipsisWidth > parentContainerInnerWidth ||
+          (nextLayout && nextLayout.line !== line)
         ) {
-          const { subset, resolvedWidth } = calcEllipsis(leftOffset, text)
+          // Spaces at the end of the line aren't drawn before the ellipsis.
+          const { subset, resolvedWidth } = calcEllipsis(
+            leftOffset,
+            text.replace(/\s+$/, '')
+          )
 
           text = subset + _blockEllipsis
           skippedLine = line
@@ -784,33 +790,6 @@ export default async function* buildTextNodes(
             resolvedWidth - decorationLines[line].left
           )
           isLastDisplayedBeforeEllipsis = true
-        } else if (nextLayout && nextLayout.line !== line) {
-          if (textAlign === 'center') {
-            const { subset, resolvedWidth } = calcEllipsis(leftOffset, text)
-
-            text = subset + _blockEllipsis
-            skippedLine = line
-            decorationLines[line].width = Math.max(
-              0,
-              resolvedWidth - decorationLines[line].left
-            )
-            isLastDisplayedBeforeEllipsis = true
-          } else {
-            const nextLineText = texts[i + 1]
-
-            const { subset, resolvedWidth } = calcEllipsis(
-              width + leftOffset,
-              nextLineText
-            )
-
-            text = text + subset + _blockEllipsis
-            skippedLine = line
-            decorationLines[line].width = Math.max(
-              0,
-              resolvedWidth - decorationLines[line].left
-            )
-            isLastDisplayedBeforeEllipsis = true
-          }
         }
       }
     }
