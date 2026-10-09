@@ -360,64 +360,16 @@ function roundedContour(
 }
 
 /**
- * The dashes of a rounded border, like in Chrome. Chrome dashes a closed path
- * inset by half the width rounded down, with the length rounded down, and
- * draws it clipped to the border. The dashes are mapped to the middle of the
- * border, where the corners have the same centers, so they're cut by the same
- * lines.
+ * The dashes of a closed path, like in Chrome: whole dashes and gaps, two
+ * smaller dashes on short paths, and a solid line on shorter ones.
  */
-function roundedDashes(
-  box: { left: number; top: number; width: number; height: number },
-  style: Record<string, number | string>,
-  offset: number[],
-  widths: number[],
-  dash: number,
-  gap: number
-) {
-  const center = roundedContour(
-    box,
-    style,
-    offset.map((o, i) => o + widths[i] / 2)
-  )
-  const chrome = roundedContour(
-    box,
-    style,
-    offset.map((o, i) => o + Math.trunc(widths[i] / 2))
-  ).segments
-  const total = chrome.reduce((sum, length) => sum + length, 0)
-  const length = Math.trunc(total)
-  if (length <= dash * 2) return { d: center.d }
-
-  // Paths with room for only two dashes get two smaller ones.
-  let pattern = [dash, fitDashGap(length, dash, gap, true)]
+function closedDashArray(length: number, dash: number, gap: number) {
+  if (length <= dash * 2) return undefined
   if (length <= 2 * (dash + gap)) {
     const scale = length / (2 * (dash + gap))
-    pattern = [dash * scale, gap * scale]
+    return `${dash * scale} ${gap * scale}`
   }
-
-  // Maps a distance along the path of Chrome to the middle of the border.
-  const toCenter = (distance: number) => {
-    let mapped = 0
-    for (let i = 0; i < 8; i++) {
-      if (distance <= chrome[i] || i === 7) {
-        return (
-          mapped + (chrome[i] ? (distance / chrome[i]) * center.segments[i] : 0)
-        )
-      }
-      distance -= chrome[i]
-      mapped += center.segments[i]
-    }
-  }
-  const intervals: number[] = []
-  let previous = 0
-  for (let at = 0, i = 0; at < total; i++) {
-    at = Math.min(total, at + pattern[i % 2])
-    const mapped = toCenter(at)
-    intervals.push(Math.round((mapped - previous) * 1000) / 1000)
-    previous = mapped
-  }
-  if (intervals.length % 2) intervals.push(0)
-  return { d: center.d, dasharray: intervals.join(' ') }
+  return `${dash} ${fitDashGap(length, dash, gap, true)}`
 }
 
 /**
@@ -433,7 +385,9 @@ function drawPatternedSide(
   box: { left: number; top: number; width: number; height: number },
   style: Record<string, number | string>,
   offset: number[],
-  attributes: Record<string, any>
+  attributes: Record<string, any>,
+  /** Whether the line is clipped to the area of the border. */
+  clipped = false
 ) {
   const widths = SIDES.map((s) => (style[`border${s}Width`] as number) || 0)
   const width = widths[side]
@@ -467,15 +421,25 @@ function drawPatternedSide(
     length > dash * 2 ? `${dash} ${fitDashGap(length, dash, gap)}` : undefined
 
   // Like in Chrome, dashes of rounded borders go around the whole border, and
-  // each side shows the ones in its region.
+  // each side shows the ones in its region. Chrome dashes a closed path inset
+  // by half the widths rounded down, with its length rounded down, and draws
+  // it wide enough to cover the border, clipped to it. The corners have the
+  // same centers as those of the border, so the dashes are cut along the same
+  // lines as if they were drawn along its middle.
   if (isRoundedBox(box, style)) {
-    const dashes = roundedDashes(box, style, offset, widths, dash, gap)
+    const half = (w: number) => (clipped ? Math.trunc(w / 2) : w / 2)
+    const { d, segments } = roundedContour(
+      box,
+      style,
+      offset.map((o, i) => o + half(widths[i]))
+    )
+    const length = segments.reduce((sum, segment) => sum + segment, 0)
     return buildXMLString('path', {
       ...attributes,
       fill: 'none',
-      'stroke-width': width,
-      'stroke-dasharray': dashes.dasharray,
-      d: dashes.d,
+      'stroke-width': clipped ? 2 * Math.max(...widths) : width,
+      'stroke-dasharray': closedDashArray(Math.trunc(length), dash, gap),
+      d,
     })
   }
 
@@ -596,7 +560,13 @@ function drawBorder(
   const roundCorners = CORNER_SHAPES.every(
     (name) => resolveCornerShape(style[name]) === 1
   )
-  if (splitCorners && roundCorners) {
+  // Rounded dashed borders are drawn clipped to the area of the border.
+  const roundedDashes =
+    !asContentMask &&
+    id !== undefined &&
+    isRoundedBox(box, style) &&
+    directions.some((d) => style[d + 'Style'] === 'dashed')
+  if ((splitCorners || roundedDashes) && roundCorners) {
     const widths = SIDES.map(
       (side) => (style[`border${side}Width`] as number) || 0
     )
@@ -676,6 +646,13 @@ function drawBorder(
         : 0)
     if (!w) return ''
     if (!asContentMask && (lineStyle === 'dotted' || lineStyle === 'dashed')) {
+      const { transform, ...attributes } = props
+      const clipped =
+        lineStyle === 'dashed' && !!ringId && isRoundedBox(box, style)
+      const clipToRing = (path: string) =>
+        clipped
+          ? buildXMLString('g', { 'clip-path': `url(#${ringId})` }, path)
+          : path
       // Dashes of rounded borders with the same style on all sides go around
       // the whole border once.
       if (
@@ -683,26 +660,37 @@ function drawBorder(
         sides.every(Boolean) &&
         isRoundedBox(box, style)
       ) {
-        return drawPatternedSide(
-          sides.indexOf(true),
+        const path = drawPatternedSide(
+          0,
           lineStyle,
           box,
           style,
           offset,
-          { ...props, stroke: color }
+          { ...(clipped ? attributes : props), stroke: color },
+          clipped
         )
+        return clipped
+          ? buildXMLString('defs', {}, ring) +
+              buildXMLString('g', { transform }, clipToRing(path))
+          : path
       }
       let lines = ''
       for (let side = 0; side < 4; side++) {
         if (!sides[side]) continue
         const sideOnly = [false, false, false, false]
         sideOnly[side] = true
-        const { transform: _transform, ...attributes } = props
-        const path = drawPatternedSide(side, lineStyle, box, style, offset, {
-          ...(splitCorners ? attributes : props),
-          stroke: color,
-        })
-        lines += splitCorners ? clipToRegion(sideOnly, path) : path
+        const path = drawPatternedSide(
+          side,
+          lineStyle,
+          box,
+          style,
+          offset,
+          { ...(splitCorners ? attributes : props), stroke: color },
+          clipped && splitCorners
+        )
+        lines += splitCorners
+          ? clipToRegion(sideOnly, clipped ? clipToRing(path) : path)
+          : path
       }
       return lines
     }
