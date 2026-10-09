@@ -64,4 +64,42 @@ describe('Event', () => {
       ]
     `)
   })
+
+  it('should report inline elements like getBoundingClientRect', async () => {
+    const rects: Record<string, number[]> = {}
+    await satori(
+      <div
+        style={{
+          display: 'block',
+          width: 200,
+          padding: 10,
+          fontSize: 16,
+          lineHeight: 1.5,
+        }}
+      >
+        Text with a{' '}
+        <span key='wrapped' style={{ padding: '0 4px', border: '1px solid' }}>
+          span that wraps onto the next line
+        </span>{' '}
+        and an <span key='empty'></span> empty one.
+      </div>,
+      {
+        width: 220,
+        height: 100,
+        fonts,
+        onNodeDetected: ({ key, left, top, width, height }) => {
+          if (key) rects[key] = [left, top, width, height]
+        },
+      }
+    )
+
+    // The union of the fragments on each line, as measured in Chrome.
+    const expected = {
+      wrapped: [10, 11, 199.6, 45],
+      empty: [189.1, 36, 0, 19],
+    }
+    for (const [key, rect] of Object.entries(expected)) {
+      rect.forEach((value, i) => expect(rects[key][i]).toBeCloseTo(value, 0))
+    }
+  })
 })
