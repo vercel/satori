@@ -748,11 +748,11 @@ export default async function* buildTextNodes(
         for (const char of chars) {
           const w = baseWidth + measureGraphemeArray([subset + char])
           if (
-            // Keep at least one character:
+            // Keep at least one character at the start of the line:
             // > The first character or atomic inline-level element on a line
             // must be clipped rather than ellipsed.
             // https://drafts.csswg.org/css-overflow/#text-overflow
-            subset &&
+            (subset || layout.x > 0) &&
             w + ellipsisWidth > parentContainerInnerWidth
           ) {
             break
