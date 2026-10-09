@@ -219,6 +219,24 @@ describe('Border', () => {
       expect(await toImage(svg, 300)).toMatchImageSnapshot()
     })
 
+    it('should repeat one pattern for the dashes of rounded borders', async () => {
+      // A long border of short dashes, with widths that aren't snapped.
+      const svg = await satori(
+        <div
+          style={{
+            width: 2000,
+            height: 2000,
+            border: '0.001px dashed red',
+            borderRadius: 40,
+          }}
+        />,
+        { width: 2000, height: 2000, fonts, pointScaleFactor: 0 }
+      )
+      const dasharrays = [...svg.matchAll(/stroke-dasharray="([^"]*)"/g)]
+      expect(dasharrays).toHaveLength(1)
+      expect(dasharrays[0][1].split(' ')).toHaveLength(2)
+    })
+
     it('should support styles, widths and colors per side', async () => {
       const svg = await satori(
         <div
