@@ -76,7 +76,7 @@ export default async function* buildTextNodes(
     textWrap,
     fontSize,
     filter: cssFilter,
-    letterSpacing,
+    letterSpacing = 0,
     wordSpacing,
     _inheritedBackgroundClipTextPath,
     _inheritedBackgroundClipTextHasBackground,
@@ -263,6 +263,13 @@ export default async function* buildTextNodes(
 
       w = originWidth
       const lineEndingSpacesWidth = endingSpacesWidth
+      const previousWord = words[i - 1]
+      const spacingBeforeWord =
+        i > 0 &&
+        currentWidth > 0 &&
+        (previousWord.endsWith('-') || previousWord.endsWith('/'))
+          ? letterSpacing
+          : 0
 
       // When starting a new line from an empty line, we should push one extra
       // line height.
@@ -282,7 +289,7 @@ export default async function* buildTextNodes(
         // When the break line happens at the end of the `bbb`, what we see looks like this
         // |aaa bbb|
         // |ccc    |
-        currentWidth + w > width + lineEndingSpacesWidth &&
+        currentWidth + spacingBeforeWord + w > width + lineEndingSpacesWidth &&
         allowSoftWrap
 
       // Need to break the word if:
@@ -347,7 +354,7 @@ export default async function* buildTextNodes(
         }
       } else {
         // It fits into the current line.
-        currentWidth += w
+        currentWidth += spacingBeforeWord + w
         const glyphHeight = Math.round(engine.height(word))
         if (glyphHeight > currentLineHeight) {
           // Use the baseline of the highest segment as the baseline of the line.

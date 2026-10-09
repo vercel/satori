@@ -1,6 +1,7 @@
 import { it, describe, expect } from 'vitest'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import Sharp from 'sharp'
 
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
@@ -377,5 +378,48 @@ describe('Letter Spacing', () => {
     )
 
     expect(await toImage(svg, 260)).toMatchImageSnapshot()
+  })
+
+  it('should preserve the word space after a hyphen or slash', async () => {
+    const getLargestGap = async (text: string) => {
+      const svg = await satori(
+        <div
+          style={{
+            color: 'black',
+            fontSize: 40,
+            letterSpacing: 20,
+          }}
+        >
+          {text}
+        </div>,
+        { width: 900, height: 80, fonts }
+      )
+      const { data, info } = await Sharp(await toImage(svg, 900))
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true })
+      const hasInk = (x: number) => {
+        for (let y = 0; y < info.height; y++) {
+          const offset = (y * info.width + x) * info.channels
+          if (data[offset + 3] > 5) {
+            return true
+          }
+        }
+        return false
+      }
+
+      const inkColumns = Array.from({ length: info.width }, (_, x) => x).filter(
+        hasInk
+      )
+      let largestGap = 0
+      for (let i = 1; i < inkColumns.length; i++) {
+        largestGap = Math.max(largestGap, inkColumns[i] - inkColumns[i - 1] - 1)
+      }
+      return largestGap
+    }
+
+    const expectedWordGap = await getLargestGap('LOWCOST PLAN')
+    expect(await getLargestGap('LOW-COST PLAN')).toBe(expectedWordGap)
+    expect(await getLargestGap('A/B TEST')).toBe(expectedWordGap)
   })
 })
