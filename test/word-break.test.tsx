@@ -207,4 +207,78 @@ describe('word-break', () => {
       expect(await toImage(svg, 200)).toMatchImageSnapshot()
     })
   })
+
+  describe('overflow-wrap', () => {
+    const text =
+      'Supercalifragilisticexpialidocious and pneumonoultramicroscopicsilicovolcanoconiosis'
+    const box = (
+      style: Record<string, string | number>,
+      children: any = text
+    ) => (
+      <div
+        style={{
+          width: 120,
+          background: '#cde',
+          fontSize: 13,
+          marginBottom: 6,
+          ...style,
+        }}
+      >
+        {children}
+      </div>
+    )
+
+    it('should break words that overflow', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 6,
+            padding: 4,
+            alignItems: 'flex-start',
+          }}
+        >
+          {box({})}
+          {box({ overflowWrap: 'break-word' })}
+          {box({ overflowWrap: 'anywhere' })}
+          {box({ wordWrap: 'break-word' })}
+          <div style={{ overflowWrap: 'break-word', width: 120 }}>
+            {box({ width: 'auto', background: '#fdc' })}
+          </div>
+          {box({ overflowWrap: 'break-word' }, [
+            'Text ',
+            <span style={{ color: 'red' }}>withaspan{text}</span>,
+          ])}
+        </div>,
+        { width: 300, height: 280, fonts }
+      )
+      expect(await toImage(svg, 300)).toMatchImageSnapshot()
+    })
+
+    it('should only break words in min-content sizes with anywhere', async () => {
+      const svg = await satori(
+        <div style={{ padding: 4 }}>
+          {box(
+            { width: 'min-content', overflowWrap: 'break-word' },
+            'short words and averyverylongword'
+          )}
+          <div style={{ display: 'flex', width: 80, background: '#eee' }}>
+            {box(
+              { width: 'auto', overflowWrap: 'break-word' },
+              'flexitemwithlongword'
+            )}
+          </div>
+          <div style={{ display: 'flex', width: 80, background: '#eee' }}>
+            {box(
+              { width: 'auto', overflowWrap: 'anywhere' },
+              'flexitemwithlongword'
+            )}
+          </div>
+        </div>,
+        { width: 200, height: 120, fonts }
+      )
+      expect(await toImage(svg, 200)).toMatchImageSnapshot()
+    })
+  })
 })

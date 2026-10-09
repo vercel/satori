@@ -31,7 +31,7 @@ import buildDecoration, {
 } from '../builder/text-decoration.js'
 import { buildDropShadow } from '../builder/shadow.js'
 import { genMeasurer } from './measurer.js'
-import { preprocess, processTextTransform } from './processor.js'
+import { canBreakWords, preprocess, processTextTransform } from './processor.js'
 import buildTextNodes from './index.js'
 import cssColorParse from 'parse-css-color'
 
@@ -305,8 +305,8 @@ export class Paragraph {
   } | null
 
   constructor(readonly style: SerializedStyle, readonly env: InlineEnv) {
-    this.node.measure = (width, _height, exclusions) =>
-      this.measure(width, exclusions)
+    this.node.measure = (width, _height, exclusions, minContent) =>
+      this.measure(width, exclusions, minContent)
     this.node.lastBaseline = (width) => {
       this.flow(width)
       const last = this.lines[this.lines.length - 1]
@@ -617,7 +617,11 @@ export class Paragraph {
   }
 
   /** Breaks the paragraph into lines that fit the width, beside floats. */
-  private flow(width: number, exclusions: FloatExclusion[] = []) {
+  private flow(
+    width: number,
+    exclusions: FloatExclusion[] = [],
+    minContent = false
+  ) {
     const words = this.prepare().slice()
     if (this.atomicWidth !== width) {
       this.atomicLayouts.clear()
@@ -664,8 +668,13 @@ export class Paragraph {
     }
     words.forEach(measureWord)
 
-    const wordBreak = this.style.wordBreak as string
-    const allowBreakWord = ['break-all', 'break-word'].includes(wordBreak)
+    const breakWords = canBreakWords(
+      this.style.wordBreak as string,
+      this.style.overflowWrap as string
+    )
+    const allowBreakWord = minContent
+      ? breakWords.allowBreakWordInMinContent
+      : breakWords.allowBreakWord
     // The first line is shorter by the indent.
     const indent = toNumber(this.style.textIndent, this.style, containerWidth)
 
@@ -887,13 +896,21 @@ export class Paragraph {
     }
   }
 
-  measure(width: number, exclusions: FloatExclusion[] = []) {
+  measure(
+    width: number,
+    exclusions: FloatExclusion[] = [],
+    minContent = false
+  ) {
     if (this.simple?.delegate) {
       // Measured by the delegate.
       return { width: 0, height: 0 }
     }
     this.exclusions = exclusions
-    const { width: measuredWidth, height } = this.flow(width, exclusions)
+    const { width: measuredWidth, height } = this.flow(
+      width,
+      exclusions,
+      minContent
+    )
     const first = this.lines[0]
     const last = this.lines[this.lines.length - 1]
     return {

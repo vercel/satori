@@ -89,6 +89,7 @@ export default async function* buildTextNodes(
     requiredBreaks: segmentedRequiredBreaks,
     allowSoftWrap,
     allowBreakWord,
+    allowBreakWordInMinContent,
     processedContent,
     shouldCollapseTabsAndSpaces,
     lineLimit,
@@ -221,6 +222,9 @@ export default async function* buildTextNodes(
     isImage: boolean
   })[] = []
 
+  // Whether the min-content size is measured, see `canBreakWords()`.
+  let measuringMinContent = false
+
   // With the given container width, compute the text layout.
   function flow(width: number) {
     let lines = 0
@@ -291,7 +295,9 @@ export default async function* buildTextNodes(
       // A single grapheme can't be broken, even if it's wider than the
       // container, e.g. when measuring the min-content width.
       const needToBreakWord =
-        allowBreakWord && w > width && (!currentWidth || willWrap || forceBreak)
+        (measuringMinContent ? allowBreakWordInMinContent : allowBreakWord) &&
+        w > width &&
+        (!currentWidth || willWrap || forceBreak)
       const chars = needToBreakWord ? segment(word, 'grapheme') : undefined
 
       if (chars && chars.length > 1) {
@@ -507,12 +513,21 @@ export default async function* buildTextNodes(
     { width: number; height: number; lastBaseline: number }
   >()
   let flowedWidth: number | undefined
-  const measure = (containerWidth: number) => {
-    let cached = measureCache.get(containerWidth)
+  const measure = (
+    containerWidth: number,
+    _height?: number,
+    _exclusions?: unknown,
+    minContent = false
+  ) => {
+    // The min-content size may break fewer words than a width of 0.
+    const key = minContent ? -1 : containerWidth
+    let cached = measureCache.get(key)
     if (!cached) {
+      measuringMinContent = minContent
       cached = { ...layoutText(containerWidth), lastBaseline }
-      flowedWidth = containerWidth
-      measureCache.set(containerWidth, cached)
+      measuringMinContent = false
+      flowedWidth = minContent ? undefined : containerWidth
+      measureCache.set(key, cached)
     }
     return { width: cached.width, height: cached.height }
   }

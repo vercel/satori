@@ -12,12 +12,13 @@ export function preprocess(
   requiredBreaks: boolean[]
   allowSoftWrap: boolean
   allowBreakWord: boolean
+  allowBreakWordInMinContent: boolean
   processedContent: string
   shouldCollapseTabsAndSpaces: boolean
   lineLimit: number
   blockEllipsis: string
 } {
-  const { textTransform, whiteSpace, wordBreak } = style
+  const { textTransform, whiteSpace, wordBreak, overflowWrap } = style
 
   content = processTextTransform(content, textTransform, locale)
 
@@ -27,10 +28,8 @@ export function preprocess(
     allowSoftWrap,
   } = processWhiteSpace(content, whiteSpace)
 
-  const { words, requiredBreaks, allowBreakWord } = processWordBreak(
-    processedContent,
-    wordBreak
-  )
+  const { words, requiredBreaks, allowBreakWord, allowBreakWordInMinContent } =
+    processWordBreak(processedContent, wordBreak, overflowWrap as string)
 
   const [lineLimit, blockEllipsis] = processTextOverflow(style, allowSoftWrap)
 
@@ -39,6 +38,7 @@ export function preprocess(
     requiredBreaks,
     allowSoftWrap,
     allowBreakWord,
+    allowBreakWordInMinContent,
     processedContent,
     shouldCollapseTabsAndSpaces,
     lineLimit,
@@ -111,18 +111,41 @@ function processTextOverflow(
   return [Infinity]
 }
 
+/**
+ * Whether words that don't fit are broken, and whether they're broken when
+ * measuring the min-content size, which `overflowWrap: break-word` doesn't do.
+ */
+export function canBreakWords(wordBreak: string, overflowWrap: string) {
+  const inMinContent =
+    ['break-all', 'break-word'].includes(wordBreak) ||
+    overflowWrap === 'anywhere'
+  return {
+    allowBreakWord: inMinContent || overflowWrap === 'break-word',
+    allowBreakWordInMinContent: inMinContent,
+  }
+}
+
 function processWordBreak(
   content,
-  wordBreak: string
-): { words: string[]; requiredBreaks: boolean[]; allowBreakWord: boolean } {
-  const allowBreakWord = ['break-all', 'break-word'].includes(wordBreak)
+  wordBreak: string,
+  overflowWrap: string
+): {
+  words: string[]
+  requiredBreaks: boolean[]
+  allowBreakWord: boolean
+  allowBreakWordInMinContent: boolean
+} {
+  const { allowBreakWord, allowBreakWordInMinContent } = canBreakWords(
+    wordBreak,
+    overflowWrap
+  )
 
   const { words, requiredBreaks } = splitByBreakOpportunities(
     content,
     wordBreak
   )
 
-  return { words, requiredBreaks, allowBreakWord }
+  return { words, requiredBreaks, allowBreakWord, allowBreakWordInMinContent }
 }
 
 function processWhiteSpace(

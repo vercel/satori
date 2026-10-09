@@ -747,6 +747,15 @@ function handleSpecialCase(
     return { backgroundClip: value }
   }
 
+  // `wordWrap` is a legacy name of `overflowWrap`.
+  if (name === 'overflowWrap' || name === 'wordWrap') {
+    const normalized = String(value).trim().toLowerCase()
+    if (!['normal', 'break-word', 'anywhere'].includes(normalized)) {
+      throw new Error(`Invalid \`${name}\` value.`)
+    }
+    return { overflowWrap: normalized }
+  }
+
   if (name === 'paintOrder') {
     // `normal | [ fill || stroke || markers ]`
     const normalized = String(value).trim().toLowerCase()
