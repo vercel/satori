@@ -511,7 +511,12 @@ export default async function* buildTextNodes(
   // the width that the line state, e.g. `lineWidths`, was computed for.
   const measureCache = new Map<
     number,
-    { width: number; height: number; lastBaseline: number }
+    {
+      width: number
+      height: number
+      firstBaseline?: number
+      lastBaseline?: number
+    }
   >()
   let flowedWidth: number | undefined
   const measure = (
@@ -526,11 +531,14 @@ export default async function* buildTextNodes(
     if (!cached) {
       measuringMinContent = minContent
       cached = { ...layoutText(containerWidth), lastBaseline }
+      // The first line starts at the top. Without baselines, the layout would
+      // align the text by its bottom, e.g. with `alignItems: baseline`.
+      if (baselines.length) cached.firstBaseline = baselines[0]
       measuringMinContent = false
       flowedWidth = minContent ? undefined : containerWidth
       measureCache.set(key, cached)
     }
-    return { width: cached.width, height: cached.height }
+    return cached
   }
   textContainer.measure = measure
   textContainer.lastBaseline = (width) => {
