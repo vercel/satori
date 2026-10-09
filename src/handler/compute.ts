@@ -10,6 +10,7 @@ import expand, { SerializedStyle } from './expand.js'
 import {
   asPointAutoPercentageLength,
   asPointPercentageLength,
+  asSize,
   lengthToNumber,
   parseViewBox,
   v as checkValue,
@@ -574,23 +575,23 @@ export default async function compute(
   }
 
   if (typeof style.flexBasis !== 'undefined') {
-    layout.flexBasis = asPointAutoPercentageLength(style.flexBasis, 'flexBasis')
+    layout.flexBasis = asSize(style.flexBasis, 'flexBasis')
   }
   layout.flexGrow = typeof style.flexGrow === 'undefined' ? 0 : style.flexGrow
   layout.flexShrink =
     typeof style.flexShrink === 'undefined' ? 1 : style.flexShrink
 
   if (typeof style.maxHeight !== 'undefined') {
-    layout.maxHeight = asPointPercentageLength(style.maxHeight, 'maxHeight')
+    layout.maxHeight = asSize(style.maxHeight, 'maxHeight')
   }
   if (typeof style.maxWidth !== 'undefined') {
-    layout.maxWidth = asPointPercentageLength(style.maxWidth, 'maxWidth')
+    layout.maxWidth = asSize(style.maxWidth, 'maxWidth')
   }
   if (typeof style.minHeight !== 'undefined') {
-    layout.minHeight = asPointPercentageLength(style.minHeight, 'minHeight')
+    layout.minHeight = asSize(style.minHeight, 'minHeight')
   }
   if (typeof style.minWidth !== 'undefined') {
-    layout.minWidth = asPointPercentageLength(style.minWidth, 'minWidth')
+    layout.minWidth = asSize(style.minWidth, 'minWidth')
   }
 
   // `visible` and `clip` don't make the box a scroll container, so with a
@@ -740,12 +741,10 @@ export default async function compute(
 
   layout.height =
     typeof style.height !== 'undefined'
-      ? asPointAutoPercentageLength(style.height, 'height')
+      ? asSize(style.height, 'height')
       : 'auto'
   layout.width =
-    typeof style.width !== 'undefined'
-      ? asPointAutoPercentageLength(style.width, 'width')
-      : 'auto'
+    typeof style.width !== 'undefined' ? asSize(style.width, 'width') : 'auto'
 
   layout.replaced =
     type === 'img' || type === 'svg' || !!replacedElements?.[type]

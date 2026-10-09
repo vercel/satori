@@ -16,6 +16,7 @@ import type {
   Length,
   LayoutNode,
   LayoutStyle,
+  Size,
 } from './node.js'
 
 const DISPLAY = {
@@ -54,13 +55,23 @@ const FLOAT = { none: 0, left: 1, right: 2 }
 
 const CLEAR = { none: 0, left: 1, right: 2, both: 3 }
 
+/** The unit codes of sizing keywords. */
+const SIZING_KEYWORD = {
+  'min-content': 4,
+  'max-content': 5,
+  'fit-content': 6,
+  stretch: 9,
+  content: 10,
+}
+
 /**
  * Unit codes: 0 is auto, 1 is a length, 2 is a percentage, 3 is a `calc()`
- * expression, by its index in `calcs`.
+ * expression, by its index in `calcs`, 4 to 6, 9 and 10 are sizing keywords,
+ * and 7 and 8 are `fit-content()` with a length and a percentage.
  */
 function pushLength(
   data: number[],
-  length: Length | undefined,
+  length: Size | undefined,
   fallback: Length,
   scale: number,
   calcs: CalcLength['calc'][]
@@ -68,12 +79,16 @@ function pushLength(
   const value = length ?? fallback
   if (typeof value === 'number') {
     data.push(1, value * scale)
+  } else if (typeof value === 'object' && 'fitContent' in value) {
+    const limit = value.fitContent
+    if (typeof limit === 'number') data.push(7, limit * scale)
+    else data.push(8, parseFloat(limit) / 100)
   } else if (typeof value === 'object') {
     data.push(3, calcs.push(value.calc) - 1)
   } else if (value.endsWith('%')) {
     data.push(2, parseFloat(value) / 100)
   } else {
-    data.push(0, 0)
+    data.push(SIZING_KEYWORD[value] ?? 0, 0)
   }
 }
 
@@ -87,7 +102,7 @@ function encodeStyle(
   scale: number,
   calcs: CalcLength['calc'][]
 ) {
-  const length = (value: Length | undefined, fallback: Length) =>
+  const length = (value: Size | undefined, fallback: Length) =>
     pushLength(data, value, fallback, scale, calcs)
 
   data.push(

@@ -250,15 +250,15 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>inset</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="4">Size</td></tr>
-<tr><td><code>width</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
-<tr><td><code>height</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
+<tr><td><code>width</code></td><td>Supported. <code>fit-content()</code> is also supported, which Chrome doesn't support yet</td><td></td></tr>
+<tr><td><code>height</code></td><td>Supported. <code>fit-content()</code> is also supported, which Chrome doesn't support yet</td><td></td></tr>
 <tr><td><code>aspectRatio</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="5">Min & max size</td></tr>
-<tr><td><code>minWidth</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
-<tr><td><code>minHeight</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
-<tr><td><code>maxWidth</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
-<tr><td><code>maxHeight</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
+<tr><td><code>minWidth</code></td><td><code>fit-content</code> and <code>stretch</code> are ignored. <code>fit-content()</code> with a length is supported, which Chrome doesn't support yet</td><td></td></tr>
+<tr><td><code>minHeight</code></td><td><code>min-content</code>, <code>max-content</code>, <code>fit-content</code> and <code>stretch</code> are ignored</td><td></td></tr>
+<tr><td><code>maxWidth</code></td><td><code>fit-content</code> and <code>stretch</code> are ignored. <code>fit-content()</code> with a length is supported, which Chrome doesn't support yet</td><td></td></tr>
+<tr><td><code>maxHeight</code></td><td><code>min-content</code>, <code>max-content</code>, <code>fit-content</code> and <code>stretch</code> are ignored</td><td></td></tr>
 
 <tr><td rowspan="5"><code>border</code></td></tr>
 <tr><td>Width (<code>borderWidth</code>, <code>borderTopWidth</code>, ...)</td><td>Supported</td><td></td></tr>
@@ -289,7 +289,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>flexWrap</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>flexGrow</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>flexShrink</code></td><td>Supported</td><td></td></tr>
-<tr><td><code>flexBasis</code></td><td>Supported except for <code>content</code></td><td></td></tr>
+<tr><td><code>flexBasis</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>alignItems</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>alignContent</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>alignSelf</code></td><td>Supported</td><td></td></tr>

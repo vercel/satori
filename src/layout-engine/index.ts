@@ -31,8 +31,11 @@ interface LayoutExports {
 }
 
 export interface ComputeLayoutOptions {
-  /** The available size, `undefined` to size to the content. */
-  width?: number
+  /**
+   * The available size, `undefined` to size to the content, or
+   * `min-content` to its min-content width.
+   */
+  width?: number | 'min-content'
   height?: number
   /**
    * Layouts are rounded to multiples of `1 / pointScaleFactor` px, or not
@@ -185,7 +188,11 @@ export function createLayoutEngine(): LayoutEngine {
         output = exports.compute(
           ptr,
           data.length,
-          width === undefined ? Infinity : width * layoutScale,
+          width === undefined
+            ? Infinity
+            : width === 'min-content'
+            ? -1
+            : width * layoutScale,
           height === undefined ? Infinity : height * layoutScale,
           0
         )
