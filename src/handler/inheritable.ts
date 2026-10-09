@@ -33,6 +33,7 @@ const list = new Set([
   'whiteSpace',
   'transform',
   'wordBreak',
+  'overflowWrap',
   'tabSize',
   'visibility',
 

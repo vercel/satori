@@ -146,7 +146,8 @@ export function createLayoutEngine(): LayoutEngine {
         const result = nodes[index].measure(
           width / scale,
           height / scale,
-          exclusions
+          exclusions,
+          Number.isNaN(knownWidth) && availableWidth < 0
         )
         // Measuring may have grown the memory, so create the view now.
         new Float32Array(exports.memory.buffer, out, 4).set([

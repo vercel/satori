@@ -335,7 +335,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>wordSpacing</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>whiteSpace</code></td><td><code>break-spaces</code> is laid out like <code>pre-wrap</code></td><td></td></tr>
 <tr><td><code>wordBreak</code></td><td><code>auto-phrase</code> is laid out like <code>normal</code></td><td></td></tr>
-<tr><td><code>overflowWrap</code></td><td>Not supported, use <code>wordBreak: break-word</code></td><td></td></tr>
+<tr><td><code>overflowWrap</code></td><td>Supported, also as <code>wordWrap</code></td><td></td></tr>
 <tr><td><code>textWrap</code></td><td><code>balance</code> and <code>pretty</code> only apply to text without inline elements in it, and <code>pretty</code> is approximated</td><td></td></tr>
 
 <tr><td rowspan="10">Background</td></tr>

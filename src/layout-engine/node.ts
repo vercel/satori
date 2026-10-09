@@ -203,12 +203,14 @@ export interface FloatExclusion {
  * Measures a leaf, e.g. text. `width` is the known width, or the available
  * width: 0 for the min-content size and `Infinity` for the max-content size.
  * `height` is the known or available height, `NaN` if it's not known. Text
- * wraps around the `exclusions` of floats.
+ * wraps around the `exclusions` of floats. `minContent` is whether the
+ * min-content size is measured.
  */
 export type MeasureFunction = (
   width: number,
   height: number,
-  exclusions: FloatExclusion[]
+  exclusions: FloatExclusion[],
+  minContent?: boolean
 ) => MeasureResult
 
 const zeroEdges = (): Edges => ({ left: 0, right: 0, top: 0, bottom: 0 })
