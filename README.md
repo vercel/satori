@@ -349,7 +349,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>backgroundClip</code></td><td>Supported, also as <code>WebkitBackgroundClip</code></td><td></td></tr>
 <tr><td><code>backgroundRepeat</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>backgroundOrigin</code></td><td>Supported</td><td></td></tr>
-<tr><td><code>backgroundBlendMode</code></td><td>Not supported</td><td></td></tr>
+<tr><td><code>backgroundBlendMode</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="9"><code>transform</code></td></tr>
 <tr><td>Translate (<code>translate</code>, <code>translateX</code>, <code>translateY</code>, <code>translateZ</code>, <code>translate3d</code>)</td><td>Supported</td><td></td></tr>

@@ -793,29 +793,22 @@ function handleSpecialCase(
     return {
       mixBlendMode: v(
         String(value).trim(),
-        {
-          normal: 'normal',
-          multiply: 'multiply',
-          screen: 'screen',
-          overlay: 'overlay',
-          darken: 'darken',
-          lighten: 'lighten',
-          'color-dodge': 'color-dodge',
-          'color-burn': 'color-burn',
-          'hard-light': 'hard-light',
-          'soft-light': 'soft-light',
-          difference: 'difference',
-          exclusion: 'exclusion',
-          hue: 'hue',
-          saturation: 'saturation',
-          color: 'color',
-          luminosity: 'luminosity',
-          'plus-lighter': 'plus-lighter',
-        },
+        { ...BLEND_MODES, 'plus-lighter': 'plus-lighter' },
         'normal',
         'mixBlendMode'
       ),
     }
+  }
+
+  // A blend mode for each background layer.
+  if (name === 'backgroundBlendMode') {
+    const modes = String(value)
+      .split(',')
+      .map((mode) => mode.trim().toLowerCase())
+    if (modes.some((mode) => !(mode in BLEND_MODES))) {
+      throw new Error('Invalid `backgroundBlendMode` value.')
+    }
+    return { backgroundBlendMode: modes.join(',') }
   }
 
   if (name === 'isolation') {
@@ -1021,6 +1014,25 @@ type OtherStyle = Exclude<Record<PropertyKey, string | number>, keyof MainStyle>
 
 export type SerializedStyle = Partial<MainStyle & OtherStyle>
 
+const BLEND_MODES = {
+  normal: 'normal',
+  multiply: 'multiply',
+  screen: 'screen',
+  overlay: 'overlay',
+  darken: 'darken',
+  lighten: 'lighten',
+  'color-dodge': 'color-dodge',
+  'color-burn': 'color-burn',
+  'hard-light': 'hard-light',
+  'soft-light': 'soft-light',
+  difference: 'difference',
+  exclusion: 'exclusion',
+  hue: 'hue',
+  saturation: 'saturation',
+  color: 'color',
+  luminosity: 'luminosity',
+}
+
 // Sizes, which can be sizing keywords and `fit-content()`.
 const SIZES = new Set([
   'width',
@@ -1185,6 +1197,15 @@ export default function expand(
   if (serializedStyle.backgroundImage) {
     const { backgrounds } = parseElementStyle(serializedStyle)
     if (checkImages('backgroundImage', backgrounds)) {
+      // Blend modes are repeated for the layers, like other lists.
+      const modes = serializedStyle.backgroundBlendMode
+        ? String(serializedStyle.backgroundBlendMode).split(',')
+        : []
+      backgrounds.forEach((background, index) => {
+        if (modes.length) {
+          ;(background as any).blendMode = modes[index % modes.length]
+        }
+      })
       serializedStyle.backgroundImage = backgrounds
     }
   }
