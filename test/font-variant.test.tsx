@@ -75,12 +75,30 @@ describe('Font variants', () => {
     expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
+  it('should accept fontVariantEmoji, which has no effect', async () => {
+    const render = (style: Record<string, string>) =>
+      satori(<div style={style}>Hello World</div>, {
+        width: 200,
+        height: 50,
+        fonts,
+      })
+    const smallCaps = await render({ fontVariantCaps: 'small-caps' })
+    expect(await render({ fontVariant: 'small-caps emoji' })).toBe(smallCaps)
+    expect(
+      await render({ fontVariantCaps: 'small-caps', fontVariantEmoji: 'emoji' })
+    ).toBe(smallCaps)
+    expect(await render({ fontVariant: 'text' })).toBe(
+      await render({ fontVariant: 'normal' })
+    )
+  })
+
   it('should throw for invalid values', async () => {
     for (const style of [
       { fontVariant: 'small-caps big' },
       { fontVariantCaps: 'tiny-caps' },
       { fontVariantNumeric: 'none' },
       { fontKerning: 'off' },
+      { fontVariantEmoji: 'bogus' },
     ]) {
       await expect(
         satori(<div style={style as any}>x</div>, {

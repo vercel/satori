@@ -54,6 +54,18 @@ const VARIANT_FEATURES: Record<string, Record<string, string>> = {
   fontVariantAlternates: {
     'historical-forms': '"hist"',
   },
+  // Valid, but without features, since the presentation of emoji isn't
+  // chosen.
+  fontVariantEmoji: {
+    text: '',
+    emoji: '',
+    unicode: '',
+  },
+}
+
+/** Whether a property is `fontKerning` or a `fontVariant` longhand. */
+export function isFontVariantProperty(name: string) {
+  return name === 'fontKerning' || name in VARIANT_FEATURES
 }
 
 /** Keywords that can't be combined with others in each longhand. */
