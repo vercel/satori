@@ -314,12 +314,14 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td>Shorthand (<code>listStyle</code>)</td><td>Supported</td><td></td></tr>
 <tr><td><code>counterReset</code>, <code>counterIncrement</code>, <code>counterSet</code></td><td>Counters other than <code>list-item</code> aren't displayed, since <code>content</code> and <code>counter()</code> aren't supported. Where a marker is placed, and how many items a <code>reversed()</code> counter counts, are found from the <code>style</code> prop and the default styles of elements, not their <code>tw</code> classes</td><td></td></tr>
 
-<tr><td rowspan="6">Font</td></tr>
+<tr><td rowspan="8">Font</td></tr>
 <tr><td><code>fontFamily</code></td><td>Only the fonts passed in the <code>fonts</code> option are used. After the listed families, the other loaded fonts are used as fallbacks in the order they were passed, so generic families like <code>serif</code> don't select a font</td><td></td></tr>
 <tr><td><code>fontSize</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontWeight</code></td><td>Bold isn't synthesized when no bold font is loaded</td><td></td></tr>
 <tr><td><code>fontStyle</code></td><td>Italic isn't synthesized when the font has no italic</td><td></td></tr>
 <tr><td><code>fontFeatureSettings</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>fontKerning</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>fontVariant</code>, <code>fontVariantCaps</code>, <code>fontVariantNumeric</code>, <code>fontVariantLigatures</code>, <code>fontVariantPosition</code>, <code>fontVariantEastAsian</code>, <code>fontVariantAlternates</code>, <code>fontVariantEmoji</code></td><td>Applied with the OpenType features of the font. Small caps aren't synthesized when the font has none, <code>fontVariantAlternates</code> only supports <code>historical-forms</code>, since <code>@font-feature-values</code> isn't supported, and <code>fontVariantEmoji</code> has no effect</td><td></td></tr>
 
 <tr><td rowspan="15">Text</td></tr>
 <tr><td><code>tabSize</code></td><td>Supported</td><td></td></tr>
@@ -505,7 +507,7 @@ Note:
 
 1. In 3D transforms, elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
 2. Percentages in `calc()`, `min()`, `max()` and `clamp()` only work in sizes, margins, paddings, insets, gaps, `flexBasis` and translations. Elsewhere, values with them are ignored.
-3. Properties that aren't listed are ignored, for example `columns`, `direction`, `writingMode`, `fontVariant`, `fontStretch` and `fontKerning`.
+3. Properties that aren't listed are ignored, for example `columns`, `direction`, `writingMode` and `fontStretch`.
 4. Invalid values throw an error, which fails the whole render, unless they're ignored with [`onStyleError`](#invalid-styles).
 
 #### Perspective (experimental)
