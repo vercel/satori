@@ -737,4 +737,53 @@ describe('Gradient', () => {
     )
     expect(await toImage(svg, 240)).toMatchImageSnapshot()
   })
+
+  it('should show the background through transparent stops of radial gradients', async () => {
+    const gradients = [
+      'radial-gradient(circle, transparent 45%, black 46%)',
+      'radial-gradient(closest-side, #f00, #00f)',
+      'radial-gradient(circle closest-side at 30% 40%, #ff0, #0a0 60%, #00f)',
+      'radial-gradient(ellipse farthest-corner at 20% 80%, #fff, transparent 50%, #000)',
+      'radial-gradient(30px 15px at 50% 50%, #f0f, #0ff)',
+      'radial-gradient(circle at 100% 0, rgba(255,0,0,0.5), rgba(0,0,255,0.8) 70%)',
+      'radial-gradient(0 0 at 50% 50%, red, blue)',
+      'radial-gradient(farthest-side at 0 50%, transparent 30%, #333 31%, #333 50%, transparent 51%)',
+      'repeating-radial-gradient(circle, #f00 0 6px, transparent 6px 12px)',
+      'radial-gradient(circle 15px, #000, #fff), linear-gradient(red, blue)',
+    ]
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 8,
+          padding: 8,
+          width: '100%',
+          height: '100%',
+          background: '#eee',
+        }}
+      >
+        {gradients.map((backgroundImage) => (
+          <div
+            style={{
+              width: 52,
+              height: 60,
+              backgroundColor: '#fc0',
+              backgroundImage,
+            }}
+          />
+        ))}
+        <div
+          style={{
+            width: 52,
+            height: 60,
+            background: 'conic-gradient(#22c55e 0 70%, #e2e8f0 0)',
+            maskImage: 'radial-gradient(circle, transparent 45%, black 46%)',
+          }}
+        />
+      </div>,
+      { width: 260, height: 220, fonts }
+    )
+    expect(await toImage(svg, 260)).toMatchImageSnapshot()
+  })
 })
