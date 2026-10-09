@@ -386,12 +386,21 @@ export default async function compute(
   // parent, and the inner one, how its children are laid out. Elements are
   // inline by default, and blockified in flex and grid containers, see
   // `layout()`.
-  const [outerDisplay, innerDisplay] = v(
+  const [outerDisplay, boxInnerDisplay] = v(
     style.display,
     DISPLAY_TYPES,
     DISPLAY_TYPES.inline,
     'display'
   ) as [OuterDisplay, LayoutStyle['display'] | 'inline']
+  // Like in browsers, a vertical `-webkit-box` with a line clamp is a block
+  // container, whose lines are clamped. Otherwise, it's laid out like flex.
+  // https://drafts.csswg.org/css-overflow-4/#webkit-line-clamp
+  const innerDisplay =
+    style.display === '-webkit-box' &&
+    style.WebkitBoxOrient === 'vertical' &&
+    Number(style.WebkitLineClamp) > 0
+      ? 'flow-root'
+      : boxInnerDisplay
   style.__outerDisplay = outerDisplay
   style.__innerDisplay = innerDisplay
   style.__listItem = (style.display === 'list-item') as any
