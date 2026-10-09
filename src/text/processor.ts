@@ -1,5 +1,10 @@
 import { Locale } from '../language.js'
-import { segment, splitByBreakOpportunities } from '../utils.js'
+import {
+  isString,
+  lengthToNumber,
+  segment,
+  splitByBreakOpportunities,
+} from '../utils.js'
 import { HorizontalEllipsis, Space } from './characters.js'
 import { SerializedStyle } from '../handler/expand.js'
 
@@ -326,4 +331,30 @@ function parseLineClamp(input: number | string): [number?, string?] {
   }
 
   return []
+}
+
+/** The distance between tab stops, from `tabSize`. */
+export function getTabWidth(style: SerializedStyle, spaceWidth: number) {
+  const tabSize = style.tabSize ?? 8
+  return isString(tabSize)
+    ? lengthToNumber(tabSize, style.fontSize as number, 1, style)
+    : spaceWidth * (tabSize as number)
+}
+
+/**
+ * The advance of `count` tabs at `x` from the start of the line, which move
+ * to the next tab stop. Like in browsers, the first one moves to the stop after
+ * the next when it's closer than half a space.
+ * https://drafts.csswg.org/css-text-3/#tab-size-property
+ */
+export function getTabAdvance(
+  x: number,
+  count: number,
+  tabWidth: number,
+  spaceWidth: number
+) {
+  if (!(tabWidth > 0)) return 0
+  let advance = (Math.floor(x / tabWidth) + 1) * tabWidth - x
+  if (advance < spaceWidth / 2) advance += tabWidth
+  return advance + (count - 1) * tabWidth
 }

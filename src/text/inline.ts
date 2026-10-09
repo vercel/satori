@@ -31,7 +31,13 @@ import buildDecoration, {
 } from '../builder/text-decoration.js'
 import { buildDropShadow } from '../builder/shadow.js'
 import { genMeasurer } from './measurer.js'
-import { canBreakWords, preprocess, processTextTransform } from './processor.js'
+import {
+  canBreakWords,
+  getTabAdvance,
+  getTabWidth,
+  preprocess,
+  processTextTransform,
+} from './processor.js'
 import { getFontFeatureSettings } from './font-features.js'
 import buildTextNodes from './index.js'
 import cssColorParse from 'parse-css-color'
@@ -503,7 +509,12 @@ export class Paragraph {
         if (item.kind === 'text') {
           if (char === '\n') continue
           const last = segments[segments.length - 1]
-          if (last && last.item === item) {
+          // Tabs are in segments of their own, see `placeTabs()`.
+          if (
+            last &&
+            last.item === item &&
+            (last.text[0] === '\t') === (char === '\t')
+          ) {
             last.text += char
           } else {
             segments.push({ item, text: char, width: 0, x: 0 })
@@ -669,6 +680,26 @@ export class Paragraph {
     }
     words.forEach(measureWord)
 
+    // Tabs move to the next tab stop, from the start of the line at `x`.
+    const placeTabs = (word: Word, x: number) => {
+      if (!word.segments.some((s) => s.text?.[0] === '\t')) return
+      word.width = 0
+      for (const segment of word.segments) {
+        const { item } = segment
+        if (item.kind === 'text' && segment.text?.[0] === '\t') {
+          const { measureText } = this.runState(item.run)
+          const spaceWidth = measureText(' ')
+          segment.width = getTabAdvance(
+            x + word.width,
+            segment.text.length,
+            getTabWidth(item.run.style, spaceWidth),
+            spaceWidth
+          )
+        }
+        word.width += segment.width
+      }
+    }
+
     const breakWords = canBreakWords(
       this.style.wordBreak as string,
       this.style.overflowWrap as string
@@ -781,13 +812,19 @@ export class Paragraph {
       const word = words[i]
       if (!line || (i > 0 && word.forceBreak)) {
         line = newLine()
-      } else if (
-        line.words.length &&
-        canBreak &&
-        line.width + word.width - word.trailing > line.available + 1e-3
-      ) {
-        line = newLine()
-        wrapped = true
+      } else {
+        placeTabs(word, line.width + (lines.length === 1 ? indent : 0))
+        if (
+          line.words.length &&
+          canBreak &&
+          line.width + word.width - word.trailing > line.available + 1e-3
+        ) {
+          line = newLine()
+          wrapped = true
+        }
+      }
+      if (!line.words.length) {
+        placeTabs(word, lines.length === 1 ? indent : 0)
       }
 
       // A line that doesn't fit beside floats moves down until it does.
@@ -1021,7 +1058,11 @@ export class Paragraph {
               !item.continued
             )
             open.splice(open.lastIndexOf(item.box), 1)
-          } else if (item.kind === 'text' && segment.text) {
+          } else if (
+            item.kind === 'text' &&
+            segment.text &&
+            segment.text[0] !== '\t'
+          ) {
             const { shift } = this.runState(item.run)
             const pieces = this.pieces.get(item.run) || []
             pieces.push({

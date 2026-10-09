@@ -9,7 +9,6 @@ import {
   wordSeparators,
   buildXMLString,
   isUndefined,
-  isString,
   lengthToNumber,
 } from '../utils.js'
 import { LayoutNode } from '../layout-engine/index.js'
@@ -28,7 +27,7 @@ import type { GlyphBox } from '../font.js'
 import { Locale } from '../language.js'
 import { HorizontalEllipsis, Space, Tab } from './characters.js'
 import { genMeasurer } from './measurer.js'
-import { preprocess } from './processor.js'
+import { getTabAdvance, getTabWidth, preprocess } from './processor.js'
 import { getFontFeatureSettings } from './font-features.js'
 import cssColorParse from 'parse-css-color'
 
@@ -77,7 +76,6 @@ export default async function* buildTextNodes(
     textWrap,
     fontSize,
     filter: cssFilter,
-    tabSize = 8,
     letterSpacing,
     wordSpacing,
     _inheritedBackgroundClipTextPath,
@@ -159,9 +157,10 @@ export default async function* buildTextNodes(
     }
   )
 
-  const tabWidth = isString(tabSize)
-    ? lengthToNumber(tabSize, fontSize, 1, parentStyle)
-    : measureGrapheme(Space) * tabSize
+  const tabWidth = getTabWidth(parentStyle, measureGrapheme(Space))
+
+  const tabAdvance = (x: number, count: number) =>
+    getTabAdvance(x, count, tabWidth, measureGrapheme(Space))
 
   const calc = (
     text: string,
@@ -179,20 +178,17 @@ export default async function* buildTextNodes(
       }
     }
 
-    const { index, tabCount } = detectTabs(text)
-
     let originWidth = 0
 
-    if (tabCount > 0) {
-      const textBeforeTab = text.slice(0, index)
-      const textAfterTab = text.slice(index + tabCount)
-      const textWidthBeforeTab = measureText(textBeforeTab)
-      const offsetBeforeTab = textWidthBeforeTab + currentWidth
-      const tabMoveDistance =
-        tabWidth === 0
-          ? textWidthBeforeTab
-          : (Math.floor(offsetBeforeTab / tabWidth) + tabCount) * tabWidth
-      originWidth = tabMoveDistance + measureText(textAfterTab)
+    if (text.includes(Tab)) {
+      // Tabs move to the next tab stop, from the start of the line.
+      let x = currentWidth
+      for (const part of text.split(/(\t+)/)) {
+        if (part) {
+          x += part[0] === Tab ? tabAdvance(x, part.length) : measureText(part)
+        }
+      }
+      originWidth = x - currentWidth
     } else {
       originWidth = measureText(text)
     }
@@ -329,6 +325,8 @@ export default async function* buildTextNodes(
         // Start a new line, spaces can be ignored.
         if (shouldCollapseTabsAndSpaces && word === Space) {
           w = 0
+        } else if (word.includes(Tab)) {
+          w = calc(word, 0).originWidth
         }
 
         lineWidths.push(currentWidth - prevLineEndingSpacesWidth)
@@ -389,6 +387,8 @@ export default async function* buildTextNodes(
           if (isImage(_text)) {
             _width = fontSize
             _isImage = true
+          } else if (_text[0] === Tab) {
+            _width = tabAdvance(x, _text.length)
           } else if (!embedFont && _text.length > 1) {
             // When embedFont is false, use measureText for multi-character strings
             // to ensure consistency with how currentWidth is accumulated (sum of
@@ -1035,25 +1035,4 @@ export default async function* buildTextNodes(
   }
 
   return result
-}
-
-function detectTabs(text: string):
-  | {
-      index: null
-      tabCount: 0
-    }
-  | {
-      index: number
-      tabCount: number
-    } {
-  const result = /(\t)+/.exec(text)
-  return result
-    ? {
-        index: result.index,
-        tabCount: result[0].length,
-      }
-    : {
-        index: null,
-        tabCount: 0,
-      }
 }

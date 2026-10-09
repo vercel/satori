@@ -485,6 +485,11 @@ function handleSpecialCase(
     return { lineHeight: purify(name, value) }
   }
 
+  // A length isn't converted to a number, which would be a number of spaces.
+  if (name === 'tabSize') {
+    return { tabSize: typeof value === 'number' ? value : String(value).trim() }
+  }
+
   if (name === 'fontFamily') {
     return {
       fontFamily: (value as string).split(',').map((_v) => {
@@ -1306,8 +1311,21 @@ export default function expand(
         }
       }
 
-      // Convert em and rem values to px (number).
-      if (typeof value === 'string') {
+      // `tabSize` is a number of spaces, or a length that is kept in px.
+      if (prop === 'tabSize' && typeof value === 'string') {
+        const spaces = Number(value)
+        const len = Number.isNaN(spaces)
+          ? lengthToNumber(value, baseFontSize, baseFontSize, inheritedStyle)
+          : undefined
+        value = serializedStyle[prop] = (
+          !Number.isNaN(spaces)
+            ? spaces
+            : typeof len === 'number'
+            ? `${len}px`
+            : value
+        ) as any
+      } else if (typeof value === 'string') {
+        // Convert em and rem values to px (number).
         const len = lengthToNumber(
           value,
           baseFontSize,
