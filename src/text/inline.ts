@@ -469,11 +469,25 @@ export class Paragraph {
       const segments: Segment[] = []
 
       for (let p = start; p <= end; p++) {
-        for (const markerIndex of markers.get(p) || []) {
+        const here = markers.get(p) || []
+        for (const [k, markerIndex] of here.entries()) {
           const item = this.items[markerIndex]
           // Boxes end in the word before them, and start in the word after.
-          const belongs =
+          // Empty boxes, opened and closed at the same offset, stay in the
+          // word before them, like in browsers.
+          const isEmpty =
             item.kind === 'close'
+              ? here.slice(0, k).some((i) => {
+                  const other = this.items[i]
+                  return other.kind === 'open' && other.box === item.box
+                })
+              : item.kind === 'open' &&
+                here.slice(k + 1).some((i) => {
+                  const other = this.items[i]
+                  return other.kind === 'close' && other.box === item.box
+                })
+          const belongs =
+            item.kind === 'close' || isEmpty
               ? p > start || isFirst
               : p < end || (isLast && p === end)
           if (belongs) segments.push({ item, width: 0, x: 0 })
@@ -899,15 +913,31 @@ export class Paragraph {
         fragmentStart.set(box, { x: lineStart, first: false })
       let x = lineStart
 
+      // Spaces at the end of the line hang after the edges of the boxes that
+      // start or end there, which are moved before them.
+      const lastWord = line.words[line.words.length - 1]
+      let lastText = Infinity
+      if (line.trailing) {
+        lastText = lastWord.segments.length - 1
+        while (lastText >= 0) {
+          const segment = lastWord.segments[lastText]
+          if (segment.item.kind === 'text' && segment.text) break
+          lastText--
+        }
+      }
+      const edge = (word: Word, index: number) =>
+        word.segments[index].x -
+        (word === lastWord && index > lastText ? line.trailing : 0)
+
       for (const word of line.words) {
-        for (const segment of word.segments) {
+        for (const [index, segment] of word.segments.entries()) {
           const { item } = segment
           if (item.kind === 'open') {
             open.push(item.box)
             const { style } = item.box
             fragmentStart.set(item.box, {
               x:
-                segment.x +
+                edge(word, index) +
                 (item.continuation
                   ? 0
                   : toNumber(style.marginLeft, style, containerWidth)),
@@ -918,7 +948,7 @@ export class Paragraph {
             addFragment(
               item.box,
               line,
-              segment.x +
+              edge(word, index) +
                 segment.width -
                 (item.continued
                   ? 0
