@@ -335,4 +335,81 @@ describe('mix-blend-mode', () => {
       })
     ).rejects.toThrow('Invalid value for CSS property "isolation"')
   })
+
+  it('should blend background layers', async () => {
+    const image =
+      'data:image/svg+xml;utf8,' +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="20" height="40" fill="#3a3"/><circle cx="30" cy="20" r="10" fill="#c3c"/></svg>'
+      )
+    const box = (style: Record<string, string | number>) => (
+      <div style={{ width: 90, height: 70, ...style }} />
+    )
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 8,
+          padding: 6,
+          background: '#eee',
+        }}
+      >
+        {box({
+          backgroundColor: '#f80',
+          backgroundImage: 'linear-gradient(to right, #00f, #fff)',
+          backgroundBlendMode: 'multiply',
+        })}
+        {box({
+          backgroundImage:
+            'radial-gradient(circle, #f00, transparent 70%), linear-gradient(#0f0, #00f)',
+          backgroundBlendMode: 'screen, normal',
+        })}
+        {box({
+          backgroundColor: '#ff0',
+          backgroundImage: `url("${image}")`,
+          backgroundBlendMode: 'luminosity',
+        })}
+        {box({
+          backgroundColor: '#888',
+          backgroundImage:
+            'linear-gradient(45deg, #f00, #00f), linear-gradient(-45deg, #0f0, #fff), radial-gradient(#fff, #000)',
+          backgroundBlendMode: 'difference',
+        })}
+        {/* The layers don't blend with the parent. */}
+        <div style={{ background: '#f00', padding: 6 }}>
+          {box({
+            width: 78,
+            height: 58,
+            backgroundColor: '#0ff',
+            backgroundImage: 'linear-gradient(#fff, #000)',
+            backgroundBlendMode: 'difference',
+          })}
+        </div>
+        {box({
+          backgroundColor: '#36c',
+          backgroundImage: 'linear-gradient(to bottom, #fff, transparent)',
+          backgroundBlendMode: 'overlay',
+          borderRadius: 16,
+          border: '4px solid #333',
+        })}
+      </div>,
+      { width: 420, height: 170, fonts }
+    )
+    expect(await toImage(svg, 420)).toMatchImageSnapshot()
+  })
+
+  it('should throw for invalid background blend modes', async () => {
+    await expect(
+      satori(
+        <div
+          style={{
+            backgroundImage: 'linear-gradient(red, blue)',
+            backgroundBlendMode: 'multiply, plus-lighter',
+          }}
+        />,
+        { width: 100, height: 100, fonts }
+      )
+    ).rejects.toThrow('backgroundBlendMode')
+  })
 })
