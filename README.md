@@ -202,7 +202,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>display</code></td>
-<td>Supported, with these differences: <code>table</code>, <code>ruby</code> and their inner values, and two-value syntax like <code>inline flow-root</code>, aren't supported and throw. <code>-webkit-box</code> is laid out like <code>flex</code>, to support <code>WebkitLineClamp</code>. The top-level element is laid out as a block, like the root element of a page. Form controls like <code>button</code> are inline instead of <code>inline-block</code>, and have no default styles.</td>
+<td>Supported, with these differences: <code>table</code>, <code>ruby</code> and their inner values, and two-value syntax like <code>inline flow-root</code>, aren't supported and throw. The top-level element is laid out as a block, like the root element of a page. Form controls like <code>button</code> are inline instead of <code>inline-block</code>, and have no default styles.</td>
 <td></td>
 </tr>
 
@@ -250,19 +250,19 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>inset</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="4">Size</td></tr>
-<tr><td><code>width</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
-<tr><td><code>height</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
+<tr><td><code>width</code></td><td>Supported. <code>fit-content()</code> is also supported, which Chrome doesn't support yet</td><td></td></tr>
+<tr><td><code>height</code></td><td>Supported. <code>fit-content()</code> is also supported, which Chrome doesn't support yet</td><td></td></tr>
 <tr><td><code>aspectRatio</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="5">Min & max size</td></tr>
-<tr><td><code>minWidth</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
-<tr><td><code>minHeight</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
-<tr><td><code>maxWidth</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
-<tr><td><code>maxHeight</code></td><td>Supported except for <code>min-content</code>, <code>max-content</code> and <code>fit-content</code></td><td></td></tr>
+<tr><td><code>minWidth</code></td><td><code>fit-content</code> and <code>stretch</code> are ignored. <code>fit-content()</code> with a length is supported, which Chrome doesn't support yet</td><td></td></tr>
+<tr><td><code>minHeight</code></td><td><code>min-content</code>, <code>max-content</code>, <code>fit-content</code> and <code>stretch</code> are ignored</td><td></td></tr>
+<tr><td><code>maxWidth</code></td><td><code>fit-content</code> and <code>stretch</code> are ignored. <code>fit-content()</code> with a length is supported, which Chrome doesn't support yet</td><td></td></tr>
+<tr><td><code>maxHeight</code></td><td><code>min-content</code>, <code>max-content</code>, <code>fit-content</code> and <code>stretch</code> are ignored</td><td></td></tr>
 
 <tr><td rowspan="5"><code>border</code></td></tr>
 <tr><td>Width (<code>borderWidth</code>, <code>borderTopWidth</code>, ...)</td><td>Supported</td><td></td></tr>
-<tr><td>Style (<code>borderStyle</code>, <code>borderTopStyle</code>, ...)</td><td>Dots and dashes are spaced per side, so on rounded corners they're placed differently</td><td></td></tr>
+<tr><td>Style (<code>borderStyle</code>, <code>borderTopStyle</code>, ...)</td><td>On rounded corners, dots are spaced evenly along each side, while Chrome draws square dots on the straight parts of thick dotted borders</td><td></td></tr>
 <tr><td>Color (<code>borderColor</code>, <code>borderTopColor</code>, ...)</td><td>Supported</td><td></td></tr>
 <tr><td>Shorthand (<code>border</code>, <code>borderTop</code>, ...)</td><td>Supported</td><td></td></tr>
 
@@ -289,7 +289,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>flexWrap</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>flexGrow</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>flexShrink</code></td><td>Supported</td><td></td></tr>
-<tr><td><code>flexBasis</code></td><td>Supported except for <code>content</code></td><td></td></tr>
+<tr><td><code>flexBasis</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>alignItems</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>alignContent</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>alignSelf</code></td><td>Supported</td><td></td></tr>
@@ -314,19 +314,21 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td>Shorthand (<code>listStyle</code>)</td><td>Supported</td><td></td></tr>
 <tr><td><code>counterReset</code>, <code>counterIncrement</code>, <code>counterSet</code></td><td>Counters other than <code>list-item</code> aren't displayed, since <code>content</code> and <code>counter()</code> aren't supported. Where a marker is placed, and how many items a <code>reversed()</code> counter counts, are found from the <code>style</code> prop and the default styles of elements, not their <code>tw</code> classes</td><td></td></tr>
 
-<tr><td rowspan="6">Font</td></tr>
+<tr><td rowspan="8">Font</td></tr>
 <tr><td><code>fontFamily</code></td><td>Only the fonts passed in the <code>fonts</code> option are used. After the listed families, the other loaded fonts are used as fallbacks in the order they were passed, so generic families like <code>serif</code> don't select a font</td><td></td></tr>
 <tr><td><code>fontSize</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontWeight</code></td><td>Bold isn't synthesized when no bold font is loaded</td><td></td></tr>
 <tr><td><code>fontStyle</code></td><td>Italic isn't synthesized when the font has no italic</td><td></td></tr>
 <tr><td><code>fontFeatureSettings</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>fontKerning</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>fontVariant</code>, <code>fontVariantCaps</code>, <code>fontVariantNumeric</code>, <code>fontVariantLigatures</code>, <code>fontVariantPosition</code>, <code>fontVariantEastAsian</code>, <code>fontVariantAlternates</code>, <code>fontVariantEmoji</code></td><td>Applied with the OpenType features of the font. Small caps aren't synthesized when the font has none, <code>fontVariantAlternates</code> only supports <code>historical-forms</code>, since <code>@font-feature-values</code> isn't supported, and <code>fontVariantEmoji</code> has no effect</td><td></td></tr>
 
 <tr><td rowspan="15">Text</td></tr>
 <tr><td><code>tabSize</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>textAlign</code></td><td><code>start</code> and <code>end</code> are always left and right, since <code>direction</code> isn't supported. <code>match-parent</code> isn't supported</td><td></td></tr>
 <tr><td><code>textIndent</code></td><td>Supported except for the <code>hanging</code> and <code>each-line</code> keywords</td><td></td></tr>
 <tr><td><code>verticalAlign</code></td><td><code>middle</code>, <code>top</code>, <code>bottom</code>, <code>text-top</code> and <code>text-bottom</code> only apply to images and other atomic inlines, not to inline elements</td><td></td></tr>
-<tr><td><code>textTransform</code></td><td>Supported except for <code>full-width</code> and <code>full-size-kana</code></td><td></td></tr>
+<tr><td><code>textTransform</code></td><td>Supported. <code>full-width</code> and <code>full-size-kana</code> are also supported, which Chrome doesn't support yet</td><td></td></tr>
 <tr><td><code>textOverflow</code></td><td><code>ellipsis</code> only applies to text without inline elements in it</td><td></td></tr>
 <tr><td><code>textDecoration</code></td><td>Decorations are drawn per element: <code>textDecoration: none</code> on a descendant removes the parent's lines, and a descendant's own decoration replaces them instead of adding to them. <code>textUnderlinePosition</code> isn't supported</td><td><a href="https://og-playground.vercel.app/?share=pVPLTsMwEPwVaytUkAKkPCRklV4oXwDHXhx7YxtcO3Ic2hLl37GTtEKIQynywTvjndGstG6BO4FAYS70x8oSUoedwce2TTUhCrVUgZLpLM_PptlAbrQI6gcndF0ZtotsaXC7Z1O91B550M7GN-5Ms7b714oJoa2kZJaPTMH4u_SuseLJGeejYlKW5cHN2fCiP5GS25uRkqxK8gS6bmUXqUiTHMYgAbdhidx5NmawzuI0di9SMb-OzceoYiT0Ro_SAzpan5ovg4qzSdVbfCf-noIIFwIK4lH0bgM8KQ0RrFbRqjDNMNyAT8rUFAbJhHP-_1CDl5cFO8-z_lzdX_ySb39DBq5KTjXQFvoVBfqQ5xkMOwz0LgGBRSOBlszUmAGu3Zt-3VXpA4RNj6JP2rPndYECaPANdhkEVsQOhca4jfNGQPcF">Example</a></td></tr>
 <tr><td><code>textShadow</code></td><td>Supported</td><td></td></tr>
@@ -335,7 +337,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>wordSpacing</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>whiteSpace</code></td><td><code>break-spaces</code> is laid out like <code>pre-wrap</code></td><td></td></tr>
 <tr><td><code>wordBreak</code></td><td><code>auto-phrase</code> is laid out like <code>normal</code></td><td></td></tr>
-<tr><td><code>overflowWrap</code></td><td>Not supported, use <code>wordBreak: break-word</code></td><td></td></tr>
+<tr><td><code>overflowWrap</code></td><td>Supported, also as <code>wordWrap</code></td><td></td></tr>
 <tr><td><code>textWrap</code></td><td><code>balance</code> and <code>pretty</code> only apply to text without inline elements in it, and <code>pretty</code> is approximated</td><td></td></tr>
 
 <tr><td rowspan="10">Background</td></tr>
@@ -347,7 +349,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>backgroundClip</code></td><td>Supported, also as <code>WebkitBackgroundClip</code></td><td></td></tr>
 <tr><td><code>backgroundRepeat</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>backgroundOrigin</code></td><td>Supported</td><td></td></tr>
-<tr><td><code>backgroundBlendMode</code></td><td>Not supported</td><td></td></tr>
+<tr><td><code>backgroundBlendMode</code></td><td>Supported</td><td></td></tr>
 
 <tr><td rowspan="9"><code>transform</code></td></tr>
 <tr><td>Translate (<code>translate</code>, <code>translateX</code>, <code>translateY</code>, <code>translateZ</code>, <code>translate3d</code>)</td><td>Supported</td><td></td></tr>
@@ -463,7 +465,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>lineClamp</code></td>
-<td>Only applies to text without inline elements in it. Also <code>WebkitLineClamp</code> with <code>display: -webkit-box</code></td>
+<td>Only applies to text without inline elements in it. This is also true for <code>WebkitLineClamp</code>, which applies with <code>display: -webkit-box</code> and <code>WebkitBoxOrient: vertical</code></td>
 <td><a href="https://og-playground.vercel.app/?share=5VPBbtQwEP2VkRFakNKSshxQBBwoXDhwaEFc9uLYk6xbx2PZk-6G1Up8DR_GlzDOkgr13FtPGb_xvPf8ojkoQxZVo95Zd7cJAJknj-8Ph1IDbNH1W25gdVHXz1fVCdw5y9sHmHU5ej0J2nncL2ipP7mEhh0F6Rny4xCWbtTWutA3cFH_Q1ptbvtEY7CX5CnJxLOu6-7ZKPC1-4kNrF_P0PG4CR9KsZh_aP9_X60nc7tQAXgX8NLrIQrbPTjo1LvwkZhpkJF1HferU69IAcxiAN8zWmgnyDQgUAe8RdhR8naVwQsFZgZDQ9TBYa7gK-75_CYDBt16zDDRCExgEmpG6EbvzzLLy-EHtqBj9M7oElguGjKLocQ0q3iZEPIr1Iahk_kxFQUdLLjA2CcZlKuRdpiEGK7GzGetLn6_6Dt9bZKLLOIkz-8l0DSzdjrPtO3ovM3nc6KvJNJHyHa1ho368-s3vDBihQb5fVayEa-BX27UE093-apKUZxNqeag5v1Szdu6rtRpAVXzphwstmOvmk77jJXCgW7ctymW7eXdfBKesiSfhxatajiNeKwU61ZubNF7mmNUx78">Example</a></td>
 </tr>
 
@@ -505,7 +507,7 @@ Note:
 
 1. In 3D transforms, elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
 2. Percentages in `calc()`, `min()`, `max()` and `clamp()` only work in sizes, margins, paddings, insets, gaps, `flexBasis` and translations. Elsewhere, values with them are ignored.
-3. Properties that aren't listed are ignored, for example `columns`, `direction`, `writingMode`, `fontVariant`, `fontStretch` and `fontKerning`.
+3. Properties that aren't listed are ignored, for example `columns`, `direction`, `writingMode` and `fontStretch`.
 4. Invalid values throw an error, which fails the whole render, unless they're ignored with [`onStyleError`](#invalid-styles).
 
 #### Perspective (experimental)

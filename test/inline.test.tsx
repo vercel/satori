@@ -400,4 +400,27 @@ describe('Inline layout', () => {
     )
     expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
+
+  it('should end inline boxes before spaces at the end of lines', async () => {
+    const box = { background: '#cde', border: '1px solid #36c' }
+    const svg = await satori(
+      <div
+        style={{
+          display: 'block',
+          width: 200,
+          padding: 10,
+          fontSize: 16,
+          lineHeight: 1.5,
+        }}
+      >
+        Text with <span style={box}>a span that ends </span>on a line, then an{' '}
+        <span style={{ ...box, paddingLeft: 4, background: 'red' }}></span>{' '}
+        empty one and{' '}
+        <span style={{ ...box, background: 'orange' }}>more </span>
+        words to wrap.
+      </div>,
+      { width: 220, height: 130, fonts }
+    )
+    expect(await toImage(svg, 220)).toMatchImageSnapshot()
+  })
 })

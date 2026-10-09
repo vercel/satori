@@ -31,7 +31,14 @@ import buildDecoration, {
 } from '../builder/text-decoration.js'
 import { buildDropShadow } from '../builder/shadow.js'
 import { genMeasurer } from './measurer.js'
-import { preprocess, processTextTransform } from './processor.js'
+import {
+  canBreakWords,
+  getTabAdvance,
+  getTabWidth,
+  preprocess,
+  processTextTransform,
+} from './processor.js'
+import { getFontFeatureSettings } from './font-features.js'
 import buildTextNodes from './index.js'
 import cssColorParse from 'parse-css-color'
 
@@ -41,7 +48,10 @@ export interface InlineEnv {
   debug?: boolean
   graphemeImages?: Record<string, string>
   /** Lays out a tree, used for atomic inlines. */
-  computeLayout: (root: LayoutNode, options: { width?: number }) => void
+  computeLayout: (
+    root: LayoutNode,
+    options: { width?: number | 'min-content' }
+  ) => void
 }
 
 /** The box of an inline element, which is split into fragments by lines. */
@@ -302,8 +312,8 @@ export class Paragraph {
   } | null
 
   constructor(readonly style: SerializedStyle, readonly env: InlineEnv) {
-    this.node.measure = (width, _height, exclusions) =>
-      this.measure(width, exclusions)
+    this.node.measure = (width, _height, exclusions, minContent) =>
+      this.measure(width, exclusions, minContent)
     this.node.lastBaseline = (width) => {
       this.flow(width)
       const last = this.lines[this.lines.length - 1]
@@ -357,7 +367,7 @@ export class Paragraph {
         fontSize: run.style.fontSize as number,
         letterSpacing: run.style.letterSpacing as number,
         wordSpacing: run.style.wordSpacing as number,
-        fontFeatureSettings: run.style.fontFeatureSettings as string,
+        fontFeatureSettings: getFontFeatureSettings(run.style),
       })
       let shift = 0
       let parentStyle = this.style
@@ -469,11 +479,25 @@ export class Paragraph {
       const segments: Segment[] = []
 
       for (let p = start; p <= end; p++) {
-        for (const markerIndex of markers.get(p) || []) {
+        const here = markers.get(p) || []
+        for (const [k, markerIndex] of here.entries()) {
           const item = this.items[markerIndex]
           // Boxes end in the word before them, and start in the word after.
-          const belongs =
+          // Empty boxes, opened and closed at the same offset, stay in the
+          // word before them, like in browsers.
+          const isEmpty =
             item.kind === 'close'
+              ? here.slice(0, k).some((i) => {
+                  const other = this.items[i]
+                  return other.kind === 'open' && other.box === item.box
+                })
+              : item.kind === 'open' &&
+                here.slice(k + 1).some((i) => {
+                  const other = this.items[i]
+                  return other.kind === 'close' && other.box === item.box
+                })
+          const belongs =
+            item.kind === 'close' || isEmpty
               ? p > start || isFirst
               : p < end || (isLast && p === end)
           if (belongs) segments.push({ item, width: 0, x: 0 })
@@ -485,7 +509,12 @@ export class Paragraph {
         if (item.kind === 'text') {
           if (char === '\n') continue
           const last = segments[segments.length - 1]
-          if (last && last.item === item) {
+          // Tabs are in segments of their own, see `placeTabs()`.
+          if (
+            last &&
+            last.item === item &&
+            (last.text[0] === '\t') === (char === '\t')
+          ) {
             last.text += char
           } else {
             segments.push({ item, text: char, width: 0, x: 0 })
@@ -522,20 +551,64 @@ export class Paragraph {
     const { computeLayout } = this.env
     const marginWidth = () =>
       node.layout.width + node.layout.margin.left + node.layout.margin.right
-    // Percentages are of the width of the paragraph.
-    const isPercentage = [
-      node.style.width,
-      node.style.minWidth,
-      node.style.maxWidth,
-    ].some((value) => typeof value === 'string' && value.endsWith('%'))
-    computeLayout(node, isPercentage && Number.isFinite(width) ? { width } : {})
-    if (!isPercentage && Number.isFinite(width) && marginWidth() > width) {
-      computeLayout(node, {
-        width: Math.max(
-          0,
-          width - node.layout.margin.left - node.layout.margin.right
-        ),
-      })
+    const margins = () => node.layout.margin.left + node.layout.margin.right
+    const hasWidth = Number.isFinite(width)
+    // Laid out on its own, the box ignores sizing keywords, so they're
+    // resolved here.
+    const size = node.style.width
+    // Lays the box out with a border box width.
+    const layoutWithWidth = (borderBoxWidth: number) => {
+      const { padding, border } = node.layout
+      const insets =
+        node.style.boxSizing === 'content-box'
+          ? padding.left + padding.right + border.left + border.right
+          : 0
+      node.style.width = Math.max(0, borderBoxWidth - insets)
+      computeLayout(node, {})
+      node.style.width = size
+    }
+    if (size === 'min-content') {
+      computeLayout(node, { width: 'min-content' })
+    } else if (size === 'stretch' && hasWidth) {
+      computeLayout(node, {})
+      layoutWithWidth(width - margins())
+    } else if (typeof size === 'object' && 'fitContent' in size) {
+      // The limit, clamped between the min-content and max-content widths.
+      computeLayout(node, {})
+      const maxContent = node.layout.width
+      computeLayout(node, { width: 'min-content' })
+      const minContent = node.layout.width
+      const { padding, border } = node.layout
+      const insets =
+        node.style.boxSizing === 'content-box'
+          ? padding.left + padding.right + border.left + border.right
+          : 0
+      const limit =
+        typeof size.fitContent === 'number'
+          ? size.fitContent
+          : hasWidth
+          ? (parseFloat(size.fitContent) / 100) * width
+          : Infinity
+      layoutWithWidth(
+        Math.min(maxContent, Math.max(minContent, limit + insets))
+      )
+    } else {
+      // Percentages are of the width of the paragraph.
+      const isPercentage = [
+        node.style.width,
+        node.style.minWidth,
+        node.style.maxWidth,
+      ].some((value) => typeof value === 'string' && value.endsWith('%'))
+      computeLayout(node, isPercentage && hasWidth ? { width } : {})
+      // Except for `max-content`, boxes shrink to fit the width.
+      if (
+        size !== 'max-content' &&
+        !isPercentage &&
+        hasWidth &&
+        marginWidth() > width
+      ) {
+        computeLayout(node, { width: Math.max(0, width - margins()) })
+      }
     }
 
     const { layout } = node
@@ -556,7 +629,11 @@ export class Paragraph {
   }
 
   /** Breaks the paragraph into lines that fit the width, beside floats. */
-  private flow(width: number, exclusions: FloatExclusion[] = []) {
+  private flow(
+    width: number,
+    exclusions: FloatExclusion[] = [],
+    minContent = false
+  ) {
     const words = this.prepare().slice()
     if (this.atomicWidth !== width) {
       this.atomicLayouts.clear()
@@ -603,8 +680,33 @@ export class Paragraph {
     }
     words.forEach(measureWord)
 
-    const wordBreak = this.style.wordBreak as string
-    const allowBreakWord = ['break-all', 'break-word'].includes(wordBreak)
+    // Tabs move to the next tab stop, from the start of the line at `x`.
+    const placeTabs = (word: Word, x: number) => {
+      if (!word.segments.some((s) => s.text?.[0] === '\t')) return
+      word.width = 0
+      for (const segment of word.segments) {
+        const { item } = segment
+        if (item.kind === 'text' && segment.text?.[0] === '\t') {
+          const { measureText } = this.runState(item.run)
+          const spaceWidth = measureText(' ')
+          segment.width = getTabAdvance(
+            x + word.width,
+            segment.text.length,
+            getTabWidth(item.run.style, spaceWidth),
+            spaceWidth
+          )
+        }
+        word.width += segment.width
+      }
+    }
+
+    const breakWords = canBreakWords(
+      this.style.wordBreak as string,
+      this.style.overflowWrap as string
+    )
+    const allowBreakWord = minContent
+      ? breakWords.allowBreakWordInMinContent
+      : breakWords.allowBreakWord
     // The first line is shorter by the indent.
     const indent = toNumber(this.style.textIndent, this.style, containerWidth)
 
@@ -710,13 +812,19 @@ export class Paragraph {
       const word = words[i]
       if (!line || (i > 0 && word.forceBreak)) {
         line = newLine()
-      } else if (
-        line.words.length &&
-        canBreak &&
-        line.width + word.width - word.trailing > line.available + 1e-3
-      ) {
-        line = newLine()
-        wrapped = true
+      } else {
+        placeTabs(word, line.width + (lines.length === 1 ? indent : 0))
+        if (
+          line.words.length &&
+          canBreak &&
+          line.width + word.width - word.trailing > line.available + 1e-3
+        ) {
+          line = newLine()
+          wrapped = true
+        }
+      }
+      if (!line.words.length) {
+        placeTabs(word, lines.length === 1 ? indent : 0)
       }
 
       // A line that doesn't fit beside floats moves down until it does.
@@ -826,13 +934,21 @@ export class Paragraph {
     }
   }
 
-  measure(width: number, exclusions: FloatExclusion[] = []) {
+  measure(
+    width: number,
+    exclusions: FloatExclusion[] = [],
+    minContent = false
+  ) {
     if (this.simple?.delegate) {
       // Measured by the delegate.
       return { width: 0, height: 0 }
     }
     this.exclusions = exclusions
-    const { width: measuredWidth, height } = this.flow(width, exclusions)
+    const { width: measuredWidth, height } = this.flow(
+      width,
+      exclusions,
+      minContent
+    )
     const first = this.lines[0]
     const last = this.lines[this.lines.length - 1]
     return {
@@ -899,15 +1015,31 @@ export class Paragraph {
         fragmentStart.set(box, { x: lineStart, first: false })
       let x = lineStart
 
+      // Spaces at the end of the line hang after the edges of the boxes that
+      // start or end there, which are moved before them.
+      const lastWord = line.words[line.words.length - 1]
+      let lastText = Infinity
+      if (line.trailing) {
+        lastText = lastWord.segments.length - 1
+        while (lastText >= 0) {
+          const segment = lastWord.segments[lastText]
+          if (segment.item.kind === 'text' && segment.text) break
+          lastText--
+        }
+      }
+      const edge = (word: Word, index: number) =>
+        word.segments[index].x -
+        (word === lastWord && index > lastText ? line.trailing : 0)
+
       for (const word of line.words) {
-        for (const segment of word.segments) {
+        for (const [index, segment] of word.segments.entries()) {
           const { item } = segment
           if (item.kind === 'open') {
             open.push(item.box)
             const { style } = item.box
             fragmentStart.set(item.box, {
               x:
-                segment.x +
+                edge(word, index) +
                 (item.continuation
                   ? 0
                   : toNumber(style.marginLeft, style, containerWidth)),
@@ -918,7 +1050,7 @@ export class Paragraph {
             addFragment(
               item.box,
               line,
-              segment.x +
+              edge(word, index) +
                 segment.width -
                 (item.continued
                   ? 0
@@ -926,7 +1058,11 @@ export class Paragraph {
               !item.continued
             )
             open.splice(open.lastIndexOf(item.box), 1)
-          } else if (item.kind === 'text' && segment.text) {
+          } else if (
+            item.kind === 'text' &&
+            segment.text &&
+            segment.text[0] !== '\t'
+          ) {
             const { shift } = this.runState(item.run)
             const pieces = this.pieces.get(item.run) || []
             pieces.push({
@@ -996,7 +1132,7 @@ export class Paragraph {
     const fontSize = style.fontSize as number
     const letterSpacing = style.letterSpacing as number
     const wordSpacing = style.wordSpacing as number
-    const fontFeatureSettings = style.fontFeatureSettings as string
+    const fontFeatureSettings = getFontFeatureSettings(style)
     const clipPathId = inheritedStyle._inheritedClipPathId as string | undefined
     const maskId = inheritedStyle._inheritedMaskId as string | undefined
     const fillColor = getTextFillColor(style)

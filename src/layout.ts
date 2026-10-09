@@ -31,6 +31,7 @@ import {
   relativeOffset,
   type AtomicInline,
   type InlineBox,
+  type InlineBoxFragment,
   type InlineEnv,
 } from './text/inline.js'
 import rect from './builder/rect.js'
@@ -194,6 +195,26 @@ export interface SatoriNode {
   key?: string | number
   props: Record<string, any>
   textContent?: string
+}
+
+/**
+ * The border box of a fragment of an inline box, offset by `left` and `top`,
+ * the position of its block container.
+ */
+function fragmentRect(
+  box: InlineBox,
+  fragment: InlineBoxFragment,
+  left: number,
+  top: number
+) {
+  const paragraph = fragment.paragraph.node.layout
+  const [dx, dy] = relativeOffset([...box.ancestors, box], paragraph.width)
+  return {
+    left: left + paragraph.left + fragment.left + dx,
+    top: top + paragraph.top + fragment.top + dy,
+    width: fragment.width,
+    height: fragment.height,
+  }
 }
 
 export default async function* layout(
@@ -799,11 +820,27 @@ export default async function* layout(
   // event handler because everything is already flattened, unless it's a text
   // node.
   const { children: childrenNode, ...restProps } = props
+  // Inline boxes are reported like by `getBoundingClientRect()` in browsers,
+  // as the union of the border boxes of their fragments on each line.
+  let detected = { left, top, width, height }
+  if (inlineBox) {
+    for (const paragraph of inlineBox.paragraphs) paragraph.finalize()
+    const rects = inlineBox.fragments.map((fragment) =>
+      fragmentRect(inlineBox, fragment, left, top)
+    )
+    if (rects.length) {
+      const minLeft = Math.min(...rects.map((r) => r.left))
+      const minTop = Math.min(...rects.map((r) => r.top))
+      detected = {
+        left: minLeft,
+        top: minTop,
+        width: Math.max(...rects.map((r) => r.left + r.width)) - minLeft,
+        height: Math.max(...rects.map((r) => r.top + r.height)) - minTop,
+      }
+    }
+  }
   context.onNodeDetected?.({
-    left,
-    top,
-    width,
-    height,
+    ...detected,
     type,
     props: restProps,
     key: element.key,
@@ -906,10 +943,6 @@ export default async function* layout(
     for (const paragraph of inlineBox.paragraphs) paragraph.finalize()
     drawn.shapes = false
     for (const [index, fragment] of inlineBox.fragments.entries()) {
-      const [dx, dy] = relativeOffset(
-        [...inlineBox.ancestors, inlineBox],
-        fragment.paragraph.node.layout.width
-      )
       const fragmentStyle = { ...computedStyle }
       if (!fragment.first) {
         fragmentStyle.borderLeftWidth = 0
@@ -927,10 +960,7 @@ export default async function* layout(
       baseRenderResult += await rect(
         {
           id: `${id}-${index}`,
-          left: left + fragment.paragraph.node.layout.left + fragment.left + dx,
-          top: top + fragment.paragraph.node.layout.top + fragment.top + dy,
-          width: fragment.width,
-          height: fragment.height,
+          ...fragmentRect(inlineBox, fragment, left, top),
           isInheritingTransform,
           debug,
           opacity: rectOpacity,

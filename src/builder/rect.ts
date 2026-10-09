@@ -172,6 +172,8 @@ export default async function rect(
   let matrix = ''
   let defs = ''
   let fills: string[] = []
+  // The blend mode of each fill, with the backgrounds below it.
+  const blendModes: (string | undefined)[] = []
   let extra = ''
 
   if (style.backgroundColor) {
@@ -194,7 +196,7 @@ export default async function rect(
 
   let backgroundShapes = ''
   if (style.backgroundImage) {
-    const backgrounds: string[][] = []
+    const backgrounds: { image: string[]; blendMode?: string }[] = []
 
     for (
       let index = 0;
@@ -220,15 +222,17 @@ export default async function rect(
       )
       if (image) {
         // Background images that come first in the array are rendered last.
-        backgrounds.unshift(image)
+        backgrounds.unshift({ image, blendMode: background.blendMode })
       }
     }
 
-    for (const background of backgrounds) {
-      fills.push(`url(#${background[0]})`)
-      defs += background[1]
-      if (background[2]) {
-        backgroundShapes += background[2]
+    for (const { image, blendMode } of backgrounds) {
+      fills.push(`url(#${image[0]})`)
+      blendModes[fills.length - 1] =
+        blendMode && blendMode !== 'normal' ? blendMode : undefined
+      defs += image[1]
+      if (image[2]) {
+        backgroundShapes += image[2]
       }
     }
   }
@@ -340,7 +344,7 @@ export default async function rect(
   // @TODO: Not sure if this is the best way to do it, maybe <pattern> with
   // multiple <image>s is better.
   let shape = fills
-    .map((fill) =>
+    .map((fill, index) =>
       buildXMLString(type, {
         x: left,
         y: top,
@@ -352,9 +356,16 @@ export default async function rect(
         transform: matrix ? matrix : undefined,
         'clip-path': style.transform ? undefined : currentClipPath,
         mask: style.transform ? undefined : maskId,
+        style: blendModes[index]
+          ? `mix-blend-mode:${blendModes[index]}`
+          : undefined,
       })
     )
     .join('')
+  // Background layers only blend with the ones of the element.
+  if (blendModes.some(Boolean)) {
+    shape = buildXMLString('g', { style: 'isolation:isolate' }, shape)
+  }
 
   // `background-clip: padding-box | content-box` masks the backgrounds with
   // the inner edge of the border, or of the padding.

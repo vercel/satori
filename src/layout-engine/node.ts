@@ -12,6 +12,20 @@ export interface CalcLength {
 
 export type Length = number | `${number}%` | 'auto' | CalcLength
 
+/**
+ * A size: a length, a sizing keyword, or `fit-content()` with a length in px or
+ * a percentage. `content` is only a flex basis.
+ * @see https://www.w3.org/TR/css-sizing-3/#sizing-values
+ */
+export type Size =
+  | Length
+  | 'min-content'
+  | 'max-content'
+  | 'fit-content'
+  | 'stretch'
+  | 'content'
+  | { fitContent: number | `${number}%` }
+
 export type Alignment =
   | 'start'
   | 'end'
@@ -94,12 +108,12 @@ export interface LayoutStyle {
   boxSizing?: 'border-box' | 'content-box'
   overflowX?: 'visible' | 'hidden' | 'clip' | 'scroll'
   overflowY?: 'visible' | 'hidden' | 'clip' | 'scroll'
-  width?: Length
-  height?: Length
-  minWidth?: Length
-  minHeight?: Length
-  maxWidth?: Length
-  maxHeight?: Length
+  width?: Size
+  height?: Size
+  minWidth?: Size
+  minHeight?: Size
+  maxWidth?: Size
+  maxHeight?: Size
   aspectRatio?: number
   marginTop?: Length
   marginRight?: Length
@@ -127,7 +141,7 @@ export interface LayoutStyle {
   justifyContent?: ContentAlignment
   flexDirection?: 'row' | 'column' | 'row-reverse' | 'column-reverse'
   flexWrap?: 'nowrap' | 'wrap' | 'wrap-reverse'
-  flexBasis?: Length
+  flexBasis?: Size
   flexGrow?: number
   flexShrink?: number
   /** The order of flex and grid items, see `encodeTree()`. */
@@ -189,12 +203,14 @@ export interface FloatExclusion {
  * Measures a leaf, e.g. text. `width` is the known width, or the available
  * width: 0 for the min-content size and `Infinity` for the max-content size.
  * `height` is the known or available height, `NaN` if it's not known. Text
- * wraps around the `exclusions` of floats.
+ * wraps around the `exclusions` of floats. `minContent` is whether the
+ * min-content size is measured.
  */
 export type MeasureFunction = (
   width: number,
   height: number,
-  exclusions: FloatExclusion[]
+  exclusions: FloatExclusion[],
+  minContent?: boolean
 ) => MeasureResult
 
 const zeroEdges = (): Edges => ({ left: 0, right: 0, top: 0, bottom: 0 })

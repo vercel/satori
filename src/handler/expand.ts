@@ -17,6 +17,11 @@ import parseTransformOrigin, {
   ParsedTransformOrigin,
 } from '../transform-origin.js'
 import { isString, lengthToNumber, v, splitEffects } from '../utils.js'
+import {
+  expandFontVariant,
+  isFontVariantProperty,
+  parseFontVariant,
+} from '../text/font-features.js'
 import { MaskProperty, parseMask } from '../parser/mask.js'
 import { splitCornerShapeValues } from '../parser/corner-shape.js'
 import { parseBackdropFilter } from '../parser/backdrop-filter.js'
@@ -480,6 +485,11 @@ function handleSpecialCase(
     return { lineHeight: purify(name, value) }
   }
 
+  // A length isn't converted to a number, which would be a number of spaces.
+  if (name === 'tabSize') {
+    return { tabSize: typeof value === 'number' ? value : String(value).trim() }
+  }
+
   if (name === 'fontFamily') {
     return {
       fontFamily: (value as string).split(',').map((_v) => {
@@ -747,6 +757,22 @@ function handleSpecialCase(
     return { backgroundClip: value }
   }
 
+  if (name === 'fontVariant') {
+    return expandFontVariant(value)
+  }
+  if (isFontVariantProperty(name)) {
+    return { [name]: parseFontVariant(name, value) }
+  }
+
+  // `wordWrap` is a legacy name of `overflowWrap`.
+  if (name === 'overflowWrap' || name === 'wordWrap') {
+    const normalized = String(value).trim().toLowerCase()
+    if (!['normal', 'break-word', 'anywhere'].includes(normalized)) {
+      throw new Error(`Invalid \`${name}\` value.`)
+    }
+    return { overflowWrap: normalized }
+  }
+
   if (name === 'paintOrder') {
     // `normal | [ fill || stroke || markers ]`
     const normalized = String(value).trim().toLowerCase()
@@ -772,29 +798,22 @@ function handleSpecialCase(
     return {
       mixBlendMode: v(
         String(value).trim(),
-        {
-          normal: 'normal',
-          multiply: 'multiply',
-          screen: 'screen',
-          overlay: 'overlay',
-          darken: 'darken',
-          lighten: 'lighten',
-          'color-dodge': 'color-dodge',
-          'color-burn': 'color-burn',
-          'hard-light': 'hard-light',
-          'soft-light': 'soft-light',
-          difference: 'difference',
-          exclusion: 'exclusion',
-          hue: 'hue',
-          saturation: 'saturation',
-          color: 'color',
-          luminosity: 'luminosity',
-          'plus-lighter': 'plus-lighter',
-        },
+        { ...BLEND_MODES, 'plus-lighter': 'plus-lighter' },
         'normal',
         'mixBlendMode'
       ),
     }
+  }
+
+  // A blend mode for each background layer.
+  if (name === 'backgroundBlendMode') {
+    const modes = String(value)
+      .split(',')
+      .map((mode) => mode.trim().toLowerCase())
+    if (modes.some((mode) => !(mode in BLEND_MODES))) {
+      throw new Error('Invalid `backgroundBlendMode` value.')
+    }
+    return { backgroundBlendMode: modes.join(',') }
   }
 
   if (name === 'isolation') {
@@ -1000,6 +1019,36 @@ type OtherStyle = Exclude<Record<PropertyKey, string | number>, keyof MainStyle>
 
 export type SerializedStyle = Partial<MainStyle & OtherStyle>
 
+const BLEND_MODES = {
+  normal: 'normal',
+  multiply: 'multiply',
+  screen: 'screen',
+  overlay: 'overlay',
+  darken: 'darken',
+  lighten: 'lighten',
+  'color-dodge': 'color-dodge',
+  'color-burn': 'color-burn',
+  'hard-light': 'hard-light',
+  'soft-light': 'soft-light',
+  difference: 'difference',
+  exclusion: 'exclusion',
+  hue: 'hue',
+  saturation: 'saturation',
+  color: 'color',
+  luminosity: 'luminosity',
+}
+
+// Sizes, which can be sizing keywords and `fit-content()`.
+const SIZES = new Set([
+  'width',
+  'height',
+  'minWidth',
+  'minHeight',
+  'maxWidth',
+  'maxHeight',
+  'flexBasis',
+])
+
 // Lengths that can have percentages in `calc()`.
 const CALC_LENGTHS = new Set([
   'width',
@@ -1153,6 +1202,15 @@ export default function expand(
   if (serializedStyle.backgroundImage) {
     const { backgrounds } = parseElementStyle(serializedStyle)
     if (checkImages('backgroundImage', backgrounds)) {
+      // Blend modes are repeated for the layers, like other lists.
+      const modes = serializedStyle.backgroundBlendMode
+        ? String(serializedStyle.backgroundBlendMode).split(',')
+        : []
+      backgrounds.forEach((background, index) => {
+        if (modes.length) {
+          ;(background as any).blendMode = modes[index % modes.length]
+        }
+      })
       serializedStyle.backgroundImage = backgrounds
     }
   }
@@ -1236,8 +1294,38 @@ export default function expand(
         value = serializedStyle[prop] = { calc: math.evaluate } as any
       }
 
-      // Convert em and rem values to px (number).
-      if (typeof value === 'string') {
+      // The limit of `fit-content()` sizes is converted to px.
+      const fitContent =
+        typeof value === 'string' && SIZES.has(prop)
+          ? /^fit-content\((.+)\)$/i.exec(value.trim())
+          : null
+      if (fitContent && !fitContent[1].trim().endsWith('%')) {
+        const limit = lengthToNumber(
+          fitContent[1].trim(),
+          baseFontSize,
+          baseFontSize,
+          inheritedStyle
+        )
+        if (typeof limit === 'number') {
+          value = serializedStyle[prop] = `fit-content(${limit}px)` as any
+        }
+      }
+
+      // `tabSize` is a number of spaces, or a length that is kept in px.
+      if (prop === 'tabSize' && typeof value === 'string') {
+        const spaces = Number(value)
+        const len = Number.isNaN(spaces)
+          ? lengthToNumber(value, baseFontSize, baseFontSize, inheritedStyle)
+          : undefined
+        value = serializedStyle[prop] = (
+          !Number.isNaN(spaces)
+            ? spaces
+            : typeof len === 'number'
+            ? `${len}px`
+            : value
+        ) as any
+      } else if (typeof value === 'string') {
+        // Convert em and rem values to px (number).
         const len = lengthToNumber(
           value,
           baseFontSize,

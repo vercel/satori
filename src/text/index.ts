@@ -9,7 +9,6 @@ import {
   wordSeparators,
   buildXMLString,
   isUndefined,
-  isString,
   lengthToNumber,
 } from '../utils.js'
 import { LayoutNode } from '../layout-engine/index.js'
@@ -28,7 +27,8 @@ import type { GlyphBox } from '../font.js'
 import { Locale } from '../language.js'
 import { HorizontalEllipsis, Space, Tab } from './characters.js'
 import { genMeasurer } from './measurer.js'
-import { preprocess } from './processor.js'
+import { getTabAdvance, getTabWidth, preprocess } from './processor.js'
+import { getFontFeatureSettings } from './font-features.js'
 import cssColorParse from 'parse-css-color'
 
 const skippedWordWhenFindingMissingFont = new Set([Tab])
@@ -76,19 +76,19 @@ export default async function* buildTextNodes(
     textWrap,
     fontSize,
     filter: cssFilter,
-    tabSize = 8,
     letterSpacing = 0,
     wordSpacing,
-    fontFeatureSettings,
     _inheritedBackgroundClipTextPath,
     _inheritedBackgroundClipTextHasBackground,
   } = parentStyle
+  const fontFeatureSettings = getFontFeatureSettings(parentStyle)
 
   const {
     words: segmentedWords,
     requiredBreaks: segmentedRequiredBreaks,
     allowSoftWrap,
     allowBreakWord,
+    allowBreakWordInMinContent,
     processedContent,
     shouldCollapseTabsAndSpaces,
     lineLimit,
@@ -157,9 +157,10 @@ export default async function* buildTextNodes(
     }
   )
 
-  const tabWidth = isString(tabSize)
-    ? lengthToNumber(tabSize, fontSize, 1, parentStyle)
-    : measureGrapheme(Space) * tabSize
+  const tabWidth = getTabWidth(parentStyle, measureGrapheme(Space))
+
+  const tabAdvance = (x: number, count: number) =>
+    getTabAdvance(x, count, tabWidth, measureGrapheme(Space))
 
   const calc = (
     text: string,
@@ -177,20 +178,17 @@ export default async function* buildTextNodes(
       }
     }
 
-    const { index, tabCount } = detectTabs(text)
-
     let originWidth = 0
 
-    if (tabCount > 0) {
-      const textBeforeTab = text.slice(0, index)
-      const textAfterTab = text.slice(index + tabCount)
-      const textWidthBeforeTab = measureText(textBeforeTab)
-      const offsetBeforeTab = textWidthBeforeTab + currentWidth
-      const tabMoveDistance =
-        tabWidth === 0
-          ? textWidthBeforeTab
-          : (Math.floor(offsetBeforeTab / tabWidth) + tabCount) * tabWidth
-      originWidth = tabMoveDistance + measureText(textAfterTab)
+    if (text.includes(Tab)) {
+      // Tabs move to the next tab stop, from the start of the line.
+      let x = currentWidth
+      for (const part of text.split(/(\t+)/)) {
+        if (part) {
+          x += part[0] === Tab ? tabAdvance(x, part.length) : measureText(part)
+        }
+      }
+      originWidth = x - currentWidth
     } else {
       originWidth = measureText(text)
     }
@@ -220,6 +218,9 @@ export default async function* buildTextNodes(
     lineIndex: number
     isImage: boolean
   })[] = []
+
+  // Whether the min-content size is measured, see `canBreakWords()`.
+  let measuringMinContent = false
 
   // With the given container width, compute the text layout.
   function flow(width: number) {
@@ -298,7 +299,9 @@ export default async function* buildTextNodes(
       // A single grapheme can't be broken, even if it's wider than the
       // container, e.g. when measuring the min-content width.
       const needToBreakWord =
-        allowBreakWord && w > width && (!currentWidth || willWrap || forceBreak)
+        (measuringMinContent ? allowBreakWordInMinContent : allowBreakWord) &&
+        w > width &&
+        (!currentWidth || willWrap || forceBreak)
       const chars = needToBreakWord ? segment(word, 'grapheme') : undefined
 
       if (chars && chars.length > 1) {
@@ -329,6 +332,8 @@ export default async function* buildTextNodes(
         // Start a new line, spaces can be ignored.
         if (shouldCollapseTabsAndSpaces && word === Space) {
           w = 0
+        } else if (word.includes(Tab)) {
+          w = calc(word, 0).originWidth
         }
 
         lineWidths.push(currentWidth - prevLineEndingSpacesWidth)
@@ -389,6 +394,8 @@ export default async function* buildTextNodes(
           if (isImage(_text)) {
             _width = fontSize
             _isImage = true
+          } else if (_text[0] === Tab) {
+            _width = tabAdvance(x, _text.length)
           } else if (!embedFont && _text.length > 1) {
             // When embedFont is false, use measureText for multi-character strings
             // to ensure consistency with how currentWidth is accumulated (sum of
@@ -511,17 +518,34 @@ export default async function* buildTextNodes(
   // the width that the line state, e.g. `lineWidths`, was computed for.
   const measureCache = new Map<
     number,
-    { width: number; height: number; lastBaseline: number }
+    {
+      width: number
+      height: number
+      firstBaseline?: number
+      lastBaseline?: number
+    }
   >()
   let flowedWidth: number | undefined
-  const measure = (containerWidth: number) => {
-    let cached = measureCache.get(containerWidth)
+  const measure = (
+    containerWidth: number,
+    _height?: number,
+    _exclusions?: unknown,
+    minContent = false
+  ) => {
+    // The min-content size may break fewer words than a width of 0.
+    const key = minContent ? -1 : containerWidth
+    let cached = measureCache.get(key)
     if (!cached) {
+      measuringMinContent = minContent
       cached = { ...layoutText(containerWidth), lastBaseline }
-      flowedWidth = containerWidth
-      measureCache.set(containerWidth, cached)
+      // The first line starts at the top. Without baselines, the layout would
+      // align the text by its bottom, e.g. with `alignItems: baseline`.
+      if (baselines.length) cached.firstBaseline = baselines[0]
+      measuringMinContent = false
+      flowedWidth = minContent ? undefined : containerWidth
+      measureCache.set(key, cached)
     }
-    return { width: cached.width, height: cached.height }
+    return cached
   }
   textContainer.measure = measure
   textContainer.lastBaseline = (width) => {
@@ -718,7 +742,6 @@ export default async function* buildTextNodes(
         _blockEllipsis = HorizontalEllipsis
         ellipsisWidth = measureGrapheme(_blockEllipsis)
       }
-      const spaceWidth = measureGrapheme(Space)
       const isNotLastLine = line < lineWidths.length - 1
       const isLastAllowedLine = line + 1 === lineLimit
 
@@ -731,11 +754,11 @@ export default async function* buildTextNodes(
         for (const char of chars) {
           const w = baseWidth + measureGraphemeArray([subset + char])
           if (
-            // Keep at least one character:
+            // Keep at least one character at the start of the line:
             // > The first character or atomic inline-level element on a line
             // must be clipped rather than ellipsed.
             // https://drafts.csswg.org/css-overflow/#text-overflow
-            subset &&
+            (subset || layout.x > 0) &&
             w + ellipsisWidth > parentContainerInnerWidth
           ) {
             break
@@ -754,11 +777,18 @@ export default async function* buildTextNodes(
         isLastAllowedLine &&
         (isNotLastLine || lineWidths[line] > parentContainerInnerWidth)
       ) {
+        // Like in browsers, the last line keeps its words, and characters are
+        // only removed when the ellipsis doesn't fit after them.
+        // https://drafts.csswg.org/css-overflow-4/#block-ellipsis
         if (
-          leftOffset + width + ellipsisWidth + spaceWidth >
-          parentContainerInnerWidth
+          leftOffset + width + ellipsisWidth > parentContainerInnerWidth ||
+          (nextLayout && nextLayout.line !== line)
         ) {
-          const { subset, resolvedWidth } = calcEllipsis(leftOffset, text)
+          // Spaces at the end of the line aren't drawn before the ellipsis.
+          const { subset, resolvedWidth } = calcEllipsis(
+            leftOffset,
+            text.replace(/\s+$/, '')
+          )
 
           text = subset + _blockEllipsis
           skippedLine = line
@@ -767,33 +797,6 @@ export default async function* buildTextNodes(
             resolvedWidth - decorationLines[line].left
           )
           isLastDisplayedBeforeEllipsis = true
-        } else if (nextLayout && nextLayout.line !== line) {
-          if (textAlign === 'center') {
-            const { subset, resolvedWidth } = calcEllipsis(leftOffset, text)
-
-            text = subset + _blockEllipsis
-            skippedLine = line
-            decorationLines[line].width = Math.max(
-              0,
-              resolvedWidth - decorationLines[line].left
-            )
-            isLastDisplayedBeforeEllipsis = true
-          } else {
-            const nextLineText = texts[i + 1]
-
-            const { subset, resolvedWidth } = calcEllipsis(
-              width + leftOffset,
-              nextLineText
-            )
-
-            text = text + subset + _blockEllipsis
-            skippedLine = line
-            decorationLines[line].width = Math.max(
-              0,
-              resolvedWidth - decorationLines[line].left
-            )
-            isLastDisplayedBeforeEllipsis = true
-          }
         }
       }
     }
@@ -1039,25 +1042,4 @@ export default async function* buildTextNodes(
   }
 
   return result
-}
-
-function detectTabs(text: string):
-  | {
-      index: null
-      tabCount: 0
-    }
-  | {
-      index: number
-      tabCount: number
-    } {
-  const result = /(\t)+/.exec(text)
-  return result
-    ? {
-        index: result.index,
-        tabCount: result[0].length,
-      }
-    : {
-        index: null,
-        tabCount: 0,
-      }
 }

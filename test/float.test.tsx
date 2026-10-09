@@ -187,6 +187,33 @@ describe('float', () => {
     expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 
+  it('should not wrap the content of inline blocks around floats', async () => {
+    const box = {
+      display: 'inline-block',
+      border: '1px solid #36c',
+      padding: '0 4px',
+    }
+    const svg = await satori(
+      <p style={{ ...text, padding: 6 }}>
+        <span
+          style={{
+            float: 'left',
+            width: 60,
+            height: 40,
+            marginRight: 8,
+            background: '#e33',
+          }}
+        />
+        Text flows around the float. An <span style={box}>inline block</span>{' '}
+        keeps its own width, and so does{' '}
+        <span style={{ ...box, color: '#36c' }}>another one</span>, as the float
+        is outside of them.
+      </p>,
+      { width: 300, height: 90, fonts }
+    )
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
+  })
+
   it('should not float flex items', async () => {
     const svg = await satori(
       <div style={{ display: 'flex', gap: 6, padding: 6 }}>
