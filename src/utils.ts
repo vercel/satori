@@ -361,7 +361,7 @@ export function createLRU<T>(max = 20) {
 }
 
 export function parseViewBox(viewBox?: string | null | undefined) {
-  return viewBox ? viewBox.split(/[, ]/).filter(Boolean).map(Number) : null
+  return viewBox ? viewBox.split(/[\s,]+/).filter(Boolean).map(Number) : null
 }
 
 export function toString(x: unknown): string {
