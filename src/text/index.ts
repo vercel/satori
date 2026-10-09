@@ -29,6 +29,7 @@ import { Locale } from '../language.js'
 import { HorizontalEllipsis, Space, Tab } from './characters.js'
 import { genMeasurer } from './measurer.js'
 import { preprocess } from './processor.js'
+import { getFontFeatureSettings } from './font-features.js'
 import cssColorParse from 'parse-css-color'
 
 const skippedWordWhenFindingMissingFont = new Set([Tab])
@@ -79,10 +80,10 @@ export default async function* buildTextNodes(
     tabSize = 8,
     letterSpacing,
     wordSpacing,
-    fontFeatureSettings,
     _inheritedBackgroundClipTextPath,
     _inheritedBackgroundClipTextHasBackground,
   } = parentStyle
+  const fontFeatureSettings = getFontFeatureSettings(parentStyle)
 
   const {
     words: segmentedWords,

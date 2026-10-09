@@ -17,6 +17,7 @@ import parseTransformOrigin, {
   ParsedTransformOrigin,
 } from '../transform-origin.js'
 import { isString, lengthToNumber, v, splitEffects } from '../utils.js'
+import { expandFontVariant, parseFontVariant } from '../text/font-features.js'
 import { MaskProperty, parseMask } from '../parser/mask.js'
 import { splitCornerShapeValues } from '../parser/corner-shape.js'
 import { parseBackdropFilter } from '../parser/backdrop-filter.js'
@@ -745,6 +746,13 @@ function handleSpecialCase(
 
   if (name === 'WebkitBackgroundClip') {
     return { backgroundClip: value }
+  }
+
+  if (name === 'fontVariant') {
+    return expandFontVariant(value)
+  }
+  if (name === 'fontKerning' || /^fontVariant[A-Z]/.test(name)) {
+    return { [name]: parseFontVariant(name, value) }
   }
 
   // `wordWrap` is a legacy name of `overflowWrap`.

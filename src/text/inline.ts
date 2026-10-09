@@ -32,6 +32,7 @@ import buildDecoration, {
 import { buildDropShadow } from '../builder/shadow.js'
 import { genMeasurer } from './measurer.js'
 import { canBreakWords, preprocess, processTextTransform } from './processor.js'
+import { getFontFeatureSettings } from './font-features.js'
 import buildTextNodes from './index.js'
 import cssColorParse from 'parse-css-color'
 
@@ -360,7 +361,7 @@ export class Paragraph {
         fontSize: run.style.fontSize as number,
         letterSpacing: run.style.letterSpacing as number,
         wordSpacing: run.style.wordSpacing as number,
-        fontFeatureSettings: run.style.fontFeatureSettings as string,
+        fontFeatureSettings: getFontFeatureSettings(run.style),
       })
       let shift = 0
       let parentStyle = this.style
@@ -1090,7 +1091,7 @@ export class Paragraph {
     const fontSize = style.fontSize as number
     const letterSpacing = style.letterSpacing as number
     const wordSpacing = style.wordSpacing as number
-    const fontFeatureSettings = style.fontFeatureSettings as string
+    const fontFeatureSettings = getFontFeatureSettings(style)
     const clipPathId = inheritedStyle._inheritedClipPathId as string | undefined
     const maskId = inheritedStyle._inheritedMaskId as string | undefined
     const fillColor = getTextFillColor(style)
