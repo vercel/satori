@@ -291,16 +291,133 @@ export default function border(
 }
 
 /**
- * The gap between dashes of a side, so that it starts and ends with a dash,
- * and the gap is as close to `gap` as possible.
+ * The gap between dashes, as close to `gap` as possible, so that an open path
+ * starts and ends with a dash, and a closed path has whole dashes and gaps.
+ * Like `SelectBestDashGap` of Chrome.
  */
-function fitDashGap(length: number, dash: number, gap: number) {
-  const fewer = Math.floor((length + gap) / (dash + gap))
-  const fewerGap = (length - fewer * dash) / (fewer - 1)
-  const moreGap = (length - (fewer + 1) * dash) / fewer
+function fitDashGap(length: number, dash: number, gap: number, closed = false) {
+  const fewer = Math.floor((closed ? length : length + gap) / (dash + gap))
+  const fewerGap = (length - fewer * dash) / (closed ? fewer : fewer - 1)
+  const moreGap = (length - (fewer + 1) * dash) / (closed ? fewer + 1 : fewer)
   return moreGap <= 0 || Math.abs(fewerGap - gap) < Math.abs(moreGap - gap)
     ? fewerGap
     : moreGap
+}
+
+// A quarter of the perimeter of an ellipse, by Ramanujan's approximation.
+const quarterArc = ([x, y]: number[]) =>
+  (Math.PI * (3 * (x + y) - Math.sqrt((3 * x + y) * (x + 3 * y)))) / 4
+
+/**
+ * A closed path around a rounded box, inset by `inset`, and the lengths of its
+ * sides and corners in order. Like in Chrome, it starts at the left end of the
+ * top side and goes clockwise.
+ */
+function roundedContour(
+  box: { left: number; top: number; width: number; height: number },
+  style: Record<string, number | string>,
+  inset: number[]
+) {
+  const left = box.left + inset[3]
+  const top = box.top + inset[0]
+  const right = box.left + box.width - inset[1]
+  const bottom = box.top + box.height - inset[2]
+  const [tl, tr, br, bl] = (resolveBorderRadii(box, style) || []).map(
+    ([x, y], i) => [
+      Math.max(0, x - inset[i % 3 === 0 ? 3 : 1]),
+      Math.max(0, y - inset[i < 2 ? 0 : 2]),
+    ]
+  )
+  const isRound = ([x, y]: number[]) => x > 0 && y > 0
+  const arc = (corner: number[], toX: number, toY: number) =>
+    isRound(corner)
+      ? `A${corner[0]},${corner[1]} 0 0 1 ${toX},${toY}`
+      : `L${toX},${toY}`
+  const d =
+    `M${left + tl[0]},${top}` +
+    `H${right - tr[0]}` +
+    arc(tr, right, top + tr[1]) +
+    `V${bottom - br[1]}` +
+    arc(br, right - br[0], bottom) +
+    `H${left + bl[0]}` +
+    arc(bl, left, bottom - bl[1]) +
+    `V${top + tl[1]}` +
+    arc(tl, left + tl[0], top) +
+    'Z'
+  const corner = (c: number[]) =>
+    isRound(c) ? quarterArc(c) : Math.hypot(c[0], c[1])
+  const segments = [
+    right - tr[0] - left - tl[0],
+    corner(tr),
+    bottom - br[1] - top - tr[1],
+    corner(br),
+    right - br[0] - left - bl[0],
+    corner(bl),
+    bottom - bl[1] - top - tl[1],
+    corner(tl),
+  ].map((length) => Math.max(0, length))
+  return { d, segments }
+}
+
+/**
+ * The dashes of a rounded border, like in Chrome. Chrome dashes a closed path
+ * inset by half the width rounded down, with the length rounded down, and
+ * draws it clipped to the border. The dashes are mapped to the middle of the
+ * border, where the corners have the same centers, so they're cut by the same
+ * lines.
+ */
+function roundedDashes(
+  box: { left: number; top: number; width: number; height: number },
+  style: Record<string, number | string>,
+  offset: number[],
+  widths: number[],
+  dash: number,
+  gap: number
+) {
+  const center = roundedContour(
+    box,
+    style,
+    offset.map((o, i) => o + widths[i] / 2)
+  )
+  const chrome = roundedContour(
+    box,
+    style,
+    offset.map((o, i) => o + Math.trunc(widths[i] / 2))
+  ).segments
+  const total = chrome.reduce((sum, length) => sum + length, 0)
+  const length = Math.trunc(total)
+  if (length <= dash * 2) return { d: center.d }
+
+  // Paths with room for only two dashes get two smaller ones.
+  let pattern = [dash, fitDashGap(length, dash, gap, true)]
+  if (length <= 2 * (dash + gap)) {
+    const scale = length / (2 * (dash + gap))
+    pattern = [dash * scale, gap * scale]
+  }
+
+  // Maps a distance along the path of Chrome to the middle of the border.
+  const toCenter = (distance: number) => {
+    let mapped = 0
+    for (let i = 0; i < 8; i++) {
+      if (distance <= chrome[i] || i === 7) {
+        return (
+          mapped + (chrome[i] ? (distance / chrome[i]) * center.segments[i] : 0)
+        )
+      }
+      distance -= chrome[i]
+      mapped += center.segments[i]
+    }
+  }
+  const intervals: number[] = []
+  let previous = 0
+  for (let at = 0, i = 0; at < total; i++) {
+    at = Math.min(total, at + pattern[i % 2])
+    const mapped = toCenter(at)
+    intervals.push(Math.round((mapped - previous) * 1000) / 1000)
+    previous = mapped
+  }
+  if (intervals.length % 2) intervals.push(0)
+  return { d: center.d, dasharray: intervals.join(' ') }
 }
 
 /**
@@ -308,7 +425,7 @@ function fitDashGap(length: number, dash: number, gap: number) {
  * or square if they're smaller than 3px, with a dot at each corner. Dashes are
  * twice as long as the width, or three times if it's smaller than 3px, with a
  * dash at each end, so they cover the corners together with the dashes of the
- * next sides.
+ * next sides. On rounded borders, dashes go around the whole border instead.
  */
 function drawPatternedSide(
   side: number,
@@ -343,56 +460,86 @@ function drawPatternedSide(
     })
   }
 
-  // Sides go from corner to corner of the box, including rounded corners, so
-  // the dashes at the ends of adjacent sides cover the corners together.
+  const dash = width * (width >= 3 ? 2 : 3)
+  const gap = width * (width >= 3 ? 1 : 2)
+  // A line without room for two dashes is solid.
+  const dasharray = (length: number) =>
+    length > dash * 2 ? `${dash} ${fitDashGap(length, dash, gap)}` : undefined
+
+  // Like in Chrome, dashes of rounded borders go around the whole border, and
+  // each side shows the ones in its region.
+  if (isRoundedBox(box, style)) {
+    const dashes = roundedDashes(box, style, offset, widths, dash, gap)
+    return buildXMLString('path', {
+      ...attributes,
+      fill: 'none',
+      'stroke-width': width,
+      'stroke-dasharray': dashes.dasharray,
+      d: dashes.d,
+    })
+  }
+
+  const center = offset.map((o, i) => o + widths[i] / 2)
+
+  // Sides with shaped corners go from corner to corner, including the corners,
+  // so the dashes at the ends of adjacent sides cover the corners together.
+  const radii = resolveBorderRadii(box, style)?.map(([x, y], i) => [
+    Math.max(0, x - center[i % 3 === 0 ? 3 : 1]),
+    Math.max(0, y - center[i < 2 ? 0 : 2]),
+  ])
+  const corners = radii ? [radii[side], radii[(side + 1) % 4]] : []
+  if (corners.some(([x, y]) => x > 0 && y > 0)) {
+    const length =
+      (side % 2 === 0 ? box.width : box.height) -
+      center[(side + 3) % 4] -
+      center[(side + 1) % 4] -
+      corners.reduce(
+        (sum, [x, y]) => sum + (side % 2 === 0 ? x : y) - quarterArc([x, y]),
+        0
+      )
+    return buildXMLString('path', {
+      ...attributes,
+      fill: 'none',
+      'stroke-width': width,
+      'stroke-dasharray': dasharray(length),
+      d: radius(box, style, sides, true, center),
+    })
+  }
+
   const [t, r, b, l] = offset
   const left = box.left + l
   const top = box.top + t
   const right = box.left + box.width - r
   const bottom = box.top + box.height - b
   const half = width / 2
-  const center = offset.map((o, i) => o + widths[i] / 2)
-  const radii = resolveBorderRadii(box, style)?.map(([x, y], i) => [
-    Math.max(0, x - center[i % 3 === 0 ? 3 : 1]),
-    Math.max(0, y - center[i < 2 ? 0 : 2]),
-  ])
-  const corners = radii ? [radii[side], radii[(side + 1) % 4]] : []
-  const isRounded = corners.some(([x, y]) => x > 0 && y > 0)
-  // A quarter of the perimeter of an ellipse, by Ramanujan's approximation.
-  const arc = ([x, y]: number[]) =>
-    (Math.PI * (3 * (x + y) - Math.sqrt((3 * x + y) * (x + 3 * y)))) / 4
-  const straight = side % 2 === 0 ? right - left : bottom - top
-  const length = isRounded
-    ? (side % 2 === 0 ? box.width : box.height) -
-      center[(side + 3) % 4] -
-      center[(side + 1) % 4] -
-      corners.reduce(
-        (sum, [x, y]) => sum + (side % 2 === 0 ? x : y) - arc([x, y]),
-        0
-      )
-    : straight
-  const d = isRounded
-    ? radius(box, style, sides, true, center)
-    : [
-        `M${left},${top + half}H${right}`,
-        `M${right - half},${top}V${bottom}`,
-        `M${right},${bottom - half}H${left}`,
-        `M${left + half},${bottom}V${top}`,
-      ][side]
-  const dash = width * (width >= 3 ? 2 : 3)
-  const gap = width * (width >= 3 ? 1 : 2)
   return buildXMLString('path', {
     ...attributes,
     fill: 'none',
     'stroke-width': width,
-    // A side without room for two dashes is solid.
-    'stroke-dasharray':
-      length > dash * 2
-        ? `${dash} ${fitDashGap(length, dash, gap)}`
-        : undefined,
-    d,
+    'stroke-dasharray': dasharray(side % 2 === 0 ? right - left : bottom - top),
+    d: [
+      `M${left},${top + half}H${right}`,
+      `M${right - half},${top}V${bottom}`,
+      `M${right},${bottom - half}H${left}`,
+      `M${left + half},${bottom}V${top}`,
+    ][side],
   })
 }
+
+/** Whether a box has rounded corners, and none of another shape. */
+const isRoundedBox = (
+  box: { left: number; top: number; width: number; height: number },
+  style: Record<string, number | string>
+) =>
+  CORNER_SHAPES.every((name) => resolveCornerShape(style[name]) === 1) &&
+  !!resolveBorderRadii(box, style)?.some(([x, y]) => x > 0 && y > 0)
+
+const CORNER_SHAPES = [
+  'cornerTopLeftShape',
+  'cornerTopRightShape',
+  'cornerBottomRightShape',
+  'cornerBottomLeftShape',
+]
 
 function drawBorder(
   {
@@ -446,12 +593,9 @@ function drawBorder(
   let maxWidth = 0
   // The inner edge of shaped corners isn't known, so their sides keep their
   // own widths.
-  const roundCorners = [
-    'cornerTopLeftShape',
-    'cornerTopRightShape',
-    'cornerBottomRightShape',
-    'cornerBottomLeftShape',
-  ].every((name) => resolveCornerShape(style[name]) === 1)
+  const roundCorners = CORNER_SHAPES.every(
+    (name) => resolveCornerShape(style[name]) === 1
+  )
   if (splitCorners && roundCorners) {
     const widths = SIDES.map(
       (side) => (style[`border${side}Width`] as number) || 0
@@ -532,6 +676,22 @@ function drawBorder(
         : 0)
     if (!w) return ''
     if (!asContentMask && (lineStyle === 'dotted' || lineStyle === 'dashed')) {
+      // Dashes of rounded borders with the same style on all sides go around
+      // the whole border once.
+      if (
+        lineStyle === 'dashed' &&
+        sides.every(Boolean) &&
+        isRoundedBox(box, style)
+      ) {
+        return drawPatternedSide(
+          sides.indexOf(true),
+          lineStyle,
+          box,
+          style,
+          offset,
+          { ...props, stroke: color }
+        )
+      }
       let lines = ''
       for (let side = 0; side < 4; side++) {
         if (!sides[side]) continue
