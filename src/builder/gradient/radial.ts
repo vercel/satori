@@ -37,7 +37,7 @@ export function buildRadialGradient(
     position,
     size,
     repeating,
-  } = parseRadialGradient(expandColorStops(gradient))
+  } = parseRadialGradient(withDefaultShape(expandColorStops(gradient)))
   const [xDelta, yDelta] = dimensions
 
   let cx: number = xDelta / 2
@@ -72,7 +72,6 @@ export function buildRadialGradient(
 
   const gradientId = `satori_radial_${id}`
   const patternId = `satori_pattern_${id}`
-  const maskId = `satori_mask_${id}`
 
   // https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/radial-gradient()#values
   const spread = calcRadius(
@@ -95,6 +94,70 @@ export function buildRadialGradient(
     spread
   )
 
+  const stopElements = stops
+    .map((stop) =>
+      buildXMLString('stop', {
+        offset: stop.offset || 0,
+        'stop-color': stop.color,
+      })
+    )
+    .join('')
+  const lastColor = stops.at(-1)?.color || 'transparent'
+
+  let content: string
+  if (repeating) {
+    // The shape is made large enough to cover the box, see `patchSpread()`.
+    content =
+      buildXMLString(
+        'radialGradient',
+        {
+          id: gradientId,
+          ...props,
+        },
+        stopElements
+      ) +
+      buildXMLString(shape, {
+        cx: cx,
+        cy: cy,
+        width: xDelta,
+        height: yDelta,
+        ...spread,
+        fill: `url(#${gradientId})`,
+      })
+  } else {
+    // The gradient covers the whole box, and its last color continues outside
+    // of the ending shape. An ellipse is a circle scaled vertically.
+    const r = shape === 'circle' ? spread.r : spread.rx
+    const scaleY = shape === 'circle' ? 1 : spread.ry / spread.rx
+    const degenerate = !(r > 0) || !(scaleY > 0) || !Number.isFinite(scaleY)
+    content =
+      (degenerate
+        ? ''
+        : buildXMLString(
+            'radialGradient',
+            {
+              id: gradientId,
+              gradientUnits: 'userSpaceOnUse',
+              cx,
+              cy,
+              r,
+              gradientTransform:
+                scaleY === 1
+                  ? undefined
+                  : `translate(${cx} ${cy}) scale(1 ${scaleY}) translate(${-cx} ${-cy})`,
+              ...props,
+            },
+            stopElements
+          )) +
+      buildXMLString('rect', {
+        x: 0,
+        y: 0,
+        width: xDelta,
+        height: yDelta,
+        fill: degenerate ? lastColor : `url(#${gradientId})`,
+      })
+  }
+
   // TODO: check for repeat-x/repeat-y
   const defs = buildXMLString(
     'pattern',
@@ -106,50 +169,7 @@ export function buildRadialGradient(
       height: tiles[1] / height,
       patternUnits: 'objectBoundingBox',
     },
-    buildXMLString(
-      'radialGradient',
-      {
-        id: gradientId,
-        ...props,
-      },
-      stops
-        .map((stop) =>
-          buildXMLString('stop', {
-            offset: stop.offset || 0,
-            'stop-color': stop.color,
-          })
-        )
-        .join('')
-    ) +
-      buildXMLString(
-        'mask',
-        {
-          id: maskId,
-        },
-        buildXMLString('rect', {
-          x: 0,
-          y: 0,
-          width: xDelta,
-          height: yDelta,
-          fill: '#fff',
-        })
-      ) +
-      buildXMLString('rect', {
-        x: 0,
-        y: 0,
-        width: xDelta,
-        height: yDelta,
-        fill: stops.at(-1)?.color || 'transparent',
-      }) +
-      buildXMLString(shape, {
-        cx: cx,
-        cy: cy,
-        width: xDelta,
-        height: yDelta,
-        ...spread,
-        fill: `url(#${gradientId})`,
-        mask: `url(#${maskId})`,
-      })
+    content
   )
 
   const result = [patternId, defs]
@@ -459,4 +479,15 @@ function isSizeAllLength(v: RadialPropertyValue[]): v is Array<{
   }
 }> {
   return !v.some((s) => s.type === 'keyword')
+}
+
+/**
+ * Adds the default `ellipse` shape before a size keyword without a shape,
+ * which the parser would read as a color.
+ */
+function withDefaultShape(gradient: string) {
+  return gradient.replace(
+    /^((?:repeating-)?radial-gradient\(\s*)((?:closest|farthest)-(?:side|corner)\s*,)/,
+    '$1ellipse $2'
+  )
 }
