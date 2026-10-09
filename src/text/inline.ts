@@ -41,7 +41,10 @@ export interface InlineEnv {
   debug?: boolean
   graphemeImages?: Record<string, string>
   /** Lays out a tree, used for atomic inlines. */
-  computeLayout: (root: LayoutNode, options: { width?: number }) => void
+  computeLayout: (
+    root: LayoutNode,
+    options: { width?: number | 'min-content' }
+  ) => void
 }
 
 /** The box of an inline element, which is split into fragments by lines. */
@@ -536,20 +539,64 @@ export class Paragraph {
     const { computeLayout } = this.env
     const marginWidth = () =>
       node.layout.width + node.layout.margin.left + node.layout.margin.right
-    // Percentages are of the width of the paragraph.
-    const isPercentage = [
-      node.style.width,
-      node.style.minWidth,
-      node.style.maxWidth,
-    ].some((value) => typeof value === 'string' && value.endsWith('%'))
-    computeLayout(node, isPercentage && Number.isFinite(width) ? { width } : {})
-    if (!isPercentage && Number.isFinite(width) && marginWidth() > width) {
-      computeLayout(node, {
-        width: Math.max(
-          0,
-          width - node.layout.margin.left - node.layout.margin.right
-        ),
-      })
+    const margins = () => node.layout.margin.left + node.layout.margin.right
+    const hasWidth = Number.isFinite(width)
+    // Laid out on its own, the box ignores sizing keywords, so they're
+    // resolved here.
+    const size = node.style.width
+    // Lays the box out with a border box width.
+    const layoutWithWidth = (borderBoxWidth: number) => {
+      const { padding, border } = node.layout
+      const insets =
+        node.style.boxSizing === 'content-box'
+          ? padding.left + padding.right + border.left + border.right
+          : 0
+      node.style.width = Math.max(0, borderBoxWidth - insets)
+      computeLayout(node, {})
+      node.style.width = size
+    }
+    if (size === 'min-content') {
+      computeLayout(node, { width: 'min-content' })
+    } else if (size === 'stretch' && hasWidth) {
+      computeLayout(node, {})
+      layoutWithWidth(width - margins())
+    } else if (typeof size === 'object' && 'fitContent' in size) {
+      // The limit, clamped between the min-content and max-content widths.
+      computeLayout(node, {})
+      const maxContent = node.layout.width
+      computeLayout(node, { width: 'min-content' })
+      const minContent = node.layout.width
+      const { padding, border } = node.layout
+      const insets =
+        node.style.boxSizing === 'content-box'
+          ? padding.left + padding.right + border.left + border.right
+          : 0
+      const limit =
+        typeof size.fitContent === 'number'
+          ? size.fitContent
+          : hasWidth
+          ? (parseFloat(size.fitContent) / 100) * width
+          : Infinity
+      layoutWithWidth(
+        Math.min(maxContent, Math.max(minContent, limit + insets))
+      )
+    } else {
+      // Percentages are of the width of the paragraph.
+      const isPercentage = [
+        node.style.width,
+        node.style.minWidth,
+        node.style.maxWidth,
+      ].some((value) => typeof value === 'string' && value.endsWith('%'))
+      computeLayout(node, isPercentage && hasWidth ? { width } : {})
+      // Except for `max-content`, boxes shrink to fit the width.
+      if (
+        size !== 'max-content' &&
+        !isPercentage &&
+        hasWidth &&
+        marginWidth() > width
+      ) {
+        computeLayout(node, { width: Math.max(0, width - margins()) })
+      }
     }
 
     const { layout } = node

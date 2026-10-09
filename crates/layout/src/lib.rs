@@ -12,8 +12,8 @@ use std::cell::RefCell;
 use taffy::prelude::*;
 use taffy::style::{GridTemplateArea, GridTemplateAreas, GridTemplateRepetition};
 use taffy::{
-    compute_leaf_layout, AlignContent, AlignItems, Baselines, BoxSizing, Clear, Float, LayoutInput,
-    LayoutOutput, Overflow, Point, TextAlign, LEAF_FLOAT_EXCLUSIONS,
+    compute_leaf_layout, AlignContent, AlignItems, Baselines, BoxSizing, Clear, CompactLength,
+    Float, LayoutInput, LayoutOutput, Overflow, Point, TextAlign, LEAF_FLOAT_EXCLUSIONS,
 };
 
 #[link(wasm_import_module = "env")]
@@ -72,6 +72,9 @@ fn calc_handle(index: f32) -> *const () {
 struct Reader<'a> {
     data: &'a [f32],
     index: usize,
+    /// The sizing keywords of the minimum and maximum widths of each node,
+    /// which Taffy doesn't support, see `limit`.
+    intrinsic_limits: Vec<[Option<Dimension>; 2]>,
 }
 
 impl<'a> Reader<'a> {
@@ -85,8 +88,10 @@ impl<'a> Reader<'a> {
         self.next() as i32
     }
 
-    /// A unit (0: auto, 1: length, 2: percentage, 3: `calc()`) and a value,
-    /// which is the index of the expression for `calc()`.
+    /// A unit (0: auto, 1: length, 2: percentage, 3: `calc()`, 4: `min-content`,
+    /// 5: `max-content`, 6: `fit-content`, 7: `fit-content()` with a length,
+    /// 8: `fit-content()` with a percentage, 9: `stretch`, 10: `content`) and a
+    /// value, which is the index of the expression for `calc()`.
     fn dimension(&mut self) -> Dimension {
         let unit = self.int();
         let value = self.next();
@@ -94,7 +99,24 @@ impl<'a> Reader<'a> {
             1 => Dimension::length(value),
             2 => Dimension::percent(value),
             3 => Dimension::calc(calc_handle(value)),
+            4 => Dimension::min_content(),
+            5 => Dimension::max_content(),
+            6 => Dimension::fit_content(),
+            7 => Dimension::fit_content_px(value),
+            8 => Dimension::fit_content_percent(value),
+            9 => Dimension::stretch(),
+            10 => Dimension::content(),
             _ => Dimension::auto(),
+        }
+    }
+
+    /// A minimum or maximum size. Taffy doesn't support sizing keywords there, so
+    /// they're `auto`, and returned separately.
+    fn limit(&mut self) -> (LengthPercentageAuto, Option<Dimension>) {
+        if (4..=10).contains(&(self.data[self.index] as i32)) {
+            (LengthPercentageAuto::auto(), Some(self.dimension()))
+        } else {
+            (self.length_percentage_auto(), None)
         }
     }
 
@@ -285,8 +307,20 @@ impl<'a> Reader<'a> {
             y: self.overflow(),
         };
         let size = self.size(Self::dimension);
-        let min_size = self.size(Self::length_percentage_auto);
-        let max_size = self.size(Self::length_percentage_auto);
+        let (min_width, min_width_keyword) = self.limit();
+        let (min_height, _) = self.limit();
+        let (max_width, max_width_keyword) = self.limit();
+        let (max_height, _) = self.limit();
+        self.intrinsic_limits
+            .push([min_width_keyword, max_width_keyword]);
+        let min_size = Size {
+            width: min_width,
+            height: min_height,
+        };
+        let max_size = Size {
+            width: max_width,
+            height: max_height,
+        };
         let aspect_ratio = Some(self.next()).filter(|ratio| ratio.is_finite() && *ratio > 0.0);
         let margin = self.rect(Self::length_percentage_auto);
         let padding = self.rect(Self::length_percentage);
@@ -441,6 +475,7 @@ pub unsafe extern "C" fn compute(
     let mut reader = Reader {
         data: std::slice::from_raw_parts(input, len),
         index: 0,
+        intrinsic_limits: Vec::new(),
     };
 
     let node_count = reader.int() as usize;
@@ -475,13 +510,112 @@ pub unsafe extern "C" fn compute(
         }
     }
 
+    // Negative sizes are the min-content size, and infinite ones the
+    // max-content size.
     let to_available_space = |value: f32| {
-        if value.is_finite() && value >= 0.0 {
+        if value < 0.0 {
+            AvailableSpace::MinContent
+        } else if value.is_finite() {
             AvailableSpace::Definite(value)
         } else {
             AvailableSpace::MaxContent
         }
     };
+
+    let mut measure_leaf = |inputs: LayoutInput,
+                            _: NodeId,
+                            context: Option<&mut Measured>,
+                            style: &Style|
+     -> LayoutOutput {
+        // The floats that intersect this leaf. They're taken, so that layouts nested in its
+        // measure function, e.g. of atomic inlines in its text, don't wrap around them.
+        let exclusions: Vec<f32> = LEAF_FLOAT_EXCLUSIONS
+            .with(|exclusions| exclusions.take().iter().flatten().copied().collect());
+        let Some(Measured(index)) = context else {
+            return compute_leaf_layout(inputs, style, |_, _| 0.0, |_, _| Size::ZERO);
+        };
+        let index = *index;
+        let mut baselines = Baselines::NONE;
+        let mut output = compute_leaf_layout(
+            inputs,
+            style,
+            |_, _| 0.0,
+            |known, available| {
+                let mut out = [0.0f32; 4];
+                measure(
+                    index,
+                    known.width.unwrap_or(f32::NAN),
+                    known.height.unwrap_or(f32::NAN),
+                    available_space_to_f32(available.width),
+                    available_space_to_f32(available.height),
+                    exclusions.as_ptr(),
+                    (exclusions.len() / 4) as u32,
+                    out.as_mut_ptr(),
+                );
+                baselines.first = Some(out[2]).filter(|value| value.is_finite());
+                baselines.last = Some(out[3]).filter(|value| value.is_finite());
+                Size {
+                    width: out[0],
+                    height: out[1],
+                }
+            },
+        );
+        output.baselines = baselines;
+        output
+    };
+
+    // Taffy doesn't support sizing keywords as minimum and maximum widths, so
+    // they're replaced by the intrinsic widths of their boxes, measured before
+    // the layout without the box's own widths, from the innermost boxes. A
+    // `fit-content()` limit is clamped between them. Other keywords are `auto`.
+    for (index, &node) in nodes.iter().enumerate().rev() {
+        let [min_keyword, max_keyword] = reader.intrinsic_limits[index];
+        if min_keyword.is_none() && max_keyword.is_none() {
+            continue;
+        }
+        let style = tree.style(node).unwrap().clone();
+        let mut unconstrained = style.clone();
+        unconstrained.size.width = Dimension::auto();
+        unconstrained.min_size.width = LengthPercentageAuto::auto();
+        unconstrained.max_size.width = LengthPercentageAuto::auto();
+        tree.set_style(node, unconstrained).unwrap();
+        let mut measure = |width: AvailableSpace| {
+            let available = Size {
+                width,
+                height: AvailableSpace::MaxContent,
+            };
+            tree.compute_layout_with_measure(node, available, &mut measure_leaf)
+                .unwrap();
+            // Layouts have the size of the border box.
+            let layout = tree.layout(node).unwrap();
+            let insets = layout.padding.left
+                + layout.padding.right
+                + layout.border.left
+                + layout.border.right;
+            layout.size.width
+                - if style.box_sizing == BoxSizing::ContentBox {
+                    insets
+                } else {
+                    0.0
+                }
+        };
+        let min_content = measure(AvailableSpace::MinContent);
+        let max_content = measure(AvailableSpace::MaxContent).max(min_content);
+        let resolve = |keyword: Option<Dimension>, size: LengthPercentageAuto| match keyword
+            .map(|k| k.tag())
+        {
+            Some(CompactLength::MIN_CONTENT_TAG) => LengthPercentageAuto::length(min_content),
+            Some(CompactLength::MAX_CONTENT_TAG) => LengthPercentageAuto::length(max_content),
+            Some(CompactLength::FIT_CONTENT_PX_TAG) => LengthPercentageAuto::length(
+                keyword.unwrap().value().min(max_content).max(min_content),
+            ),
+            _ => size,
+        };
+        let mut resolved = style;
+        resolved.min_size.width = resolve(min_keyword, resolved.min_size.width);
+        resolved.max_size.width = resolve(max_keyword, resolved.max_size.width);
+        tree.set_style(node, resolved).unwrap();
+    }
 
     tree.compute_layout_with_measure(
         nodes[0],
@@ -489,43 +623,7 @@ pub unsafe extern "C" fn compute(
             width: to_available_space(available_width),
             height: to_available_space(available_height),
         },
-        |inputs: LayoutInput, _, context: Option<&mut Measured>, style: &Style| -> LayoutOutput {
-            // The floats that intersect this leaf. They're taken, so that layouts nested in its
-            // measure function, e.g. of atomic inlines in its text, don't wrap around them.
-            let exclusions: Vec<f32> = LEAF_FLOAT_EXCLUSIONS
-                .with(|exclusions| exclusions.take().iter().flatten().copied().collect());
-            let Some(Measured(index)) = context else {
-                return compute_leaf_layout(inputs, style, |_, _| 0.0, |_, _| Size::ZERO);
-            };
-            let index = *index;
-            let mut baselines = Baselines::NONE;
-            let mut output = compute_leaf_layout(
-                inputs,
-                style,
-                |_, _| 0.0,
-                |known, available| {
-                    let mut out = [0.0f32; 4];
-                    measure(
-                        index,
-                        known.width.unwrap_or(f32::NAN),
-                        known.height.unwrap_or(f32::NAN),
-                        available_space_to_f32(available.width),
-                        available_space_to_f32(available.height),
-                        exclusions.as_ptr(),
-                        (exclusions.len() / 4) as u32,
-                        out.as_mut_ptr(),
-                    );
-                    baselines.first = Some(out[2]).filter(|value| value.is_finite());
-                    baselines.last = Some(out[3]).filter(|value| value.is_finite());
-                    Size {
-                        width: out[0],
-                        height: out[1],
-                    }
-                },
-            );
-            output.baselines = baselines;
-            output
-        },
+        &mut measure_leaf,
     )
     .unwrap();
 

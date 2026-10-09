@@ -1000,6 +1000,17 @@ type OtherStyle = Exclude<Record<PropertyKey, string | number>, keyof MainStyle>
 
 export type SerializedStyle = Partial<MainStyle & OtherStyle>
 
+// Sizes, which can be sizing keywords and `fit-content()`.
+const SIZES = new Set([
+  'width',
+  'height',
+  'minWidth',
+  'minHeight',
+  'maxWidth',
+  'maxHeight',
+  'flexBasis',
+])
+
 // Lengths that can have percentages in `calc()`.
 const CALC_LENGTHS = new Set([
   'width',
@@ -1234,6 +1245,23 @@ export default function expand(
         value = serializedStyle[prop] = math.evaluate(0)
       } else if (math && CALC_LENGTHS.has(prop)) {
         value = serializedStyle[prop] = { calc: math.evaluate } as any
+      }
+
+      // The limit of `fit-content()` sizes is converted to px.
+      const fitContent =
+        typeof value === 'string' && SIZES.has(prop)
+          ? /^fit-content\((.+)\)$/i.exec(value.trim())
+          : null
+      if (fitContent && !fitContent[1].trim().endsWith('%')) {
+        const limit = lengthToNumber(
+          fitContent[1].trim(),
+          baseFontSize,
+          baseFontSize,
+          inheritedStyle
+        )
+        if (typeof limit === 'number') {
+          value = serializedStyle[prop] = `fit-content(${limit}px)` as any
+        }
       }
 
       // Convert em and rem values to px (number).

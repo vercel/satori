@@ -3,7 +3,7 @@ import escapeHTML from 'escape-html'
 import LineBreaker from 'linebreak'
 
 import CssDimension from './vendor/parse-css-dimension/index.js'
-import type { CalcLength } from './layout-engine/node.js'
+import type { CalcLength, Size } from './layout-engine/node.js'
 
 export function isReactElement(node: ReactNode): node is ReactElement {
   const type = typeof node
@@ -406,6 +406,42 @@ export function asPointPercentageLength(
     }. Expected a number or a percentage value (e.g., "50%").`
   )
   return undefined
+}
+
+const SIZING_KEYWORDS = {
+  'min-content': 'min-content',
+  'max-content': 'max-content',
+  'fit-content': 'fit-content',
+  stretch: 'stretch',
+  // Prefixed aliases, like in Chrome.
+  '-webkit-min-content': 'min-content',
+  '-webkit-max-content': 'max-content',
+  '-webkit-fit-content': 'fit-content',
+  '-webkit-fill-available': 'stretch',
+} as const
+
+/**
+ * A size of `width`, `height`, their minimums and maximums, or `flexBasis`: a
+ * length, or a sizing keyword. `content` is only a flex basis, and `auto`
+ * isn't a minimum or maximum.
+ */
+export function asSize(
+  x: string | number | CalcLength,
+  propertyName: string
+): Size | undefined {
+  if (typeof x === 'string') {
+    const value = x.trim().toLowerCase()
+    if (value in SIZING_KEYWORDS) return SIZING_KEYWORDS[value]
+    if (value === 'content' && propertyName === 'flexBasis') return 'content'
+    const fitContent = /^fit-content\(\s*([\d.]+)(px|%)\s*\)$/.exec(value)
+    if (fitContent) {
+      const limit = parseFloat(fitContent[1])
+      return { fitContent: fitContent[2] === '%' ? `${limit}%` : limit }
+    }
+  }
+  return /^(min|max)/.test(propertyName)
+    ? asPointPercentageLength(x, propertyName)
+    : asPointAutoPercentageLength(x, propertyName)
 }
 
 export function asPointAutoPercentageLength(
