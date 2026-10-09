@@ -327,4 +327,37 @@ describe('Overflow', () => {
       ).rejects.toThrowError('Invalid value for CSS property "overflow"')
     })
   })
+
+  it('should only keep a character before an ellipsis at the start of a line', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          padding: 8,
+          width: '100%',
+          height: '100%',
+          background: '#fff',
+          fontSize: 14,
+        }}
+      >
+        {[60, 75, 90, 105, 120, 135, 150, 165, 180, 12].map((width) => (
+          <div
+            style={{
+              width,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              background: '#eef',
+              marginBottom: 2,
+            }}
+          >
+            search-indexer-with-a-long-name
+          </div>
+        ))}
+      </div>,
+      { width: 200, height: 220, fonts }
+    )
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
+  })
 })
