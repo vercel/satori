@@ -490,6 +490,10 @@ pub unsafe extern "C" fn compute(
             height: to_available_space(available_height),
         },
         |inputs: LayoutInput, _, context: Option<&mut Measured>, style: &Style| -> LayoutOutput {
+            // The floats that intersect this leaf. They're taken, so that layouts nested in its
+            // measure function, e.g. of atomic inlines in its text, don't wrap around them.
+            let exclusions: Vec<f32> = LEAF_FLOAT_EXCLUSIONS
+                .with(|exclusions| exclusions.take().iter().flatten().copied().collect());
             let Some(Measured(index)) = context else {
                 return compute_leaf_layout(inputs, style, |_, _| 0.0, |_, _| Size::ZERO);
             };
@@ -501,8 +505,6 @@ pub unsafe extern "C" fn compute(
                 |_, _| 0.0,
                 |known, available| {
                     let mut out = [0.0f32; 4];
-                    let exclusions: Vec<f32> = LEAF_FLOAT_EXCLUSIONS
-                        .with(|exclusions| exclusions.borrow().iter().flatten().copied().collect());
                     measure(
                         index,
                         known.width.unwrap_or(f32::NAN),
