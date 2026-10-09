@@ -262,7 +262,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr><td rowspan="5"><code>border</code></td></tr>
 <tr><td>Width (<code>borderWidth</code>, <code>borderTopWidth</code>, ...)</td><td>Supported</td><td></td></tr>
-<tr><td>Style (<code>borderStyle</code>, <code>borderTopStyle</code>, ...)</td><td>Dots and dashes are spaced per side, so on rounded corners they're placed differently</td><td></td></tr>
+<tr><td>Style (<code>borderStyle</code>, <code>borderTopStyle</code>, ...)</td><td>On rounded corners, dots are spaced evenly along each side, while Chrome draws square dots on the straight parts of thick dotted borders</td><td></td></tr>
 <tr><td>Color (<code>borderColor</code>, <code>borderTopColor</code>, ...)</td><td>Supported</td><td></td></tr>
 <tr><td>Shorthand (<code>border</code>, <code>borderTop</code>, ...)</td><td>Supported</td><td></td></tr>
 

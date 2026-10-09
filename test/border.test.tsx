@@ -168,6 +168,57 @@ describe('Border', () => {
       })
     }
 
+    it('should dash rounded borders around their corners', async () => {
+      const box = (style: Record<string, number | string>) => (
+        <div style={{ display: 'flex', width: 120, height: 24, ...style }} />
+      )
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: 6,
+            width: 300,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              border: '1.5px dashed #333',
+              borderRadius: 10,
+              padding: '6px 10px',
+              fontSize: 14,
+            }}
+          >
+            rotate · scale
+          </div>
+          {box({ border: '2px dashed #333', borderRadius: 12 })}
+          {box({
+            border: '3px dashed',
+            borderColor: 'red green blue orange',
+            borderRadius: 14,
+          })}
+          {box({
+            borderWidth: '2px 4px',
+            borderStyle: 'dashed solid',
+            borderColor: '#333',
+            borderRadius: 14,
+          })}
+          {box({ border: '2px dashed #333', borderRadius: '20px 4px' })}
+          {box({
+            border: '3px dashed #333',
+            borderRadius: 4,
+            width: 10,
+            height: 6,
+          })}
+        </div>,
+        { width: 300, height: 150, fonts }
+      )
+      expect(await toImage(svg, 300)).toMatchImageSnapshot()
+    })
+
     it('should support styles, widths and colors per side', async () => {
       const svg = await satori(
         <div
