@@ -151,8 +151,27 @@ const ALLOWED_IMAGE_TYPES = [PNG, APNG, JPEG, GIF, SVG, WEBP]
 // Pre-compiled regex patterns for SVG parsing
 const SVG_ATTRS_REGEX = /<svg[^>]*>/i
 const VIEWBOX_REGEX = /viewBox=['"]([^'"]+)['"]/
-const WIDTH_REGEX = /width=['"](\d*\.?\d+)['"]/
-const HEIGHT_REGEX = /height=['"](\d*\.?\d+)['"]/
+const WIDTH_REGEX = /\swidth=['"](\d*\.?\d+)(?:px)?['"]/
+const HEIGHT_REGEX = /\sheight=['"](\d*\.?\d+)(?:px)?['"]/
+
+/**
+ * Whether an image has a size. An SVG without `width` and `height` only has
+ * a ratio from its `viewBox`, so CSS sizes it to fit backgrounds.
+ */
+export function hasIntrinsicSize(src: string) {
+  if (!src.startsWith('data:image/svg+xml')) return true
+  const comma = src.indexOf(',')
+  let data = src.slice(comma + 1)
+  try {
+    data = src.slice(0, comma).endsWith(';base64')
+      ? atob(data)
+      : decodeURIComponent(data)
+  } catch {
+    return true
+  }
+  const tag = data.match(SVG_ATTRS_REGEX)?.[0]
+  return !tag || WIDTH_REGEX.test(tag) || HEIGHT_REGEX.test(tag)
+}
 
 export function arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array) {
   const bytes = new Uint8Array(buffer)
@@ -210,7 +229,7 @@ function parseSvgImageSize(src: string, data: string) {
   return imageSize
 }
 
-function arrayBufferToDataUri(data: ArrayBuffer) {
+function arrayBufferToDataUri(data: ArrayBuffer, responseType?: string) {
   let imageSize: [number, number]
 
   const imageType = detectContentType(new Uint8Array(data))
@@ -232,7 +251,13 @@ function arrayBufferToDataUri(data: ArrayBuffer) {
   }
 
   if (!ALLOWED_IMAGE_TYPES.includes(imageType)) {
-    throw new Error(`Unsupported image type: ${imageType || 'unknown'}`)
+    const detail =
+      !imageType && responseType
+        ? `. The server sent Content-Type "${responseType}", which is not an image format Satori can decode.`
+        : ''
+    throw new Error(
+      `Unsupported image type: ${imageType || 'unknown'}${detail}`
+    )
   }
   return [
     `data:${imageType};base64,${arrayBufferToBase64(data)}`,
@@ -341,9 +366,19 @@ export async function resolveImageData(
     typeof window === 'undefined'
       ? () => safeServerFetch(url)
       : () => fetch(url)
+  let responseType: string | null = null
   const promise = doFetch()
     .then((res): Promise<string | ArrayBuffer> => {
       const type = res.headers.get('content-type')
+      responseType = type
+
+      if (res.ok === false) {
+        throw new Error(
+          `the server responded with ${res.status}${
+            res.statusText ? ` ${res.statusText}` : ''
+          }${type ? ` (Content-Type: "${type}")` : ''}`
+        )
+      }
 
       // Handle SVG specially
       if (type === 'image/svg+xml' || type === 'application/svg+xml') {
@@ -364,7 +399,7 @@ export async function resolveImageData(
         }
       }
 
-      const [newSrc, imageSize] = arrayBufferToDataUri(data)
+      const [newSrc, imageSize] = arrayBufferToDataUri(data, responseType)
       return [newSrc, ...imageSize] as ResolvedImageData
     })
     .then((result) => {

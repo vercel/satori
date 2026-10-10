@@ -44,7 +44,7 @@ describe('clipPath', () => {
       )
     )
 
-    svgs.forEach((svg) => expect(toImage(svg)).toMatchImageSnapshot())
+    for (const svg of svgs) expect(await toImage(svg)).toMatchImageSnapshot()
   })
 
   it('should make clip-path compatible with overflow', async () => {
@@ -73,7 +73,7 @@ describe('clipPath', () => {
       }
     )
 
-    expect(toImage(svg)).toMatchImageSnapshot()
+    expect(await toImage(svg)).toMatchImageSnapshot()
   })
 
   it('should respect the position value', async () => {
@@ -101,7 +101,7 @@ describe('clipPath', () => {
       }
     )
 
-    expect(toImage(svg)).toMatchImageSnapshot()
+    expect(await toImage(svg)).toMatchImageSnapshot()
   })
 
   it('should respect left and top', async () => {
@@ -135,6 +135,44 @@ describe('clipPath', () => {
       }
     )
 
-    expect(toImage(svg)).toMatchImageSnapshot()
+    expect(await toImage(svg)).toMatchImageSnapshot()
+  })
+
+  it('should not reference itself', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          width: 100,
+          height: 100,
+          background: '#111',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            width: 80,
+            height: 80,
+            clipPath: 'circle(40px)',
+          }}
+        >
+          <svg width='80' height='80' viewBox='0 0 80 80'>
+            <rect width='80' height='80' fill='#0af' />
+          </svg>
+        </div>
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+
+    // Renderers like librsvg drop clip paths that reference themselves, and
+    // the clip paths that reference those.
+    for (const [, id, reference] of svg.matchAll(
+      /<clipPath id="([^"]+)"[^>]*?clip-path="url\(#([^)]+)\)"/g
+    )) {
+      expect(reference).not.toBe(id)
+    }
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })

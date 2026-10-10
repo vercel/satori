@@ -25,7 +25,7 @@ export type {
   WebGLCanvasInfo,
   WebGLCanvasRenderer,
 } from './canvas.js'
-export { init } from '../yoga.js'
+export { init } from '../layout-engine/wasm.js'
 
 export type SatoriOptions = BaseSatoriOptions & {
   /**

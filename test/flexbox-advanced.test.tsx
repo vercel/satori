@@ -36,7 +36,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render with different flex-grow ratios', async () => {
@@ -74,7 +74,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -109,7 +109,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render with different flex-shrink values', async () => {
@@ -142,7 +142,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -175,7 +175,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render flex-basis with flex-grow', async () => {
@@ -208,7 +208,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -241,7 +241,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render with different flex values', async () => {
@@ -279,7 +279,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -314,7 +314,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render alignSelf flex-end', async () => {
@@ -347,7 +347,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render alignSelf center', async () => {
@@ -380,7 +380,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render alignSelf stretch', async () => {
@@ -412,7 +412,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -436,7 +436,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render alignContent center', async () => {
@@ -458,7 +458,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render alignContent space-between', async () => {
@@ -480,7 +480,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -521,7 +521,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render flex with gap and wrapping', async () => {
@@ -544,7 +544,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should combine flex-grow and flex-shrink', async () => {
@@ -579,7 +579,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render complex flex layout with multiple properties', async () => {
@@ -624,7 +624,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render gap with percentage values', async () => {
@@ -646,7 +646,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render row-gap with percentage values', async () => {
@@ -668,7 +668,7 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render column-gap with percentage values', async () => {
@@ -689,7 +689,62 @@ describe('Flexbox Advanced', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
+  })
+
+  it('should align text by its baseline', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          padding: 8,
+          width: '100%',
+          height: '100%',
+          background: '#fff',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            background: '#eee',
+          }}
+        >
+          <span style={{ fontSize: 40 }}>$20</span>
+          <span style={{ fontSize: 14, marginLeft: 4 }}>/month</span>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 6,
+            background: '#eef',
+          }}
+        >
+          <div style={{ fontSize: 32 }}>Big</div>
+          <div style={{ fontSize: 12 }}>small</div>
+          <div style={{ fontSize: 18, paddingTop: 12, background: '#fde' }}>
+            padded
+          </div>
+          <div style={{ fontSize: 14, alignSelf: 'flex-end' }}>end</div>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 6,
+            background: '#efe',
+          }}
+        >
+          <div style={{ fontSize: 24, width: 70 }}>Two lines</div>
+          <div style={{ fontSize: 12 }}>by the first line</div>
+        </div>
+      </div>,
+      { width: 300, height: 210, fonts }
+    )
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 })

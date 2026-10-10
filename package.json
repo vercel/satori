@@ -16,7 +16,7 @@
   "license": "MPL-2.0",
   "files": [
     "dist/**",
-    "yoga.wasm"
+    "layout.wasm"
   ],
   "imports": {
     "#satori/jsx/jsx-runtime": "./src/jsx/jsx-runtime.ts",
@@ -24,7 +24,7 @@
   },
   "exports": {
     "./package.json": "./package.json",
-    "./yoga.wasm": "./yoga.wasm",
+    "./layout.wasm": "./layout.wasm",
     ".": {
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
@@ -70,6 +70,7 @@
     "dev": "pnpm run dev:default",
     "dev:default": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
     "dev:playground": "turbo dev --filter=satori-playground...",
+    "build:wasm": "node scripts/build-layout-wasm.mjs",
     "build": "pnpm run build:default && pnpm run build:standalone && pnpm run test:browser-build",
     "build:default": "NODE_ENV=production tsup",
     "build:standalone": "NODE_ENV=production SATORI_STANDALONE=1 tsup",
@@ -127,7 +128,7 @@
     "mitata": "^1.0.34",
     "prettier": "^2.7.1",
     "react": "^17.0.2",
-    "sharp": "^0.34.3",
+    "sharp": "^0.35.5",
     "tsup": "^7.1.0",
     "turbo": "^2.9.14",
     "twrnc": "^3.4.0",
@@ -146,8 +147,7 @@
     "harfbuzzjs": "0.10.0",
     "linebreak": "^1.1.0",
     "parse-css-color": "^0.2.1",
-    "postcss-value-parser": "^4.2.0",
-    "yoga-layout": "^3.2.1"
+    "postcss-value-parser": "^4.2.0"
   },
   "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
   "engines": {

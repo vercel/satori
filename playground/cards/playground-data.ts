@@ -182,6 +182,7 @@ const playgroundTabs: Tabs = {
     fontWeight: 600,
     textAlign: 'left',
     padding: 70,
+    boxSizing: 'border-box',
     color: 'red',
     backgroundImage: 'linear-gradient(to right, #334d50, #cbcaa5)',
     height: '100%',
@@ -227,6 +228,163 @@ const playgroundTabs: Tabs = {
     </div>
   </div>
 </div>`,
+  'Block Layout': `// Children of a block container stack vertically and fill its width, and
+// the vertical margins between them collapse, like in browsers.
+
+<div
+  style={{
+    display: 'block',
+    height: '100%',
+    width: '100%',
+    padding: '40px 56px',
+    boxSizing: 'border-box',
+    backgroundImage: 'linear-gradient(to bottom right, #fff 50%, #e0f2fe)',
+    color: '#0f172a',
+  }}
+>
+  <div
+    style={{
+      fontSize: 16,
+      fontWeight: 700,
+      letterSpacing: 2,
+      textTransform: 'uppercase',
+      color: '#0284c7',
+      marginBottom: 24,
+    }}
+  >
+    Changelog
+  </div>
+  {/* The 24px margins above and below collapse into one. */}
+  <h1
+    style={{
+      fontSize: 44,
+      lineHeight: 1.1,
+      letterSpacing: -1.5,
+      margin: '24px 0 16px',
+    }}
+  >
+    Block layout, with margins that collapse
+  </h1>
+  <p
+    style={{
+      fontSize: 20,
+      lineHeight: 1.5,
+      color: '#475569',
+      margin: '16px 0 32px',
+    }}
+  >
+    Lay out content like a document, without flexDirection or fixed widths.
+    Text wraps to the width of its container.
+  </p>
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      fontSize: 18,
+      color: '#64748b',
+    }}
+  >
+    <div
+      style={{
+        width: 32,
+        height: 32,
+        marginRight: 12,
+        borderRadius: 16,
+        backgroundImage: 'linear-gradient(135deg, #38bdf8, #6366f1)',
+      }}
+    />
+    Satori Team · October 2026
+  </div>
+</div>
+`,
+  Grid: `// Place items in named grid areas, and size tracks with fr, minmax()
+// and repeat(), like in browsers.
+
+() => {
+  function Tile({ area, children, style }) {
+    return (
+      <div
+        style={{
+          gridArea: area,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: 20,
+          borderRadius: 16,
+          backgroundColor: '#1e293b',
+          ...style,
+        }}
+      >
+        {children}
+      </div>
+    )
+  }
+
+  function Label({ children }) {
+    return <div style={{ fontSize: 16, color: '#94a3b8' }}>{children}</div>
+  }
+
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateRows: 'repeat(2, 1fr)',
+        gridTemplateAreas: '"hero hero builds uptime" "hero hero regions regions"',
+        gap: 16,
+        height: '100%',
+        width: '100%',
+        padding: 32,
+        boxSizing: 'border-box',
+        backgroundColor: '#0f172a',
+        color: 'white',
+      }}
+    >
+      <Tile
+        area="hero"
+        style={{ backgroundImage: 'linear-gradient(135deg, #6366f1, #a855f7)' }}
+      >
+        <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>
+          Satori
+        </div>
+        <div style={{ fontSize: 44, fontWeight: 700, lineHeight: 1.1, letterSpacing: -1.5 }}>
+          CSS Grid, with named areas
+        </div>
+      </Tile>
+      <Tile area="builds">
+        <Label>Build time</Label>
+        <div style={{ fontSize: 40, fontWeight: 700 }}>1.2s</div>
+      </Tile>
+      <Tile area="uptime">
+        <Label>Uptime</Label>
+        <div style={{ fontSize: 40, fontWeight: 700 }}>99.9%</div>
+      </Tile>
+      <Tile area="regions">
+        <Label>42 regions</Label>
+        {/* As many 14px columns as fit, stretched to fill the row. */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(14px, 1fr))',
+            gap: 6,
+          }}
+        >
+          {Array.from({ length: 42 }, (_, i) => (
+            <div
+              key={i}
+              style={{
+                height: 14,
+                borderRadius: 4,
+                backgroundColor: i % 5 === 2 ? '#a855f7' : '#334155',
+              }}
+            />
+          ))}
+        </div>
+      </Tile>
+    </div>
+  )
+}
+`,
   Advanced: `// Fallback fonts and Emoji are dynamically loaded
 // from Google Fonts and CDNs in this demo.
 
@@ -253,6 +411,7 @@ const playgroundTabs: Tabs = {
         height: '100%',
         width: '100%',
         padding: '10px 20px',
+        boxSizing: 'border-box',
         justifyContent: 'center',
         fontFamily: 'Geist, "Material Icons"',
         fontSize: 28,

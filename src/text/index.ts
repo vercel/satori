@@ -9,18 +9,26 @@ import {
   wordSeparators,
   buildXMLString,
   isUndefined,
-  isString,
   lengthToNumber,
 } from '../utils.js'
-import { getYoga, TYoga, YogaNode } from '../yoga.js'
-import buildText, { container } from '../builder/text.js'
+import { LayoutNode } from '../layout-engine/index.js'
+import buildText, {
+  container,
+  getTextFillColor,
+  getTextStrokeAttributes,
+} from '../builder/text.js'
 import { buildDropShadow } from '../builder/shadow.js'
-import buildDecoration from '../builder/text-decoration.js'
+import buildDecoration, {
+  getDecorationLines,
+  getDecorationThickness,
+  getUnderlineY,
+} from '../builder/text-decoration.js'
 import type { GlyphBox } from '../font.js'
 import { Locale } from '../language.js'
 import { HorizontalEllipsis, Space, Tab } from './characters.js'
 import { genMeasurer } from './measurer.js'
-import { preprocess } from './processor.js'
+import { getTabAdvance, getTabWidth, preprocess } from './processor.js'
+import { getFontFeatureSettings } from './font-features.js'
 import cssColorParse from 'parse-css-color'
 
 const skippedWordWhenFindingMissingFont = new Set([Tab])
@@ -47,8 +55,6 @@ export default async function* buildTextNodes(
   content: string,
   context: LayoutContext
 ): AsyncGenerator<{ word: string; locale?: Locale }[], string, [any, any]> {
-  const Yoga = await getYoga()
-
   const {
     parentStyle,
     inheritedStyle,
@@ -70,31 +76,44 @@ export default async function* buildTextNodes(
     textWrap,
     fontSize,
     filter: cssFilter,
-    tabSize = 8,
     letterSpacing,
-    fontFeatureSettings,
+    wordSpacing,
     _inheritedBackgroundClipTextPath,
     _inheritedBackgroundClipTextHasBackground,
-    flexShrink,
   } = parentStyle
+  const fontFeatureSettings = getFontFeatureSettings(parentStyle)
 
   const {
-    words,
-    requiredBreaks,
+    words: segmentedWords,
+    requiredBreaks: segmentedRequiredBreaks,
     allowSoftWrap,
     allowBreakWord,
+    allowBreakWordInMinContent,
     processedContent,
     shouldCollapseTabsAndSpaces,
     lineLimit,
     blockEllipsis,
   } = preprocess(content, parentStyle, locale)
 
-  const textContainer = createTextContainerNode(Yoga, textAlign)
-  parent.insertChild(textContainer, parent.getChildCount())
+  v(
+    textAlign,
+    {
+      left: true,
+      right: true,
+      center: true,
+      justify: true,
+      // We don't have other writing modes yet.
+      start: true,
+      end: true,
+    },
+    true,
+    'textAlign'
+  )
 
-  if (isUndefined(flexShrink)) {
-    parent.setFlexShrink(1)
-  }
+  // Like the anonymous flex item around text in CSS, or the paragraph of a
+  // block container.
+  const textContainer = context.textNode ?? new LayoutNode({ flexShrink: 1 })
+  if (!context.textNode) parent.insertChild(textContainer)
 
   // Get the correct font according to the container style.
   // https://www.w3.org/TR/CSS2/visudet.html
@@ -133,13 +152,15 @@ export default async function* buildTextNodes(
     {
       fontSize,
       letterSpacing,
+      wordSpacing: wordSpacing as number,
       fontFeatureSettings,
     }
   )
 
-  const tabWidth = isString(tabSize)
-    ? lengthToNumber(tabSize, fontSize, 1, parentStyle)
-    : measureGrapheme(Space) * tabSize
+  const tabWidth = getTabWidth(parentStyle, measureGrapheme(Space))
+
+  const tabAdvance = (x: number, count: number) =>
+    getTabAdvance(x, count, tabWidth, measureGrapheme(Space))
 
   const calc = (
     text: string,
@@ -157,20 +178,17 @@ export default async function* buildTextNodes(
       }
     }
 
-    const { index, tabCount } = detectTabs(text)
-
     let originWidth = 0
 
-    if (tabCount > 0) {
-      const textBeforeTab = text.slice(0, index)
-      const textAfterTab = text.slice(index + tabCount)
-      const textWidthBeforeTab = measureText(textBeforeTab)
-      const offsetBeforeTab = textWidthBeforeTab + currentWidth
-      const tabMoveDistance =
-        tabWidth === 0
-          ? textWidthBeforeTab
-          : (Math.floor(offsetBeforeTab / tabWidth) + tabCount) * tabWidth
-      originWidth = tabMoveDistance + measureText(textAfterTab)
+    if (text.includes(Tab)) {
+      // Tabs move to the next tab stop, from the start of the line.
+      let x = currentWidth
+      for (const part of text.split(/(\t+)/)) {
+        if (part) {
+          x += part[0] === Tab ? tabAdvance(x, part.length) : measureText(part)
+        }
+      }
+      originWidth = x - currentWidth
     } else {
       originWidth = measureText(text)
     }
@@ -189,6 +207,7 @@ export default async function* buildTextNodes(
   // @TODO: Use segments instead of words to properly support kerning.
   let lineWidths = []
   let baselines = []
+  let lastBaseline: number | undefined
   let lineSegmentNumber = []
   let texts: string[] = []
   let wordPositionInLayout: (null | {
@@ -199,6 +218,9 @@ export default async function* buildTextNodes(
     lineIndex: number
     isImage: boolean
   })[] = []
+
+  // Whether the min-content size is measured, see `canBreakWords()`.
+  let measuringMinContent = false
 
   // With the given container width, compute the text layout.
   function flow(width: number) {
@@ -211,9 +233,15 @@ export default async function* buildTextNodes(
     let currentBaselineOffset = 0
 
     lineWidths = []
+    baselines = []
     lineSegmentNumber = [0]
     texts = []
     wordPositionInLayout = []
+
+    // The text is laid out with several widths, and words may be broken for
+    // one of them, so keep the original words.
+    const words = segmentedWords.slice()
+    const requiredBreaks = segmentedRequiredBreaks.slice()
 
     // We naively implement the width calculation without proper kerning.
     // @TODO: Support different writing modes.
@@ -261,13 +289,23 @@ export default async function* buildTextNodes(
       // - we have break-word
       // - the word is wider than the container width
       // - the word will be put at the beginning of the line
+      // A single grapheme can't be broken, even if it's wider than the
+      // container, e.g. when measuring the min-content width.
       const needToBreakWord =
-        allowBreakWord && w > width && (!currentWidth || willWrap || forceBreak)
+        (measuringMinContent ? allowBreakWordInMinContent : allowBreakWord) &&
+        w > width &&
+        (!currentWidth || willWrap || forceBreak)
+      const chars = needToBreakWord ? segment(word, 'grapheme') : undefined
 
-      if (needToBreakWord) {
+      if (chars && chars.length > 1) {
         // Break the word into multiple segments and continue the loop.
-        const chars = segment(word, 'grapheme')
         words.splice(i, 1, ...chars)
+        requiredBreaks.splice(
+          i,
+          1,
+          forceBreak,
+          ...chars.slice(1).map(() => false)
+        )
         if (currentWidth > 0) {
           // Start a new line, spaces can be ignored.
           lineWidths.push(currentWidth - prevLineEndingSpacesWidth)
@@ -287,6 +325,8 @@ export default async function* buildTextNodes(
         // Start a new line, spaces can be ignored.
         if (shouldCollapseTabsAndSpaces && word === Space) {
           w = 0
+        } else if (word.includes(Tab)) {
+          w = calc(word, 0).originWidth
         }
 
         lineWidths.push(currentWidth - prevLineEndingSpacesWidth)
@@ -347,6 +387,8 @@ export default async function* buildTextNodes(
           if (isImage(_text)) {
             _width = fontSize
             _isImage = true
+          } else if (_text[0] === Tab) {
+            _width = tabAdvance(x, _text.length)
           } else if (!embedFont && _text.length > 1) {
             // When embedFont is false, use measureText for multi-character strings
             // to ensure consistency with how currentWidth is accumulated (sum of
@@ -388,6 +430,9 @@ export default async function* buildTextNodes(
       lines++
       lineWidths.push(currentWidth)
       baselines.push(currentBaselineOffset)
+      lastBaseline = height - currentLineHeight + currentBaselineOffset
+    } else {
+      lastBaseline = lines ? height : undefined
     }
 
     // @TODO: Support `line-height`.
@@ -398,7 +443,7 @@ export default async function* buildTextNodes(
   // size, because the container might have a fixed width or height or being
   // expanded by its parent.
   let measuredTextSize = { width: 0, height: 0 }
-  textContainer.setMeasureFunc((containerWidth) => {
+  const layoutText = (containerWidth: number) => {
     const { width, height } = flow(containerWidth)
 
     // When doing `text-wrap: balance`, we reflow the text multiple times
@@ -457,13 +502,49 @@ export default async function* buildTextNodes(
 
     const _width = Math.ceil(width)
     measuredTextSize = { width: _width, height }
-    // This may be a temporary fix, I didn't dig deep into yoga.
-    // But when the return value of width here doesn't change (assuming the value of width is 216.9),
-    // when we later get the width through `parent.getComputedWidth()`, sometimes it returns 216 and sometimes 217.
-    // I'm not sure if this is a yoga bug, but it seems related to the entire page width.
-    // So I use Math.ceil.
+    // Round up, so that rounding the layout doesn't make the text wrap.
     return { width: _width, height }
-  })
+  }
+
+  // The layout engine measures the text several times, often with the same
+  // width. The size only depends on the width, so cache it. `flowedWidth` is
+  // the width that the line state, e.g. `lineWidths`, was computed for.
+  const measureCache = new Map<
+    number,
+    {
+      width: number
+      height: number
+      firstBaseline?: number
+      lastBaseline?: number
+    }
+  >()
+  let flowedWidth: number | undefined
+  const measure = (
+    containerWidth: number,
+    _height?: number,
+    _exclusions?: unknown,
+    minContent = false
+  ) => {
+    // The min-content size may break fewer words than a width of 0.
+    const key = minContent ? -1 : containerWidth
+    let cached = measureCache.get(key)
+    if (!cached) {
+      measuringMinContent = minContent
+      cached = { ...layoutText(containerWidth), lastBaseline }
+      // The first line starts at the top. Without baselines, the layout would
+      // align the text by its bottom, e.g. with `alignItems: baseline`.
+      if (baselines.length) cached.firstBaseline = baselines[0]
+      measuringMinContent = false
+      flowedWidth = minContent ? undefined : containerWidth
+      measureCache.set(key, cached)
+    }
+    return cached
+  }
+  textContainer.measure = measure
+  textContainer.lastBaseline = (width) => {
+    measure(width)
+    return measureCache.get(width).lastBaseline
+  }
 
   const [x, y] = yield
 
@@ -472,13 +553,18 @@ export default async function* buildTextNodes(
 
   const clipPathId = inheritedStyle._inheritedClipPathId as string | undefined
   const overflowMaskId = inheritedStyle._inheritedMaskId as number | undefined
+  const fillColor = getTextFillColor(parentStyle)
 
   const {
     left: containerLeft,
     top: containerTop,
     width: containerWidth,
     height: containerHeight,
-  } = textContainer.getComputedLayout()
+  } = textContainer.layout
+
+  // The layout engine may have measured the text with other widths last, so
+  // lay it out again with the final width.
+  if (flowedWidth !== containerWidth) layoutText(containerWidth)
 
   // Convert textIndent to number if it's a string (e.g., percentage)
   const textIndentNumber =
@@ -492,18 +578,13 @@ export default async function* buildTextNodes(
         ) || 0
       : textIndent
 
-  const parentContainerInnerWidth =
-    parent.getComputedWidth() -
-    parent.getComputedPadding(Yoga.EDGE_LEFT) -
-    parent.getComputedPadding(Yoga.EDGE_RIGHT) -
-    parent.getComputedBorder(Yoga.EDGE_LEFT) -
-    parent.getComputedBorder(Yoga.EDGE_RIGHT)
+  const parentContainerInnerWidth = parent.contentWidth
 
   // Attach offset to the current node.
   const left = x + containerLeft
   const top = y + containerTop
 
-  const { matrix, opacity } = container(
+  const { matrix } = container(
     {
       left: containerLeft,
       top: containerTop,
@@ -529,9 +610,8 @@ export default async function* buildTextNodes(
         shadowOffset: textShadowOffset,
         shadowRadius: textShadowRadius,
       },
-      isFullyTransparent(parentStyle.color) ||
-        (_inheritedBackgroundClipTextHasBackground &&
-          isOpaqueWhite(parentStyle.color))
+      isFullyTransparent(fillColor) ||
+        (_inheritedBackgroundClipTextHasBackground && isOpaqueWhite(fillColor))
     )
 
     filter = buildXMLString('defs', {}, filter)
@@ -574,7 +654,7 @@ export default async function* buildTextNodes(
     const width = layout.width
     const line = layout.line
     const shouldCollectDecorationBoxes =
-      parentStyle.textDecorationLine === 'underline' &&
+      getDecorationLines(parentStyle).includes('underline') &&
       (parentStyle.textDecorationSkipInk || 'auto') !== 'none'
 
     if (line === skippedLine) {
@@ -589,9 +669,15 @@ export default async function* buildTextNodes(
       leftOffset += textIndentNumber
     }
 
-    if (lineWidths.length > 1) {
-      // Calculate alignment. Note that for Flexbox, there is only text
-      // alignment when the container is multi-line.
+    if (
+      lineWidths.length > 1 ||
+      (context.blockParagraph &&
+        (textAlign === 'right' ||
+          textAlign === 'end' ||
+          textAlign === 'center'))
+    ) {
+      // Calculate alignment. A flex item around text is as wide as a single
+      // line, but a paragraph of a block container fills its width.
       const remainingWidth = containerWidth - lineWidths[line]
       if (textAlign === 'right' || textAlign === 'end') {
         leftOffset += remainingWidth
@@ -621,16 +707,15 @@ export default async function* buildTextNodes(
     const baselineDelta = baselineOfLine - baselineOfWord
 
     const buildUnderlineBand = (offset: number) => {
-      if (
-        !shouldCollectDecorationBoxes ||
-        parentStyle.textDecorationLine !== 'underline'
-      ) {
-        return undefined
-      }
-      const baseline = top + offset + baselineDelta + baselineOfWord
+      if (!shouldCollectDecorationBoxes) return undefined
+      const strokeWidth = getDecorationThickness(parentStyle)
       return {
-        underlineY: baseline + baselineOfWord * 0.1,
-        strokeWidth: Math.max(1, fontSize * 0.1),
+        underlineY:
+          top +
+          offset +
+          baselineDelta +
+          getUnderlineY(parentStyle, baselineOfWord, strokeWidth),
+        strokeWidth,
       }
     }
 
@@ -650,7 +735,6 @@ export default async function* buildTextNodes(
         _blockEllipsis = HorizontalEllipsis
         ellipsisWidth = measureGrapheme(_blockEllipsis)
       }
-      const spaceWidth = measureGrapheme(Space)
       const isNotLastLine = line < lineWidths.length - 1
       const isLastAllowedLine = line + 1 === lineLimit
 
@@ -663,11 +747,11 @@ export default async function* buildTextNodes(
         for (const char of chars) {
           const w = baseWidth + measureGraphemeArray([subset + char])
           if (
-            // Keep at least one character:
+            // Keep at least one character at the start of the line:
             // > The first character or atomic inline-level element on a line
             // must be clipped rather than ellipsed.
             // https://drafts.csswg.org/css-overflow/#text-overflow
-            subset &&
+            (subset || layout.x > 0) &&
             w + ellipsisWidth > parentContainerInnerWidth
           ) {
             break
@@ -686,11 +770,18 @@ export default async function* buildTextNodes(
         isLastAllowedLine &&
         (isNotLastLine || lineWidths[line] > parentContainerInnerWidth)
       ) {
+        // Like in browsers, the last line keeps its words, and characters are
+        // only removed when the ellipsis doesn't fit after them.
+        // https://drafts.csswg.org/css-overflow-4/#block-ellipsis
         if (
-          leftOffset + width + ellipsisWidth + spaceWidth >
-          parentContainerInnerWidth
+          leftOffset + width + ellipsisWidth > parentContainerInnerWidth ||
+          (nextLayout && nextLayout.line !== line)
         ) {
-          const { subset, resolvedWidth } = calcEllipsis(leftOffset, text)
+          // Spaces at the end of the line aren't drawn before the ellipsis.
+          const { subset, resolvedWidth } = calcEllipsis(
+            leftOffset,
+            text.replace(/\s+$/, '')
+          )
 
           text = subset + _blockEllipsis
           skippedLine = line
@@ -699,33 +790,6 @@ export default async function* buildTextNodes(
             resolvedWidth - decorationLines[line].left
           )
           isLastDisplayedBeforeEllipsis = true
-        } else if (nextLayout && nextLayout.line !== line) {
-          if (textAlign === 'center') {
-            const { subset, resolvedWidth } = calcEllipsis(leftOffset, text)
-
-            text = subset + _blockEllipsis
-            skippedLine = line
-            decorationLines[line].width = Math.max(
-              0,
-              resolvedWidth - decorationLines[line].left
-            )
-            isLastDisplayedBeforeEllipsis = true
-          } else {
-            const nextLineText = texts[i + 1]
-
-            const { subset, resolvedWidth } = calcEllipsis(
-              width + leftOffset,
-              nextLineText
-            )
-
-            text = text + subset + _blockEllipsis
-            skippedLine = line
-            decorationLines[line].width = Math.max(
-              0,
-              resolvedWidth - decorationLines[line].left
-            )
-            isLastDisplayedBeforeEllipsis = true
-          }
         }
       }
     }
@@ -767,6 +831,7 @@ export default async function* buildTextNodes(
           // Since we need to pass the baseline position, add the ascender to the top.
           top: top + topOffset + baselineOfWord + baselineDelta,
           letterSpacing,
+          wordSpacing: wordSpacing as number,
           fontFeatureSettings,
         },
         band
@@ -824,6 +889,7 @@ export default async function* buildTextNodes(
             left: left + leftOffset,
             top: top + topOffset,
             letterSpacing,
+            wordSpacing: wordSpacing as number,
             fontFeatureSettings,
           },
           band
@@ -850,7 +916,6 @@ export default async function* buildTextNodes(
           width,
           height: heightOfWord,
           matrix,
-          opacity,
           image,
           clipPathId,
           debug,
@@ -867,7 +932,7 @@ export default async function* buildTextNodes(
     }
   }
 
-  if (parentStyle.textDecorationLine) {
+  if (getDecorationLines(parentStyle).length) {
     decorationShape = Object.entries(decorationLines)
       .map(([lineIndex, deco]) => {
         if (!deco) return ''
@@ -889,42 +954,38 @@ export default async function* buildTextNodes(
       .join('')
   }
 
+  // The opacity of the parent if it only has this text, see `layout()`. A
+  // single path without stroke or filters is one fill operation, so
+  // `fill-opacity` looks the same as drawing it as a group with `opacity`,
+  // and avoids the compositing surface of a group in rasterizers.
+  const textOpacity = (parentStyle._textOpacity as number | undefined) ?? 1
+  const fillOpacity =
+    textOpacity < 1 &&
+    !result &&
+    !filter &&
+    !cssFilter &&
+    !decorationShape &&
+    !getTextStrokeAttributes(parentStyle).stroke
+      ? textOpacity
+      : undefined
+
   // Embed the font as path.
   if (mergedPath) {
+    const strokeAttributes = getTextStrokeAttributes(parentStyle)
     const path =
-      (!isFullyTransparent(parentStyle.color) || filter) && opacity !== 0
+      !isFullyTransparent(fillColor) || strokeAttributes.stroke || filter
         ? buildXMLString('path', {
             fill:
               filter &&
-              (isFullyTransparent(parentStyle.color) ||
+              (isFullyTransparent(fillColor) ||
                 (_inheritedBackgroundClipTextHasBackground &&
-                  isOpaqueWhite(parentStyle.color)))
+                  isOpaqueWhite(fillColor)))
                 ? 'black'
-                : parentStyle.color,
+                : fillColor,
             d: mergedPath,
             transform: matrix ? matrix : undefined,
-            // A single path is one fill operation, so `fill-opacity` is
-            // visually identical to `opacity` when there is no stroke or
-            // filter, and avoids the isolated-group compositing surface in
-            // rasterizers. With a filter (e.g. text-shadow), `fill-opacity`
-            // applies before filtering while `opacity` applies after, so we
-            // must keep `opacity` there.
-            [inheritedStyle.WebkitTextStrokeWidth || cssFilter || filter
-              ? 'opacity'
-              : 'fill-opacity']: opacity !== 1 ? opacity : undefined,
-            style: cssFilter ? `filter:${cssFilter}` : undefined,
-            'stroke-width': inheritedStyle.WebkitTextStrokeWidth
-              ? `${inheritedStyle.WebkitTextStrokeWidth}px`
-              : undefined,
-            stroke: inheritedStyle.WebkitTextStrokeWidth
-              ? inheritedStyle.WebkitTextStrokeColor
-              : undefined,
-            'stroke-linejoin': inheritedStyle.WebkitTextStrokeWidth
-              ? 'round'
-              : undefined,
-            'paint-order': inheritedStyle.WebkitTextStrokeWidth
-              ? 'stroke'
-              : undefined,
+            'fill-opacity': fillOpacity,
+            ...strokeAttributes,
           })
         : ''
     const p = path
@@ -960,6 +1021,13 @@ export default async function* buildTextNodes(
       : decorationShape
   }
 
+  if (textOpacity < 1 && fillOpacity === undefined && result) {
+    result = buildXMLString('g', { opacity: textOpacity }, result)
+  }
+
+  // Hidden text takes up space, but isn't drawn.
+  if (parentStyle.visibility === 'hidden') return ''
+
   // Attach information to the parent node.
   if (backgroundClipDef) {
     ;(parentStyle._inheritedBackgroundClipTextPath as any).value +=
@@ -967,49 +1035,4 @@ export default async function* buildTextNodes(
   }
 
   return result
-}
-
-function createTextContainerNode(Yoga: TYoga, textAlign: string): YogaNode {
-  // Create a container node for this text fragment.
-  const textContainer = Yoga.Node.create()
-  textContainer.setAlignItems(Yoga.ALIGN_BASELINE)
-  textContainer.setJustifyContent(
-    v(
-      textAlign,
-      {
-        left: Yoga.JUSTIFY_FLEX_START,
-        right: Yoga.JUSTIFY_FLEX_END,
-        center: Yoga.JUSTIFY_CENTER,
-        justify: Yoga.JUSTIFY_SPACE_BETWEEN,
-        // We don't have other writing modes yet.
-        start: Yoga.JUSTIFY_FLEX_START,
-        end: Yoga.JUSTIFY_FLEX_END,
-      },
-      Yoga.JUSTIFY_FLEX_START,
-      'textAlign'
-    )
-  )
-
-  return textContainer
-}
-
-function detectTabs(text: string):
-  | {
-      index: null
-      tabCount: 0
-    }
-  | {
-      index: number
-      tabCount: number
-    } {
-  const result = /(\t)+/.exec(text)
-  return result
-    ? {
-        index: result.index,
-        tabCount: result[0].length,
-      }
-    : {
-        index: null,
-        tabCount: 0,
-      }
 }

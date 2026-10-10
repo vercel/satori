@@ -2,7 +2,7 @@
  * CSS transforms, including 3D transforms.
  *
  * Every element draws its shapes on its own plane: z = 0, in the absolute
- * layout coordinates computed by Yoga. A 4x4 matrix (`TransformState.world`)
+ * layout coordinates computed by the layout engine. A 4x4 matrix (`TransformState.world`)
  * maps that plane to the space the shapes are drawn in. Without perspective,
  * the mapping is affine and becomes an SVG `matrix()`. With perspective it
  * isn't, and the element is either drawn with a projection hook provided by
@@ -13,7 +13,7 @@
 
 import type { ParsedTransformOrigin } from '../transform-origin.js'
 import type { TransformFunction } from '../parser/transform.js'
-import type { YogaNode } from '../yoga.js'
+import type { CalcLength, LayoutNode } from '../layout-engine/index.js'
 import type { SerializedStyle } from '../handler/expand.js'
 
 /** A 4x4 matrix in column-major order, like the arguments of `matrix3d()`. */
@@ -29,7 +29,7 @@ export interface Box {
 export interface ProjectedElement {
   /** Maps the element's plane to the space the result is drawn in. */
   matrix: Mat4
-  node: YogaNode
+  node: LayoutNode
   left: number
   top: number
   style: SerializedStyle
@@ -146,10 +146,15 @@ function toMatrix(
   height: number
 ): Mat4 {
   // Percentages are only allowed in X and Y translations.
-  const resolve = (value: number | string | undefined, size: number) =>
+  const resolve = (
+    value: number | string | CalcLength | undefined,
+    size: number
+  ) =>
     typeof value === 'string'
       ? (parseFloat(value) / 100) * size
-      : (value as number) ?? 0
+      : typeof value === 'object'
+      ? value.calc(size)
+      : value ?? 0
   const [a, b, c, d] = args as number[]
 
   switch (name) {

@@ -23,7 +23,7 @@ describe('Border', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -35,7 +35,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should fallback border color to the current color', async () => {
@@ -50,14 +50,14 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support specifying `borderColor`', async () => {
       const svg = await satori(
         <div
           style={{
-            border: '1px',
+            border: '1px solid',
             borderColor: 'green',
             width: '50%',
             height: '50%',
@@ -65,14 +65,14 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support overriding borderColor', async () => {
       const svg = await satori(
         <div
           style={{
-            border: '1px blue',
+            border: '1px solid blue',
             borderColor: 'red',
             width: '50%',
             height: '50%',
@@ -80,7 +80,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -92,7 +92,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -104,7 +104,255 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
+    })
+  })
+
+  describe('border-style values', () => {
+    const row = (lineStyle: string) => (
+      <div
+        style={{
+          display: 'flex',
+          gap: 8,
+          padding: 4,
+          alignItems: 'flex-start',
+        }}
+      >
+        {[1, 2, 3, 6, 10].map((width) => (
+          <div
+            style={{
+              width: 56,
+              height: 34,
+              border: `${width}px ${lineStyle} #3366cc`,
+            }}
+          />
+        ))}
+        <div
+          style={{
+            width: 56,
+            height: 34,
+            border: `8px ${lineStyle} #3366cc`,
+            borderRadius: 14,
+          }}
+        />
+        <div
+          style={{ width: 56, height: 34, border: `8px ${lineStyle} black` }}
+        />
+        <div
+          style={{
+            width: 56,
+            height: 34,
+            border: `8px ${lineStyle} white`,
+            background: '#ccc',
+          }}
+        />
+      </div>
+    )
+
+    for (const lineStyle of [
+      'dotted',
+      'dashed',
+      'double',
+      'groove',
+      'ridge',
+      'inset',
+      'outset',
+    ]) {
+      it(`should support ${lineStyle} borders`, async () => {
+        const svg = await satori(row(lineStyle), {
+          width: 540,
+          height: 54,
+          fonts,
+        })
+        expect(await toImage(svg, 540)).toMatchImageSnapshot()
+      })
+    }
+
+    it('should dash rounded borders around their corners', async () => {
+      const box = (style: Record<string, number | string>) => (
+        <div style={{ display: 'flex', width: 120, height: 24, ...style }} />
+      )
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: 6,
+            width: 300,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              border: '1.5px dashed #333',
+              borderRadius: 10,
+              padding: '6px 10px',
+              fontSize: 14,
+            }}
+          >
+            rotate · scale
+          </div>
+          {box({ border: '2px dashed #333', borderRadius: 12 })}
+          {box({
+            border: '3px dashed',
+            borderColor: 'red green blue orange',
+            borderRadius: 14,
+          })}
+          {box({
+            borderWidth: '2px 4px',
+            borderStyle: 'dashed solid',
+            borderColor: '#333',
+            borderRadius: 14,
+          })}
+          {box({ border: '2px dashed #333', borderRadius: '20px 4px' })}
+          {box({
+            border: '3px dashed #333',
+            borderRadius: 4,
+            width: 10,
+            height: 6,
+          })}
+        </div>,
+        { width: 300, height: 150, fonts }
+      )
+      expect(await toImage(svg, 300)).toMatchImageSnapshot()
+    })
+
+    it('should repeat one pattern for the dashes of rounded borders', async () => {
+      // A long border of short dashes, with widths that aren't snapped.
+      const svg = await satori(
+        <div
+          style={{
+            width: 2000,
+            height: 2000,
+            border: '0.001px dashed red',
+            borderRadius: 40,
+          }}
+        />,
+        { width: 2000, height: 2000, fonts, pointScaleFactor: 0 }
+      )
+      const dasharrays = [...svg.matchAll(/stroke-dasharray="([^"]*)"/g)]
+      expect(dasharrays).toHaveLength(1)
+      expect(dasharrays[0][1].split(' ')).toHaveLength(2)
+    })
+
+    it('should support styles, widths and colors per side', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            padding: 6,
+            alignItems: 'flex-start',
+          }}
+        >
+          <div
+            style={{
+              width: 90,
+              height: 60,
+              borderWidth: 8,
+              borderStyle: 'solid dotted double dashed',
+              borderColor: 'red green blue orange',
+            }}
+          />
+          <div
+            style={{
+              width: 90,
+              height: 60,
+              borderWidth: 'thin medium thick 7px',
+              borderStyle: 'solid',
+              borderColor: 'black',
+            }}
+          />
+          <div
+            style={{
+              width: 90,
+              height: 60,
+              border: '6px groove gold',
+              borderRadius: 20,
+            }}
+          />
+        </div>,
+        { width: 340, height: 74, fonts }
+      )
+      expect(await toImage(svg, 340)).toMatchImageSnapshot()
+    })
+
+    it('should not draw or lay out borders without a style', async () => {
+      const svg = await satori(
+        <div style={{ display: 'flex', background: '#eee' }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderWidth: 10,
+              borderStyle: 'none',
+              background: 'teal',
+            }}
+          />
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              border: '10px hidden red',
+              background: 'pink',
+            }}
+          />
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              border: '10px solid red',
+              borderLeftStyle: 'none',
+              background: 'gold',
+            }}
+          />
+        </div>,
+        { width: 120, height: 40, fonts }
+      )
+      expect(await toImage(svg, 120)).toMatchImageSnapshot()
+    })
+
+    it('should throw for invalid styles', async () => {
+      await expect(
+        satori(<div style={{ border: '1px wavy red' }} />, {
+          width: 100,
+          height: 100,
+          fonts,
+        })
+      ).rejects.toThrowError('Invalid value')
+      await expect(
+        satori(<div style={{ borderStyle: 'solid wavy' }} />, {
+          width: 100,
+          height: 100,
+          fonts,
+        })
+      ).rejects.toThrowError('Invalid line style')
+    })
+  })
+
+  describe('initial values', () => {
+    it('should default to no style, a medium width and the current color', async () => {
+      const box = { width: 40, height: 40, background: '#eee' }
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            gap: 10,
+            padding: 10,
+            alignItems: 'flex-start',
+          }}
+        >
+          <div style={{ ...box, borderWidth: 4, borderColor: 'red' }} />
+          <div style={{ ...box, borderStyle: 'solid', borderColor: 'red' }} />
+          <div style={{ ...box, border: '2px red' }} />
+          <div style={{ ...box, color: 'blue', borderTop: 'solid' }} />
+          <hr style={{ width: 80 }} />
+        </div>,
+        { width: 400, height: 70, fonts }
+      )
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
   })
 
@@ -125,7 +373,7 @@ describe('Border', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support radius for a certain corner', async () => {
@@ -146,7 +394,7 @@ describe('Border', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should not exceed the length of the short side', async () => {
@@ -165,7 +413,7 @@ describe('Border', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support percentage border radius', async () => {
@@ -184,7 +432,7 @@ describe('Border', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support vw vh em and rem units', async () => {
@@ -212,7 +460,7 @@ describe('Border', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support slash and 2-value corner', async () => {
@@ -241,7 +489,7 @@ describe('Border', () => {
           fonts,
         }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -260,7 +508,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support non-complete border', async () => {
@@ -275,7 +523,7 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support advanced border with radius', async () => {
@@ -295,7 +543,100 @@ describe('Border', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should join sides with different colors diagonally', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 10,
+            padding: 5,
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderWidth: 12,
+              borderStyle: 'solid',
+              borderColor: 'red green blue orange',
+            }}
+          />
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderStyle: 'solid',
+              borderColor: 'red red blue blue',
+              borderWidth: '4px 12px 12px 4px',
+              borderRadius: 14,
+            }}
+          />
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderLeft: '14px solid purple',
+              borderTop: '6px solid orange',
+              borderBottom: '6px dashed orange',
+            }}
+          />
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderWidth: 10,
+              borderStyle: 'solid',
+              borderColor: 'transparent transparent black',
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
+    })
+  })
+
+  describe('width', () => {
+    it('should snap widths to device pixels', async () => {
+      const element = (
+        <div style={{ display: 'flex', gap: 10, padding: 10 }}>
+          {[0.3, 0.5, 1.5, 2.7, 3.9].map((width) => (
+            <div
+              key={width}
+              style={{
+                width: 20,
+                height: 20,
+                border: `${width}px solid black`,
+              }}
+            />
+          ))}
+          <div
+            style={{
+              width: 20,
+              height: 20,
+              outline: '1.6px solid red',
+              outlineOffset: 2,
+            }}
+          />
+        </div>
+      )
+      const svg = await satori(element, { width: 260, height: 50, fonts })
+      expect(await toImage(svg, 260)).toMatchImageSnapshot()
+
+      // With 2 device pixels per pixel, half pixels are kept.
+      const scaled = await satori(element, {
+        width: 260,
+        height: 50,
+        fonts,
+        pointScaleFactor: 2,
+      })
+      expect(await toImage(scaled, 520)).toMatchImageSnapshot()
     })
   })
 })

@@ -1,3 +1,4 @@
+import { Counters } from './list-marker.js'
 import type { ReactNode } from 'react'
 import type { TwConfig } from 'twrnc'
 import type { SatoriNode } from './layout.js'
@@ -7,13 +8,18 @@ import type { ProjectPlane } from './builder/transform.js'
 import layout from './layout.js'
 import FontLoader, { FontOptions } from './font.js'
 import svg from './builder/svg.js'
-import { getYoga, TYoga } from './yoga.js'
+import { getLayoutEngine } from './layout-engine/wasm.js'
+import { LayoutNode } from './layout-engine/index.js'
 import { detectLanguageCode, LangCode, Locale } from './language.js'
 import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
 import { cache, inflightRequests } from './handler/image.js'
 import { segment } from './utils.js'
 import { initHarfBuzz } from './harfbuzz.js'
+import {
+  sizeStaticPositionPlaceholders,
+  type FixedElement,
+} from './fixed-position.js'
 
 // We don't need to initialize the opentype instances every time.
 const fontCache = new WeakMap()
@@ -86,6 +92,17 @@ export type SatoriOptions = (
   ) => Promise<string | Array<FontOptions>>
   tailwindConfig?: TwConfig
   onNodeDetected?: (node: SatoriNode) => void
+  /**
+   * Called with the error of each invalid or unsupported style declaration,
+   * which is then ignored instead of failing the render.
+   */
+  onStyleError?: (error: Error) => void
+  /**
+   * Converts colors that SVG renderers may not support, like `oklch()`,
+   * `lab()` and `color-mix()`, to `rgb()` and `rgba()`. Set it to `false` to
+   * keep them as they are written. Defaults to `true`.
+   */
+  convertColors?: boolean
   pointScaleFactor?: number
 }
 export type { SatoriNode }
@@ -113,10 +130,11 @@ export async function render(
   { replacedElements, projectPlane }: RenderExtensions = {}
 ): Promise<string> {
   // Initialize the layout and shaping engines together.
-  const [Yoga] = await Promise.all([getYoga(), initHarfBuzz()])
-  if (!Yoga || !Yoga.Node) {
+  const [layoutEngine] = await Promise.all([getLayoutEngine(), initHarfBuzz()])
+  if (!layoutEngine) {
     throw new Error(
-      'Satori is not initialized: expect `yoga` to be loaded, got ' + Yoga
+      'Satori is not initialized: expect the layout engine to be loaded, got ' +
+        layoutEngine
     )
   }
 
@@ -127,15 +145,15 @@ export async function render(
   const definedWidth = 'width' in options ? options.width : undefined
   const definedHeight = 'height' in options ? options.height : undefined
 
-  const root = getRootNode(Yoga, options.pointScaleFactor)
-  if (definedWidth) root.setWidth(definedWidth)
-  if (definedHeight) root.setHeight(definedHeight)
-  root.setFlexDirection(Yoga.FLEX_DIRECTION_ROW)
-  root.setFlexWrap(Yoga.WRAP_WRAP)
-  root.setAlignContent(Yoga.ALIGN_AUTO)
-  root.setAlignItems(Yoga.ALIGN_FLEX_START)
-  root.setJustifyContent(Yoga.JUSTIFY_FLEX_START)
-  root.setOverflow(Yoga.OVERFLOW_HIDDEN)
+  // Like the initial containing block, the root element is laid out in a
+  // block formatting context.
+  const root = new LayoutNode({
+    display: 'flow-root',
+    width: definedWidth || 'auto',
+    height: definedHeight || 'auto',
+    overflowX: 'hidden',
+    overflowY: 'hidden',
+  })
 
   // Use a null-prototype object so that text matching Object.prototype property
   // names (e.g. "constructor", "toString") doesn't inherit truthy values from
@@ -162,6 +180,7 @@ export async function render(
   inflightRequests.clear()
   await preProcessNode(element)
 
+  const fixedElements: FixedElement[] = []
   const handler = layout(element, {
     id: 'id',
     parentStyle: {},
@@ -172,7 +191,6 @@ export async function render(
       fontStyle: 'normal',
       lineHeight: 'normal',
       color: 'black',
-      opacity: 1,
       whiteSpace: 'normal',
 
       // Special style properties:
@@ -186,8 +204,27 @@ export async function render(
     graphemeImages,
     canLoadAdditionalAssets: !!options.loadAdditionalAsset,
     onNodeDetected: options.onNodeDetected,
+    onStyleError: options.onStyleError,
+    convertColors: options.convertColors ?? true,
+    pointScaleFactor: options.pointScaleFactor,
     replacedElements,
     projectPlane,
+    // Fixed elements are positioned relative to the viewport by default.
+    fixedContainingBlock: { node: root, offset: { left: 0, top: 0 } },
+    counters: new Counters(),
+    // Sticky elements stick to the viewport by default.
+    parentBox: { node: root, offset: { left: 0, top: 0 } },
+    scrollport: { node: root, offset: { left: 0, top: 0 } },
+    // So are absolutely positioned ones without a positioned ancestor.
+    absoluteContainingBlock: { node: root, offset: { left: 0, top: 0 } },
+    fixedElements,
+    floats: { found: false },
+    formattingContext: 'root',
+    computeLayout: (node, { width }) =>
+      layoutEngine.computeLayout(node, {
+        width,
+        pointScaleFactor: options.pointScaleFactor,
+      }),
     getTwStyles: (tw, style) => {
       const twToStyles = getTw({
         width: definedWidth,
@@ -253,29 +290,23 @@ export async function render(
   }
 
   await handler.next()
-  root.calculateLayout(definedWidth, definedHeight, Yoga.DIRECTION_LTR)
+  const layoutOptions = {
+    width: definedWidth,
+    height: definedHeight,
+    pointScaleFactor: options.pointScaleFactor,
+  }
+  layoutEngine.computeLayout(root, layoutOptions)
+  // The static position of a fixed element depends on its size.
+  if (sizeStaticPositionPlaceholders(fixedElements)) {
+    layoutEngine.computeLayout(root, layoutOptions)
+  }
 
   const content = (await handler.next([0, 0])).value as string
 
-  const computedWidth = root.getComputedWidth()
-  const computedHeight = root.getComputedHeight()
-
-  root.freeRecursive()
+  const computedWidth = root.layout.width
+  const computedHeight = root.layout.height
 
   return svg({ width: computedWidth, height: computedHeight, content })
-}
-
-function getRootNode(
-  Yoga: TYoga,
-  pointScaleFactor?: SatoriOptions['pointScaleFactor']
-) {
-  if (!pointScaleFactor) {
-    return Yoga.Node.create()
-  } else {
-    const config = Yoga.Config.create()
-    config.setPointScaleFactor(pointScaleFactor)
-    return Yoga.Node.createWithConfig(config)
-  }
 }
 
 function convertToLanguageCodes(
