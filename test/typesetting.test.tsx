@@ -27,7 +27,7 @@ describe('typesetting', () => {
       }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should wrap normally for special characters', async () => {
@@ -50,6 +50,6 @@ describe('typesetting', () => {
       }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })

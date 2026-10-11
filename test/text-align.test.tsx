@@ -39,7 +39,7 @@ describe('Text Align', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly when `text-align: center`', async () => {
@@ -74,7 +74,7 @@ describe('Text Align', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly when `text-align: right`', async () => {
@@ -109,7 +109,7 @@ describe('Text Align', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly when `text-align: end`', async () => {
@@ -144,7 +144,7 @@ describe('Text Align', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
   it('Should work correctly when `text-align: justify`', async () => {
     const svg = await satori(
@@ -178,6 +178,6 @@ describe('Text Align', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 })

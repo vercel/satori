@@ -11,7 +11,6 @@ ignoredBuiltDependencies:
 
 patchedDependencies:
   harfbuzzjs@0.10.0: patches/harfbuzzjs@0.10.0.patch
-  yoga-layout@3.2.1: patches/yoga-layout@3.2.1.patch
 
 packages:
   - 'playground'

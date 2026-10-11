@@ -21,7 +21,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render text with negative letter-spacing', async () => {
@@ -36,7 +36,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render text with zero letter-spacing', async () => {
@@ -51,7 +51,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render text with large letter-spacing', async () => {
@@ -66,7 +66,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render text with very small letter-spacing', async () => {
@@ -81,7 +81,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with different font sizes', async () => {
@@ -98,7 +98,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with text-align left', async () => {
@@ -115,7 +115,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with text-align center', async () => {
@@ -132,7 +132,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with text-align right', async () => {
@@ -149,7 +149,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with wrapped text', async () => {
@@ -165,7 +165,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with text-decoration underline', async () => {
@@ -181,7 +181,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with text-decoration line-through', async () => {
@@ -197,7 +197,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with color', async () => {
@@ -214,7 +214,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with background-clip text', async () => {
@@ -232,7 +232,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with text-shadow', async () => {
@@ -248,7 +248,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with font-weight bold', async () => {
@@ -264,7 +264,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with opacity', async () => {
@@ -280,7 +280,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with multiple lines', async () => {
@@ -297,7 +297,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing on single character', async () => {
@@ -312,7 +312,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with mixed case text', async () => {
@@ -327,7 +327,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render letter-spacing with numbers', async () => {
@@ -342,7 +342,7 @@ describe('Letter Spacing', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should preserve letter-spacing across font fallbacks', async () => {
@@ -376,6 +376,6 @@ describe('Letter Spacing', () => {
       }
     )
 
-    expect(toImage(svg, 260)).toMatchImageSnapshot()
+    expect(await toImage(svg, 260)).toMatchImageSnapshot()
   })
 })

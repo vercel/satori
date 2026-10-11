@@ -20,7 +20,6 @@ export function container(
   style: Record<string, number | string>
 ) {
   let matrix = ''
-  let opacity = 1
 
   if (style.transform) {
     matrix = transform(
@@ -36,11 +35,30 @@ export function container(
     )
   }
 
-  if (style.opacity !== undefined) {
-    opacity = +style.opacity
-  }
+  return { matrix }
+}
 
-  return { matrix, opacity }
+/** The color glyphs are filled with. */
+export function getTextFillColor(style: Record<string, number | string>) {
+  return (style.WebkitTextFillColor ?? style.color) as string
+}
+
+/** Attributes for `-webkit-text-stroke` and `paint-order`. */
+export function getTextStrokeAttributes(
+  style: Record<string, number | string>
+) {
+  const width = style.WebkitTextStrokeWidth
+  if (!width) return {}
+  return {
+    'stroke-width': `${width}px`,
+    stroke: style.WebkitTextStrokeColor ?? style.color,
+    'stroke-linejoin': 'round',
+    // The stroke is painted above the fill by default.
+    'paint-order':
+      style.paintOrder && style.paintOrder !== 'normal'
+        ? style.paintOrder
+        : undefined,
+  }
 }
 
 export default function buildText(
@@ -53,7 +71,6 @@ export default function buildText(
     width,
     height,
     matrix,
-    opacity,
     image,
     clipPathId,
     debug,
@@ -68,7 +85,6 @@ export default function buildText(
     width: number
     height: number
     matrix: string
-    opacity: number
     image: string | null
     clipPathId?: string
     debug?: boolean
@@ -102,13 +118,9 @@ export default function buildText(
       height,
       transform: matrix || undefined,
       'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-      style: style.filter ? `filter:${style.filter}` : undefined,
     }
     const imageMarkup =
-      buildXMLString('image', {
-        ...shapeProps,
-        opacity: opacity !== 1 ? opacity : undefined,
-      }) + (decorationShape || '')
+      buildXMLString('image', shapeProps) + (decorationShape || '')
     return [
       (filter
         ? filter +
@@ -132,23 +144,14 @@ export default function buildText(
     'letter-spacing': style.letterSpacing || undefined,
     transform: matrix || undefined,
     'clip-path': clipPathId ? `url(#${clipPathId})` : undefined,
-    style: style.filter ? `filter:${style.filter}` : undefined,
-    'stroke-width': style.WebkitTextStrokeWidth
-      ? `${style.WebkitTextStrokeWidth}px`
-      : undefined,
-    stroke: style.WebkitTextStrokeWidth
-      ? style.WebkitTextStrokeColor
-      : undefined,
-    'stroke-linejoin': style.WebkitTextStrokeWidth ? 'round' : undefined,
-    'paint-order': style.WebkitTextStrokeWidth ? 'stroke' : undefined,
+    ...getTextStrokeAttributes(style),
   }
   const textMarkup =
     buildXMLString(
       'text',
       {
         ...shapeProps,
-        fill: style.color,
-        opacity: opacity !== 1 ? opacity : undefined,
+        fill: getTextFillColor(style),
       },
       escapeHTML(content)
     ) + (decorationShape || '')

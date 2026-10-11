@@ -561,7 +561,7 @@ const LiveSatori = withLive(function ({
                       <>
                         <style
                           dangerouslySetInnerHTML={{
-                            __html: `@import url('https://fonts.googleapis.com/css2?family=Material+Icons');@font-face{font-family:Geist;font-style:normal;font-weight:400;src:url('/geist-400-normal.ttf') format('truetype')}@font-face{font-family:Geist;font-style:normal;font-weight:700;src:url('/geist-700-normal.ttf') format('truetype')}body{display:flex;height:100%;margin:0;tab-size:8;font-family:Geist,sans-serif;overflow:hidden}body>div,body>div *{box-sizing:border-box;display:flex}`,
+                            __html: `@import url('https://fonts.googleapis.com/css2?family=Material+Icons');@font-face{font-family:Geist;font-style:normal;font-weight:400;src:url('/geist-400-normal.ttf') format('truetype')}@font-face{font-family:Geist;font-style:normal;font-weight:700;src:url('/geist-700-normal.ttf') format('truetype')}body{height:100%;margin:0;tab-size:8;font-family:Geist,sans-serif;overflow:hidden}`,
                           }}
                         />
                         {live?.element ? <live.element /> : null}

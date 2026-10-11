@@ -19,7 +19,7 @@ describe('Opacity', () => {
       />,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render element with opacity 0.5', async () => {
@@ -34,7 +34,7 @@ describe('Opacity', () => {
       />,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render element with opacity 1', async () => {
@@ -49,7 +49,7 @@ describe('Opacity', () => {
       />,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should apply opacity to text elements', async () => {
@@ -65,7 +65,7 @@ describe('Opacity', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should combine opacity with linear gradients', async () => {
@@ -80,7 +80,7 @@ describe('Opacity', () => {
       />,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should combine opacity with radial gradients', async () => {
@@ -95,7 +95,7 @@ describe('Opacity', () => {
       />,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should cascade opacity through nested elements', async () => {
@@ -111,7 +111,7 @@ describe('Opacity', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should combine multiple opacity values in nested elements', async () => {
@@ -128,7 +128,7 @@ describe('Opacity', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should apply opacity to elements with box-shadow', async () => {
@@ -145,7 +145,7 @@ describe('Opacity', () => {
       />,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should apply opacity to text with text-shadow', async () => {
@@ -162,7 +162,7 @@ describe('Opacity', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should apply opacity to elements with border', async () => {
@@ -178,7 +178,7 @@ describe('Opacity', () => {
       />,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should apply opacity to elements with border-radius', async () => {
@@ -194,7 +194,7 @@ describe('Opacity', () => {
       />,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should apply opacity with transform', async () => {
@@ -210,7 +210,7 @@ describe('Opacity', () => {
       />,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should handle opacity 0 with nested content', async () => {
@@ -235,7 +235,7 @@ describe('Opacity', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should apply opacity to flex container', async () => {
@@ -255,7 +255,7 @@ describe('Opacity', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should apply opacity to positioned elements', async () => {
@@ -282,7 +282,7 @@ describe('Opacity', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should combine opacity with background-clip text', async () => {
@@ -300,7 +300,7 @@ describe('Opacity', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should apply very low opacity', async () => {
@@ -315,7 +315,7 @@ describe('Opacity', () => {
       />,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should apply near-full opacity', async () => {
@@ -330,7 +330,7 @@ describe('Opacity', () => {
       />,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should apply opacity to multiple siblings', async () => {
@@ -370,7 +370,7 @@ describe('Opacity', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should apply opacity to overlapping elements', async () => {
@@ -408,6 +408,223 @@ describe('Opacity', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  describe('as a group', () => {
+    it('should not show overlapping children through each other', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            width: '100%',
+            height: '100%',
+            background: 'white',
+          }}
+        >
+          <div style={{ display: 'flex', padding: 10, opacity: 0.5 }}>
+            <div style={{ width: 50, height: 50, background: 'red' }} />
+            <div
+              style={{
+                width: 50,
+                height: 50,
+                marginLeft: -25,
+                marginTop: 25,
+                background: 'blue',
+              }}
+            />
+          </div>
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(svg).toMatch(/<g opacity="0.5">/)
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should include positioned and fixed descendants', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            width: '100%',
+            height: '100%',
+            background: 'white',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              width: 60,
+              height: 60,
+              background: 'blue',
+              opacity: 0.5,
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: 30,
+                top: 30,
+                width: 40,
+                height: 40,
+                background: 'red',
+                zIndex: 10,
+              }}
+            />
+            <div
+              style={{
+                position: 'fixed',
+                right: 0,
+                bottom: 0,
+                width: 30,
+                height: 30,
+                background: 'green',
+              }}
+            />
+          </div>
+          {/* Above the group, it's not affected by its opacity. */}
+          <div
+            style={{
+              position: 'absolute',
+              left: 50,
+              top: 0,
+              width: 30,
+              height: 30,
+              background: 'orange',
+              zIndex: 1,
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should hide positioned descendants with opacity 0', async () => {
+      const svg = await satori(
+        <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+          <div style={{ display: 'flex', opacity: 0 }}>
+            Hidden
+            <div
+              style={{
+                position: 'absolute',
+                width: 50,
+                height: 50,
+                background: 'red',
+                zIndex: 1,
+              }}
+            />
+          </div>
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(svg).not.toContain('<path')
+      expect(svg).not.toContain('red')
+    })
+
+    it('should draw leaf elements with their shadow as a group', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            width: '100%',
+            height: '100%',
+            background: 'white',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: 50,
+              height: 50,
+              background: 'blue',
+              boxShadow: '-15px -15px 0 red',
+              borderRadius: 8,
+              opacity: 0.5,
+            }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should draw text with decorations as a group', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            fontSize: 32,
+            color: 'black',
+            textDecoration: 'underline red',
+            opacity: 0.5,
+          }}
+        >
+          Hgy
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(svg).toContain('<g opacity="0.5">')
+      expect(svg).not.toContain('fill-opacity')
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should flatten preserve-3d elements', async () => {
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            width: '100%',
+            height: '100%',
+            background: 'white',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              width: 60,
+              height: 60,
+              background: 'blue',
+              transformStyle: 'preserve-3d',
+              opacity: 0.5,
+            }}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                background: 'red',
+                transform: 'translateZ(-10px)',
+              }}
+            />
+          </div>
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      // The child is drawn above its parent, as in a flat context.
+      expect(svg.indexOf('fill="red"')).toBeGreaterThan(
+        svg.indexOf('fill="blue"')
+      )
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
+    })
+
+    it('should clamp values', async () => {
+      const svg = await satori(
+        <div style={{ display: 'flex' }}>
+          <div
+            style={{ width: 10, height: 10, background: 'red', opacity: 2 }}
+          />
+          <div
+            style={{ width: 10, height: 10, background: 'blue', opacity: -1 }}
+          />
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+      expect(svg).toContain('fill="red"')
+      expect(svg).not.toContain('opacity')
+      expect(svg).not.toContain('blue')
+    })
   })
 })

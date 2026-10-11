@@ -1,5 +1,6 @@
 import { defineConfig } from 'tsup'
 import { join } from 'path'
+import { readFile } from 'fs/promises'
 import { replace } from 'esbuild-plugin-replace'
 
 const isStandaloneBuild = !!process.env.SATORI_STANDALONE
@@ -19,18 +20,28 @@ export default defineConfig({
   },
   minify: process.env.NODE_ENV !== 'development',
   format: ['esm', 'cjs'],
-  noExternal: ['twrnc', 'emoji-regex-xs', 'yoga-layout'],
+  noExternal: ['twrnc', 'emoji-regex-xs', 'harfbuzzjs'],
   esbuildOptions(options) {
     options.tsconfig = 'tsconfig.json'
     options.legalComments = 'external'
   },
   // Always replace this flag at build time. Leaving it unresolved in the
   // default build makes the browser bundle access the Node-only `process`
-  // global while selecting the Yoga loader.
+  // global while selecting the layout engine loader.
   env: {
     SATORI_STANDALONE: isStandaloneBuild ? '1' : '0',
   },
   esbuildPlugins: [
+    {
+      // The default build bundles `layout.wasm` as bytes.
+      name: 'wasm-binary',
+      setup(build) {
+        build.onLoad({ filter: /\.wasm$/ }, async (args) => ({
+          contents: await readFile(args.path),
+          loader: 'binary',
+        }))
+      },
+    },
     {
       name: 'optimize tailwind',
       setup(build) {

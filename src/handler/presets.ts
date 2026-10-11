@@ -3,13 +3,37 @@
  * default styles:
  * https://chromium.googlesource.com/chromium/blink/+/master/Source/core/css/html.css
  *
- * We try to only include commonly used, styling elements rather than semantic elements.
+ * Elements are inline by default, the initial value of `display`.
  */
 
-const DEFAULT_DISPLAY = 'flex'
+const DEFAULT_DISPLAY = 'block'
+
+const block = { display: DEFAULT_DISPLAY }
 
 export default {
   // Generic block-level elements
+  address: block,
+  article: block,
+  aside: block,
+  details: block,
+  dialog: block,
+  figcaption: block,
+  footer: block,
+  form: block,
+  header: block,
+  hgroup: block,
+  main: block,
+  nav: block,
+  search: block,
+  section: block,
+  summary: block,
+  figure: {
+    display: DEFAULT_DISPLAY,
+    marginTop: '1em',
+    marginBottom: '1em',
+    marginLeft: 40,
+    marginRight: 40,
+  },
   p: {
     display: DEFAULT_DISPLAY,
     marginTop: '1em',
@@ -31,13 +55,14 @@ export default {
   },
   hr: {
     display: DEFAULT_DISPLAY,
+    color: 'gray',
     marginTop: '0.5em',
     marginBottom: '0.5em',
     marginLeft: 'auto',
     marginRight: 'auto',
     borderWidth: 1,
-    // We don't have `inset`
-    borderStyle: 'solid',
+    borderStyle: 'inset',
+    overflow: 'hidden',
   },
   // Heading elements
   h1: {
@@ -94,7 +119,42 @@ export default {
     fontWeight: 'bold',
   },
   // Tables
-  // Lists
+  // Lists, see `getListPresets()` for their list styles
+  ul: {
+    display: DEFAULT_DISPLAY,
+    marginTop: '1em',
+    marginBottom: '1em',
+    paddingLeft: 40,
+  },
+  ol: {
+    display: DEFAULT_DISPLAY,
+    marginTop: '1em',
+    marginBottom: '1em',
+    paddingLeft: 40,
+  },
+  menu: {
+    display: DEFAULT_DISPLAY,
+    marginTop: '1em',
+    marginBottom: '1em',
+    paddingLeft: 40,
+  },
+  dir: {
+    display: DEFAULT_DISPLAY,
+    marginTop: '1em',
+    marginBottom: '1em',
+    paddingLeft: 40,
+  },
+  li: { display: 'list-item' },
+  dl: {
+    display: DEFAULT_DISPLAY,
+    marginTop: '1em',
+    marginBottom: '1em',
+  },
+  dt: block,
+  dd: {
+    display: DEFAULT_DISPLAY,
+    marginLeft: 40,
+  },
   // Form elements
   // Inline elements
   u: {

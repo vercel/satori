@@ -118,7 +118,7 @@ describe('SVG', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render svg attributes correctly', async () => {
@@ -148,7 +148,7 @@ describe('SVG', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render svg size correctly', async () => {
@@ -179,7 +179,7 @@ describe('SVG', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should parse viewBox correctly', async () => {
@@ -210,7 +210,7 @@ describe('SVG', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support em in svg size', async () => {
@@ -241,7 +241,7 @@ describe('SVG', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support currentColor for svg fill', async () => {
@@ -263,7 +263,7 @@ describe('SVG', () => {
       </svg>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support currentColor for svg stroke', async () => {
@@ -277,7 +277,7 @@ describe('SVG', () => {
       </svg>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support currentColor when color is set on parent element', async () => {
@@ -307,7 +307,7 @@ describe('SVG', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render svg prefer size props rather than viewBox', async () => {
@@ -330,7 +330,7 @@ describe('SVG', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support currentColor when used on svg nodes', async () => {
@@ -361,7 +361,7 @@ describe('SVG', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render svg without viewBox', async () => {
@@ -380,10 +380,9 @@ describe('SVG', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
-  // TODO wait for @resvg/resvg-js to support mask-type
   it('should respect style on svg node', async () => {
     const svg = await satori(
       <div
@@ -406,7 +405,7 @@ describe('SVG', () => {
       { width: 100, height: 100, fonts }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render fragments inside svg', async () => {
@@ -425,6 +424,6 @@ describe('SVG', () => {
       { width: 100, height: 100, fonts }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })

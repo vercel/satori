@@ -205,7 +205,7 @@ describe('Canvas', () => {
         createWebGLContext: fakeWebGLContext(),
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should use the width and height attributes as the drawing buffer size', async () => {
@@ -240,7 +240,7 @@ describe('Canvas', () => {
         createWebGLContext: fakeWebGLContext(),
       }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('should size the canvas like a replaced element', async () => {
@@ -278,7 +278,7 @@ describe('Canvas', () => {
         createWebGLContext: fakeWebGLContext(),
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should start every canvas from the default framebuffer and a full viewport', async () => {
@@ -327,7 +327,7 @@ describe('Canvas', () => {
         createWebGLContext: createSharedContext,
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should convert premultiplied alpha to straight alpha', async () => {
@@ -355,7 +355,7 @@ describe('Canvas', () => {
         createWebGLContext: fakeWebGLContext(),
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should treat contexts without alpha as opaque', async () => {
@@ -378,7 +378,7 @@ describe('Canvas', () => {
         createWebGLContext: fakeWebGLContext({ alpha: false }),
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should wait for async renderers', async () => {
@@ -407,7 +407,7 @@ describe('Canvas', () => {
         createWebGLContext: fakeWebGLContext(),
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should not render fallback children or hidden canvases', async () => {
@@ -439,7 +439,7 @@ describe('Canvas', () => {
         createWebGLContext: fakeWebGLContext(),
       }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should render a canvas without content as a box', async () => {
@@ -461,7 +461,7 @@ describe('Canvas', () => {
       </div>,
       { width: 100, height: 50, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should not render WebGL content from the root entry', async () => {
@@ -490,7 +490,7 @@ describe('Canvas', () => {
       </div>,
       { width: 100, height: 50, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })
 
@@ -642,7 +642,7 @@ describe('Canvas shaders', () => {
       />,
       { width: 100, height: 100, fonts, createWebGLContext }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should pass uniforms to shaders', async () => {
@@ -693,7 +693,7 @@ describe('Canvas shaders', () => {
       </div>,
       { width: 100, height: 50, fonts, createWebGLContext }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should sample textures', async () => {
@@ -726,7 +726,7 @@ describe('Canvas shaders', () => {
       />,
       { width: 80, height: 80, fonts, createWebGLContext }
     )
-    expect(toImage(svg, 80)).toMatchImageSnapshot()
+    expect(await toImage(svg, 80)).toMatchImageSnapshot()
   })
 
   it('should render multiple passes through a framebuffer', async () => {
@@ -782,7 +782,7 @@ describe('Canvas shaders', () => {
       />,
       { width: 100, height: 100, fonts, createWebGLContext }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should composite shader output with Satori content', async () => {
@@ -831,11 +831,14 @@ describe('Canvas shaders', () => {
             )
           }
         />
-        <div style={{ fontSize: 24, color: 'white' }}>Hello, shaders</div>
+        {/* Positioned, so it's drawn over the absolutely positioned canvas. */}
+        <div style={{ position: 'relative', fontSize: 24, color: 'white' }}>
+          Hello, shaders
+        </div>
       </div>,
       { width: 200, height: 100, fonts, createWebGLContext }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 })
 
@@ -876,7 +879,7 @@ describe('Default WebGL contexts', () => {
       />,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should give each canvas a fresh context', async () => {
@@ -914,7 +917,7 @@ describe('Default WebGL contexts', () => {
       </div>,
       { width: 100, height: 50, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should keep concurrent renders separate', async () => {
@@ -934,8 +937,8 @@ describe('Default WebGL contexts', () => {
       satori(card(RED, [1, 1, 1, 1]), { width: 50, height: 50, fonts }),
       satori(card(BLUE, [0, 0, 0, 1]), { width: 50, height: 50, fonts }),
     ])
-    expect(toImage(first, 50)).toMatchImageSnapshot()
-    expect(toImage(second, 50)).toMatchImageSnapshot()
+    expect(await toImage(first, 50)).toMatchImageSnapshot()
+    expect(await toImage(second, 50)).toMatchImageSnapshot()
   })
 
   it('should use OffscreenCanvas when available', async () => {
@@ -960,7 +963,7 @@ describe('Default WebGL contexts', () => {
         />,
         { width: 100, height: 50, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     } finally {
       globals.OffscreenCanvas = original
     }

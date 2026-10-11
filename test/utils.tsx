@@ -39,14 +39,48 @@ export function initFonts(callback: (fonts: SatoriOptions['fonts']) => void) {
   })
 }
 
-export function toImage(svg: string, width = 100) {
+/**
+ * Renders an SVG to a PNG of a width with Sharp, which draws SVG with librsvg.
+ *
+ * Text that isn't embedded, in `<text>` elements, is drawn with resvg and the
+ * fonts of the tests instead: Sharp finds fonts with CoreText on macOS and
+ * fontconfig on Linux, so the images would differ between platforms.
+ */
+export async function toImage(svg: string, width = 100) {
+  if (/<text[\s>]/.test(svg)) return toImageWithResvg(svg, width)
+
+  // librsvg only decodes embedded PNG, JPEG and SVG images, so other formats
+  // are transcoded to PNG.
+  const dataUris =
+    svg.match(/data:image\/(webp|gif|avif|tiff|heif);base64,[^"']+/g) || []
+  for (const dataUri of dataUris) {
+    const data = Buffer.from(dataUri.slice(dataUri.indexOf(',') + 1), 'base64')
+    const png = await Sharp(data).png().toBuffer()
+    svg = svg.replace(
+      dataUri,
+      `data:image/png;base64,${png.toString('base64')}`
+    )
+  }
+
+  // Rendered at the size of the image, instead of resizing it from 72 DPI.
+  // The height is rounded up, like with resvg.
+  const svgWidth = Number(/<svg[^>]*?\swidth="([\d.]+)"/.exec(svg)?.[1])
+  const svgHeight = Number(/<svg[^>]*?\sheight="([\d.]+)"/.exec(svg)?.[1])
+  const scale = svgWidth > 0 ? width / svgWidth : 1
+  return Sharp(Buffer.from(svg), { density: 72 * scale })
+    .resize({
+      width,
+      height: svgHeight > 0 ? Math.ceil(svgHeight * scale) : undefined,
+      fit: 'fill',
+    })
+    .png()
+    .toBuffer()
+}
+
+function toImageWithResvg(svg: string, width: number) {
   const resvg = new Resvg(svg, {
-    fitTo: {
-      mode: 'width',
-      value: width,
-    },
+    fitTo: { mode: 'width', value: width },
     font: {
-      // As system fallback font
       fontFiles: [
         join(process.cwd(), 'test', 'assets', 'playfair-display.ttf'),
       ],
@@ -54,24 +88,7 @@ export function toImage(svg: string, width = 100) {
       defaultFontFamily: 'Playfair Display',
     },
   })
-  const pngData = resvg.render()
-  return pngData.asPng()
-}
-
-export async function toImageWithSharp(svg: string, width = 100) {
-  const webpDataUris = svg.match(/data:image\/webp;base64,[^"']+/g) || []
-
-  for (const dataUri of webpDataUris) {
-    // Sharp's SVG decoder cannot decode embedded WebP, so transcode the payload.
-    const webp = Buffer.from(dataUri.slice(dataUri.indexOf(',') + 1), 'base64')
-    const png = await Sharp(webp).png().toBuffer()
-    svg = svg.replace(
-      dataUri,
-      `data:image/png;base64,${png.toString('base64')}`
-    )
-  }
-
-  return Sharp(Buffer.from(svg)).resize({ width }).png().toBuffer()
+  return resvg.render().asPng()
 }
 
 declare global {

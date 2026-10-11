@@ -21,7 +21,7 @@ describe('Shadow', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render box shadow with offset', async () => {
@@ -37,7 +37,7 @@ describe('Shadow', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render box shadow with offset and spread', async () => {
@@ -53,7 +53,7 @@ describe('Shadow', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should render multiple box shadows', async () => {
@@ -69,7 +69,7 @@ describe('Shadow', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support negative spread', async () => {
@@ -86,7 +86,7 @@ describe('Shadow', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support box shadow for transparent elements', async () => {
@@ -102,7 +102,7 @@ describe('Shadow', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support box shadow spread with transparency', async () => {
@@ -118,7 +118,7 @@ describe('Shadow', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support inset box shadows', async () => {
@@ -134,7 +134,7 @@ describe('Shadow', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should be affected by container opacity', async () => {
@@ -151,7 +151,7 @@ describe('Shadow', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should work correct with zero border radius', async () => {
@@ -167,7 +167,7 @@ describe('Shadow', () => {
         ></div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should show box shadow without specifying height', async () => {
@@ -192,7 +192,7 @@ describe('Shadow', () => {
         </div>,
         { width: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support multiple text shadows', async () => {
@@ -210,7 +210,7 @@ describe('Shadow', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support text shadows if exist unexpected comma', async () => {
@@ -230,7 +230,7 @@ describe('Shadow', () => {
         { width: 100, height: 100, fonts }
       )
 
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support text shadows with transparent text color', async () => {
@@ -249,7 +249,7 @@ describe('Shadow', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support text shadows with backgroundClip text', async () => {
@@ -269,7 +269,7 @@ describe('Shadow', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
     it('should support text shadows with backgroundClip and no background', async () => {
@@ -289,7 +289,7 @@ describe('Shadow', () => {
         </div>,
         { width: 100, height: 100, fonts }
       )
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 })

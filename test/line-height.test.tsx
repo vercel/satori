@@ -28,8 +28,8 @@ describe('line-height', () => {
       )
     )
 
-    svgs.forEach((svg) => {
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
-    })
+    for (const svg of svgs) {
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
+    }
   })
 })

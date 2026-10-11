@@ -9,7 +9,7 @@
  */
 
 import type { Box, Mat4, ProjectPlane } from '../builder/transform.js'
-import type { YogaNode } from '../yoga.js'
+import type { LayoutNode } from '../layout-engine/index.js'
 import { buildXMLString } from '../utils.js'
 
 // Maximum distance in px between a point's exact and approximate positions.
@@ -183,12 +183,11 @@ function tessellate(svg: string, m: Mat4, bounds: Box, id: string) {
  * The area an element and its descendants occupy before transforms, in
  * absolute coordinates.
  */
-function getSubtreeBounds(node: YogaNode, left: number, top: number) {
-  const { width, height } = node.getComputedLayout()
+function getSubtreeBounds(node: LayoutNode, left: number, top: number) {
+  const { width, height } = node.layout
   const bounds = { left, top, right: left + width, bottom: top + height }
-  for (let i = 0; i < node.getChildCount(); i++) {
-    const child = node.getChild(i)
-    const offset = child.getComputedLayout()
+  for (const child of node.children) {
+    const offset = child.layout
     const inner = getSubtreeBounds(child, left + offset.left, top + offset.top)
     bounds.left = Math.min(bounds.left, inner.left)
     bounds.top = Math.min(bounds.top, inner.top)

@@ -67,7 +67,7 @@ function resolveRadius(
 const radiusZeroOrNull = (_radius?: [number, number]) =>
   _radius && _radius[0] !== 0 && _radius[1] !== 0
 
-function resolveCornerShape(value: unknown) {
+export function resolveCornerShape(value: unknown) {
   if (typeof value !== 'string') return 1
   return parseCornerShapeValue(value)
 }
@@ -141,7 +141,8 @@ function shapedRadiusPath(
   height: number,
   radii: [number, number][],
   shapes: number[],
-  partialSides?: boolean[]
+  partialSides?: boolean[],
+  fullCorners = false
 ) {
   if (partialSides?.every(Boolean)) partialSides = undefined
 
@@ -184,21 +185,29 @@ function shapedRadiusPath(
     if (start === -1) throw new Error('Invalid `partialSides`.')
     while (partialSides[(start + 3) % 4]) start = (start + 3) % 4
 
+    // From the middle of the corner before the sides to the middle of the
+    // corner after them, or through the whole corners.
+    const middle = (corner: unknown[]) =>
+      fullCorners ? 0 : Math.floor(corner.length / 2)
     const firstCorner = corners[start]
-    const firstMiddle = Math.floor(firstCorner.length / 2)
+    const firstMiddle = middle(firstCorner)
     let path = `M${pointString(firstCorner[firstMiddle])}`
     let side = start
 
     do {
       const currentCorner = corners[side]
-      const currentMiddle = Math.floor(currentCorner.length / 2)
+      const currentMiddle = middle(currentCorner)
       for (let i = currentMiddle + 1; i < currentCorner.length; i++) {
         path += ` L${pointString(currentCorner[i])}`
       }
 
       const nextCorner = corners[(side + 1) % 4]
       path += ` L${pointString(nextCorner[0])}`
-      const nextMiddle = Math.floor(nextCorner.length / 2)
+      const isLast = !partialSides[(side + 1) % 4]
+      const nextMiddle =
+        fullCorners && isLast
+          ? nextCorner.length - 1
+          : Math.floor(nextCorner.length / 2)
       for (let i = 1; i <= nextMiddle; i++) {
         path += ` L${pointString(nextCorner[i])}`
       }
@@ -258,21 +267,22 @@ export function getBorderRadiusClipPath(
   return [defs, rectClipId]
 }
 
-export default function radius(
+/**
+ * Resolves the radii of the corners of a box, `[horizontal, vertical]` in px
+ * from the top left clockwise, reduced so they don't overlap. Returns
+ * `undefined` if no corner is rounded.
+ */
+export function resolveBorderRadii(
   {
-    left,
-    top,
     width,
     height,
   }: {
-    left: number
-    top: number
     width: number
     height: number
   },
   style: Record<string, any>,
-  partialSides?: boolean[]
-) {
+  keepSquare = false
+): [number, number][] | undefined {
   let {
     borderTopLeftRadius,
     borderTopRightRadius,
@@ -321,13 +331,13 @@ export default function radius(
   )
 
   if (
-    !partialSides &&
+    !keepSquare &&
     !radiusZeroOrNull(borderTopLeftRadius) &&
     !radiusZeroOrNull(borderTopRightRadius) &&
     !radiusZeroOrNull(borderBottomLeftRadius) &&
     !radiusZeroOrNull(borderBottomRightRadius)
   ) {
-    return ''
+    return undefined
   }
   borderTopLeftRadius ||= [0, 0]
   borderTopRightRadius ||= [0, 0]
@@ -404,6 +414,71 @@ export default function radius(
     }
   }
 
+  return [
+    borderTopLeftRadius,
+    borderTopRightRadius,
+    borderBottomRightRadius,
+    borderBottomLeftRadius,
+  ]
+}
+
+export default function radius(
+  {
+    left,
+    top,
+    width,
+    height,
+  }: {
+    left: number
+    top: number
+    width: number
+    height: number
+  },
+  style: Record<string, any>,
+  partialSides?: boolean[],
+  /** Whether partial sides include the whole corners at their ends. */
+  fullCorners = false,
+  /**
+   * Insets for the inner edge of a border, `[top, right, bottom, left]`.
+   * The radii are reduced by them.
+   */
+  inset?: number[]
+) {
+  const radii = resolveBorderRadii({ width, height }, style, !!partialSides)
+  if (!radii) return ''
+  let [
+    borderTopLeftRadius,
+    borderTopRightRadius,
+    borderBottomRightRadius,
+    borderBottomLeftRadius,
+  ] = radii
+  const cornerShapes = [
+    resolveCornerShape(style.cornerTopLeftShape),
+    resolveCornerShape(style.cornerTopRightShape),
+    resolveCornerShape(style.cornerBottomRightShape),
+    resolveCornerShape(style.cornerBottomLeftShape),
+  ]
+
+  if (inset) {
+    const [t, r, b, l] = inset
+    left += l
+    top += t
+    width = Math.max(0, width - l - r)
+    height = Math.max(0, height - t - b)
+    const reduce = (
+      corner: number[],
+      x: number,
+      y: number
+    ): [number, number] => [
+      Math.max(0, corner[0] - x),
+      Math.max(0, corner[1] - y),
+    ]
+    borderTopLeftRadius = reduce(borderTopLeftRadius, l, t)
+    borderTopRightRadius = reduce(borderTopRightRadius, r, t)
+    borderBottomRightRadius = reduce(borderBottomRightRadius, r, b)
+    borderBottomLeftRadius = reduce(borderBottomLeftRadius, l, b)
+  }
+
   if (cornerShapes.some((shape) => shape !== 1)) {
     return shapedRadiusPath(
       left,
@@ -417,7 +492,8 @@ export default function radius(
         borderBottomLeftRadius,
       ],
       cornerShapes,
-      partialSides
+      partialSides,
+      fullCorners
     )
   }
 
@@ -511,7 +587,16 @@ export default function radius(
 
     const arc0 = getArc(start)
 
-    let l = `M${arc0[0]} A${p[(start + 3) % 4][0]} 0 0 1 ${arc0[1]}`
+    // The start of the corner before the sides.
+    const cornerStart = [
+      [left, top + borderTopLeftRadius[1]],
+      [left + width - borderTopRightRadius[0], top],
+      [left + width, top + height - borderBottomRightRadius[1]],
+      [left + borderBottomLeftRadius[0], top + height],
+    ][start]
+    let l = `M${fullCorners ? cornerStart : arc0[0]} A${
+      p[(start + 3) % 4][0]
+    } 0 0 1 ${arc0[1]}`
 
     let len = 0
     for (; len < 4 && partialSides[(start + len) % 4]; len++) {
@@ -519,6 +604,8 @@ export default function radius(
       l = [T, R, B, L][(start + len) % 4]
     }
     const end = (start + len) % 4
+
+    if (fullCorners) return result + l
 
     // For the last segment, we skip the full arc and add the half arc.
     result += l.split(' ')[0]

@@ -1,0 +1,35 @@
+--- a/src/tree/taffy_tree.rs
++++ b/src/tree/taffy_tree.rs
+@@ -1,4 +1,11 @@
+ //! Contains [TaffyTree](crate::tree::TaffyTree): the default implementation of [LayoutTree](crate::tree::LayoutTree), and the error type for Taffy.
++#[cfg(feature = "calc")]
++#[link(wasm_import_module = "env")]
++extern "C" {
++    /// Resolves the `calc()` expression at `index` against `basis`, the size
++    /// that percentages are relative to.
++    fn resolve_calc(index: u32, basis: f32) -> f32;
++}
+ #[cfg(not(feature = "std"))]
+ use slotmap::SecondaryMap;
+ #[cfg(feature = "std")]
+@@ -384,8 +391,18 @@
+     }
+ 
+     #[inline(always)]
+-    fn resolve_calc_value(&self, _val: *const (), _basis: f32) -> f32 {
+-        0.0
++    #[allow(unsafe_code)]
++    fn resolve_calc_value(&self, val: *const (), basis: f32) -> f32 {
++        #[cfg(feature = "calc")]
++        {
++            // The value is the index of the expression, shifted past the tag.
++            unsafe { resolve_calc(((val as usize) >> 3) as u32 - 1, basis) }
++        }
++        #[cfg(not(feature = "calc"))]
++        {
++            let _ = (val, basis);
++            0.0
++        }
+     }
+ 
+     #[inline(always)]

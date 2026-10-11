@@ -1,0 +1,11 @@
+--- a/src/compute/block.rs
++++ b/src/compute/block.rs
+@@ -1268,6 +1268,8 @@
+                     })
+                     .map_height(|height| height.or(keyword_height))
+                     .maybe_clamp(item.min_size, item.max_size)
++                    // A box is never smaller than its padding and border
++                    .maybe_max(item.padding_border_sum)
+             };
+ 
+             //

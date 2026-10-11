@@ -1,0 +1,25 @@
+--- a/src/compute/flexbox.rs
++++ b/src/compute/flexbox.rs
+@@ -1329,7 +1329,21 @@
+                 if lines.len() > 1 {
+                     f32_max(size, main_axis_available_space)
+                 } else {
+-                    size
++                    // Like `fit-content`, fill the available space at most, but don't
++                    // get smaller than the minimum sizes of the items.
++                    let min_size: f32 = lines
++                        .first()
++                        .map(|line| {
++                            line.items
++                                .iter()
++                                .map(|child| child.resolved_minimum_main_size + child.margin.main_axis_sum(dir))
++                                .sum::<f32>()
++                                + sum_axis_gaps(main_axis_gap, line.items.len())
++                        })
++                        .unwrap_or(0.0)
++                        + main_content_box_inset;
++                    // The available space excludes padding and border.
++                    f32_max(f32_min(size, main_axis_available_space + main_content_box_inset), min_size)
+                 }
+             }
+             AvailableSpace::MinContent if constants.is_wrap => {

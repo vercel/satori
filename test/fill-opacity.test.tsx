@@ -21,7 +21,7 @@ describe('Opacity to fill-opacity optimization', () => {
     )
     expect(svg).toContain('fill-opacity="0.5"')
     expect(svg).not.toContain('<g opacity=')
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should keep group opacity when the element has a border', async () => {
@@ -39,7 +39,7 @@ describe('Opacity to fill-opacity optimization', () => {
     )
     expect(svg).toContain('<g opacity="0.5">')
     expect(svg).not.toContain('fill-opacity')
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should keep group opacity when the element has a box shadow', async () => {
@@ -56,7 +56,7 @@ describe('Opacity to fill-opacity optimization', () => {
       { width: 100, height: 100, fonts }
     )
     expect(svg).toContain('<g opacity="0.5">')
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should keep group opacity when the element has multiple backgrounds', async () => {
@@ -73,7 +73,7 @@ describe('Opacity to fill-opacity optimization', () => {
       { width: 100, height: 100, fonts }
     )
     expect(svg).toContain('<g opacity="0.5">')
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should use fill-opacity for text without stroke or filter', async () => {
@@ -90,10 +90,10 @@ describe('Opacity to fill-opacity optimization', () => {
       { width: 200, height: 100, fonts }
     )
     expect(svg).toContain('fill-opacity="0.5"')
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
-  it('should render nested opacity multiplicatively', async () => {
+  it('should render nested opacity as nested groups', async () => {
     const svg = await satori(
       <div
         style={{
@@ -114,7 +114,9 @@ describe('Opacity to fill-opacity optimization', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(svg).toContain('fill-opacity="0.25"')
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    // The child is a single shape, so it uses `fill-opacity` in the group.
+    expect(svg).toContain('<g opacity="0.5">')
+    expect(svg).toContain('fill-opacity="0.5"')
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })

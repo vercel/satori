@@ -29,7 +29,7 @@ describe('Font', () => {
       height: 100,
       fonts: [],
     })
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should use correct fonts', async () => {
@@ -67,7 +67,7 @@ describe('Font', () => {
       }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   describe('font-size', () => {
@@ -77,7 +77,7 @@ describe('Font', () => {
         height: 100,
         fonts,
       })
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
 
@@ -109,7 +109,7 @@ describe('Font', () => {
       }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should handle font-size correctly for element like heading', async () => {
@@ -142,9 +142,9 @@ describe('Font', () => {
       )
     )
 
-    svgs.forEach((svg) => {
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
-    })
+    for (const svg of svgs) {
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
+    }
   })
 
   it('should handle escape html when embedFont is false', async () => {
@@ -164,6 +164,6 @@ describe('Font', () => {
       }
     )
 
-    expect(toImage(svg)).toMatchImageSnapshot()
+    expect(await toImage(svg)).toMatchImageSnapshot()
   })
 })

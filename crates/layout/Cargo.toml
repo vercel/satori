@@ -1,0 +1,21 @@
+[package]
+name = "satori-layout"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "Taffy layout for Satori, compiled to WebAssembly."
+license = "MPL-2.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Taffy with the patches in `patches`, see `scripts/build-layout-wasm.mjs`.
+taffy = { path = "target/taffy", default-features = false, features = ["std", "taffy_tree", "flexbox", "grid", "block_layout", "float_layout", "calc"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

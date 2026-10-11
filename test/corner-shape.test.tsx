@@ -117,7 +117,7 @@ describe('corner-shape', () => {
       { width: 100, height: 100, fonts: [] }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('applies shaped corners to fills and directional borders', async () => {
@@ -140,7 +140,7 @@ describe('corner-shape', () => {
       { width: 100, height: 100, fonts: [] }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('renders a uniform border around a shaped contour', async () => {
@@ -157,7 +157,7 @@ describe('corner-shape', () => {
       { width: 100, height: 100, fonts: [] }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('compares the corner shape values', async () => {
@@ -298,6 +298,6 @@ describe('corner-shape', () => {
       { width: 1200, height: 630, fonts: comparisonFonts, pointScaleFactor: 2 }
     )
 
-    expect(toImage(svg, 1200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 1200)).toMatchImageSnapshot()
   })
 })

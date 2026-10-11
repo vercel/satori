@@ -2,7 +2,7 @@ import { it, describe, expect, beforeAll } from 'vitest'
 import { readFile } from 'node:fs/promises'
 import { join } from 'path'
 
-import { toImageWithSharp } from './utils.js'
+import { toImage } from './utils.js'
 import satori from '../src/index.js'
 
 describe('HarfBuzz Shaping', () => {
@@ -161,7 +161,7 @@ describe('HarfBuzz Shaping', () => {
         { width: 700, height: 140, fonts: latinCjkFonts, embedFont: true }
       )
 
-      expect(await toImageWithSharp(svg, 700)).toMatchImageSnapshot()
+      expect(await toImage(svg, 700)).toMatchImageSnapshot()
     })
 
     it('should position combining marks over Latin glyphs', async () => {
@@ -186,7 +186,7 @@ describe('HarfBuzz Shaping', () => {
         { width: 280, height: 180, fonts: latinCjkFonts, embedFont: true }
       )
 
-      expect(await toImageWithSharp(svg, 280)).toMatchImageSnapshot()
+      expect(await toImage(svg, 280)).toMatchImageSnapshot()
     })
 
     it('should apply proportional alternates to Japanese glyphs', async () => {
@@ -209,7 +209,7 @@ describe('HarfBuzz Shaping', () => {
         { width: 420, height: 170, fonts: latinCjkFonts, embedFont: true }
       )
 
-      expect(await toImageWithSharp(svg, 420)).toMatchImageSnapshot()
+      expect(await toImage(svg, 420)).toMatchImageSnapshot()
     })
 
     it('should compose decomposed Hangul Jamo into syllable glyphs', async () => {
@@ -232,7 +232,7 @@ describe('HarfBuzz Shaping', () => {
         { width: 360, height: 120, fonts: latinCjkFonts, embedFont: true }
       )
 
-      expect(await toImageWithSharp(svg, 360)).toMatchImageSnapshot()
+      expect(await toImage(svg, 360)).toMatchImageSnapshot()
     })
 
     it('should preserve shaping across English and CJK font fallbacks', async () => {
@@ -257,7 +257,7 @@ describe('HarfBuzz Shaping', () => {
         { width: 560, height: 190, fonts: latinCjkFonts, embedFont: true }
       )
 
-      expect(await toImageWithSharp(svg, 560)).toMatchImageSnapshot()
+      expect(await toImage(svg, 560)).toMatchImageSnapshot()
     })
 
     it('showcases HarfBuzz shaping features', async () => {
@@ -638,7 +638,7 @@ describe('HarfBuzz Shaping', () => {
         }
       )
 
-      expect(await toImageWithSharp(svg, 1200)).toMatchImageSnapshot()
+      expect(await toImage(svg, 1200)).toMatchImageSnapshot()
     })
   })
 
@@ -661,7 +661,7 @@ describe('HarfBuzz Shaping', () => {
         </div>,
         { width: 400, height: 150, fonts: arabicFonts, embedFont: true }
       )
-      expect(await toImageWithSharp(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
 
     it('should shape Arabic greeting with connected letters', async () => {
@@ -682,7 +682,7 @@ describe('HarfBuzz Shaping', () => {
         </div>,
         { width: 400, height: 150, fonts: arabicFonts, embedFont: true }
       )
-      expect(await toImageWithSharp(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
 
     it('should handle Arabic text without explicit direction', async () => {
@@ -703,7 +703,7 @@ describe('HarfBuzz Shaping', () => {
         </div>,
         { width: 400, height: 150, fonts: arabicFonts, embedFont: true }
       )
-      expect(await toImageWithSharp(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
   })
 
@@ -725,7 +725,7 @@ describe('HarfBuzz Shaping', () => {
         </div>,
         { width: 400, height: 150, fonts: hebrewFonts, embedFont: true }
       )
-      expect(await toImageWithSharp(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
   })
 
@@ -748,7 +748,7 @@ describe('HarfBuzz Shaping', () => {
         </div>,
         { width: 600, height: 150, fonts: arabicFonts, embedFont: true }
       )
-      expect(await toImageWithSharp(svg, 600)).toMatchImageSnapshot()
+      expect(await toImage(svg, 600)).toMatchImageSnapshot()
     })
 
     it('should handle multiple spaces correctly', async () => {
@@ -768,7 +768,7 @@ describe('HarfBuzz Shaping', () => {
         </div>,
         { width: 400, height: 150, fonts: arabicFonts, embedFont: true }
       )
-      expect(await toImageWithSharp(svg, 400)).toMatchImageSnapshot()
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
   })
 
@@ -790,7 +790,7 @@ describe('HarfBuzz Shaping', () => {
         </div>,
         { width: 500, height: 150, fonts: mixedFonts, embedFont: true }
       )
-      expect(await toImageWithSharp(svg, 500)).toMatchImageSnapshot()
+      expect(await toImage(svg, 500)).toMatchImageSnapshot()
     })
 
     it('should shape Arabic correctly in LTR context', async () => {
@@ -811,7 +811,7 @@ describe('HarfBuzz Shaping', () => {
         </div>,
         { width: 500, height: 150, fonts: mixedFonts, embedFont: true }
       )
-      expect(await toImageWithSharp(svg, 500)).toMatchImageSnapshot()
+      expect(await toImage(svg, 500)).toMatchImageSnapshot()
     })
 
     it('should have correct spacing at script boundaries', async () => {
@@ -832,7 +832,7 @@ describe('HarfBuzz Shaping', () => {
         </div>,
         { width: 300, height: 150, fonts: mixedFonts, embedFont: true }
       )
-      expect(await toImageWithSharp(svg, 300)).toMatchImageSnapshot()
+      expect(await toImage(svg, 300)).toMatchImageSnapshot()
     })
   })
 })

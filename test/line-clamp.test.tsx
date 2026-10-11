@@ -71,7 +71,7 @@ describe('Line Clamp', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should replace custom block ellipsis with default ellipsis when too long', async () => {
@@ -102,7 +102,7 @@ describe('Line Clamp', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should not work when display is not set to block', async () => {
@@ -120,6 +120,7 @@ describe('Line Clamp', () => {
       >
         <div
           style={{
+            display: 'flex',
             width: '100%',
             lineClamp: 2,
           }}
@@ -132,7 +133,7 @@ describe('Line Clamp', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
 
   it('Should work correctly when `text-align: center`', async () => {
@@ -164,6 +165,78 @@ describe('Line Clamp', () => {
       </div>,
       { width: 200, height: 200, fonts, embedFont: true }
     )
-    expect(toImage(svg, 200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
+  })
+
+  it('should clamp the lines of vertical -webkit-box elements like browsers', async () => {
+    const text =
+      'This paragraph is clamped to two lines with an ellipsis at the end, no matter how much more text follows it.'
+    const clamp = {
+      display: '-webkit-box',
+      WebkitBoxOrient: 'vertical',
+      overflow: 'hidden',
+    } as const
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+          padding: 8,
+          width: '100%',
+          height: '100%',
+          background: '#fff',
+          fontSize: 14,
+        }}
+      >
+        <div style={{ ...clamp, WebkitLineClamp: 2, background: '#eef' }}>
+          {text}
+        </div>
+        <div
+          style={{
+            ...clamp,
+            WebkitLineClamp: 2,
+            width: 200,
+            background: '#fee',
+          }}
+        >
+          {text}
+        </div>
+        <div
+          style={{
+            ...clamp,
+            WebkitLineClamp: 2,
+            width: 220,
+            textAlign: 'center',
+            background: '#eff',
+          }}
+        >
+          {text}
+        </div>
+        <div
+          style={{
+            ...clamp,
+            WebkitLineClamp: 1,
+            width: 196,
+            background: '#fef',
+          }}
+        >
+          This paragraph is clamped xxxxxxxx yy
+        </div>
+        {/* Horizontal boxes are laid out like flex, and aren't clamped. */}
+        <div
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 1,
+            width: 220,
+            background: '#efe',
+          }}
+        >
+          {text}
+        </div>
+      </div>,
+      { width: 300, height: 260, fonts }
+    )
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
 })

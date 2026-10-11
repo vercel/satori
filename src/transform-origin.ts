@@ -26,6 +26,8 @@ interface ParsedUnit {
 }
 
 function parseUnit(word: string, baseFontSize: number): ParsedUnit {
+  // Zero doesn't need a unit.
+  if (/^[+-]?0*\.?0+$/.test(word)) return { absolute: 0 }
   try {
     const parsed = new CssDimension(word)
     switch (parsed.unit) {
@@ -63,11 +65,11 @@ function handleWord(
       return {}
     default: {
       const parsedUnit = parseUnit(word, baseFontSize)
-      return parsedUnit.absolute
+      return parsedUnit.absolute !== undefined
         ? {
             [unitIsHorizontal ? 'xAbsolute' : 'yAbsolute']: parsedUnit.absolute,
           }
-        : parsedUnit.relative
+        : parsedUnit.relative !== undefined
         ? {
             [unitIsHorizontal ? 'xRelative' : 'yRelative']: parsedUnit.relative,
           }

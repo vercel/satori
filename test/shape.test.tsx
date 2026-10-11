@@ -204,6 +204,6 @@ describe('shape()', () => {
       { width: 1200, height: 630, fonts: comparisonFonts, pointScaleFactor: 2 }
     )
 
-    expect(toImage(svg, 1200)).toMatchImageSnapshot()
+    expect(await toImage(svg, 1200)).toMatchImageSnapshot()
   })
 })

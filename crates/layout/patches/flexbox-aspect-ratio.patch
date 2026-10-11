@@ -1,0 +1,94 @@
+--- a/src/compute/flexbox.rs
++++ b/src/compute/flexbox.rs
+@@ -41,6 +41,8 @@
+     max_size: Size<Option<f32>>,
+     /// The aspect ratio of this item
+     aspect_ratio: Option<f32>,
++    /// The padding and border of a `content-box` item, which the aspect ratio doesn't apply to
++    box_sizing_adjustment: Size<f32>,
+     /// The cross-alignment of this item
+     align_self: AlignSelf,
+ 
+@@ -110,6 +112,22 @@
+ }
+ 
+ impl FlexItem {
++    /// Transfers an outer cross size through the aspect ratio to an outer main size
++    fn transfer_cross_size(&self, cross: Option<f32>, dir: FlexDirection) -> Option<f32> {
++        let ratio = self.aspect_ratio?;
++        let cross = cross? - self.box_sizing_adjustment.cross(dir);
++        let main = if dir.is_row() { cross * ratio } else { cross / ratio };
++        Some(main + self.box_sizing_adjustment.main(dir))
++    }
++
++    /// Transfers an outer main size through the aspect ratio to an outer cross size
++    fn transfer_main_size(&self, main: f32, dir: FlexDirection) -> Option<f32> {
++        let ratio = self.aspect_ratio?;
++        let main = main - self.box_sizing_adjustment.main(dir);
++        let cross = if dir.is_row() { main / ratio } else { main * ratio };
++        Some(cross + self.box_sizing_adjustment.cross(dir))
++    }
++
+     /// Returns true if the item is a <https://www.w3.org/TR/css-overflow-3/#scroll-container>
+     fn is_scroll_container(&self) -> bool {
+         self.overflow.x.is_scroll_container() | self.overflow.y.is_scroll_container()
+@@ -692,6 +710,7 @@
+                     .maybe_resolve(percent_resolution_size, |val, basis| tree.calc(val, basis))
+                     .maybe_add(box_sizing_adjustment),
+                 aspect_ratio,
++                box_sizing_adjustment,
+ 
+                 inset: child_style
+                     .inset()
+@@ -1048,7 +1067,29 @@
+                     dir.main_axis(),
+                     Line::FALSE,
+                 )
++            };
++
++            // The min-content size of a box with an aspect ratio and a definite cross size is at
++            // least that size transferred through the ratio. An automatic cross size is only
++            // definite when it's stretched, not when it's transferred from the main size
++            // https://drafts.csswg.org/css-sizing-4/#aspect-ratio-minimum
++            let definite_cross = if child.size_style.cross(dir).is_auto() {
++                let is_stretched = child.align_self == AlignSelf::STRETCH
++                    && !child.margin_is_auto.cross_start(dir)
++                    && !child.margin_is_auto.cross_end(dir)
++                    && !constants.is_wrap
++                    && constants.has_definite_cross_size
++                    && cross_axis_parent_size.is_some();
++                if is_stretched {
++                    cross_axis_available_space.into_option().maybe_sub(child.margin.cross_axis_sum(dir))
++                } else {
++                    None
++                }
++            } else {
++                child_known_dimensions.cross(dir)
+             };
++            let min_content_main_size =
++                min_content_main_size.maybe_max(child.transfer_cross_size(definite_cross, dir));
+ 
+             // 4.5. Automatic Minimum Size of Flex Items
+             // https://www.w3.org/TR/css-flexbox-1/#min-size-auto
+@@ -1795,11 +1836,16 @@
+         let transferred_min_cross = child.min_size.maybe_apply_aspect_ratio(child.aspect_ratio).cross(constants.dir);
+         let transferred_max_cross = child.max_size.maybe_apply_aspect_ratio(child.aspect_ratio).cross(constants.dir);
+ 
+-        let child_cross = child
+-            .size
+-            .cross(constants.dir)
+-            .maybe_clamp(transferred_min_cross, transferred_max_cross)
+-            .maybe_max(padding_border_sum);
++        // With an aspect ratio and an automatic cross size, the cross size is transferred from
++        // the main size after flexing, not from the main size property
++        // https://drafts.csswg.org/css-flexbox-1/#algo-cross-item
++        let child_cross = if child.aspect_ratio.is_some() && child.size_style.cross(constants.dir).is_auto() {
++            child.transfer_main_size(child.target_size.main(constants.dir), constants.dir)
++        } else {
++            child.size.cross(constants.dir)
++        }
++        .maybe_clamp(transferred_min_cross, transferred_max_cross)
++        .maybe_max(padding_border_sum);
+ 
+         let child_available_cross = available_space
+             .cross(constants.dir)

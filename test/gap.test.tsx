@@ -41,7 +41,7 @@ describe('flex gap', () => {
       </div>,
       { width: 100, height: 100, fonts: [] }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support rowGap and columnGap', async () => {
@@ -70,7 +70,7 @@ describe('flex gap', () => {
       </div>,
       { width: 100, height: 100, fonts: [] }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support percentage values as gap', async () => {
@@ -98,6 +98,6 @@ describe('flex gap', () => {
       </div>,
       { width: 100, height: 100, fonts: [] }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })

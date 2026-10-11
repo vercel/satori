@@ -44,7 +44,7 @@ describe('tab-size', () => {
       }
     )
 
-    expect(toImage(svg, 150)).toMatchImageSnapshot()
+    expect(await toImage(svg, 150)).toMatchImageSnapshot()
   })
 
   it("Tabs render correctly with default tab-size of 8 when white-space is 'pre'", async () => {
@@ -85,7 +85,7 @@ describe('tab-size', () => {
       }
     )
 
-    expect(toImage(svg, 150)).toMatchImageSnapshot()
+    expect(await toImage(svg, 150)).toMatchImageSnapshot()
   })
 
   it('Tabs render correctly when tab-size is a number', async () => {
@@ -127,7 +127,7 @@ describe('tab-size', () => {
       }
     )
 
-    expect(toImage(svg, 150)).toMatchImageSnapshot()
+    expect(await toImage(svg, 150)).toMatchImageSnapshot()
   })
 
   it('Tabs render correctly when tab-size is a string', async () => {
@@ -169,7 +169,7 @@ describe('tab-size', () => {
       }
     )
 
-    expect(toImage(svg, 150)).toMatchImageSnapshot()
+    expect(await toImage(svg, 150)).toMatchImageSnapshot()
   })
 
   it("Tabs render correctly with default tab-size of 8 when white-space is 'pre-wrap'", async () => {
@@ -210,6 +210,49 @@ describe('tab-size', () => {
       }
     )
 
-    expect(toImage(svg, 150)).toMatchImageSnapshot()
+    expect(await toImage(svg, 150)).toMatchImageSnapshot()
+  })
+
+  it('should move tabs to the next tab stop of their line', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+          padding: 8,
+          width: '100%',
+          height: '100%',
+          background: '#fff',
+          fontSize: 14,
+        }}
+      >
+        <div style={{ whiteSpace: 'pre', tabSize: 4, background: '#eee' }}>
+          {'a\tb\n\tc\nabcde\tf\nab\t\tg'}
+        </div>
+        <div style={{ whiteSpace: 'pre', background: '#eef' }}>
+          {'x\ty\n\tz'}
+        </div>
+        <div style={{ whiteSpace: 'pre', tabSize: 4, background: '#efe' }}>
+          x <span style={{ color: 'red' }}>{'\ty'}</span>
+          <b>{'\tz'}</b>
+        </div>
+        <div style={{ whiteSpace: 'pre', tabSize: '40px', background: '#fee' }}>
+          {'a\tb\tcdefgh\ti'}
+        </div>
+        <div
+          style={{
+            whiteSpace: 'pre-wrap',
+            tabSize: 4,
+            width: 120,
+            background: '#ffe',
+          }}
+        >
+          {'one two three\tfour\tfive'}
+        </div>
+      </div>,
+      { width: 240, height: 230, fonts }
+    )
+    expect(await toImage(svg, 240)).toMatchImageSnapshot()
   })
 })

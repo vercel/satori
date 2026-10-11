@@ -28,7 +28,7 @@ describe('text-wrap', () => {
       }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should wrap balancedly with text-wrap: balance', async () => {
@@ -52,6 +52,6 @@ describe('text-wrap', () => {
       }
     )
 
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 })

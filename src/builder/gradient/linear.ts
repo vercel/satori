@@ -1,5 +1,9 @@
 import { parseLinearGradient, ColorStop } from 'css-gradient-parser'
-import { normalizeStops } from './utils.js'
+import {
+  expandColorStops,
+  extractInterpolationMethod,
+  normalizeStops,
+} from './utils.js'
 import { buildXMLString, calcDegree, lengthToNumber } from '../../utils.js'
 
 export function buildLinearGradient(
@@ -7,14 +11,13 @@ export function buildLinearGradient(
     id,
     width,
     height,
-    repeatX,
-    repeatY,
+    tiles,
   }: {
     id: string
     width: number
     height: number
-    repeatX: boolean
-    repeatY: boolean
+    /** The distance between repeated images. */
+    tiles: [number, number]
   },
   image: string,
   dimensions: number[],
@@ -22,7 +25,8 @@ export function buildLinearGradient(
   inheritableStyle: Record<string, number | string>,
   from?: 'background' | 'mask'
 ) {
-  const parsed = parseLinearGradient(image)
+  const [gradient, method] = extractInterpolationMethod(image)
+  const parsed = parseLinearGradient(expandColorStops(gradient))
   const [imageWidth, imageHeight] = dimensions
   const repeating = image.startsWith('repeating')
 
@@ -60,7 +64,8 @@ export function buildLinearGradient(
     parsed.stops,
     inheritableStyle,
     repeating,
-    from
+    from,
+    method
   )
 
   const gradientId = `satori_bi${id}`
@@ -72,8 +77,8 @@ export function buildLinearGradient(
       id: patternId,
       x: offsets[0] / width,
       y: offsets[1] / height,
-      width: repeatX ? imageWidth / width : '1',
-      height: repeatY ? imageHeight / height : '1',
+      width: tiles[0] / width,
+      height: tiles[1] / height,
       patternUnits: 'objectBoundingBox',
     },
     buildXMLString(

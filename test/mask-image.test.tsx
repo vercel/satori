@@ -94,9 +94,9 @@ describe('Mask-*', () => {
       )
     )
 
-    svgs.forEach((svg) => {
-      expect(toImage(svg, 100)).toMatchImageSnapshot()
-    })
+    for (const svg of svgs) {
+      expect(await toImage(svg, 100)).toMatchImageSnapshot()
+    }
   })
   it('should support mask-image on img', async () => {
     const svg = await satori(
@@ -118,7 +118,7 @@ describe('Mask-*', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
   it('should support mask-size', async () => {
     const svg = await satori(
@@ -134,7 +134,7 @@ describe('Mask-*', () => {
       ></div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
   it('should support mask-position', async () => {
     const svg = await satori(
@@ -151,7 +151,7 @@ describe('Mask-*', () => {
       ></div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
   it('should support mask-repeat', async () => {
     const svg = await satori(
@@ -168,7 +168,7 @@ describe('Mask-*', () => {
       ></div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support mask-image on text', async () => {
@@ -187,7 +187,7 @@ describe('Mask-*', () => {
       </div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support multiple mask-image', async () => {
@@ -207,7 +207,7 @@ describe('Mask-*', () => {
       ></div>,
       { width: 100, height: 100, fonts }
     )
-    expect(toImage(svg, 100)).toMatchImageSnapshot()
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
   it('should support mask-image on positioned elements', async () => {
@@ -236,6 +236,6 @@ describe('Mask-*', () => {
       </div>,
       { width: 120, height: 120, fonts }
     )
-    expect(toImage(svg, 120)).toMatchImageSnapshot()
+    expect(await toImage(svg, 120)).toMatchImageSnapshot()
   })
 })
