@@ -1,4 +1,5 @@
 import { SerializedStyle } from './expand.js'
+import { getLonghands } from './shorthands.js'
 
 const list = new Set([
   'color',
@@ -63,13 +64,9 @@ const list = new Set([
  */
 export function isInherited(prop: string) {
   if (prop === 'transform') return false
-  for (const inherited of list) {
-    if (
-      inherited === prop ||
-      (inherited.startsWith(prop) && /[A-Z]/.test(inherited[prop.length]))
-    ) {
-      return true
-    }
+  if (list.has(prop)) return true
+  for (const longhand of getLonghands(prop)) {
+    if (list.has(longhand)) return true
   }
   return false
 }

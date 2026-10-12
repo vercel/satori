@@ -314,6 +314,58 @@ describe('stylesheets', () => {
     )
   })
 
+  it('should only reset the longhands of shorthands with CSS-wide keywords', async () => {
+    await expectSame(
+      `.f { display: flex; flex-direction: column; flex-wrap: wrap; flex: initial }
+      .b {
+        border-radius: 8px;
+        background-color: red;
+        padding: 4px;
+        border: 2px solid blue;
+        border: initial;
+      }
+      .o {
+        outline-offset: 4px;
+        outline: initial;
+        outline-style: solid;
+        outline-width: 2px;
+        outline-color: red;
+      }`,
+      <>
+        <div className='f'>
+          <span>1</span>
+          <span>2</span>
+        </div>
+        <div className='b'>Border</div>
+        <div className='o' style={{ margin: 8 }}>
+          Outline
+        </div>
+      </>,
+      <>
+        <div
+          style={{ display: 'flex', flexDirection: 'column', flexWrap: 'wrap' }}
+        >
+          <span>1</span>
+          <span>2</span>
+        </div>
+        <div style={{ borderRadius: 8, backgroundColor: 'red', padding: 4 }}>
+          Border
+        </div>
+        <div
+          style={{
+            outlineOffset: 4,
+            outlineStyle: 'solid',
+            outlineWidth: 2,
+            outlineColor: 'red',
+            margin: 8,
+          }}
+        >
+          Outline
+        </div>
+      </>
+    )
+  })
+
   it('should apply stylesheets of components, inner HTML and SVG', async () => {
     const Card = () => (
       <>

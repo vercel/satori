@@ -6,6 +6,7 @@
 
 import presets from './presets.js'
 import inheritable, { isInherited } from './inheritable.js'
+import { isLonghandOf } from './shorthands.js'
 import expand, { SerializedStyle } from './expand.js'
 import {
   asPointAutoPercentageLength,
@@ -220,13 +221,6 @@ const CSS_WIDE_KEYWORDS = new Set([
   'revert',
   'revert-layer',
 ])
-
-/** Whether `key` is the property `prop` or one of its longhands. */
-function isLonghandOf(key: string, prop: string) {
-  return (
-    key === prop || (key.startsWith(prop) && /[A-Z]/.test(key[prop.length]))
-  )
-}
 
 /**
  * Resolves the CSS-wide keywords of a style, which override earlier
