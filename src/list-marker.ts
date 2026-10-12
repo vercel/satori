@@ -7,7 +7,11 @@ import type { ReactElement } from 'react'
 
 import type { CounterChange, SerializedStyle } from './handler/expand.js'
 import presets from './handler/presets.js'
-import { getMarkerText, SYMBOL_MARKERS } from './counter-styles.js'
+import {
+  formatCounter,
+  getMarkerText,
+  SYMBOL_MARKERS,
+} from './counter-styles.js'
 
 interface CounterInstance {
   value: number
@@ -69,6 +73,31 @@ export class Counters {
     const stack = this.stack(name)
     return stack[stack.length - 1]?.value ?? 0
   }
+
+  /** The values of the counters with a name, from the outermost one. */
+  values(name: string) {
+    const stack = this.stack(name)
+    return stack.length ? stack.map((counter) => counter.value) : [0]
+  }
+}
+
+/**
+ * The text of `counter()`, or `counters()` with a separator, in generated
+ * content.
+ */
+export function getCounterText(
+  counters: Counters,
+  name: string,
+  separator: string | null,
+  counterStyle: string
+) {
+  if (separator === null) {
+    return formatCounter(counters.value(name), counterStyle)
+  }
+  return counters
+    .values(name)
+    .map((value) => formatCounter(value, counterStyle))
+    .join(separator)
 }
 
 type Child = ReactElement | string
@@ -261,7 +290,7 @@ export function getListMarker(
       props: {
         src: url[2],
         style: outside ? { marginRight: 7, flexShrink: 0 } : { marginRight: 7 },
-        __marker: true,
+        __naturalSize: true,
       },
     } as unknown as ReactElement
     return outside

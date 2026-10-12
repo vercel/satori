@@ -422,6 +422,159 @@ describe('stylesheets', () => {
     )
   })
 
+  it('should generate ::before and ::after', async () => {
+    await expectSame(
+      `.a::before { content: "\\BB  "; color: red }
+      .a::after { content: attr(data-x) "!"; font-weight: bold }
+      .b::before {
+        content: "";
+        display: block;
+        width: 20px;
+        height: 4px;
+        background-color: blue;
+      }
+      .c::before { content: open-quote }
+      .c::after { content: close-quote }
+      .d::before { content: none }
+      .e::after { color: red }
+      .f { &::after { content: "1" } }
+      div.g::before { content: "low" }
+      .g::before { content: "x" }`,
+      <>
+        <div className='a' data-x='hi'>
+          Text
+        </div>
+        <div className='b'>Bar</div>
+        <div className='c'>Quote</div>
+        <div className='d'>None</div>
+        <div className='e'>Normal</div>
+        <div className='f'>Nested</div>
+        <div className='g'>Specificity</div>
+      </>,
+      <>
+        <div>
+          <span style={{ color: 'red' }}>{'\u00bb '}</span>
+          Text
+          <span style={{ fontWeight: 'bold' }}>hi!</span>
+        </div>
+        <div>
+          <span
+            style={{
+              display: 'block',
+              width: '20px',
+              height: '4px',
+              backgroundColor: 'blue',
+            }}
+          />
+          Bar
+        </div>
+        <div>
+          <span>{'\u201c'}</span>Quote<span>{'\u201d'}</span>
+        </div>
+        <div>None</div>
+        <div>Normal</div>
+        <div>
+          Nested<span>1</span>
+        </div>
+        <div>
+          <span>low</span>Specificity
+        </div>
+      </>
+    )
+  })
+
+  it('should resolve counters in pseudo-elements', async () => {
+    await expectSame(
+      `.list { counter-reset: item }
+      .list > div { counter-increment: item }
+      .list > div::before { content: counter(item) ". " }
+      .list > div:last-child::before {
+        content: counter(item, upper-roman) ". "
+      }
+      .tree { counter-reset: n }
+      .n::before { counter-increment: n; content: counters(n, ".") " " }`,
+      <>
+        <div className='list'>
+          <div>One</div>
+          <div>Two</div>
+          <div>Three</div>
+        </div>
+        <div className='tree'>
+          <div className='n'>A</div>
+          <div className='tree'>
+            <div className='n'>B</div>
+            <div className='n'>C</div>
+          </div>
+        </div>
+      </>,
+      <>
+        <div>
+          <div>
+            <span>1. </span>One
+          </div>
+          <div>
+            <span>2. </span>Two
+          </div>
+          <div>
+            <span>III. </span>Three
+          </div>
+        </div>
+        <div>
+          <div>
+            <span>1 </span>A
+          </div>
+          <div>
+            <div>
+              <span>1.1 </span>B
+            </div>
+            <div>
+              <span>1.2 </span>C
+            </div>
+          </div>
+        </div>
+      </>
+    )
+  })
+
+  it('should generate images with url()', async () => {
+    const src =
+      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><rect width='10' height='10' fill='red'/></svg>"
+    await expectSame(
+      `.i::before { content: url("${src}") " Icon" }`,
+      <div className='i'>Text</div>,
+      <div>
+        <span>
+          <img src={src} width={10} height={10} /> Icon
+        </span>
+        Text
+      </div>
+    )
+  })
+
+  it('should not generate pseudo-elements in other cases', async () => {
+    const src =
+      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'></svg>"
+    await expectSame(
+      `img::before, svg::before, rect::before { content: "x" }
+      :is(::before), .k::before .m, .k::before:hover { content: "x" }
+      .k { content: "Ignored" }`,
+      <div className='k'>
+        <img src={src} width={10} height={10} />
+        <svg width='10' height='10'>
+          <rect width='10' height='10' />
+        </svg>
+        <span className='m'>Text</span>
+      </div>,
+      <div>
+        <img src={src} width={10} height={10} />
+        <svg width='10' height='10'>
+          <rect width='10' height='10' />
+        </svg>
+        <span>Text</span>
+      </div>
+    )
+  })
+
   it('should render a card styled with a stylesheet', async () => {
     const css = `
       .card {

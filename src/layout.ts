@@ -14,6 +14,7 @@ import { getStickyOffset } from './sticky-position.js'
 import {
   applyCounters,
   findMarkerTarget,
+  getCounterText,
   getListMarker,
   type Counters,
 } from './list-marker.js'
@@ -336,6 +337,22 @@ export default async function* layout(
       computedStyle,
       id.slice(0, Math.max(0, id.lastIndexOf('-'))),
       [].concat(children ?? []).flat()
+    )
+  }
+
+  // Counters in the content of pseudo-elements have their values at this
+  // point of the tree, after the counters they change, see
+  // `applyStyleSheets()`.
+  if (type === '::before' || type === '::after') {
+    children = normalizeChildren(children).map((child) =>
+      child?.type === '::counter'
+        ? getCounterText(
+            context.counters,
+            child.props.name,
+            child.props.separator,
+            child.props.counterStyle
+          )
+        : child
     )
   }
 

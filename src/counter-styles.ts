@@ -185,6 +185,17 @@ export function getMarkerText(value: number, listStyleType: string) {
   if (string) return string[2]
   const style =
     COUNTER_STYLES[listStyleType.toLowerCase()] ?? COUNTER_STYLES.decimal
+  return formatCounter(value, listStyleType) + (style.suffix ?? '. ')
+}
+
+/**
+ * A counter value in a counter style, without the suffix of markers, e.g. for
+ * `counter()`. Unknown counter styles are `decimal`, and `none` is empty.
+ */
+export function formatCounter(value: number, counterStyle: string) {
+  const name = counterStyle.toLowerCase()
+  if (name === 'none') return ''
+  const style = COUNTER_STYLES[name] ?? COUNTER_STYLES.decimal
   let text = represent(value, style)
   let { pad = 0 } = style
   let symbols = style.symbols
@@ -202,5 +213,5 @@ export function getMarkerText(value: number, listStyleType: string) {
     if (length < pad) text = symbols[0].repeat(pad - length) + text
     if (value < 0) text = '-' + text
   }
-  return text + (style.suffix ?? '. ')
+  return text
 }
