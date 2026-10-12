@@ -44,6 +44,29 @@ for (const entry of [
         'the bundle throws before Satori can render.'
     )
   }
+
+  if (decodesWasmWithUnguardedBuffer(source)) {
+    throw new Error(
+      `${entry} decodes wasm with Buffer.from before checking that Buffer ` +
+        'exists. Browsers do not define Buffer, so importing the bundle ' +
+        'throws before Satori can render.'
+    )
+  }
+}
+
+// HarfBuzz already decodes its wasm with `typeof Buffer == "function" ? …`.
+// An unguarded `Buffer.from` is the layout engine, and it runs on import.
+function decodesWasmWithUnguardedBuffer(source) {
+  const needle = 'Buffer.from'
+  let from = 0
+  while (from < source.length) {
+    const index = source.indexOf(needle, from)
+    if (index === -1) return false
+    const before = source.slice(Math.max(0, index - 120), index)
+    if (!before.includes('typeof Buffer')) return true
+    from = index + needle.length
+  }
+  return false
 }
 
 const outfile = new URL('../.tmp/browser-build.js', import.meta.url)
