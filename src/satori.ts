@@ -13,6 +13,7 @@ import { LayoutNode } from './layout-engine/index.js'
 import { detectLanguageCode, LangCode, Locale } from './language.js'
 import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
+import { resolveComponents } from './handler/components.js'
 import { cache, inflightRequests } from './handler/image.js'
 import { segment } from './utils.js'
 import { initHarfBuzz } from './harfbuzz.js'
@@ -175,6 +176,10 @@ export async function render(
   // the Chinese as missing font because we have removed the Chinese as a fallback.
   // To address this situation, we may need to add `processedWordsMissingFont`
   const processedWordsMissingFonts = new Set()
+
+  // Render the components first, so that the whole tree is known before
+  // layout, including the images to load.
+  element = await resolveComponents(element)
 
   cache.clear()
   inflightRequests.clear()

@@ -5,12 +5,9 @@
 import type { ReactElement, ReactNode } from 'react'
 import {
   isReactElement,
-  isClass,
   buildXMLString,
   normalizeChildren,
   hasDangerouslySetInnerHTMLProp,
-  isReactComponent,
-  isForwardRefComponent,
 } from './utils.js'
 import { LayoutNode } from './layout-engine/index.js'
 import { getStickyOffset } from './sticky-position.js'
@@ -245,39 +242,13 @@ export default async function* layout(
     return ''
   }
 
-  // Not a regular element.
-  if (!isReactElement(element) || isReactComponent(element.type)) {
-    let iter: ReturnType<typeof layout>
-
-    if (!isReactElement(element)) {
-      // Process as text node. In a block container, it's inline content.
-      iter = context.inline
-        ? buildInlineText(String(element), context)
-        : buildTextNodes(String(element), context)
-      yield (await iter.next()).value as { word: string; locale?: Locale }[]
-    } else {
-      if (isClass(element.type as Function)) {
-        throw new Error('Class component is not supported.')
-      }
-
-      let render: Function
-
-      // This is a hack to support React.forwardRef wrapped components.
-      // https://github.com/vercel/satori/issues/600
-      if (isForwardRefComponent(element.type)) {
-        render = (element.type as any).render
-      } else {
-        render = element.type as Function
-      }
-
-      // If it's a custom component, Satori strictly requires it to be pure,
-      // stateless, and not relying on any React APIs such as hooks or suspense.
-      // So we can safely evaluate it to render. Otherwise, an error will be
-      // thrown by React.
-      iter = layout(await render(element.props), context)
-      yield (await iter.next()).value as { word: string; locale?: string }[]
-    }
-
+  // A text node. In a block container, it's inline content. Components are
+  // already rendered, see `resolveComponents()`.
+  if (!isReactElement(element)) {
+    const iter = context.inline
+      ? buildInlineText(String(element), context)
+      : buildTextNodes(String(element), context)
+    yield (await iter.next()).value as { word: string; locale?: Locale }[]
     await iter.next()
     const offset = yield
     return (await iter.next(offset)).value as string
