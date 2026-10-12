@@ -1235,7 +1235,7 @@ export class Paragraph {
         }
       }
 
-      for (const [partIndex, part] of parts.entries()) {
+      for (const part of parts) {
         const partWidth = isImage(part)
           ? fontSize
           : engine.measure(part, {
@@ -1281,9 +1281,8 @@ export class Paragraph {
           path += svg.path + ' '
           if (band && svg.boxes) glyphBoxes = glyphBoxes.concat(svg.boxes)
         }
-        // Letter spacing is between graphemes, also across parts.
-        pieceX +=
-          partWidth + (partIndex < parts.length - 1 ? letterSpacing || 0 : 0)
+        // Widths include the letter spacing after each character.
+        pieceX += partWidth
       }
 
       if (decorationLines.length) {

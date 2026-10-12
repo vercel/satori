@@ -135,6 +135,12 @@ export function getFontFeatureSettings(
       if (feature) features.push(feature)
     }
   }
+  // Like in browsers, optional ligatures aren't used with letter spacing,
+  // unless `fontFeatureSettings` turns them on.
+  // https://www.w3.org/TR/css-text-3/#letter-spacing-property
+  if (typeof style.letterSpacing === 'number' && style.letterSpacing !== 0) {
+    features.push('"liga" 0, "clig" 0')
+  }
   const settings = style.fontFeatureSettings as string | undefined
   if (settings && settings !== 'normal') features.push(settings)
   return features.length ? features.join(', ') : undefined

@@ -921,18 +921,20 @@ export default class FontLoader {
     const shapedRuns = getShapedRuns(content, fontFeatureSettings)
 
     let totalWidth = 0
-    let glyphCount = 0
+    let clusterCount = 0
     for (const [, font, glyphs] of shapedRuns) {
       let segmentWidth = 0
-      for (const glyph of glyphs) {
-        segmentWidth += glyph.ax
+      for (let i = 0; i < glyphs.length; i++) {
+        segmentWidth += glyphs[i].ax
+        if (glyphs[i + 1]?.cl !== glyphs[i].cl) clusterCount++
       }
 
       totalWidth += (segmentWidth / font.unitsPerEm) * fontSize
-      glyphCount += glyphs.length
     }
 
-    const spacingWidth = letterSpacing * Math.max(0, glyphCount - 1)
+    // Like in browsers, letter spacing is added after every character,
+    // including the last one, and a ligature is one character.
+    const spacingWidth = letterSpacing * clusterCount
     const separators = wordSpacing
       ? content.match(WORD_SEPARATORS)?.length ?? 0
       : 0
@@ -979,7 +981,6 @@ export default class FontLoader {
 
     let cursorX = left
     const cursorY = top
-    let hasRenderedGlyph = false
 
     let path = ''
 
@@ -995,10 +996,6 @@ export default class FontLoader {
       // Process shaped glyphs for this segment
       for (let i = 0; i < glyphs.length; i++) {
         const shapedGlyph = glyphs[i]
-
-        if (hasRenderedGlyph) {
-          cursorX += letterSpacing
-        }
 
         // Get the glyph from opentype.js by ID
         const glyph = font.glyphs.get(shapedGlyph.g)
@@ -1030,19 +1027,17 @@ export default class FontLoader {
           }
         }
 
-        // Advance cursor by the shaped advance. Letter spacing is added before
-        // every glyph after the first so it also crosses font fallbacks.
+        // Advance cursor by the shaped advance.
         cursorX += shapedGlyph.ax * scale
 
-        // Word spacing is added after the last glyph of a word separator.
-        if (
-          extraWordSpacing &&
-          glyphs[i + 1]?.cl !== shapedGlyph.cl &&
-          isWordSeparator(runText, shapedGlyph.cl)
-        ) {
-          cursorX += extraWordSpacing
+        // Letter spacing is added after the last glyph of every character,
+        // and word spacing after the last glyph of a word separator.
+        if (glyphs[i + 1]?.cl !== shapedGlyph.cl) {
+          cursorX += letterSpacing
+          if (extraWordSpacing && isWordSeparator(runText, shapedGlyph.cl)) {
+            cursorX += extraWordSpacing
+          }
         }
-        hasRenderedGlyph = true
       }
     }
 
