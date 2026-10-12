@@ -12,6 +12,8 @@ crate-type = ["cdylib"]
 [dependencies]
 # Taffy with the patches in `patches`, see `scripts/build-layout-wasm.mjs`.
 taffy = { path = "target/taffy", default-features = false, features = ["std", "taffy_tree", "flexbox", "grid", "block_layout", "float_layout", "calc"] }
+# Parses the stylesheets of `<style>` elements, see `src/css.rs`.
+cssparser = { version = "0.38", default-features = false }
 
 [profile.release]
 opt-level = "z"

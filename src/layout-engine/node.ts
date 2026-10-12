@@ -160,6 +160,8 @@ export interface LayoutStyle {
   replaced?: boolean
   float?: 'none' | 'left' | 'right'
   clear?: 'none' | 'left' | 'right' | 'both'
+  /** The inline base direction, which flex rows and grid columns follow. */
+  direction?: 'ltr' | 'rtl'
 }
 
 export interface Edges {

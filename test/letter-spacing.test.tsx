@@ -422,4 +422,59 @@ describe('Letter Spacing', () => {
     expect(await getLargestGap('LOW-COST PLAN')).toBe(expectedWordGap)
     expect(await getLargestGap('A/B TEST')).toBe(expectedWordGap)
   })
+
+  it('should add letter-spacing after every character', async () => {
+    const playfair = await readFile(
+      join(process.cwd(), 'test', 'assets', 'playfair-display.ttf')
+    )
+    const row = { backgroundColor: '#fcc', letterSpacing: 10 }
+    const svg = await satori(
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          gap: 8,
+          width: '100%',
+          height: '100%',
+          padding: 10,
+          boxSizing: 'border-box',
+          backgroundColor: 'white',
+          fontSize: 24,
+        }}
+      >
+        {/* After the last character, and after spaces. */}
+        <div style={row}>a b c d e f</div>
+        {/* Per grapheme, not per code point. */}
+        <div style={row}>x&#x301;y&#x308;z</div>
+        {/* Optional ligatures aren't used, unless turned on. */}
+        <div style={{ ...row, fontFamily: 'Playfair Display' }}>office fi</div>
+        <div
+          style={{
+            ...row,
+            fontFamily: 'Playfair Display',
+            fontFeatureSettings: '"liga" 1',
+          }}
+        >
+          office fi
+        </div>
+        <div style={{ display: 'block', backgroundColor: '#ccf' }}>
+          <span style={row}>Hi</span>
+          <span>there</span>
+        </div>
+      </div>,
+      {
+        width: 300,
+        height: 270,
+        fonts: fonts.concat({
+          name: 'Playfair Display',
+          data: playfair,
+          weight: 400,
+          style: 'normal',
+        }),
+      }
+    )
+
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
+  })
 })

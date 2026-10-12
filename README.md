@@ -57,7 +57,7 @@ Under the hood, it handles layout calculation, font, typography and more, to gen
 ### JSX
 
 Satori only accepts JSX elements that are pure and stateless. You can use a subset of HTML
-elements (see section below), or custom React components, but React APIs such as `useState`, `useEffect`, `dangerouslySetInnerHTML` are not supported.
+elements (see section below), or custom React components, but React APIs such as `useState` and `useEffect` are not supported, and `dangerouslySetInnerHTML` is only supported on `<style>` and `<script>`.
 
 #### Experimental: builtin JSX support
 
@@ -101,7 +101,7 @@ await satori(
 
 Satori supports a limited subset of HTML and CSS features, due to its special use cases. In general, only these static and visible elements and properties that are implemented.
 
-For example, the `<input>` HTML element, the `cursor` CSS property are not in consideration. And you can't use `<style>` tags or external resources via `<link>` or `<script>`.
+For example, the `<input>` HTML element, the `cursor` CSS property are not in consideration. `<style>` elements apply their CSS, see [Stylesheets](#stylesheets), but external resources via `<link>` or `<script>` aren't loaded.
 
 Also, Satori does not guarantee that the SVG will 100% match the browser-rendered HTML output since Satori implements its own layout engine based on the [SVG 1.1 spec](https://www.w3.org/TR/SVG11).
 
@@ -202,7 +202,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>display</code></td>
-<td>Supported, with these differences: <code>table</code>, <code>ruby</code> and their inner values, and two-value syntax like <code>inline flow-root</code>, aren't supported and throw. The top-level element is laid out as a block, like the root element of a page. Form controls like <code>button</code> are inline instead of <code>inline-block</code>, and have no default styles.</td>
+<td>Supported, with these differences: <code>table</code>, <code>ruby</code> and their inner values, and two-value syntax like <code>inline flow-root</code>, aren't supported and throw. Form controls like <code>button</code> are inline instead of <code>inline-block</code>, and have no default styles.</td>
 <td></td>
 </tr>
 
@@ -314,18 +314,20 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td>Shorthand (<code>listStyle</code>)</td><td>Supported</td><td></td></tr>
 <tr><td><code>counterReset</code>, <code>counterIncrement</code>, <code>counterSet</code></td><td>Counters other than <code>list-item</code> aren't displayed, since <code>content</code> and <code>counter()</code> aren't supported. Where a marker is placed, and how many items a <code>reversed()</code> counter counts, are found from the <code>style</code> prop and the default styles of elements, not their <code>tw</code> classes</td><td></td></tr>
 
-<tr><td rowspan="8">Font</td></tr>
+<tr><td rowspan="9">Font</td></tr>
 <tr><td><code>fontFamily</code></td><td>Only the fonts passed in the <code>fonts</code> option are used. After the listed families, the other loaded fonts are used as fallbacks in the order they were passed, so generic families like <code>serif</code> don't select a font</td><td></td></tr>
 <tr><td><code>fontSize</code></td><td>Supported</td><td></td></tr>
-<tr><td><code>fontWeight</code></td><td>Bold isn't synthesized when no bold font is loaded</td><td></td></tr>
-<tr><td><code>fontStyle</code></td><td>Italic isn't synthesized when the font has no italic</td><td></td></tr>
+<tr><td><code>fontWeight</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>fontStyle</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>fontSynthesis</code>, <code>fontSynthesisWeight</code>, <code>fontSynthesisStyle</code></td><td><code>small-caps</code> and <code>position</code> have no effect</td><td></td></tr>
 <tr><td><code>fontFeatureSettings</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontKerning</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontVariant</code>, <code>fontVariantCaps</code>, <code>fontVariantNumeric</code>, <code>fontVariantLigatures</code>, <code>fontVariantPosition</code>, <code>fontVariantEastAsian</code>, <code>fontVariantAlternates</code>, <code>fontVariantEmoji</code></td><td>Applied with the OpenType features of the font. Small caps aren't synthesized when the font has none, <code>fontVariantAlternates</code> only supports <code>historical-forms</code>, since <code>@font-feature-values</code> isn't supported, and <code>fontVariantEmoji</code> has no effect</td><td></td></tr>
 
-<tr><td rowspan="15">Text</td></tr>
+<tr><td rowspan="17">Text</td></tr>
+<tr><td><code>direction</code></td><td>Also set by the <code>dir</code> attribute, except for <code>auto</code>. With <code>rtl</code>, flex rows, grid columns, block boxes and lines of text start at the right. Lines with inline elements in them are aligned, but their content isn't reordered yet. <code>unicodeBidi</code> isn't supported</td><td></td></tr>
 <tr><td><code>tabSize</code></td><td>Supported</td><td></td></tr>
-<tr><td><code>textAlign</code></td><td><code>start</code> and <code>end</code> are always left and right, since <code>direction</code> isn't supported. <code>match-parent</code> isn't supported</td><td></td></tr>
+<tr><td><code>textAlign</code></td><td><code>start</code> and <code>end</code> follow <code>direction</code>. <code>match-parent</code> isn't supported</td><td></td></tr>
 <tr><td><code>textIndent</code></td><td>Supported except for the <code>hanging</code> and <code>each-line</code> keywords</td><td></td></tr>
 <tr><td><code>verticalAlign</code></td><td><code>middle</code>, <code>top</code>, <code>bottom</code>, <code>text-top</code> and <code>text-bottom</code> only apply to images and other atomic inlines, not to inline elements</td><td></td></tr>
 <tr><td><code>textTransform</code></td><td>Supported. <code>full-width</code> and <code>full-size-kana</code> are also supported, which Chrome doesn't support yet</td><td></td></tr>
@@ -333,7 +335,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>textDecoration</code></td><td>Decorations are drawn per element: <code>textDecoration: none</code> on a descendant removes the parent's lines, and a descendant's own decoration replaces them instead of adding to them. <code>textUnderlinePosition</code> isn't supported</td><td><a href="https://og-playground.vercel.app/?share=pVPLTsMwEPwVaytUkAKkPCRklV4oXwDHXhx7YxtcO3Ic2hLl37GTtEKIQynywTvjndGstG6BO4FAYS70x8oSUoedwce2TTUhCrVUgZLpLM_PptlAbrQI6gcndF0ZtotsaXC7Z1O91B550M7GN-5Ms7b714oJoa2kZJaPTMH4u_SuseLJGeejYlKW5cHN2fCiP5GS25uRkqxK8gS6bmUXqUiTHMYgAbdhidx5NmawzuI0di9SMb-OzceoYiT0Ro_SAzpan5ovg4qzSdVbfCf-noIIFwIK4lH0bgM8KQ0RrFbRqjDNMNyAT8rUFAbJhHP-_1CDl5cFO8-z_lzdX_ySb39DBq5KTjXQFvoVBfqQ5xkMOwz0LgGBRSOBlszUmAGu3Zt-3VXpA4RNj6JP2rPndYECaPANdhkEVsQOhca4jfNGQPcF">Example</a></td></tr>
 <tr><td><code>textShadow</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>lineHeight</code></td><td>Line heights are rounded to whole pixels</td><td></td></tr>
-<tr><td><code>letterSpacing</code></td><td>Isn't added after the last character</td><td></td></tr>
+<tr><td><code>letterSpacing</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>wordSpacing</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>whiteSpace</code></td><td><code>break-spaces</code> is laid out like <code>pre-wrap</code></td><td></td></tr>
 <tr><td><code>wordBreak</code></td><td><code>auto-phrase</code> is laid out like <code>normal</code></td><td></td></tr>
@@ -507,8 +509,18 @@ Note:
 
 1. In 3D transforms, elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
 2. Percentages in `calc()`, `min()`, `max()` and `clamp()` only work in sizes, margins, paddings, insets, gaps, `flexBasis` and translations. Elsewhere, values with them are ignored.
-3. Properties that aren't listed are ignored, for example `columns`, `direction`, `writingMode` and `fontStretch`.
+3. Properties that aren't listed are ignored, for example `columns`, `writingMode` and `fontStretch`.
 4. Invalid values throw an error, which fails the whole render, unless they're ignored with [`onStyleError`](#invalid-styles).
+5. `inherit` on properties that aren't inherited, e.g. `border: inherit`, sets their initial value instead of the value of the parent.
+
+#### Stylesheets
+
+The CSS of `<style>` elements applies to the whole tree, including the elements of components. The declarations of matching rules are merged with inline styles in cascade order, so the table above applies to them too. Selectors, specificity, `!important`, nesting, `@layer`, `@media`, `@supports` and the `media` attribute are supported, with these differences:
+
+- `@media` matches the `width` and `height` of the image, on a static screen in light mode, e.g. `prefers-color-scheme: light` and `hover: none`.
+- `@supports` assumes that declarations and `selector()` are supported, but not `font-tech()` and `font-format()`.
+- Pseudo-elements such as `::before` aren't supported, so rules with them don't apply. Pseudo-classes of interactions such as `:hover` never match, and functional pseudo-classes other than `:is()`, `:where()`, `:not()`, `:has()`, `:nth-*()` and `:lang()` make their rule invalid.
+- Other at-rules are ignored, such as `@font-face`, `@keyframes`, `@container`, `@scope` and `@import`.
 
 #### Perspective (experimental)
 
@@ -546,9 +558,12 @@ Example:
 </div>
 ```
 
-HarfBuzz also improves glyph shaping for complex scripts such as Arabic. Full
-Unicode bidirectional layout is not yet supported, so mixed LTR and RTL text
-may not follow browser ordering.
+HarfBuzz also improves glyph shaping for complex scripts such as Arabic. Words
+are ordered with a simplified Unicode bidirectional algorithm, so right-to-left
+text in a left-to-right element, and left-to-right text and numbers in a
+right-to-left one, follow browser ordering, and lines with `direction: rtl` are
+laid out from the right. Explicit embeddings with `unicodeBidi`, bracket pairs
+and reordering text with inline elements in it aren't supported yet.
 
 #### Fonts
 
