@@ -44,29 +44,6 @@ for (const entry of [
         'the bundle throws before Satori can render.'
     )
   }
-
-  if (decodesWasmWithUnguardedBuffer(source)) {
-    throw new Error(
-      `${entry} decodes wasm with Buffer.from before checking that Buffer ` +
-        'exists. Browsers do not define Buffer, so importing the bundle ' +
-        'throws before Satori can render.'
-    )
-  }
-}
-
-// HarfBuzz already decodes its wasm with `typeof Buffer == "function" ? …`.
-// An unguarded `Buffer.from` is the layout engine, and it runs on import.
-function decodesWasmWithUnguardedBuffer(source) {
-  const needle = 'Buffer.from'
-  let from = 0
-  while (from < source.length) {
-    const index = source.indexOf(needle, from)
-    if (index === -1) return false
-    const before = source.slice(Math.max(0, index - 120), index)
-    if (!before.includes('typeof Buffer')) return true
-    from = index + needle.length
-  }
-  return false
 }
 
 const outfile = new URL('../.tmp/browser-build.js', import.meta.url)
@@ -79,6 +56,22 @@ try {
     format: 'esm',
     outfile: outfile.pathname,
   })
+
+  // Browsers do not define `Buffer`. Import the browser bundle without it and
+  // render once, so a Node-only decoder fails here the way it fails there.
+  delete globalThis.Buffer
+  const { default: satori } = await import(outfile.href)
+  const font = new Uint8Array(
+    readFileSync(new URL('./assets/Roboto-Regular.ttf', import.meta.url))
+  )
+  await satori(
+    { type: 'div', props: { children: 'Hi', style: { display: 'flex' } } },
+    {
+      width: 100,
+      height: 40,
+      fonts: [{ name: 'Roboto', data: font, weight: 400, style: 'normal' }],
+    }
+  )
 } finally {
   rmSync(outfile, { force: true })
 }
