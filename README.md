@@ -323,9 +323,10 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>fontKerning</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontVariant</code>, <code>fontVariantCaps</code>, <code>fontVariantNumeric</code>, <code>fontVariantLigatures</code>, <code>fontVariantPosition</code>, <code>fontVariantEastAsian</code>, <code>fontVariantAlternates</code>, <code>fontVariantEmoji</code></td><td>Applied with the OpenType features of the font. Small caps aren't synthesized when the font has none, <code>fontVariantAlternates</code> only supports <code>historical-forms</code>, since <code>@font-feature-values</code> isn't supported, and <code>fontVariantEmoji</code> has no effect</td><td></td></tr>
 
-<tr><td rowspan="15">Text</td></tr>
+<tr><td rowspan="17">Text</td></tr>
+<tr><td><code>direction</code></td><td>Also set by the <code>dir</code> attribute, except for <code>auto</code>. With <code>rtl</code>, flex rows, grid columns, block boxes and lines of text start at the right. Lines with inline elements in them are aligned, but their content isn't reordered yet. <code>unicodeBidi</code> isn't supported</td><td></td></tr>
 <tr><td><code>tabSize</code></td><td>Supported</td><td></td></tr>
-<tr><td><code>textAlign</code></td><td><code>start</code> and <code>end</code> are always left and right, since <code>direction</code> isn't supported. <code>match-parent</code> isn't supported</td><td></td></tr>
+<tr><td><code>textAlign</code></td><td><code>start</code> and <code>end</code> follow <code>direction</code>. <code>match-parent</code> isn't supported</td><td></td></tr>
 <tr><td><code>textIndent</code></td><td>Supported except for the <code>hanging</code> and <code>each-line</code> keywords</td><td></td></tr>
 <tr><td><code>verticalAlign</code></td><td><code>middle</code>, <code>top</code>, <code>bottom</code>, <code>text-top</code> and <code>text-bottom</code> only apply to images and other atomic inlines, not to inline elements</td><td></td></tr>
 <tr><td><code>textTransform</code></td><td>Supported. <code>full-width</code> and <code>full-size-kana</code> are also supported, which Chrome doesn't support yet</td><td></td></tr>
@@ -546,9 +547,11 @@ Example:
 </div>
 ```
 
-HarfBuzz also improves glyph shaping for complex scripts such as Arabic. Full
-Unicode bidirectional layout is not yet supported, so mixed LTR and RTL text
-may not follow browser ordering.
+HarfBuzz also improves glyph shaping for complex scripts such as Arabic. With
+`direction: rtl`, lines are laid out from the right, and words of left-to-right
+text and numbers in them keep their order. Full Unicode bidirectional layout is
+not yet supported, so right-to-left text in a left-to-right element, and
+directions mixed within a word, may not follow browser ordering.
 
 #### Fonts
 

@@ -37,6 +37,7 @@ import {
   getTabWidth,
   preprocess,
   processTextTransform,
+  resolveTextAlign,
 } from './processor.js'
 import { getFontFeatureSettings } from './font-features.js'
 import buildTextNodes from './index.js'
@@ -714,7 +715,12 @@ export class Paragraph {
     const strut = this.engine(this.style)
     const strutAscent = Math.round(strut.baseline(STRUT))
     const strutDescent = Math.round(strut.height(STRUT)) - strutAscent
-    const textAlign = this.style.textAlign as string
+    // `start` and `end` follow `direction`. Lines with inline boxes or atomic
+    // inlines are aligned, but their content isn't reordered with `rtl` yet.
+    const textAlign = resolveTextAlign(
+      this.style.textAlign,
+      this.style.direction
+    )
 
     // Lines are shortened by the floats beside them. A line that is at least
     // as tall as the strut is beside the floats from its top to there.
@@ -868,7 +874,7 @@ export class Paragraph {
       let gap = 0
       if (Number.isFinite(width)) {
         const remaining = current.available - lineWidth
-        if (textAlign === 'right' || textAlign === 'end') {
+        if (textAlign === 'right') {
           x += remaining
         } else if (textAlign === 'center') {
           x += remaining / 2

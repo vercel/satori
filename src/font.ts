@@ -178,10 +178,14 @@ export type FontEngine = {
       letterSpacing: number
       wordSpacing?: number
       fontFeatureSettings?: string
+      /** The shaping direction, guessed from the text by default. */
+      direction?: TextDirection
     },
     band?: SkipInkBand
   ) => { path: string; boxes: GlyphBox[] }
 }
+
+export type TextDirection = 'ltr' | 'rtl'
 
 type ShapedRun = [text: string, font: opentype.Font, glyphs: ShapedGlyph[]]
 
@@ -204,7 +208,8 @@ const toWordSpacing = (value: number | string | undefined) =>
   typeof value === 'number' ? value : 0
 type GetShapedRuns = (
   content: string,
-  fontFeatureSettings?: string
+  fontFeatureSettings?: string,
+  direction?: TextDirection
 ) => ShapedRun[]
 
 type BandPoint = [number, number]
@@ -743,8 +748,14 @@ export default class FontLoader {
     const engineKey = `${fontFamily.join(',')}|${fontWeight}|${fontStyle}|${
       locale || ''
     }`
-    const getShapedRuns: GetShapedRuns = (content, fontFeatureSettings) => {
-      const key = `${engineKey}\0${fontFeatureSettings || ''}\0${content}`
+    const getShapedRuns: GetShapedRuns = (
+      content,
+      fontFeatureSettings,
+      direction
+    ) => {
+      const key = `${engineKey}\0${fontFeatureSettings || ''}\0${
+        direction || ''
+      }\0${content}`
       const cached = shapedRunCache.get(key)
 
       if (cached !== undefined) {
@@ -760,7 +771,7 @@ export default class FontLoader {
         ([text, font]): ShapedRun => [
           text,
           font,
-          shapeText(font, text, { features }),
+          shapeText(font, text, { features, direction }),
         ]
       )
 
@@ -824,6 +835,7 @@ export default class FontLoader {
           left: number
           letterSpacing: number
           wordSpacing?: number
+          direction?: TextDirection
         },
         band?: SkipInkBand
       ) => {
@@ -937,6 +949,7 @@ export default class FontLoader {
       letterSpacing = 0,
       wordSpacing,
       fontFeatureSettings,
+      direction,
     }: {
       fontSize: number
       top: number
@@ -944,6 +957,7 @@ export default class FontLoader {
       letterSpacing: number
       wordSpacing?: number
       fontFeatureSettings?: string
+      direction?: TextDirection
     },
     getShapedRuns: GetShapedRuns,
     band?: SkipInkBand
@@ -952,10 +966,14 @@ export default class FontLoader {
       return { path: '', boxes: [] }
     }
 
-    const shapedRuns = getShapedRuns(
+    let shapedRuns = getShapedRuns(
       content.replace(/\n/g, ''),
-      fontFeatureSettings
+      fontFeatureSettings,
+      direction
     )
+    // The glyphs of each run are in visual order, and so are the runs of
+    // right-to-left text when they're reversed.
+    if (direction === 'rtl') shapedRuns = shapedRuns.slice().reverse()
 
     const boxes: GlyphBox[] = []
 

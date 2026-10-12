@@ -43,6 +43,7 @@ const list = new Set([
   'overflowWrap',
   'tabSize',
   'visibility',
+  'direction',
 
   // Special properties of Satori:
   '_viewportWidth',
