@@ -202,7 +202,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>display</code></td>
-<td>Supported, with these differences: <code>table</code>, <code>ruby</code> and their inner values, and two-value syntax like <code>inline flow-root</code>, aren't supported and throw. The top-level element is laid out as a block, like the root element of a page. Form controls like <code>button</code> are inline instead of <code>inline-block</code>, and have no default styles.</td>
+<td>Supported, with these differences: <code>table</code>, <code>ruby</code> and their inner values, and two-value syntax like <code>inline flow-root</code>, aren't supported and throw. Form controls like <code>button</code> are inline instead of <code>inline-block</code>, and have no default styles.</td>
 <td></td>
 </tr>
 
@@ -335,7 +335,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>textDecoration</code></td><td>Decorations are drawn per element: <code>textDecoration: none</code> on a descendant removes the parent's lines, and a descendant's own decoration replaces them instead of adding to them. <code>textUnderlinePosition</code> isn't supported</td><td><a href="https://og-playground.vercel.app/?share=pVPLTsMwEPwVaytUkAKkPCRklV4oXwDHXhx7YxtcO3Ic2hLl37GTtEKIQynywTvjndGstG6BO4FAYS70x8oSUoedwce2TTUhCrVUgZLpLM_PptlAbrQI6gcndF0ZtotsaXC7Z1O91B550M7GN-5Ms7b714oJoa2kZJaPTMH4u_SuseLJGeejYlKW5cHN2fCiP5GS25uRkqxK8gS6bmUXqUiTHMYgAbdhidx5NmawzuI0di9SMb-OzceoYiT0Ro_SAzpan5ovg4qzSdVbfCf-noIIFwIK4lH0bgM8KQ0RrFbRqjDNMNyAT8rUFAbJhHP-_1CDl5cFO8-z_lzdX_ySb39DBq5KTjXQFvoVBfqQ5xkMOwz0LgGBRSOBlszUmAGu3Zt-3VXpA4RNj6JP2rPndYECaPANdhkEVsQOhca4jfNGQPcF">Example</a></td></tr>
 <tr><td><code>textShadow</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>lineHeight</code></td><td>Line heights are rounded to whole pixels</td><td></td></tr>
-<tr><td><code>letterSpacing</code></td><td>Isn't added after the last character</td><td></td></tr>
+<tr><td><code>letterSpacing</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>wordSpacing</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>whiteSpace</code></td><td><code>break-spaces</code> is laid out like <code>pre-wrap</code></td><td></td></tr>
 <tr><td><code>wordBreak</code></td><td><code>auto-phrase</code> is laid out like <code>normal</code></td><td></td></tr>

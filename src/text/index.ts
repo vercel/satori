@@ -448,13 +448,9 @@ export default async function* buildTextNodes(
             isImage: _isImage,
           })
 
+          // Widths include the letter spacing after each character, so they
+          // add up to the width of the word.
           x += _width
-          // Add letterSpacing between adjacent sub-segments (but not after the last).
-          // This ensures x positions match the full word width which includes
-          // inter-grapheme letterSpacing.
-          if (j < _texts.length - 1 && letterSpacing > 0) {
-            x += letterSpacing
-          }
         }
       }
 
