@@ -547,11 +547,12 @@ Example:
 </div>
 ```
 
-HarfBuzz also improves glyph shaping for complex scripts such as Arabic. With
-`direction: rtl`, lines are laid out from the right, and words of left-to-right
-text and numbers in them keep their order. Full Unicode bidirectional layout is
-not yet supported, so right-to-left text in a left-to-right element, and
-directions mixed within a word, may not follow browser ordering.
+HarfBuzz also improves glyph shaping for complex scripts such as Arabic. Words
+are ordered with a simplified Unicode bidirectional algorithm, so right-to-left
+text in a left-to-right element, and left-to-right text and numbers in a
+right-to-left one, follow browser ordering, and lines with `direction: rtl` are
+laid out from the right. Explicit embeddings with `unicodeBidi`, bracket pairs
+and reordering text with inline elements in it aren't supported yet.
 
 #### Fonts
 
