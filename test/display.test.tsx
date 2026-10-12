@@ -92,6 +92,52 @@ describe('display', () => {
     ).toMatchImageSnapshot()
   })
 
+  it('should not render elements that are hidden by default', async () => {
+    const options = { width: 200, height: 60, fonts }
+    const page = (hidden: any) => (
+      <div style={{ display: 'flex', gap: 4, fontSize: 16 }}>
+        <span>Visible</span>
+        {hidden}
+      </div>
+    )
+    const visible = await satori(page(null), options)
+    expect(
+      await satori(
+        page(
+          <>
+            <head>
+              <title>Title</title>
+              <meta name='description' content='Description' />
+            </head>
+            <style>{'.title { color: red }'}</style>
+            <style dangerouslySetInnerHTML={{ __html: 'p { color: red }' }} />
+            <script dangerouslySetInnerHTML={{ __html: 'alert(1)' }} />
+            <template>Template</template>
+          </>
+        ),
+        options
+      )
+    ).toBe(visible)
+
+    // Their text is still their content.
+    expect(
+      await satori(
+        page(<style style={{ display: 'inline' }}>Visible</style>),
+        options
+      )
+    ).toBe(
+      await satori(
+        page(<span style={{ display: 'inline' }}>Visible</span>),
+        options
+      )
+    )
+
+    // Other elements don't support inner HTML.
+    await expect(
+      satori(page(<div dangerouslySetInnerHTML={{ __html: 'x' }} />), options)
+    ).rejects.toThrow('dangerouslySetInnerHTML property is not supported')
+  })
+
   it('should blockify children of flex containers', async () => {
     expect(
       await render(

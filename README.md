@@ -57,7 +57,7 @@ Under the hood, it handles layout calculation, font, typography and more, to gen
 ### JSX
 
 Satori only accepts JSX elements that are pure and stateless. You can use a subset of HTML
-elements (see section below), or custom React components, but React APIs such as `useState`, `useEffect`, `dangerouslySetInnerHTML` are not supported.
+elements (see section below), or custom React components, but React APIs such as `useState` and `useEffect` are not supported, and `dangerouslySetInnerHTML` is only supported on `<style>` and `<script>`.
 
 #### Experimental: builtin JSX support
 
@@ -101,7 +101,7 @@ await satori(
 
 Satori supports a limited subset of HTML and CSS features, due to its special use cases. In general, only these static and visible elements and properties that are implemented.
 
-For example, the `<input>` HTML element, the `cursor` CSS property are not in consideration. And you can't use `<style>` tags or external resources via `<link>` or `<script>`.
+For example, the `<input>` HTML element, the `cursor` CSS property are not in consideration. `<style>`, `<link>` and `<script>` elements aren't rendered, and their stylesheets and scripts aren't applied.
 
 Also, Satori does not guarantee that the SVG will 100% match the browser-rendered HTML output since Satori implements its own layout engine based on the [SVG 1.1 spec](https://www.w3.org/TR/SVG11).
 

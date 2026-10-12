@@ -9,8 +9,26 @@
 const DEFAULT_DISPLAY = 'block'
 
 const block = { display: DEFAULT_DISPLAY }
+const hidden = { display: 'none' }
 
 export default {
+  // Elements that aren't rendered.
+  area: hidden,
+  base: hidden,
+  basefont: hidden,
+  datalist: hidden,
+  head: hidden,
+  link: hidden,
+  meta: hidden,
+  noembed: hidden,
+  noframes: hidden,
+  param: hidden,
+  rp: hidden,
+  script: hidden,
+  style: hidden,
+  template: hidden,
+  title: hidden,
+
   // Generic block-level elements
   address: block,
   article: block,
