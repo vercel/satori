@@ -9,7 +9,11 @@
  */
 import type { LayoutContext } from '../layout.js'
 import type { SerializedStyle } from '../handler/expand.js'
-import type { FontEngine, GlyphBox } from '../font.js'
+import {
+  getSyntheticBoldWidth,
+  type FontEngine,
+  type GlyphBox,
+} from '../font.js'
 import type FontLoader from '../font.js'
 import type { Locale } from '../language.js'
 import { LayoutNode, type FloatExclusion } from '../layout-engine/index.js'
@@ -20,6 +24,7 @@ import {
   splitByBreakOpportunities,
 } from '../utils.js'
 import buildText, {
+  buildGlyphPaths,
   container as getContainer,
   getTextFillColor,
   getTextStrokeAttributes,
@@ -1181,6 +1186,8 @@ export class Paragraph {
     const thickness = getDecorationThickness(style)
 
     let path = ''
+    // The paths of synthetic bold glyphs, which are emboldened.
+    let boldPath = ''
     let elements = ''
     const decorations: {
       left: number
@@ -1279,6 +1286,7 @@ export class Paragraph {
             band
           )
           path += svg.path + ' '
+          boldPath += svg.boldPath
           if (band && svg.boxes) glyphBoxes = glyphBoxes.concat(svg.boxes)
         }
         // Letter spacing is between graphemes, also across parts.
@@ -1325,16 +1333,22 @@ export class Paragraph {
       .join('')
 
     const strokeAttributes = getTextStrokeAttributes(style)
-    const shape = path
-      ? !isFullyTransparent(fillColor) || strokeAttributes.stroke || filter
-        ? buildXMLString('path', {
-            fill: filter && isFullyTransparent(fillColor) ? 'black' : fillColor,
-            d: path,
-            transform: matrix || undefined,
-            ...strokeAttributes,
-          })
+    const shape =
+      path || boldPath
+        ? !isFullyTransparent(fillColor) || strokeAttributes.stroke || filter
+          ? buildGlyphPaths(
+              { path, boldPath },
+              {
+                fill:
+                  filter && isFullyTransparent(fillColor) ? 'black' : fillColor,
+                transform: matrix || undefined,
+                ...strokeAttributes,
+              },
+              getSyntheticBoldWidth(fontSize),
+              id
+            )
+          : ''
         : ''
-      : ''
     let result =
       buildXMLString(
         'g',
@@ -1361,9 +1375,9 @@ export class Paragraph {
     const clipText = style._inheritedBackgroundClipTextPath as unknown as
       | { value: string }
       | undefined
-    if (clipText && path) {
+    if (clipText && (path || boldPath)) {
       clipText.value += buildXMLString('path', {
-        d: path,
+        d: path + boldPath,
         transform: matrix || undefined,
       })
     }
