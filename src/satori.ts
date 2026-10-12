@@ -2,7 +2,7 @@ import { Counters } from './list-marker.js'
 import type { ReactNode } from 'react'
 import type { TwConfig } from 'twrnc'
 import type { SatoriNode } from './layout.js'
-import type { ReplacedElementHandlers } from './handler/compute.js'
+import { ROOT_STYLE, type ReplacedElementHandlers } from './handler/compute.js'
 import type { ProjectPlane } from './builder/transform.js'
 
 import layout from './layout.js'
@@ -14,6 +14,7 @@ import { detectLanguageCode, LangCode, Locale } from './language.js'
 import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
 import { resolveComponents } from './handler/components.js'
+import { applyStyleSheets } from './handler/stylesheet.js'
 import { cache, inflightRequests } from './handler/image.js'
 import { segment } from './utils.js'
 import { initHarfBuzz } from './harfbuzz.js'
@@ -178,8 +179,13 @@ export async function render(
   const processedWordsMissingFonts = new Set()
 
   // Render the components first, so that the whole tree is known before
-  // layout, including the images to load.
+  // layout, including the images to load and the elements that stylesheets
+  // apply to.
   element = await resolveComponents(element)
+  element = applyStyleSheets(element, layoutEngine, {
+    width: definedWidth,
+    height: definedHeight,
+  })
 
   cache.clear()
   inflightRequests.clear()
@@ -190,13 +196,7 @@ export async function render(
     id: 'id',
     parentStyle: {},
     inheritedStyle: {
-      fontSize: 16,
-      fontWeight: 'normal',
-      fontFamily: 'serif',
-      fontStyle: 'normal',
-      lineHeight: 'normal',
-      color: 'black',
-      whiteSpace: 'normal',
+      ...ROOT_STYLE,
 
       // Special style properties:
       _viewportWidth: definedWidth,

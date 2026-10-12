@@ -1,4 +1,5 @@
 import { SerializedStyle } from './expand.js'
+import { getLonghands } from './shorthands.js'
 
 const list = new Set([
   'color',
@@ -56,6 +57,19 @@ const list = new Set([
   '_inheritedBackgroundClipTextPath',
   '_inheritedBackgroundClipTextHasBackground',
 ])
+
+/**
+ * Whether a property, or the longhands of a shorthand, are inherited. Satori
+ * passes `transform` down for its own use, but it isn't inherited.
+ */
+export function isInherited(prop: string) {
+  if (prop === 'transform') return false
+  if (list.has(prop)) return true
+  for (const longhand of getLonghands(prop)) {
+    if (list.has(longhand)) return true
+  }
+  return false
+}
 
 export default function inheritable(style: SerializedStyle): SerializedStyle {
   const inheritedStyle: SerializedStyle = {}

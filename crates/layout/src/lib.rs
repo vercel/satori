@@ -63,6 +63,53 @@ pub unsafe extern "C" fn dealloc(ptr: *mut f32, len: usize) {
     drop(Vec::from_raw_parts(ptr, 0, len));
 }
 
+mod css;
+
+thread_local! {
+    static CSS_OUTPUT: RefCell<String> = const { RefCell::new(String::new()) };
+}
+
+/// Allocates a buffer of `len` bytes for the input of `parse_css`.
+#[no_mangle]
+pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
+    let mut buffer = Vec::<u8>::with_capacity(len);
+    let ptr = buffer.as_mut_ptr();
+    std::mem::forget(buffer);
+    ptr
+}
+
+/// Frees a buffer allocated by `alloc_bytes`.
+///
+/// # Safety
+///
+/// `ptr` and `len` must come from the same call to `alloc_bytes`.
+#[no_mangle]
+pub unsafe extern "C" fn dealloc_bytes(ptr: *mut u8, len: usize) {
+    drop(Vec::from_raw_parts(ptr, 0, len));
+}
+
+/// Parses the stylesheet in the `len` UTF-8 bytes at `input` into JSON, see
+/// `css.rs`, and returns its length in bytes. `css_output` points to it.
+///
+/// # Safety
+///
+/// `input` must point to `len` initialized bytes.
+#[no_mangle]
+pub unsafe extern "C" fn parse_css(input: *const u8, len: usize) -> usize {
+    let css = std::str::from_utf8(std::slice::from_raw_parts(input, len)).unwrap_or("");
+    let output = css::parse_stylesheet(css);
+    CSS_OUTPUT.with(|buffer| {
+        *buffer.borrow_mut() = output;
+        buffer.borrow().len()
+    })
+}
+
+/// The JSON written by the last call to `parse_css`.
+#[no_mangle]
+pub extern "C" fn css_output() -> *const u8 {
+    CSS_OUTPUT.with(|buffer| buffer.borrow().as_ptr())
+}
+
 /// The handle of the `calc()` expression at `index`, which Taffy passes to
 /// `resolve_calc`. Taffy uses the low 3 bits as a tag, which must be 0.
 fn calc_handle(index: f32) -> *const () {

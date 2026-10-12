@@ -5,7 +5,8 @@
  */
 
 import presets from './presets.js'
-import inheritable from './inheritable.js'
+import inheritable, { isInherited } from './inheritable.js'
+import { isLonghandOf } from './shorthands.js'
 import expand, { SerializedStyle } from './expand.js'
 import {
   asPointAutoPercentageLength,
@@ -202,6 +203,68 @@ function getListPresets(
  * The `dir` attribute sets `direction` like the user agent stylesheet, so the
  * `direction` property overrides it.
  */
+/** The inherited style of the root, the initial values of these properties. */
+export const ROOT_STYLE: Record<string, string | number> = {
+  fontSize: 16,
+  fontWeight: 'normal',
+  fontFamily: 'serif',
+  fontStyle: 'normal',
+  lineHeight: 'normal',
+  color: 'black',
+  whiteSpace: 'normal',
+}
+
+const CSS_WIDE_KEYWORDS = new Set([
+  'inherit',
+  'initial',
+  'unset',
+  'revert',
+  'revert-layer',
+])
+
+/**
+ * Resolves the CSS-wide keywords of a style, which override earlier
+ * declarations and the preset. Returns the other declarations, and the
+ * properties that get their initial value: with `initial`, and `unset` and
+ * `inherit` for properties that aren't inherited, as the values of the parent
+ * aren't known here. Other inherited properties keep the inherited value.
+ */
+function resolveKeywords(
+  style: Record<string, string | number>,
+  preset: Record<string, string | number>
+) {
+  const defined: Record<string, string | number> = {}
+  const initial = new Set<string>()
+  for (const prop in style) {
+    const value = style[prop]
+    const keyword =
+      typeof value === 'string' && !prop.startsWith('--')
+        ? value.trim().toLowerCase()
+        : ''
+    if (!CSS_WIDE_KEYWORDS.has(keyword)) {
+      // `all` only accepts CSS-wide keywords.
+      if (prop !== 'all') defined[prop] = value
+      continue
+    }
+
+    // `all` is every property but custom properties and `direction`.
+    const affects = (key: string) =>
+      prop === 'all'
+        ? !key.startsWith('--') && key !== 'direction'
+        : isLonghandOf(key, prop)
+    for (const key in defined) if (affects(key)) delete defined[key]
+    if (keyword === 'revert' || keyword === 'revert-layer') continue
+
+    for (const key in preset) if (affects(key)) delete preset[key]
+    if (keyword === 'initial' || (prop !== 'all' && !isInherited(prop))) {
+      initial.add(prop)
+    } else {
+      initial.delete(prop)
+    }
+  }
+  return { defined, initial }
+}
+
 function getDirPreset(props: Record<string, any>) {
   const dir = typeof props?.dir === 'string' ? props.dir.toLowerCase() : ''
   return dir === 'ltr' || dir === 'rtl' ? { direction: dir } : {}
@@ -256,16 +319,23 @@ export default async function compute(
     ...getListPresets(type, props, listDepth),
     ...getDirPreset(props),
   }
-  for (const prop in definedStyle) delete presetStyle[prop]
+  const { defined, initial } = resolveKeywords(definedStyle, presetStyle)
+  for (const prop in defined) delete presetStyle[prop]
+
+  // Properties without a value have their initial value, except the root
+  // ones. Satori's own properties are kept.
+  const base: SerializedStyle = { ...inheritedStyle }
+  for (const prop of initial) {
+    const resets = (key: string) =>
+      prop === 'all'
+        ? !key.startsWith('_') && !key.startsWith('--') && key !== 'direction'
+        : isLonghandOf(key, prop)
+    for (const key in base) if (resets(key)) delete base[key]
+    for (const key in ROOT_STYLE) if (resets(key)) base[key] = ROOT_STYLE[key]
+  }
   const style: SerializedStyle = Object.assign(
-    {},
-    inheritedStyle,
-    expand(
-      { ...presetStyle, ...definedStyle },
-      inheritedStyle,
-      onStyleError,
-      convertColors
-    )
+    base,
+    expand({ ...presetStyle, ...defined }, base, onStyleError, convertColors)
   )
 
   // An `aspect-ratio` replaces the natural ratio of replaced elements, unless
