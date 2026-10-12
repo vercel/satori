@@ -101,7 +101,7 @@ await satori(
 
 Satori supports a limited subset of HTML and CSS features, due to its special use cases. In general, only these static and visible elements and properties that are implemented.
 
-For example, the `<input>` HTML element, the `cursor` CSS property are not in consideration. `<style>`, `<link>` and `<script>` elements aren't rendered, and their stylesheets and scripts aren't applied.
+For example, the `<input>` HTML element, the `cursor` CSS property are not in consideration. `<style>` elements apply their CSS, see [Stylesheets](#stylesheets), but external resources via `<link>` or `<script>` aren't loaded.
 
 Also, Satori does not guarantee that the SVG will 100% match the browser-rendered HTML output since Satori implements its own layout engine based on the [SVG 1.1 spec](https://www.w3.org/TR/SVG11).
 
@@ -509,8 +509,18 @@ Note:
 
 1. In 3D transforms, elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
 2. Percentages in `calc()`, `min()`, `max()` and `clamp()` only work in sizes, margins, paddings, insets, gaps, `flexBasis` and translations. Elsewhere, values with them are ignored.
-3. Properties that aren't listed are ignored, for example `columns`, `direction`, `writingMode` and `fontStretch`.
+3. Properties that aren't listed are ignored, for example `columns`, `writingMode` and `fontStretch`.
 4. Invalid values throw an error, which fails the whole render, unless they're ignored with [`onStyleError`](#invalid-styles).
+5. `inherit` on properties that aren't inherited, e.g. `border: inherit`, sets their initial value instead of the value of the parent.
+
+#### Stylesheets
+
+The CSS of `<style>` elements applies to the whole tree, including the elements of components. The declarations of matching rules are merged with inline styles in cascade order, so the table above applies to them too. Selectors, specificity, `!important`, nesting, `@layer`, `@media`, `@supports` and the `media` attribute are supported, with these differences:
+
+- `@media` matches the `width` and `height` of the image, on a static screen in light mode, e.g. `prefers-color-scheme: light` and `hover: none`.
+- `@supports` assumes that declarations and `selector()` are supported, but not `font-tech()` and `font-format()`.
+- Pseudo-elements such as `::before` aren't supported, so rules with them don't apply. Pseudo-classes of interactions such as `:hover` never match, and functional pseudo-classes other than `:is()`, `:where()`, `:not()`, `:has()`, `:nth-*()` and `:lang()` make their rule invalid.
+- Other at-rules are ignored, such as `@font-face`, `@keyframes`, `@container`, `@scope` and `@import`.
 
 #### Perspective (experimental)
 

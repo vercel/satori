@@ -57,6 +57,23 @@ const list = new Set([
   '_inheritedBackgroundClipTextHasBackground',
 ])
 
+/**
+ * Whether a property, or the longhands of a shorthand, are inherited. Satori
+ * passes `transform` down for its own use, but it isn't inherited.
+ */
+export function isInherited(prop: string) {
+  if (prop === 'transform') return false
+  for (const inherited of list) {
+    if (
+      inherited === prop ||
+      (inherited.startsWith(prop) && /[A-Z]/.test(inherited[prop.length]))
+    ) {
+      return true
+    }
+  }
+  return false
+}
+
 export default function inheritable(style: SerializedStyle): SerializedStyle {
   const inheritedStyle: SerializedStyle = {}
   for (const prop in style) {

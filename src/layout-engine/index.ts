@@ -28,6 +28,10 @@ interface LayoutExports {
     availableHeight: number,
     useRounding: number
   ): number
+  alloc_bytes(len: number): number
+  dealloc_bytes(ptr: number, len: number): void
+  parse_css(ptr: number, len: number): number
+  css_output(): number
 }
 
 export interface ComputeLayoutOptions {
@@ -49,6 +53,11 @@ export interface LayoutEngine {
   setInstance(instance: WebAssembly.Instance): void
   /** Lays out the tree, setting the `layout` of every node. */
   computeLayout(root: LayoutNode, options?: ComputeLayoutOptions): void
+  /**
+   * Parses a stylesheet into JSON, see `crates/layout/src/css.rs` for the
+   * format.
+   */
+  parseCSS(css: string): string
 }
 
 /**
@@ -233,6 +242,22 @@ export function createLayoutEngine(): LayoutEngine {
       // `display: contents` nodes have no box. Their children are positioned
       // relative to the parent, so they're at its origin.
       for (const node of encoded.contents) node.layout = emptyLayout()
+    },
+    parseCSS(css) {
+      if (!exports) throw new Error('The layout engine is not initialized.')
+
+      const input = new TextEncoder().encode(css)
+      const ptr = exports.alloc_bytes(input.length)
+      let length: number
+      try {
+        new Uint8Array(exports.memory.buffer, ptr, input.length).set(input)
+        length = exports.parse_css(ptr, input.length)
+      } finally {
+        exports.dealloc_bytes(ptr, input.length)
+      }
+      return new TextDecoder().decode(
+        new Uint8Array(exports.memory.buffer, exports.css_output(), length)
+      )
     },
   }
 }
