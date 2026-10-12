@@ -13,7 +13,7 @@ use taffy::prelude::*;
 use taffy::style::{GridTemplateArea, GridTemplateAreas, GridTemplateRepetition};
 use taffy::{
     compute_leaf_layout, AlignContent, AlignItems, Baselines, BoxSizing, Clear, CompactLength,
-    Float, LayoutInput, LayoutOutput, Overflow, Point, TextAlign, LEAF_FLOAT_EXCLUSIONS,
+    Direction, Float, LayoutInput, LayoutOutput, Overflow, Point, TextAlign, LEAF_FLOAT_EXCLUSIONS,
 };
 
 #[link(wasm_import_module = "env")]
@@ -365,6 +365,10 @@ impl<'a> Reader<'a> {
             3 => Clear::Both,
             _ => Clear::None,
         };
+        let direction = match self.int() {
+            1 => Direction::Rtl,
+            _ => Direction::Ltr,
+        };
 
         let mut style = Style::default();
         if self.int() != 0 {
@@ -441,6 +445,7 @@ impl<'a> Reader<'a> {
             item_is_replaced,
             float,
             clear,
+            direction,
             ..style
         }
     }

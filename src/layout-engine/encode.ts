@@ -148,6 +148,7 @@ function encodeStyle(
   // `text-align` for block layout, which Satori doesn't use.
   data.push(0, style.replaced ? 1 : 0)
   data.push(FLOAT[style.float] ?? 0, CLEAR[style.clear] ?? 0)
+  data.push(style.direction === 'rtl' ? 1 : 0)
   encodeGridStyle(data, style, scale)
 }
 

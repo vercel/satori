@@ -199,6 +199,15 @@ function getListPresets(
 }
 
 /**
+ * The `dir` attribute sets `direction` like the user agent stylesheet, so the
+ * `direction` property overrides it.
+ */
+function getDirPreset(props: Record<string, any>) {
+  const dir = typeof props?.dir === 'string' ? props.dir.toLowerCase() : ''
+  return dir === 'ltr' || dir === 'rtl' ? { direction: dir } : {}
+}
+
+/**
  * Snaps a border or outline width to device pixels: widths between 0 and 1
  * device pixel are rounded up, and wider ones down. Layouts that aren't
  * rounded, with a `pointScaleFactor` of 0, aren't snapped either.
@@ -245,6 +254,7 @@ export default async function compute(
   const presetStyle = {
     ...presets[type],
     ...getListPresets(type, props, listDepth),
+    ...getDirPreset(props),
   }
   for (const prop in definedStyle) delete presetStyle[prop]
   const style: SerializedStyle = Object.assign(
@@ -405,6 +415,18 @@ export default async function compute(
   style.__innerDisplay = innerDisplay
   style.__listItem = (style.display === 'list-item') as any
   layout.display = innerDisplay === 'inline' ? 'block' : innerDisplay
+
+  // The inline base direction, which is inherited. Flex rows, grid columns
+  // and lines of text start at the right with `rtl`.
+  const direction = v(
+    style.direction,
+    { ltr: 'ltr', rtl: 'rtl' },
+    inheritedStyle.direction === 'rtl' ? 'rtl' : 'ltr',
+    'direction'
+  ) as 'ltr' | 'rtl'
+  style.direction = direction
+  layout.direction = direction
+  const isRTL = direction === 'rtl'
 
   // `align-content` defaults to `normal`. In block containers, other values
   // prevent margins from collapsing.
@@ -573,6 +595,25 @@ export default async function compute(
     'flexWrap'
   )
 
+  // `left` and `right` are physical. On the inline axis, they're the end and
+  // the start with `rtl`, and otherwise they're the start.
+  if (isRTL) {
+    const PHYSICAL = { left: 'end', right: 'start' } as const
+    const isInlineAxis =
+      layout.display === 'grid' ||
+      (layout.display === 'flex' &&
+        (layout.flexDirection === 'row' ||
+          layout.flexDirection === 'row-reverse'))
+    if (isInlineAxis && PHYSICAL[style.justifyContent as string]) {
+      layout.justifyContent = PHYSICAL[style.justifyContent as string]
+    }
+    for (const prop of ['justifyItems', 'justifySelf'] as const) {
+      if (PHYSICAL[style[prop] as string]) {
+        layout[prop] = PHYSICAL[style[prop] as string]
+      }
+    }
+  }
+
   if (typeof style.gap !== 'undefined') {
     layout.rowGap = layout.columnGap = style.gap as number
   }
@@ -710,14 +751,16 @@ export default async function compute(
     position === 'absolute' || position === 'fixed' ? 'absolute' : 'relative'
 
   // Floats only apply in block containers, see `layout()`.
+  const inlineStart = isRTL ? 'right' : 'left'
+  const inlineEnd = isRTL ? 'left' : 'right'
   const float = v(
     style.float,
     {
       none: 'none',
       left: 'left',
       right: 'right',
-      'inline-start': 'left',
-      'inline-end': 'right',
+      'inline-start': inlineStart,
+      'inline-end': inlineEnd,
     },
     'none',
     'float'
@@ -731,8 +774,8 @@ export default async function compute(
       left: 'left',
       right: 'right',
       both: 'both',
-      'inline-start': 'left',
-      'inline-end': 'right',
+      'inline-start': inlineStart,
+      'inline-end': inlineEnd,
     },
     'none',
     'clear'
