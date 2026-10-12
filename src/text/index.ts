@@ -13,6 +13,7 @@ import {
 } from '../utils.js'
 import { LayoutNode } from '../layout-engine/index.js'
 import buildText, {
+  buildGlyphPaths,
   container,
   getTextFillColor,
   getTextStrokeAttributes,
@@ -23,7 +24,7 @@ import buildDecoration, {
   getDecorationThickness,
   getUnderlineY,
 } from '../builder/text-decoration.js'
-import type { GlyphBox } from '../font.js'
+import { getSyntheticBoldWidth, type GlyphBox } from '../font.js'
 import { Locale } from '../language.js'
 import { HorizontalEllipsis, Space, Tab } from './characters.js'
 import { genMeasurer } from './measurer.js'
@@ -861,6 +862,8 @@ export default async function* buildTextNodes(
 
   let decorationShape = ''
   let mergedPath = ''
+  // The paths of synthetic bold glyphs, which are emboldened.
+  let mergedBoldPath = ''
   let extra = ''
   let skippedLine = -1
   type DecorationLine = {
@@ -1079,6 +1082,7 @@ export default async function* buildTextNodes(
       )
 
       path = svg.path
+      mergedBoldPath += svg.boldPath
 
       if (shouldCollectDecorationBoxes && svg.boxes && svg.boxes.length) {
         ;(decorationGlyphs[line] || (decorationGlyphs[line] = [])).push(
@@ -1192,6 +1196,7 @@ export default async function* buildTextNodes(
         direction: isRTL ? 'rtl' : 'ltr',
       })
       mergedPath += svg.path + ' '
+      mergedBoldPath += svg.boldPath
     } else {
       const [t, shape] = buildText(
         {
@@ -1256,28 +1261,33 @@ export default async function* buildTextNodes(
     !filter &&
     !cssFilter &&
     !decorationShape &&
+    !mergedBoldPath &&
     !getTextStrokeAttributes(parentStyle).stroke
       ? textOpacity
       : undefined
 
   // Embed the font as path.
-  if (mergedPath) {
+  if (mergedPath || mergedBoldPath) {
     const strokeAttributes = getTextStrokeAttributes(parentStyle)
     const path =
       !isFullyTransparent(fillColor) || strokeAttributes.stroke || filter
-        ? buildXMLString('path', {
-            fill:
-              filter &&
-              (isFullyTransparent(fillColor) ||
-                (_inheritedBackgroundClipTextHasBackground &&
-                  isOpaqueWhite(fillColor)))
-                ? 'black'
-                : fillColor,
-            d: mergedPath,
-            transform: matrix ? matrix : undefined,
-            'fill-opacity': fillOpacity,
-            ...strokeAttributes,
-          })
+        ? buildGlyphPaths(
+            { path: mergedPath, boldPath: mergedBoldPath },
+            {
+              fill:
+                filter &&
+                (isFullyTransparent(fillColor) ||
+                  (_inheritedBackgroundClipTextHasBackground &&
+                    isOpaqueWhite(fillColor)))
+                  ? 'black'
+                  : fillColor,
+              transform: matrix ? matrix : undefined,
+              'fill-opacity': fillOpacity,
+              ...strokeAttributes,
+            },
+            getSyntheticBoldWidth(fontSize),
+            id
+          )
         : ''
     const p = path
       ? buildXMLString(
@@ -1292,7 +1302,7 @@ export default async function* buildTextNodes(
 
     if (_inheritedBackgroundClipTextPath) {
       backgroundClipDef = buildXMLString('path', {
-        d: mergedPath,
+        d: mergedPath + mergedBoldPath,
         transform: matrix ? matrix : undefined,
       })
     }
