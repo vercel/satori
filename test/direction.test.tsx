@@ -4,7 +4,13 @@ import { join } from 'node:path'
 
 import { toImage } from './utils.js'
 import satori, { type SatoriOptions } from '../src/index.js'
-import { getBidiClass, reorderLine, resolveLevels } from '../src/text/bidi.js'
+import {
+  getBidiClass,
+  hasRTL,
+  reorderLine,
+  resolveLevels,
+  splitByDirection,
+} from '../src/text/bidi.js'
 
 const arabic =
   'السلام عليكم ورحمة الله وبركاته، أهلا وسهلا بكم في موقعنا الجديد'
@@ -58,19 +64,71 @@ describe('direction', () => {
       expect(getBidiClass('\u200f')).toBe('R')
     })
 
+    it('should split text with right-to-left letters by direction', () => {
+      expect(hasRTL('Hello')).toBe(false)
+      expect(hasRTL('Hello مرحبا')).toBe(true)
+      expect(hasRTL('٢٠٢٤')).toBe(true)
+      expect(splitByDirection('Hello')).toEqual(['Hello'])
+      expect(splitByDirection('abc123')).toEqual(['abc123'])
+      expect(splitByDirection('Vercelمرحبا')).toEqual(['Vercel', 'مرحبا'])
+      expect(splitByDirection('مرحبا2024')).toEqual(['مرحبا', '2024'])
+      expect(splitByDirection('عربي-English')).toEqual(['عربي-', 'English'])
+      // Marks stay with their letters.
+      expect(splitByDirection('بِسْمِ')).toEqual(['بِسْمِ'])
+    })
+
     it('should resolve levels with a right-to-left base direction', () => {
       // Neutrals between left-to-right text are left-to-right.
-      expect(resolveLevels(['R', 'N', 'L', 'N', 'L', 'N', 'R'])).toEqual([
+      expect(resolveLevels(['R', 'N', 'L', 'N', 'L', 'N', 'R'], 1)).toEqual([
         1, 1, 2, 2, 2, 1, 1,
       ])
       // Numbers are a level higher, and count as right-to-left for neutrals.
-      expect(resolveLevels(['R', 'N', 'EN', 'N', 'R'])).toEqual([1, 1, 2, 1, 1])
-      expect(resolveLevels(['EN', 'N', 'EN'])).toEqual([2, 1, 2])
+      expect(resolveLevels(['R', 'N', 'EN', 'N', 'R'], 1)).toEqual([
+        1, 1, 2, 1, 1,
+      ])
+      expect(resolveLevels(['EN', 'N', 'EN'], 1)).toEqual([2, 1, 2])
       // European numbers after left-to-right text are left-to-right.
-      expect(resolveLevels(['L', 'N', 'EN'])).toEqual([2, 2, 2])
-      expect(resolveLevels(['L', 'N', 'AN'])).toEqual([2, 1, 2])
+      expect(resolveLevels(['L', 'N', 'EN'], 1)).toEqual([2, 2, 2])
+      expect(resolveLevels(['L', 'N', 'AN'], 1)).toEqual([2, 1, 2])
       // Neutrals at the start and end have the base direction.
-      expect(resolveLevels(['N', 'L', 'N'])).toEqual([1, 2, 1])
+      expect(resolveLevels(['N', 'L', 'N'], 1)).toEqual([1, 2, 1])
+    })
+
+    it('should resolve levels with a left-to-right base direction', () => {
+      expect(resolveLevels(['L', 'N', 'R', 'N', 'R', 'N', 'L'], 0)).toEqual([
+        0, 0, 1, 1, 1, 0, 0,
+      ])
+      // Numbers after right-to-left text are two levels higher.
+      expect(resolveLevels(['R', 'N', 'EN'], 0)).toEqual([1, 1, 2])
+      expect(resolveLevels(['L', 'N', 'EN'], 0)).toEqual([0, 0, 0])
+      expect(resolveLevels(['N', 'R', 'N'], 0)).toEqual([0, 1, 0])
+    })
+
+    it('should reverse runs of right-to-left text and numbers in them', () => {
+      // "L1 R1 2024 R2 L2" with spaces.
+      const pieces = [
+        { x: 0, width: 10 },
+        { x: 10, width: 2 },
+        { x: 12, width: 10 },
+        { x: 22, width: 2 },
+        { x: 24, width: 10 },
+        { x: 34, width: 2 },
+        { x: 36, width: 10 },
+        { x: 46, width: 2 },
+        { x: 48, width: 10 },
+      ]
+      // L1, R2 2024 R1, L2 from the left.
+      expect(reorderLine(pieces, [0, 0, 1, 1, 2, 1, 1, 0, 0], 58)).toEqual([
+        0, 10, 36, 34, 24, 22, 12, 46, 48,
+      ])
+    })
+
+    it('should hang spaces past the left of right-to-left lines', () => {
+      const pieces = [
+        { x: 0, width: 10 },
+        { x: 10, width: 2 },
+      ]
+      expect(reorderLine(pieces, [1, 1], 10)).toEqual([0, -2])
     })
 
     it('should mirror lines and keep the order of left-to-right runs', () => {
@@ -296,6 +354,81 @@ describe('direction', () => {
       const order = ['2024', 'لعام', 'Vercel', 'Ship', 'في', 'بكم', 'مرحبا']
       const lefts = order.map((text) => texts.get(text)[0])
       expect(lefts).toEqual([...lefts].sort((a, b) => a - b))
+    })
+
+    it('should reorder right-to-left text in left-to-right elements', async () => {
+      const svg = await satori(
+        <div style={container}>
+          <div style={line}>Welcome: مرحبا بكم في موقعنا 2024!</div>
+          <div style={{ ...line, textAlign: 'justify' }}>
+            The greeting {arabic} means peace be upon you
+          </div>
+        </div>,
+        { width: 400, height: 220, fonts, embedFont: true }
+      )
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
+    })
+
+    it('should split words with mixed directions', async () => {
+      const svg = await satori(
+        <div style={container}>
+          <div style={line}>Vercelمرحبا and مرحبا123</div>
+          <div style={{ ...line, direction: 'rtl' }}>
+            Vercelمرحبا و مرحبا123
+          </div>
+        </div>,
+        { width: 400, height: 120, fonts, embedFont: true }
+      )
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
+    })
+
+    it('should align indented lines beside their indent', async () => {
+      const svg = await satori(
+        <div style={{ ...container, direction: 'rtl' }}>
+          <div style={{ ...line, textIndent: 40 }}>{arabic}</div>
+          <div style={{ ...line, textIndent: 40, textAlign: 'center' }}>
+            مرحبا بكم في موقعنا
+          </div>
+          <div style={{ ...line, textIndent: 40, textAlign: 'left' }}>
+            مرحبا بكم في موقعنا
+          </div>
+          <div style={{ ...line, textIndent: 40, textAlign: 'justify' }}>
+            {arabic}
+          </div>
+        </div>,
+        { width: 400, height: 410, fonts, embedFont: true }
+      )
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
+    })
+
+    it('should cut lines with ellipses in visual order', async () => {
+      const svg = await satori(
+        <div style={container}>
+          <div
+            style={{
+              ...line,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            Welcome to {arabic}
+          </div>
+          <div
+            style={{
+              ...line,
+              direction: 'rtl',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            مرحبا Next.js and Vercel Ship are here
+          </div>
+        </div>,
+        { width: 400, height: 120, fonts, embedFont: true }
+      )
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
   })
 })

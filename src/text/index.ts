@@ -34,7 +34,13 @@ import {
   resolveTextAlign,
 } from './processor.js'
 import { getFontFeatureSettings } from './font-features.js'
-import { getBidiClass, reorderLine, resolveLevels } from './bidi.js'
+import {
+  getBidiClass,
+  hasRTL,
+  reorderLine,
+  resolveLevels,
+  splitByDirection,
+} from './bidi.js'
 import cssColorParse from 'parse-css-color'
 
 const skippedWordWhenFindingMissingFont = new Set([Tab])
@@ -116,9 +122,22 @@ export default async function* buildTextNodes(
     'textAlign'
   )
 
-  // Lines start at the right with `rtl`, see `reorderLines()`.
+  // Lines start at the right with `rtl`. Their pieces are reordered with the
+  // bidi algorithm with `rtl`, or when they have right-to-left text, see
+  // `reorderLines()`.
   const isRTL = parentStyle.direction === 'rtl'
   const align = resolveTextAlign(textAlign, parentStyle.direction)
+  const needsBidi = isRTL || hasRTL(processedContent)
+
+  // The indent of the first line, at its start. Percentages are of the width
+  // the text is laid out in, and of 0 for its max-content size.
+  const getIndent = (width: number) => {
+    const indent =
+      typeof textIndent === 'string'
+        ? lengthToNumber(textIndent, fontSize, width, parentStyle, true)
+        : textIndent
+    return Number.isFinite(indent) ? (indent as number) : 0
+  }
 
   // Like the anonymous flex item around text in CSS, or the paragraph of a
   // block container.
@@ -227,9 +246,7 @@ export default async function* buildTextNodes(
     line: number
     lineIndex: number
     isImage: boolean
-    /** With `rtl`, `x` is from the left, and this is from the start. */
-    startX?: number
-    /** With `rtl`, how far `justify` moves the piece. */
+    /** With bidi, how far `justify` moves the piece. */
     justifyShift?: number
   })[] = []
 
@@ -257,9 +274,13 @@ export default async function* buildTextNodes(
     const words = segmentedWords.slice()
     const requiredBreaks = segmentedRequiredBreaks.slice()
 
+    // The first line is shorter by the indent. Tab stops are from the start
+    // of the container, before the indent.
+    const indent = getIndent(width)
+    const lineIndent = () => (lines === 0 ? indent : 0)
+
     // We naively implement the width calculation without proper kerning.
     // @TODO: Support different writing modes.
-    // @TODO: Support RTL languages.
     let i = 0
     let prevLineEndingSpacesWidth = 0
     while (i < words.length && lines < lineLimit) {
@@ -272,7 +293,7 @@ export default async function* buildTextNodes(
         originWidth,
         endingSpacesWidth,
         text: _word,
-      } = calc(word, currentWidth)
+      } = calc(word, currentWidth + lineIndent())
       word = _word
 
       w = originWidth
@@ -296,7 +317,7 @@ export default async function* buildTextNodes(
         // When the break line happens at the end of the `bbb`, what we see looks like this
         // |aaa bbb|
         // |ccc    |
-        currentWidth + w > width + lineEndingSpacesWidth &&
+        currentWidth + w > width - lineIndent() + lineEndingSpacesWidth &&
         allowSoftWrap
 
       // Need to break the word if:
@@ -307,7 +328,7 @@ export default async function* buildTextNodes(
       // container, e.g. when measuring the min-content width.
       const needToBreakWord =
         (measuringMinContent ? allowBreakWordInMinContent : allowBreakWord) &&
-        w > width &&
+        w > width - lineIndent() &&
         (!currentWidth || willWrap || forceBreak)
       const chars = needToBreakWord ? segment(word, 'grapheme') : undefined
 
@@ -377,7 +398,7 @@ export default async function* buildTextNodes(
         lineIndex++
       }
 
-      maxWidth = Math.max(maxWidth, currentWidth)
+      maxWidth = Math.max(maxWidth, currentWidth + lineIndent())
 
       let x = currentWidth - w
 
@@ -391,7 +412,10 @@ export default async function* buildTextNodes(
           isImage: false,
         })
       } else {
-        const _texts = segment(word, 'word')
+        // Parts of words in different directions are reordered separately.
+        const _texts = needsBidi
+          ? segment(word, 'word').flatMap(splitByDirection)
+          : segment(word, 'word')
 
         for (let j = 0; j < _texts.length; j++) {
           const _text = _texts[j]
@@ -402,7 +426,7 @@ export default async function* buildTextNodes(
             _width = fontSize
             _isImage = true
           } else if (_text[0] === Tab) {
-            _width = tabAdvance(x, _text.length)
+            _width = tabAdvance(x + lineIndent(), _text.length)
           } else if (!embedFont && _text.length > 1) {
             // When embedFont is false, use measureText for multi-character strings
             // to ensure consistency with how currentWidth is accumulated (sum of
@@ -580,12 +604,18 @@ export default async function* buildTextNodes(
   // lay it out again with the final width.
   if (flowedWidth !== containerWidth) layoutText(containerWidth)
 
-  // With `rtl`, the pieces of each line are positioned from the right, and
-  // their bidi levels are the directions they're shaped in.
-  const levels = isRTL ? reorderLines() : undefined
+  const textIndentNumber = getIndent(containerWidth)
+  const parentContainerInnerWidth = parent.contentWidth
+
+  // The pieces of each line are positioned by their bidi levels, which are
+  // also the directions they're shaped in. Lines are from the right with
+  // `rtl`. Without right-to-left text, they're in logical order.
+  const baseLevel = isRTL ? 1 : 0
+  const levels = needsBidi ? reorderLines() : undefined
   function reorderLines() {
     const pieceLevels = resolveLevels(
-      wordPositionInLayout.map((_, i) => getBidiClass(texts[i] ?? ''))
+      wordPositionInLayout.map((_, i) => getBidiClass(texts[i] ?? '')),
+      baseLevel
     )
     for (let start = 0; start < wordPositionInLayout.length; ) {
       const line = wordPositionInLayout[start]?.line
@@ -604,7 +634,7 @@ export default async function* buildTextNodes(
 
       // L1: spaces at the end of a line have the base level.
       for (let i = end - 1; i >= start && !texts[i]?.trim(); i--) {
-        pieceLevels[i] = 1
+        pieceLevels[i] = baseLevel
       }
       const lefts = reorderLine(
         pieces,
@@ -612,7 +642,6 @@ export default async function* buildTextNodes(
         lineWidths[line] ?? 0
       )
       pieces.forEach((piece, index) => {
-        piece.startX = piece.x
         piece.x = lefts[index]
       })
 
@@ -625,7 +654,11 @@ export default async function* buildTextNodes(
         const isGap = (k: number) =>
           k > 0 && pieces[order[k]].lineIndex !== pieces[order[k - 1]].lineIndex
         const gaps = order.filter((_, k) => isGap(k)).length
-        const gutter = gaps ? (containerWidth - lineWidths[line]) / gaps : 0
+        const remainingWidth =
+          containerWidth -
+          lineWidths[line] -
+          (line === 0 ? textIndentNumber : 0)
+        const gutter = gaps ? remainingWidth / gaps : 0
         let count = 0
         order.forEach((index, k) => {
           if (isGap(k)) count++
@@ -637,19 +670,161 @@ export default async function* buildTextNodes(
     return pieceLevels
   }
 
-  // Convert textIndent to number if it's a string (e.g., percentage)
-  const textIndentNumber =
-    typeof textIndent === 'string'
-      ? lengthToNumber(
-          textIndent,
-          fontSize,
-          containerWidth,
-          parentStyle,
-          true
-        ) || 0
-      : textIndent
+  type PlacedPiece = NonNullable<typeof wordPositionInLayout[number]>
 
-  const parentContainerInnerWidth = parent.contentWidth
+  // Where a piece is drawn in the container, after its line is indented and
+  // aligned, and the left of its line. The first line is aligned beside its
+  // indent.
+  function placePiece(layout: PlacedPiece) {
+    const { line } = layout
+    const indent = line === 0 ? textIndentNumber : 0
+    const remainingWidth = containerWidth - lineWidths[line] - indent
+    const isJustified = align === 'justify' && line < lineWidths.length - 1
+
+    if (isRTL) {
+      // Lines are aligned even when the container is as wide as their text,
+      // so they're at the right of a wider container. The indent is on the
+      // right. The last line of justified text is aligned to the start.
+      let lineLeft = 0
+      if (align === 'right' || (align === 'justify' && !isJustified)) {
+        lineLeft = remainingWidth
+      } else if (align === 'center') {
+        lineLeft = remainingWidth / 2
+      }
+      let leftOffset = layout.x + lineLeft
+      if (isJustified) leftOffset += layout.justifyShift ?? 0
+      if (embedFont) {
+        leftOffset = Math.round(leftOffset)
+        lineLeft = Math.round(lineLeft)
+      }
+      return { leftOffset, lineLeft, extendedWidth: isJustified }
+    }
+
+    let leftOffset = layout.x
+    let lineLeft = indent
+    let extendedWidth = false
+    if (indent) leftOffset += indent
+    if (
+      lineWidths.length > 1 ||
+      (context.blockParagraph && (align === 'right' || align === 'center'))
+    ) {
+      // A flex item around text is as wide as a single line, but a paragraph
+      // of a block container fills its width.
+      if (align === 'right') {
+        leftOffset += remainingWidth
+        lineLeft += remainingWidth
+      } else if (align === 'center') {
+        leftOffset += remainingWidth / 2
+        lineLeft += remainingWidth / 2
+      } else if (isJustified) {
+        if (layout.justifyShift !== undefined) {
+          leftOffset += layout.justifyShift
+        } else {
+          const segments = lineSegmentNumber[line]
+          const gutter = segments > 1 ? remainingWidth / (segments - 1) : 0
+          leftOffset += gutter * layout.lineIndex
+        }
+        extendedWidth = true
+      }
+
+      // Only round for embedded fonts (paths benefit from pixel alignment).
+      // For non-embedded fonts (<text> elements), keep fractional positions
+      // to maintain consistent spacing between consecutive elements.
+      if (embedFont) {
+        leftOffset = Math.round(leftOffset)
+        lineLeft = Math.round(lineLeft)
+      }
+    }
+    return { leftOffset, lineLeft, extendedWidth }
+  }
+
+  // With bidi, the line that ends in an ellipsis is cut in visual order: the
+  // pieces past its end edge, on the right or on the left with `rtl`, are
+  // hidden, and the ellipsis is drawn after the others.
+  // https://drafts.csswg.org/css-overflow/#text-overflow
+  const ellipsisPlan =
+    levels && lineLimit !== Infinity ? planEllipsis(lineLimit - 1) : null
+  function planEllipsis(line: number) {
+    if (
+      line >= lineWidths.length ||
+      (line === lineWidths.length - 1 &&
+        lineWidths[line] <= parentContainerInnerWidth)
+    ) {
+      return null
+    }
+    let text = blockEllipsis
+    let width = measureGrapheme(text)
+    if (width > parentContainerInnerWidth) {
+      text = HorizontalEllipsis
+      width = measureGrapheme(text)
+    }
+
+    // Distances from the start edge of the container.
+    const limit = parentContainerInnerWidth - width
+    const pieces: { index: number; left: number; width: number }[] = []
+    wordPositionInLayout.forEach((layout, index) => {
+      if (layout?.line !== line) return
+      const { leftOffset } = placePiece(layout)
+      pieces.push({ index, left: leftOffset, width: layout.width })
+    })
+    const near = (piece: typeof pieces[number]) =>
+      isRTL ? containerWidth - piece.left - piece.width : piece.left
+    pieces.sort((a, b) => near(a) - near(b))
+
+    const hidden = new Set<number>()
+    let truncated: { index: number; text: string; left: number } | undefined
+    // The edge of the text that's kept, without spaces, on the side of the
+    // end edge.
+    let end: number | undefined
+    for (const piece of pieces) {
+      const pieceText = texts[piece.index] ?? ''
+      if (hidden.size || truncated) {
+        hidden.add(piece.index)
+      } else if (near(piece) + piece.width <= limit) {
+        if (pieceText.trim()) {
+          end = isRTL ? piece.left : piece.left + piece.width
+        }
+      } else {
+        // The graphemes of the piece on the side of the start edge are kept,
+        // which is its start if it's in the direction of the line. Like in
+        // browsers, the first one of the line is always kept.
+        const keepsStart = (levels[piece.index] % 2 === 1) === isRTL
+        const graphemes = segment(pieceText.trim(), 'grapheme', locale)
+        if (!keepsStart) graphemes.reverse()
+        let kept = ''
+        let keptWidth = 0
+        for (const grapheme of graphemes) {
+          const next = keepsStart ? kept + grapheme : grapheme + kept
+          const nextWidth = measureGraphemeArray([next])
+          if ((kept || end !== undefined) && near(piece) + nextWidth > limit) {
+            break
+          }
+          kept = next
+          keptWidth = nextWidth
+        }
+        if (kept) {
+          let keptLeft = isRTL
+            ? piece.left + piece.width - keptWidth
+            : piece.left
+          if (embedFont) keptLeft = Math.round(keptLeft)
+          truncated = { index: piece.index, text: kept, left: keptLeft }
+          end = isRTL ? keptLeft : keptLeft + keptWidth
+        } else {
+          hidden.add(piece.index)
+        }
+      }
+    }
+    end ??= isRTL ? containerWidth : 0
+    return {
+      line,
+      hidden,
+      truncated,
+      text,
+      width,
+      end,
+      left: isRTL ? end - width : end,
+    }
+  }
 
   // Attach offset to the current node.
   const left = x + containerLeft
@@ -722,7 +897,6 @@ export default async function* buildTextNodes(
         : null
 
     let topOffset = layout.y
-    let leftOffset = layout.x
     const width = layout.width
     const line = layout.line
     const shouldCollectDecorationBoxes =
@@ -732,67 +906,17 @@ export default async function* buildTextNodes(
     if (line === skippedLine) {
       continue
     }
-
-    // When `text-align` is `justify`, the width of the line will be adjusted.
-    let extendedWidth = false
-    // With `rtl`, the left of the line.
-    let lineLeft = 0
-
-    if (isRTL) {
-      // Lines are aligned even when the container is as wide as their text,
-      // so they're at the right of a wider container. The indent is at the
-      // start of the first line, on the right.
-      const remainingWidth = containerWidth - lineWidths[line]
-      lineLeft = line === 0 ? -textIndentNumber : 0
-      if (align === 'right') {
-        lineLeft += remainingWidth
-      } else if (align === 'center') {
-        lineLeft += remainingWidth / 2
-      } else if (align === 'justify') {
-        // The last line isn't justified, and is aligned to the start.
-        if (line < lineWidths.length - 1) extendedWidth = true
-        else lineLeft += remainingWidth
-      }
-      leftOffset = layout.x + lineLeft
-      if (extendedWidth) leftOffset += layout.justifyShift ?? 0
-      if (embedFont) {
-        leftOffset = Math.round(leftOffset)
-        lineLeft = Math.round(lineLeft)
-      }
-    } else if (line === 0 && textIndentNumber !== 0) {
-      // Apply text-indent to the first line (for both single and multi-line text)
-      leftOffset += textIndentNumber
-    }
-
     if (
-      !isRTL &&
-      (lineWidths.length > 1 ||
-        (context.blockParagraph && (align === 'right' || align === 'center')))
+      ellipsisPlan &&
+      (line > ellipsisPlan.line || ellipsisPlan.hidden.has(i))
     ) {
-      // Calculate alignment. A flex item around text is as wide as a single
-      // line, but a paragraph of a block container fills its width.
-      const remainingWidth = containerWidth - lineWidths[line]
-      if (align === 'right') {
-        leftOffset += remainingWidth
-      } else if (align === 'center') {
-        leftOffset += remainingWidth / 2
-      } else if (align === 'justify') {
-        // Don't justify the last line.
-        if (line < lineWidths.length - 1) {
-          const segments = lineSegmentNumber[line]
-          const gutter = segments > 1 ? remainingWidth / (segments - 1) : 0
-          leftOffset += gutter * layout.lineIndex
-          extendedWidth = true
-        }
-      }
-
-      // Only round for embedded fonts (paths benefit from pixel alignment).
-      // For non-embedded fonts (<text> elements), keep fractional positions
-      // to maintain consistent spacing between consecutive elements.
-      if (embedFont) {
-        leftOffset = Math.round(leftOffset)
-      }
+      continue
     }
+
+    // With `justify`, the line is as wide as the container beside the indent.
+    const placed = placePiece(layout)
+    let leftOffset = placed.leftOffset
+    const { extendedWidth, lineLeft } = placed
 
     const baselineOfLine = baselines[line]
     const baselineOfWord = engine.baseline(text)
@@ -814,21 +938,26 @@ export default async function* buildTextNodes(
 
     if (!decorationLines[line]) {
       decorationLines[line] = {
-        left: isRTL ? lineLeft : leftOffset,
+        // With bidi, the first piece may not be on the left of the line.
+        left: levels ? lineLeft : leftOffset,
         top: top + topOffset + baselineDelta,
         ascender: baselineOfWord,
-        width: extendedWidth ? containerWidth : lineWidths[line],
+        width: extendedWidth
+          ? containerWidth - (line === 0 ? textIndentNumber : 0)
+          : lineWidths[line],
       }
     }
 
-    // With `rtl`, the ellipsis is drawn on its own, at the left of the text.
-    let separateEllipsis: { text: string; left: number; width: number } | null =
-      null
-    // The shaping direction of the piece, guessed from its text without `rtl`.
+    // The shaping direction of the piece, guessed from its text without bidi.
     const direction =
       levels === undefined ? undefined : levels[i] % 2 === 1 ? 'rtl' : 'ltr'
 
-    if (lineLimit !== Infinity) {
+    if (ellipsisPlan?.truncated?.index === i) {
+      text = ellipsisPlan.truncated.text
+      leftOffset = ellipsisPlan.truncated.left
+    }
+
+    if (lineLimit !== Infinity && !ellipsisPlan) {
       let _blockEllipsis = blockEllipsis
       let ellipsisWidth = measureGrapheme(blockEllipsis)
       if (ellipsisWidth > parentContainerInnerWidth) {
@@ -837,8 +966,6 @@ export default async function* buildTextNodes(
       }
       const isNotLastLine = line < lineWidths.length - 1
       const isLastAllowedLine = line + 1 === lineLimit
-      // The distance from the start of the line.
-      const startX = layout.startX ?? layout.x
 
       function calcEllipsis(baseWidth: number, _text: string) {
         const chars = segment(_text, 'grapheme', locale)
@@ -853,7 +980,7 @@ export default async function* buildTextNodes(
             // > The first character or atomic inline-level element on a line
             // must be clipped rather than ellipsed.
             // https://drafts.csswg.org/css-overflow/#text-overflow
-            (subset || startX > 0) &&
+            (subset || layout.x > 0) &&
             w + ellipsisWidth > parentContainerInnerWidth
           ) {
             break
@@ -875,42 +1002,22 @@ export default async function* buildTextNodes(
         // Like in browsers, the last line keeps its words, and characters are
         // only removed when the ellipsis doesn't fit after them.
         // https://drafts.csswg.org/css-overflow-4/#block-ellipsis
-        // The distance from the start of the container to the piece, which
-        // is from the right with `rtl`.
-        const start = isRTL ? containerWidth - leftOffset - width : leftOffset
         if (
-          start + width + ellipsisWidth > parentContainerInnerWidth ||
+          leftOffset + width + ellipsisWidth > parentContainerInnerWidth ||
           (nextLayout && nextLayout.line !== line)
         ) {
           // Spaces at the end of the line aren't drawn before the ellipsis.
           const { subset, resolvedWidth } = calcEllipsis(
-            start,
+            leftOffset,
             text.replace(/\s+$/, '')
           )
 
-          const decoration = decorationLines[line]
-          if (isRTL) {
-            // Right-to-left text keeps its start, on the right.
-            if (direction === 'rtl') {
-              leftOffset += width - (subset ? resolvedWidth - start : 0)
-              if (embedFont) leftOffset = Math.round(leftOffset)
-            }
-            text = subset
-            separateEllipsis = {
-              text: _blockEllipsis,
-              left: leftOffset - ellipsisWidth,
-              width: ellipsisWidth,
-            }
-            decoration.width = Math.max(
-              0,
-              decoration.left + decoration.width - leftOffset
-            )
-            decoration.left = leftOffset
-          } else {
-            text = subset + _blockEllipsis
-            decoration.width = Math.max(0, resolvedWidth - decoration.left)
-          }
+          text = subset + _blockEllipsis
           skippedLine = line
+          decorationLines[line].width = Math.max(
+            0,
+            resolvedWidth - decorationLines[line].left
+          )
           isLastDisplayedBeforeEllipsis = true
         }
       }
@@ -930,13 +1037,15 @@ export default async function* buildTextNodes(
         !nextLayout.isImage &&
         topOffset === nextLayout.y &&
         !isLastDisplayedBeforeEllipsis &&
-        // Text is only shaped together in one direction.
-        (levels === undefined || levels[i] === levels[i + 1])
+        // Text is only shaped together in one direction, and not with pieces
+        // hidden by the ellipsis.
+        (levels === undefined ||
+          (levels[i] === levels[i + 1] && !ellipsisPlan?.hidden.has(i + 1)))
       ) {
         if (wordBuffer === null) {
           bufferedOffset = leftOffset
           bufferedRight = leftOffset + layout.width
-        } else if (isRTL) {
+        } else if (levels) {
           // Right-to-left pieces are drawn from the left of the last one.
           bufferedOffset = Math.min(bufferedOffset, leftOffset)
           bufferedRight = Math.max(bufferedRight, leftOffset + layout.width)
@@ -949,7 +1058,7 @@ export default async function* buildTextNodes(
       let finalizedLeftOffset =
         wordBuffer === null ? leftOffset : bufferedOffset
       let finalizedWidth = layout.width + leftOffset - finalizedLeftOffset
-      if (isRTL && wordBuffer !== null) {
+      if (levels && wordBuffer !== null) {
         finalizedLeftOffset = Math.min(bufferedOffset, leftOffset)
         finalizedWidth =
           Math.max(bufferedRight, leftOffset + layout.width) -
@@ -1064,45 +1173,57 @@ export default async function* buildTextNodes(
       backgroundClipDef += shape
     }
 
-    if (separateEllipsis) {
-      // At the baseline of the text it ends.
-      const baselineTop = top + layout.y + baselineOfWord + baselineDelta
-      if (embedFont) {
-        const svg = engine.getSVG(separateEllipsis.text, {
-          fontSize,
-          left: left + separateEllipsis.left,
-          top: baselineTop,
-          letterSpacing,
-          wordSpacing: wordSpacing as number,
-          fontFeatureSettings,
-          direction: 'rtl',
-        })
-        mergedPath += svg.path + ' '
-      } else {
-        const [t, shape] = buildText(
-          {
-            content: separateEllipsis.text,
-            filter,
-            id,
-            left: left + separateEllipsis.left,
-            top: baselineTop,
-            width: separateEllipsis.width,
-            height: heightOfWord,
-            matrix,
-            image: null,
-            clipPathId,
-            debug,
-            shape: !!_inheritedBackgroundClipTextPath,
-          },
-          parentStyle
-        )
-        result += t
-        backgroundClipDef += shape
-      }
-    }
-
     if (isLastDisplayedBeforeEllipsis) {
       break
+    }
+  }
+
+  if (ellipsisPlan) {
+    const { line, text, width, end } = ellipsisPlan
+    // At the baseline of the line, in the direction of the line.
+    const baselineTop =
+      top +
+      wordPositionInLayout.find((layout) => layout?.line === line).y +
+      baselines[line]
+    if (embedFont) {
+      const svg = engine.getSVG(text, {
+        fontSize,
+        left: left + ellipsisPlan.left,
+        top: baselineTop,
+        letterSpacing,
+        wordSpacing: wordSpacing as number,
+        fontFeatureSettings,
+        direction: isRTL ? 'rtl' : 'ltr',
+      })
+      mergedPath += svg.path + ' '
+    } else {
+      const [t, shape] = buildText(
+        {
+          content: text,
+          filter,
+          id,
+          left: left + ellipsisPlan.left,
+          top: baselineTop,
+          width,
+          height: engine.height(text),
+          matrix,
+          image: null,
+          clipPathId,
+          debug,
+          shape: !!_inheritedBackgroundClipTextPath,
+        },
+        parentStyle
+      )
+      result += t
+      backgroundClipDef += shape
+    }
+
+    // The decoration ends with the text before the ellipsis.
+    const decoration = decorationLines[line]
+    if (decoration) {
+      const right = decoration.left + decoration.width
+      if (isRTL) decoration.left = Math.min(end, right)
+      decoration.width = Math.max(0, (isRTL ? right : end) - decoration.left)
     }
   }
 
