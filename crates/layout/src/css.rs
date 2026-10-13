@@ -174,16 +174,34 @@ impl<'i> DeclarationParser<'i> for Rules {
         let mut important = None;
         loop {
             let before = input.position();
-            let bang = match input.next() {
+            let (bang, block) = match input.next() {
                 // Only custom properties can have `{}` blocks. Otherwise, it's
                 // a nested rule that starts with an identifier, e.g. `a:hover {}`,
                 // which is parsed as a rule instead.
                 Ok(Token::CurlyBracketBlock) if !custom => {
                     return Err(ParseError::unexpected_token())
                 }
-                Ok(token) => matches!(token, Token::Delim('!')),
+                Ok(token) => (
+                    matches!(token, Token::Delim('!')),
+                    matches!(
+                        token,
+                        Token::Function(_)
+                            | Token::ParenthesisBlock
+                            | Token::SquareBracketBlock
+                            | Token::CurlyBracketBlock
+                    ),
+                ),
                 Err(_) => break,
             };
+            // The contents of a block are skipped by the next token otherwise,
+            // so the position before it would be in the block, e.g. in
+            // `var(--x) !important`.
+            if block {
+                input.parse_nested_block(|input| -> Result<()> {
+                    while input.next().is_ok() {}
+                    Ok(())
+                })?;
+            }
             if bang
                 && input
                     .try_parse(|input| {

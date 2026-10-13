@@ -199,6 +199,33 @@ describe('stylesheets', () => {
     )
   })
 
+  it('should parse important values that end with functions', async () => {
+    await expectSame(
+      `:root { --x: 12px }
+      .a { padding-inline: var(--x) !important }
+      .b { color: rgb(255 0 0)!important }
+      .c { margin-left: calc(4px + 6px) !important; margin-top: 2px }`,
+      <>
+        <div className='a' style={{ display: 'flex', paddingLeft: 0 }}>
+          A
+        </div>
+        <span className='b' style={{ color: 'blue' }}>
+          B
+        </span>
+        <div className='c' style={{ marginLeft: 0 }}>
+          C
+        </div>
+      </>,
+      <>
+        <div style={{ display: 'flex', paddingLeft: 12, paddingRight: 12 }}>
+          A
+        </div>
+        <span style={{ color: 'rgb(255 0 0)' }}>B</span>
+        <div style={{ marginLeft: 10, marginTop: 2 }}>C</div>
+      </>
+    )
+  })
+
   it('should apply nested rules', async () => {
     await expectSame(
       `.card {
