@@ -1,9 +1,19 @@
 import { join } from 'node:path'
-import { it, describe, expect } from 'vitest'
+import { it, describe, expect, vi } from 'vitest'
 
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
 import { readFile } from 'node:fs/promises'
+
+// fflate is pinned to 0.7, but apps may resolve 0.8, where the second argument
+// of `inflateSync` is options instead of an output buffer, so it's ignored.
+vi.mock('fflate', async (importOriginal) => {
+  const fflate = await importOriginal<typeof import('fflate')>()
+  return {
+    ...fflate,
+    inflateSync: (data: Uint8Array) => fflate.inflateSync(data),
+  }
+})
 
 describe('Font', () => {
   let fonts
@@ -165,6 +175,24 @@ describe('Font', () => {
     )
 
     expect(await toImage(svg)).toMatchImageSnapshot()
+  })
+
+  it('should render WOFF fonts the same as the TTF they were built from', async () => {
+    const render = async (file: string) =>
+      satori(<div style={{ fontSize: 32 }}>Hello</div>, {
+        width: 200,
+        height: 50,
+        fonts: [
+          {
+            name: 'Habbo',
+            data: await readFile(join(process.cwd(), 'test', 'assets', file)),
+            weight: 400,
+            style: 'normal',
+          },
+        ],
+      })
+
+    expect(await render('Habbo.woff')).toBe(await render('Habbo.ttf'))
   })
 
   describe('WOFF2', () => {
