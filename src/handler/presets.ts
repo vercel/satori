@@ -29,6 +29,10 @@ export default {
   template: hidden,
   title: hidden,
 
+  // The document, as when a page is rendered.
+  html: block,
+  body: { display: DEFAULT_DISPLAY, margin: 8 },
+
   // Generic block-level elements
   address: block,
   article: block,

@@ -92,6 +92,28 @@ describe('display', () => {
     ).toMatchImageSnapshot()
   })
 
+  it('should lay out <html> and <body> like browsers', async () => {
+    const content = <div style={{ height: 20, backgroundColor: 'blue' }} />
+    const options = { width: 100, height: 60, fonts }
+    expect(
+      await satori(
+        <html style={{ backgroundColor: 'gray' }}>
+          <body style={{ backgroundColor: 'red' }}>{content}</body>
+        </html>,
+        options
+      )
+    ).toBe(
+      await satori(
+        <div style={{ display: 'block', backgroundColor: 'gray' }}>
+          <div style={{ display: 'block', margin: 8, backgroundColor: 'red' }}>
+            {content}
+          </div>
+        </div>,
+        options
+      )
+    )
+  })
+
   it('should not render elements that are hidden by default', async () => {
     const options = { width: 200, height: 60, fonts }
     const page = (hidden: any) => (
