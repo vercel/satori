@@ -510,7 +510,7 @@ Note:
 1. In 3D transforms, elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
 2. Percentages in `calc()`, `min()`, `max()` and `clamp()` only work in sizes, margins, paddings, insets, gaps, `flexBasis` and translations. Elsewhere, values with them are ignored.
 3. Properties that aren't listed are ignored, for example `columns`, `writingMode` and `fontStretch`.
-4. Invalid values throw an error, which fails the whole render, unless they're ignored with [`onStyleError`](#invalid-styles).
+4. Invalid values in inline styles throw an error, which fails the whole render, unless they're ignored with [`onStyleError`](#invalid-styles). Stylesheets drop them instead, see [Stylesheets](#stylesheets).
 5. `inherit` on properties that aren't inherited, e.g. `border: inherit`, sets their initial value instead of the value of the parent.
 
 #### Stylesheets
@@ -518,7 +518,8 @@ Note:
 The CSS of `<style>` elements applies to the whole tree, including the elements of components. The declarations of matching rules are merged with inline styles in cascade order, so the table above applies to them too. Selectors, specificity, `!important`, nesting, `@layer`, `@media`, `@supports` and the `media` attribute are supported, with these differences:
 
 - `@media` matches the `width` and `height` of the image, on a static screen in light mode, e.g. `prefers-color-scheme: light` and `hover: none`.
-- `@supports` assumes that declarations and `selector()` are supported, but not `font-tech()` and `font-format()`.
+- Invalid and unsupported declarations are dropped like in browsers, and passed to `onStyleError`. Values with `var()` are only checked when they're computed, where invalid values throw like in inline styles.
+- `@supports` checks declarations the same way, but properties that Satori ignores count as supported. `selector()` is supported, but not `font-tech()` and `font-format()`.
 - `::before` and `::after` are supported, with `content` made of strings, `attr()`, `counter()`, `counters()`, quotes and `url()`. Quotes are always “ and ”, as `quotes` isn't supported. Other pseudo-elements, such as `::marker` and `::first-line`, aren't supported, so rules with them don't apply.
 - Pseudo-classes of interactions such as `:hover` never match, and functional pseudo-classes other than `:is()`, `:where()`, `:not()`, `:has()`, `:nth-*()` and `:lang()` make their rule invalid.
 - Other at-rules are ignored, such as `@font-face`, `@keyframes`, `@container`, `@scope` and `@import`.
@@ -712,7 +713,7 @@ const svg = await satori(
 
 ### Invalid Styles
 
-By default, an invalid or unsupported style declaration throws an error, which fails the whole render. With `onStyleError`, the declaration is ignored instead, and its error is passed to the callback:
+By default, an invalid or unsupported declaration in an inline style throws an error, which fails the whole render. With `onStyleError`, the declaration is ignored instead, and its error is passed to the callback. Declarations of [stylesheets](#stylesheets) are always dropped, like in browsers, and passed to the callback too:
 
 ```jsx
 const svg = await satori(

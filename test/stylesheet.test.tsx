@@ -366,6 +366,76 @@ describe('stylesheets', () => {
     )
   })
 
+  it('should drop invalid declarations like browsers', async () => {
+    await expectSame(
+      `.a { display: flex; display: table; flex-direction: column }
+      .b { margin: 4px; margin: foo; transform: banana(1); color: red }
+      .c {
+        height: 10px;
+        background-image: linear-gradient(red, blue);
+        background-image: image-set("a.png" 1x);
+      }
+      .d { cursor: pointer; transition: all 1s }
+      .e::before { content: "E"; display: table }
+      @supports (display: table) { .f { color: red } }
+      @supports not (display: table) { .g { color: green } }`,
+      <>
+        <div className='a'>
+          <span>1</span>
+          <span>2</span>
+        </div>
+        <div className='b'>B</div>
+        <div className='c' />
+        <div className='d'>D</div>
+        <div className='e' />
+        <div className='f'>F</div>
+        <div className='g'>G</div>
+      </>,
+      <>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span>1</span>
+          <span>2</span>
+        </div>
+        <div style={{ margin: '4px', color: 'red' }}>B</div>
+        <div
+          style={{
+            height: '10px',
+            backgroundImage: 'linear-gradient(red, blue)',
+          }}
+        />
+        <div>D</div>
+        <div>
+          <span>E</span>
+        </div>
+        <div>F</div>
+        <div style={{ color: 'green' }}>G</div>
+      </>
+    )
+
+    // They're passed to `onStyleError`, and inline styles still throw.
+    const errors: string[] = []
+    await satori(
+      <div>
+        <style>{'.x { display: table } .x { display: table }'}</style>
+        <div className='x' />
+      </div>,
+      {
+        width: 10,
+        height: 10,
+        fonts,
+        onStyleError: (e) => errors.push(e.message),
+      }
+    )
+    expect(errors).toEqual([expect.stringContaining('"display"')])
+    await expect(
+      satori(<div style={{ display: 'table' }} />, {
+        width: 10,
+        height: 10,
+        fonts,
+      })
+    ).rejects.toThrow('"display"')
+  })
+
   it('should apply stylesheets of components, inner HTML and SVG', async () => {
     const Card = () => (
       <>

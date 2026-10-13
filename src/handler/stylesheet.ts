@@ -69,6 +69,17 @@ interface Node {
   lang?: string
   /** Whether it's in an `<svg>`. */
   svg: boolean
+  /**
+   * The rules that match it, and its `::before` and `::after` if it can have
+   * them, see `matchRules()`.
+   */
+  matched?: Partial<Record<'' | 'before' | 'after', MatchedRule[]>>
+}
+
+interface MatchedRule {
+  rule: Rule
+  /** The specificity of the most specific selector that matches. */
+  specificity: number
 }
 
 // Specificities are compared as numbers.
@@ -129,31 +140,49 @@ const PSEUDO_CLASSES = new Set([
  * Applies the stylesheets in the tree, which has no components, see
  * `resolveComponents()`. Without stylesheets, the tree is returned as is.
  */
-export function applyStyleSheets(
+export async function applyStyleSheets(
   root: ReactNode,
   engine: LayoutEngine,
-  viewport: Viewport
-): ReactNode {
+  viewport: Viewport,
+  isValid?: (name: string, value: string) => Promise<boolean>
+): Promise<ReactNode> {
   const sheets: string[] = []
   collectStyleSheets(root, sheets, viewport)
   if (!sheets.length) return root
 
+  const parsed: Item[][] = sheets.map((css) => JSON.parse(engine.parseCSS(css)))
   const state: CompileState = {
     order: 0,
     anonymousLayers: 0,
     layers: new Map(),
     viewport,
+    supported: isValid && (await checkSupportsDeclarations(parsed, isValid)),
   }
   const rules: Rule[] = []
-  for (const css of sheets) {
-    compileRules(JSON.parse(engine.parseCSS(css)), null, [], rules, state)
-  }
+  for (const items of parsed) compileRules(items, null, [], rules, state)
   if (!rules.length) return root
   rankLayers(rules, state.layers)
 
   const roots: Node[] = []
   buildNodes(root, null, roots)
-  const children = rebuild(root, roots, rules)
+  // Rules are matched first, so that only the declarations that apply are
+  // validated.
+  const nodes: Node[] = []
+  const visit = (node: Node) => {
+    node.matched = { '': matchRules(node, rules) }
+    if (!node.svg && !NO_GENERATED_CONTENT.has(node.type)) {
+      node.matched.before = matchRules(node, rules, 'before')
+      node.matched.after = matchRules(node, rules, 'after')
+    }
+    nodes.push(node)
+    node.children.forEach(visit)
+  }
+  roots.forEach(visit)
+  const invalid = isValid
+    ? await findInvalidDeclarations(nodes, isValid)
+    : new Set<Declaration>()
+
+  const children = rebuild(root, roots, invalid)
   return isFragment(root)
     ? {
         ...(root as ReactElement),
@@ -203,6 +232,8 @@ interface CompileState {
   /** The layers in the order they're declared, by name. */
   layers: Map<string, number>
   viewport: Viewport
+  /** Whether the declarations of `@supports` are supported. */
+  supported?: Map<string, boolean>
 }
 
 /**
@@ -249,7 +280,7 @@ function compileRules(
         compileRules(item.b, parent, layer, rules, state)
       }
     } else if (item.u !== undefined) {
-      if (matchesSupports(item.u)) {
+      if (matchesSupports(item.u, state.supported)) {
         compileRules(item.b, parent, layer, rules, state)
       }
     } else if (item.l) {
@@ -494,21 +525,25 @@ function buildNodes(
  * Rebuilds the children with the styles of the stylesheets, and the
  * `::before` and `::after` pseudo-elements.
  */
-function rebuild(children: ReactNode, nodes: Node[], rules: Rule[]) {
+function rebuild(
+  children: ReactNode,
+  nodes: Node[],
+  invalid: Set<Declaration>
+) {
   let index = 0
   return normalizeChildren(children).map((child) => {
     if (!isReactElement(child) || typeof child.type !== 'string') return child
     const node = nodes[index++]
     const props: Record<string, any> = { ...child.props }
-    const style = cascade(node, rules)
+    const style = cascade(node, invalid)
     if (style) props.style = style
     let content: ReactNode[] | undefined =
       props.children === undefined
         ? undefined
-        : rebuild(props.children, node.children, rules)
-    if (!node.svg && !NO_GENERATED_CONTENT.has(node.type)) {
-      const before = generateContent(node, rules, 'before')
-      const after = generateContent(node, rules, 'after')
+        : rebuild(props.children, node.children, invalid)
+    if (node.matched.before) {
+      const before = generateContent(node, invalid, 'before')
+      const after = generateContent(node, invalid, 'after')
       if (before || after) {
         content = [before, ...(content ?? []), after].filter(Boolean)
       }
@@ -551,8 +586,12 @@ const element = (type: string, props: Record<string, unknown>) =>
  * Counters in its content are resolved in layout, at its position in the
  * tree, see `layout()`.
  */
-function generateContent(node: Node, rules: Rule[], pseudo: string) {
-  const style = cascade(node, rules, pseudo)
+function generateContent(
+  node: Node,
+  invalid: Set<Declaration>,
+  pseudo: 'before' | 'after'
+) {
+  const style = cascade(node, invalid, pseudo)
   const content = style?.content
   if (!Array.isArray(content)) return
   delete style.content
@@ -594,15 +633,9 @@ interface Match {
   specificity: number
 }
 
-/**
- * The style of an element, or of its `pseudo` element, with the matching
- * declarations, in cascade order: normal declarations by layer, specificity
- * and order, then the inline style, then important declarations, where
- * earlier layers win.
- */
-function cascade(node: Node, rules: Rule[], pseudo?: string) {
-  const normal: Match[] = []
-  const important: Match[] = []
+/** The rules that match an element, or its `pseudo` element. */
+function matchRules(node: Node, rules: Rule[], pseudo?: string) {
+  const matched: MatchedRule[] = []
   for (const rule of rules) {
     let specificity = -1
     for (const selector of rule.selectors) {
@@ -614,10 +647,75 @@ function cascade(node: Node, rules: Rule[], pseudo?: string) {
         specificity = selector.specificity
       }
     }
-    if (specificity < 0) continue
+    if (specificity >= 0) matched.push({ rule, specificity })
+  }
+  return matched
+}
+
+const CSS_WIDE_KEYWORDS = /^(inherit|initial|unset|revert|revert-layer)$/i
+
+/**
+ * The declarations of matching rules with invalid or unsupported values,
+ * which are dropped like in browsers, so that earlier declarations apply
+ * instead. Like in browsers, values with `var()` are valid until they're
+ * computed.
+ */
+async function findInvalidDeclarations(
+  nodes: Node[],
+  isValid: (name: string, value: string) => Promise<boolean>
+) {
+  const byKey = new Map<string, Declaration[]>()
+  for (const node of nodes) {
+    for (const matched of Object.values(node.matched)) {
+      for (const { rule } of matched) {
+        for (const declaration of rule.declarations) {
+          const [name, value] = declaration
+          if (
+            typeof value !== 'string' ||
+            name.startsWith('--') ||
+            CSS_WIDE_KEYWORDS.test(value) ||
+            /var\(/i.test(value)
+          ) {
+            continue
+          }
+          const key = name + ':' + value
+          const declarations = byKey.get(key)
+          if (declarations) declarations.push(declaration)
+          else byKey.set(key, [declaration])
+        }
+      }
+    }
+  }
+  const invalid = new Set<Declaration>()
+  await Promise.all(
+    [...byKey.values()].map(async (declarations) => {
+      const [name, value] = declarations[0]
+      if (!(await isValid(toPropertyName(name), value as string))) {
+        for (const declaration of declarations) invalid.add(declaration)
+      }
+    })
+  )
+  return invalid
+}
+
+/**
+ * The style of an element, or of its `pseudo` element, with the matching
+ * declarations, in cascade order: normal declarations by layer, specificity
+ * and order, then the inline style, then important declarations, where
+ * earlier layers win.
+ */
+function cascade(
+  node: Node,
+  invalid: Set<Declaration>,
+  pseudo?: 'before' | 'after'
+) {
+  const normal: Match[] = []
+  const important: Match[] = []
+  for (const { rule, specificity } of node.matched[pseudo ?? '']) {
     for (const declaration of rule.declarations) {
       // `content` only applies to pseudo-elements.
       if (!pseudo && declaration[0] === 'content') continue
+      if (invalid.has(declaration)) continue
       ;(declaration[2] ? important : normal).push({
         declaration,
         rule,
@@ -1130,16 +1228,65 @@ function matchesMediaFeature(text: string, viewport: Viewport): boolean {
 }
 
 /**
- * Evaluates a condition of `@supports`. Declarations are assumed to be
- * supported, and `selector()` too.
+ * Evaluates a condition of `@supports`. Declarations are supported if they're
+ * in `supported`, or valid if they aren't, and `selector()` is supported.
  */
-export function matchesSupports(text: string): boolean {
+export function matchesSupports(
+  text: string,
+  supported?: Map<string, boolean>
+): boolean {
   return matchesCondition(text, function group(inner): boolean {
     if (/^selector\(/i.test(inner)) return true
     if (/^[a-z-]+\(/i.test(inner)) return false
     if (inner.startsWith('(') || /^not\b/i.test(inner)) {
       return matchesCondition(inner, group)
     }
-    return /^--|^[a-z-]+\s*:/i.test(inner)
+    if (!/^--|^[a-z-]+\s*:/i.test(inner)) return false
+    return supported?.get(inner) ?? true
   })
+}
+
+/** Collects the declarations in a condition of `@supports`. */
+function collectSupportsDeclarations(text: string, declarations: Set<string>) {
+  for (const group of splitCondition(text.trim())?.groups ?? []) {
+    if (!group.startsWith('(')) continue
+    const inner = group.slice(1, -1).trim()
+    if (inner.startsWith('(') || /^not\b/i.test(inner)) {
+      collectSupportsDeclarations(inner, declarations)
+    } else if (/^[a-z-]+\s*:/i.test(inner)) {
+      declarations.add(inner)
+    }
+  }
+}
+
+/**
+ * Which declarations of `@supports` conditions are supported, as the
+ * declarations of stylesheets are validated.
+ */
+async function checkSupportsDeclarations(
+  sheets: Item[][],
+  isValid: (name: string, value: string) => Promise<boolean>
+) {
+  const declarations = new Set<string>()
+  const visit = (items: Item[]) => {
+    for (const item of items) {
+      if (Array.isArray(item)) continue
+      if (item.u !== undefined)
+        collectSupportsDeclarations(item.u, declarations)
+      if (item.b) visit(item.b)
+    }
+  }
+  sheets.forEach(visit)
+  const supported = new Map<string, boolean>()
+  await Promise.all(
+    [...declarations].map(async (declaration) => {
+      const colon = declaration.indexOf(':')
+      const name = toPropertyName(
+        declaration.slice(0, colon).trim().toLowerCase()
+      )
+      const value = declaration.slice(colon + 1).trim()
+      supported.set(declaration, await isValid(name, value))
+    })
+  )
+  return supported
 }
