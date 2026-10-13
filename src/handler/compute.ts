@@ -6,6 +6,7 @@
 
 import presets from './presets.js'
 import inheritable, { isInherited } from './inheritable.js'
+import { toPhysicalProperties } from './logical.js'
 import { isLonghandOf } from './shorthands.js'
 import expand, { SerializedStyle } from './expand.js'
 import {
@@ -363,7 +364,18 @@ export default async function compute(
     ...getListPresets(type, props, listDepth),
     ...getDirPreset(props),
   }
-  const { defined, initial } = resolveKeywords(definedStyle, presetStyle)
+  // Logical properties are physical ones of the element's direction.
+  const ownDirection = String(definedStyle?.direction ?? '')
+    .trim()
+    .toLowerCase()
+  const logicalDirection =
+    ownDirection === 'ltr' || ownDirection === 'rtl'
+      ? ownDirection
+      : String(presetStyle.direction ?? inheritedStyle?.direction ?? 'ltr')
+  const { defined, initial } = resolveKeywords(
+    toPhysicalProperties(definedStyle, logicalDirection),
+    presetStyle
+  )
   for (const prop in defined) delete presetStyle[prop]
 
   // Properties without a value have their initial value, except the root
