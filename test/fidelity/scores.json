@@ -15,8 +15,8 @@
     "styleErrors": 0
   },
   "nextjs-footer": {
-    "mismatch": 1.66,
-    "contentMismatch": 28.15,
+    "mismatch": 0.64,
+    "contentMismatch": 16.32,
     "styleErrors": 1
   }
 }
