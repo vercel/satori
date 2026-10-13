@@ -2,13 +2,13 @@
  * Compares Satori with Chrome on snapshots of real website sections, see
  * `cases.ts` and `capture.ts`:
  *
- *   pnpm fidelity [names...]            compare with the scores in `scores.json`
- *   pnpm fidelity --update [names...]   also update `scores.json` and `results`
+ *   pnpm fidelity [names...]            compare with the saved scores
+ *   pnpm fidelity --update [names...]   also save the scores
  *
  * Uses `dist`, so run `pnpm build` first. The images of Satori, the
- * differences and all of them side by side are written to `output`. With
- * `--update`, the side-by-side images are also saved in `results`, which
- * match the scores.
+ * differences and all of them side by side are written to `output`, and so
+ * are the saved scores. They aren't committed, so that changes don't conflict
+ * with each other.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -39,8 +39,7 @@ interface Score {
 type Fonts = ReturnType<typeof loadFonts>
 
 const outputDir = join(import.meta.dirname, 'output')
-const resultsDir = join(import.meta.dirname, 'results')
-const scoresFile = join(import.meta.dirname, 'scores.json')
+const scoresFile = join(outputDir, 'scores.json')
 
 /** The height of the labels above the side-by-side images. */
 const LABEL_HEIGHT = 36
@@ -243,7 +242,7 @@ async function run(name: string) {
   writeFileSync(join(dir, 'diff.png'), diffPNG)
   writeFileSync(join(dir, 'compare.png'), compare)
   writeFileSync(join(dir, 'styleErrors.txt'), styleErrors.join('\n') + '\n')
-  return { score, time, size: `${width}x${height}`, compare }
+  return { score, time, size: `${width}x${height}` }
 }
 
 const args = process.argv.slice(2)
@@ -258,14 +257,13 @@ const baseline: Record<string, Score> = existsSync(scoresFile)
   : {}
 const scores = { ...baseline }
 const rows: Record<string, string | number>[] = []
-if (update) mkdirSync(resultsDir, { recursive: true })
 
 for (const testCase of selected) {
   if (!existsSync(join(casesDir, testCase.name, 'snapshot.json'))) {
     rows.push({ case: testCase.name, mismatch: 'not captured' })
     continue
   }
-  const { score, time, size, compare } = await run(testCase.name)
+  const { score, time, size } = await run(testCase.name)
   const before = baseline[testCase.name]
   const change = (key: 'mismatch' | 'contentMismatch') => {
     if (!before) return `${score[key]} (new)`
@@ -282,12 +280,12 @@ for (const testCase of selected) {
   })
   if (score.error) console.error(`${testCase.name}: ${score.error}`)
   scores[testCase.name] = score
-  if (update) writeFileSync(join(resultsDir, `${testCase.name}.png`), compare)
 }
 
 console.table(rows)
 console.log(`Images in ${outputDir}`)
 if (update) {
+  mkdirSync(outputDir, { recursive: true })
   writeFileSync(scoresFile, JSON.stringify(scores, null, 2) + '\n')
-  console.log(`Updated ${scoresFile} and ${resultsDir}`)
+  console.log(`Saved the scores in ${scoresFile}`)
 }
