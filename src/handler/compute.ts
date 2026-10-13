@@ -367,8 +367,8 @@ export default async function compute(
       style,
       imageWidth,
       imageHeight,
-      // Images of list markers have their natural size.
-      props.width ?? (props.__marker ? imageWidth : undefined),
+      // Images of list markers and generated content have their natural size.
+      props.width ?? (props.__naturalSize ? imageWidth : undefined),
       props.height
     )
     style.__src = resolvedSrc

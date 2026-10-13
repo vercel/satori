@@ -12,6 +12,10 @@
 //!
 //! Other at-rules are dropped. Nested group rules have declarations too.
 //!
+//! The value of `content` is `"none"`, `"normal"`, or a list of strings,
+//! `["attr",name,fallback]`, `["counter",name,separator,style]`, where the
+//! separator of `counter()` is `null`, `["quote",keyword]` and `["url",url]`.
+//!
 //! A selector list is a list of complex selectors, which are lists of
 //! compound selectors and combinators (`" "`, `">"`, `"+"` or `"~"`) from left
 //! to right. Relative selectors, in nested rules and `:has()`, can start with
@@ -156,6 +160,14 @@ impl<'i> DeclarationParser<'i> for Rules {
         input: &mut Parser<'i>,
         _start: &ParserState,
     ) -> Result<String> {
+        if name.eq_ignore_ascii_case("content") {
+            let (value, important) = content(input)?;
+            return Ok(format!(
+                "[\"content\",{},{}]",
+                value,
+                if important { 1 } else { 0 }
+            ));
+        }
         let custom = name.starts_with("--");
         let start = input.position();
         // The position of `!important` at the end, if any.
@@ -212,6 +224,102 @@ impl<'i> RuleBodyItemParser<'i, String, ()> for Rules {
     fn parse_qualified(&self) -> bool {
         true
     }
+}
+
+/// The value of `content`, and whether it's `!important`.
+fn content(input: &mut Parser) -> Result<(String, bool)> {
+    let mut parts = Vec::new();
+    let mut keyword = None;
+    let mut important = false;
+    loop {
+        let token = match input.next() {
+            Ok(token) => token.clone(),
+            Err(_) => break,
+        };
+        if keyword.is_some() && token != Token::Delim('!') {
+            return Err(ParseError::unexpected_token());
+        }
+        match token {
+            Token::Delim('!') => {
+                input.expect_ident_matching("important")?;
+                input.expect_exhausted()?;
+                important = true;
+                break;
+            }
+            // The alternative text after `/` isn't drawn.
+            Token::Delim('/') if !parts.is_empty() => {
+                while let Ok(token) = input.next() {
+                    if *token == Token::Delim('!') {
+                        input.expect_ident_matching("important")?;
+                        input.expect_exhausted()?;
+                        important = true;
+                        break;
+                    }
+                }
+                break;
+            }
+            Token::QuotedString(text) => parts.push(json(&text)),
+            Token::UnquotedUrl(url) => parts.push(format!("[\"url\",{}]", json(&url))),
+            Token::Function(name) => {
+                let name = name.to_ascii_lowercase();
+                parts.push(input.parse_nested_block(|input| content_function(input, &name))?);
+            }
+            Token::Ident(ident) => {
+                let ident = ident.to_ascii_lowercase();
+                match ident.as_str() {
+                    "none" | "normal" if parts.is_empty() => keyword = Some(ident),
+                    "open-quote" | "close-quote" | "no-open-quote" | "no-close-quote" => {
+                        parts.push(format!("[\"quote\",{}]", json(&ident)))
+                    }
+                    _ => return Err(ParseError::unexpected_token()),
+                }
+            }
+            _ => return Err(ParseError::unexpected_token()),
+        }
+    }
+    match keyword {
+        Some(keyword) => Ok((json(&keyword), important)),
+        None if parts.is_empty() => Err(ParseError::unexpected_token()),
+        None => Ok((list(&parts), important)),
+    }
+}
+
+fn content_function(input: &mut Parser, name: &str) -> Result<String> {
+    let value = match name {
+        "url" => format!("[\"url\",{}]", json(input.expect_string()?)),
+        "attr" => {
+            let attribute = input.expect_ident()?.to_string();
+            let fallback = if input.try_parse(|input| input.expect_comma()).is_ok() {
+                json(input.expect_string()?)
+            } else {
+                "null".to_string()
+            };
+            format!("[\"attr\",{},{}]", json(&attribute), fallback)
+        }
+        "counter" | "counters" => {
+            let counter = input.expect_ident()?.to_string();
+            let separator = if name == "counters" {
+                input.expect_comma()?;
+                json(input.expect_string()?)
+            } else {
+                "null".to_string()
+            };
+            let style = if input.try_parse(|input| input.expect_comma()).is_ok() {
+                input.expect_ident()?.to_string()
+            } else {
+                "decimal".to_string()
+            };
+            format!(
+                "[\"counter\",{},{},{}]",
+                json(&counter),
+                separator,
+                json(&style)
+            )
+        }
+        _ => return Err(ParseError::unexpected_token()),
+    };
+    input.expect_exhausted()?;
+    Ok(value)
 }
 
 /// The rest of the input as text.

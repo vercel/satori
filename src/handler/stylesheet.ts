@@ -14,7 +14,13 @@ import { isReactElement, normalizeChildren } from '../utils.js'
 type Combinator = ' ' | '>' | '+' | '~'
 type RawSimple = [string, ...any[]]
 type RawComplex = (RawSimple[] | Combinator)[]
-type Declaration = [name: string, value: string, important: 0 | 1]
+/** A part of `content`: text, or a function or keyword. */
+type ContentPart = string | [kind: string, ...args: any[]]
+type Declaration = [
+  name: string,
+  value: string | ContentPart[],
+  important: 0 | 1
+]
 interface RawRule {
   s?: RawComplex[]
   m?: string
@@ -29,6 +35,8 @@ type Compound = Simple[]
 interface Selector {
   parts: (Compound | Combinator)[]
   specificity: number
+  /** The pseudo-element it selects, e.g. `before`. */
+  pseudo?: string
 }
 
 interface Rule {
@@ -59,6 +67,8 @@ interface Node {
   text: boolean
   classes: string[]
   lang?: string
+  /** Whether it's in an `<svg>`. */
+  svg: boolean
 }
 
 // Specificities are compared as numbers.
@@ -308,7 +318,7 @@ function compileSelector(
     parts =
       typeof raw[0] === 'string' ? [[['&']], ...raw] : [[['&']], ' ', ...raw]
   }
-  return compileParts(parts, parent)
+  return compileParts(parts, parent, true)
 }
 
 /** Compiles a relative selector of `:has()`, anchored at its element. */
@@ -322,27 +332,41 @@ function compileRelativeSelector(
   )
 }
 
+/**
+ * Compiles the parts of a selector. A pseudo-element can only end the
+ * selector of a rule, and the rest matches its originating element.
+ */
 function compileParts(
   raw: RawComplex,
-  parent: Selector[] | null
+  parent: Selector[] | null,
+  allowPseudo = false
 ): Selector | null {
   const parts: Selector['parts'] = []
   let specificity = 0
-  for (const part of raw) {
+  let pseudo: string | undefined
+  for (let i = 0; i < raw.length; i++) {
+    const part = raw[i]
     if (typeof part === 'string') {
       parts.push(part)
       continue
     }
     const compound: Compound = []
-    for (const rawSimple of part) {
-      const simple = compileSimple(rawSimple, parent)
+    for (let j = 0; j < part.length; j++) {
+      if (part[j][0] === '::') {
+        const last = i === raw.length - 1 && j === part.length - 1
+        if (!allowPseudo || !last) return null
+        pseudo = part[j][1]
+        specificity += TYPE
+        continue
+      }
+      const simple = compileSimple(part[j], parent)
       if (!simple) return null
       compound.push(simple)
       specificity += simpleSpecificity(simple)
     }
     parts.push(compound)
   }
-  return { parts, specificity }
+  return { parts, specificity, pseudo }
 }
 
 function compileList(
@@ -410,7 +434,6 @@ function simpleSpecificity(simple: Simple): number {
     case '[':
       return CLASS
     case 't':
-    case '::':
       return TYPE
     case '&':
       // `&` without a parent rule is `:scope`.
@@ -460,13 +483,17 @@ function buildNodes(
           ? className.split(/\s+/).filter(Boolean)
           : [],
       lang: props.lang ?? lang,
+      svg: !!parent && (parent.svg || parent.type === 'svg'),
     }
     siblings.push(node)
     buildNodes(props.children, node, node.children, node.lang)
   }
 }
 
-/** Rebuilds the children with the styles of the stylesheets. */
+/**
+ * Rebuilds the children with the styles of the stylesheets, and the
+ * `::before` and `::after` pseudo-elements.
+ */
 function rebuild(children: ReactNode, nodes: Node[], rules: Rule[]) {
   let index = 0
   return normalizeChildren(children).map((child) => {
@@ -475,11 +502,79 @@ function rebuild(children: ReactNode, nodes: Node[], rules: Rule[]) {
     const props: Record<string, any> = { ...child.props }
     const style = cascade(node, rules)
     if (style) props.style = style
-    if (props.children !== undefined) {
-      props.children = rebuild(props.children, node.children, rules)
+    let content: ReactNode[] | undefined =
+      props.children === undefined
+        ? undefined
+        : rebuild(props.children, node.children, rules)
+    if (!node.svg && !NO_GENERATED_CONTENT.has(node.type)) {
+      const before = generateContent(node, rules, 'before')
+      const after = generateContent(node, rules, 'after')
+      if (before || after) {
+        content = [before, ...(content ?? []), after].filter(Boolean)
+      }
     }
+    if (content !== undefined) props.children = content
     return { ...child, props }
   })
+}
+
+/** Elements without `::before` and `::after`, e.g. replaced elements. */
+const NO_GENERATED_CONTENT = new Set([
+  'img',
+  'svg',
+  'canvas',
+  'video',
+  'audio',
+  'iframe',
+  'object',
+  'embed',
+  'input',
+  'textarea',
+  'select',
+  'br',
+  'wbr',
+])
+
+const QUOTES: Record<string, string> = {
+  'open-quote': '\u201c',
+  'close-quote': '\u201d',
+  'no-open-quote': '',
+  'no-close-quote': '',
+}
+
+const element = (type: string, props: Record<string, unknown>) =>
+  ({ type, key: null, props } as unknown as ReactElement)
+
+/**
+ * The `::before` or `::after` pseudo-element of an element, unless its
+ * `content` is `none` or `normal`. It's a child that selectors don't match.
+ * Counters in its content are resolved in layout, at its position in the
+ * tree, see `layout()`.
+ */
+function generateContent(node: Node, rules: Rule[], pseudo: string) {
+  const style = cascade(node, rules, pseudo)
+  const content = style?.content
+  if (!Array.isArray(content)) return
+  delete style.content
+  const children = (content as ContentPart[]).map((part) => {
+    if (typeof part === 'string') return part
+    switch (part[0]) {
+      case 'attr':
+        return getAttribute(node, part[1].toLowerCase()) ?? part[2] ?? ''
+      case 'quote':
+        return QUOTES[part[1]]
+      case 'url':
+        return element('img', { src: part[1], __naturalSize: true })
+      case 'counter':
+        return element('::counter', {
+          name: part[1],
+          separator: part[2],
+          counterStyle: part[3],
+        })
+    }
+    return ''
+  })
+  return element('::' + pseudo, { style, children })
 }
 
 /** Converts a property name to the camel case of inline styles. */
@@ -500,22 +595,29 @@ interface Match {
 }
 
 /**
- * The style of an element with the matching declarations, in cascade order:
- * normal declarations by layer, specificity and order, then the inline style,
- * then important declarations, where earlier layers win.
+ * The style of an element, or of its `pseudo` element, with the matching
+ * declarations, in cascade order: normal declarations by layer, specificity
+ * and order, then the inline style, then important declarations, where
+ * earlier layers win.
  */
-function cascade(node: Node, rules: Rule[]) {
+function cascade(node: Node, rules: Rule[], pseudo?: string) {
   const normal: Match[] = []
   const important: Match[] = []
   for (const rule of rules) {
     let specificity = -1
     for (const selector of rule.selectors) {
-      if (selector.specificity > specificity && matches(selector, node)) {
+      if (
+        selector.pseudo === pseudo &&
+        selector.specificity > specificity &&
+        matches(selector, node)
+      ) {
         specificity = selector.specificity
       }
     }
     if (specificity < 0) continue
     for (const declaration of rule.declarations) {
+      // `content` only applies to pseudo-elements.
+      if (!pseudo && declaration[0] === 'content') continue
       ;(declaration[2] ? important : normal).push({
         declaration,
         rule,
@@ -549,8 +651,10 @@ function cascade(node: Node, rules: Rule[]) {
   for (const { declaration } of normal) {
     set(toPropertyName(declaration[0]), declaration[1])
   }
-  for (const [name, value] of Object.entries(node.props.style ?? {})) {
-    set(name, value)
+  if (!pseudo) {
+    for (const [name, value] of Object.entries(node.props.style ?? {})) {
+      set(name, value)
+    }
   }
   for (const { declaration } of important) {
     set(toPropertyName(declaration[0]), declaration[1])
@@ -613,9 +717,13 @@ function matchesCompound(
         if (!matchesAttribute(node, simple)) return false
         break
       case '&':
+        // It doesn't represent pseudo-elements of the parent rule.
         if (
           simple[1]
-            ? !simple[1].some((selector: Selector) => matches(selector, node))
+            ? !simple[1].some(
+                (selector: Selector) =>
+                  !selector.pseudo && matches(selector, node)
+              )
             : node.parent
         ) {
           return false
@@ -624,9 +732,6 @@ function matchesCompound(
       case '@':
         if (node !== anchor) return false
         break
-      case '::':
-        // Pseudo-elements aren't supported yet.
-        return false
       case ':':
         if (!matchesPseudoClass(simple, node)) return false
         break
