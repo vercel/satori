@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { it, describe, expect } from 'vitest'
 
 import { initFonts, toImage } from './utils.js'
@@ -573,6 +575,159 @@ describe('stylesheets', () => {
         <span>Text</span>
       </div>
     )
+  })
+
+  const withBold = async () => [
+    ...fonts,
+    {
+      name: 'Roboto',
+      data: await readFile(join(process.cwd(), 'test/assets/Roboto-Bold.ttf')),
+      weight: 700,
+      style: 'normal',
+    },
+  ]
+
+  it('should render pseudo-elements in a document', async () => {
+    const css = `
+      .doc {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+        height: 100%;
+        padding: 24px;
+        box-sizing: border-box;
+        background: white;
+        color: #0f172a;
+        font-size: 15px;
+        counter-reset: section;
+      }
+      h2 {
+        margin: 0;
+        font-size: 20px;
+        counter-increment: section;
+        &::before { content: counter(section, upper-roman) ". "; color: #6366f1 }
+        &::after {
+          content: "";
+          display: block;
+          width: 32px;
+          height: 3px;
+          margin-top: 6px;
+          border-radius: 2px;
+          background: #6366f1;
+        }
+      }
+      blockquote {
+        position: relative;
+        margin: 0;
+        padding-left: 16px;
+        color: #475569;
+        &::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 4px;
+          border-radius: 2px;
+          background: #cbd5e1;
+        }
+        & span::before { content: open-quote }
+        & span::after { content: close-quote }
+      }
+      .tags { display: flex; gap: 8px }
+      .tag {
+        padding: 2px 10px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #4338ca;
+        &::after { content: " " attr(data-count); color: #818cf8 }
+      }
+    `
+    const svg = await satori(
+      <div className='doc'>
+        <style>{css}</style>
+        <h2>Pseudo-elements</h2>
+        <blockquote>
+          <span>Generated content is laid out like other content.</span>
+        </blockquote>
+        <h2>Counters</h2>
+        <div className='tags'>
+          <span className='tag' data-count='12'>
+            before
+          </span>
+          <span className='tag' data-count='8'>
+            after
+          </span>
+        </div>
+      </div>,
+      { width: 400, height: 240, fonts: (await withBold()) as any }
+    )
+    expect(await toImage(svg, 400)).toMatchImageSnapshot()
+  })
+
+  it('should render decorative pseudo-elements', async () => {
+    const check =
+      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><circle cx='8' cy='8' r='8' fill='limegreen'/><path d='M4.5 8.5l2.5 2.5 4.5-5' stroke='white' stroke-width='2' fill='none'/></svg>"
+    const css = `
+      .card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        height: 100%;
+        padding: 24px;
+        box-sizing: border-box;
+        overflow: hidden;
+        background: #0f172a;
+        color: white;
+        font-size: 16px;
+        &::before {
+          content: "";
+          position: absolute;
+          right: -60px;
+          top: -60px;
+          width: 200px;
+          height: 200px;
+          background: radial-gradient(circle, #6366f1, transparent 70%);
+        }
+        &::after {
+          content: "NEW";
+          position: absolute;
+          right: 20px;
+          top: 20px;
+          padding: 2px 8px;
+          border-radius: 4px;
+          background: #f43f5e;
+          font-size: 12px;
+          font-weight: bold;
+          letter-spacing: 1px;
+        }
+      }
+      h3 { margin: 0; font-size: 22px }
+      ul { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0 }
+      li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        &::before { content: url("${check}") }
+        &:last-child::after { content: "(soon)"; color: #94a3b8 }
+      }
+    `
+    const svg = await satori(
+      <div className='card'>
+        <style>{css}</style>
+        <h3>Pseudo-elements</h3>
+        <ul>
+          <li>Generated text and boxes</li>
+          <li>Counters and attributes</li>
+          <li>Images</li>
+        </ul>
+      </div>,
+      { width: 400, height: 200, fonts: (await withBold()) as any }
+    )
+    expect(await toImage(svg, 400)).toMatchImageSnapshot()
   })
 
   it('should render a card styled with a stylesheet', async () => {
