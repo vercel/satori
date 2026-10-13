@@ -519,7 +519,8 @@ The CSS of `<style>` elements applies to the whole tree, including the elements 
 
 - `@media` matches the `width` and `height` of the image, on a static screen in light mode, e.g. `prefers-color-scheme: light` and `hover: none`.
 - `@supports` assumes that declarations and `selector()` are supported, but not `font-tech()` and `font-format()`.
-- Pseudo-elements such as `::before` aren't supported, so rules with them don't apply. Pseudo-classes of interactions such as `:hover` never match, and functional pseudo-classes other than `:is()`, `:where()`, `:not()`, `:has()`, `:nth-*()` and `:lang()` make their rule invalid.
+- `::before` and `::after` are supported, with `content` made of strings, `attr()`, `counter()`, `counters()`, quotes and `url()`. Quotes are always “ and ”, as `quotes` isn't supported. Other pseudo-elements, such as `::marker` and `::first-line`, aren't supported, so rules with them don't apply.
+- Pseudo-classes of interactions such as `:hover` never match, and functional pseudo-classes other than `:is()`, `:where()`, `:not()`, `:has()`, `:nth-*()` and `:lang()` make their rule invalid.
 - Other at-rules are ignored, such as `@font-face`, `@keyframes`, `@container`, `@scope` and `@import`.
 
 #### Perspective (experimental)
