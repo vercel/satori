@@ -1113,10 +1113,13 @@ export default function expand(
   }
 
   if (processableStyle) {
-    // Resolve CSS variables in color property before processing
-    let resolvedColor = processableStyle.color
-      ? String(resolveVariables(processableStyle.color, mergedVariables))
+    // Resolve CSS variables in color property before processing. A color that
+    // is invalid at computed-value time is inherited.
+    const color = processableStyle.color
+      ? resolveVariables(processableStyle.color, mergedVariables)
       : undefined
+    let resolvedColor =
+      color !== undefined && String(color).trim() ? String(color) : undefined
     // `currentColor` in `color` is the inherited color.
     if (resolvedColor && resolvedColor.toLowerCase() !== 'currentcolor') {
       resolvedColor = convertColors
@@ -1152,6 +1155,17 @@ export default function expand(
         processableStyle[prop],
         mergedVariables
       )
+      // Like in browsers, a declaration that is invalid at computed-value
+      // time, or empty after var() is resolved, behaves as `unset`: inherited
+      // properties keep the inherited value, and others their initial value.
+      if (
+        resolvedValue === undefined ||
+        (typeof resolvedValue === 'string' &&
+          !resolvedValue.trim() &&
+          resolvedValue !== processableStyle[prop])
+      ) {
+        continue
+      }
       // Colors are converted to be parsed. When they're kept, the converted
       // ones are replaced by the original ones afterwards.
       const kept = convertColors ? undefined : new Map<string, string>()
@@ -1265,6 +1279,10 @@ export default function expand(
   }
 
   for (const prop in serializedStyle) {
+    // Custom properties are kept as they are, to be resolved where var()
+    // uses them.
+    if (prop.startsWith('--')) continue
+
     let value = serializedStyle[prop]
 
     // Line height needs to be relative.
@@ -1350,12 +1368,19 @@ export default function expand(
     }
 
     if (prop === 'transform') {
-      // Convert em, rem, vw, vh values to px (number), but keep % values.
-      serializedStyle.transform = resolveTransform(
-        value as unknown as TransformFunction[],
-        (length) =>
-          lengthToNumber(length, baseFontSize, baseFontSize, inheritedStyle)
-      ) as any
+      // Convert em, rem, vw, vh values to px (number), but keep % values. An
+      // invalid argument is reported like other invalid values.
+      try {
+        serializedStyle.transform = resolveTransform(
+          value as unknown as TransformFunction[],
+          (length) =>
+            lengthToNumber(length, baseFontSize, baseFontSize, inheritedStyle)
+        ) as any
+      } catch (error) {
+        if (!onStyleError) throw error
+        onStyleError(error)
+        delete serializedStyle.transform
+      }
     }
 
     if (prop === 'textShadowRadius') {
