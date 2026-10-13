@@ -3,6 +3,12 @@ import { Fragment as FragmentSymbol } from '../jsx/jsx-runtime.js'
 import { resolveImageData, cache } from './image.js'
 import { convertColors as convertColorValues } from '../parser/color.js'
 import {
+  extractCustomProperties,
+  mergeVariables,
+  resolveVariables,
+  type CSSVariables,
+} from './variables.js'
+import {
   buildXMLString,
   escapeXMLText,
   isReactElement,
@@ -117,6 +123,28 @@ function resolveSVGColors(
   return convertColors ? convertColorValues(value, currentColor) : value
 }
 
+/**
+ * Resolves `var()` in an attribute or style value, like browsers do for
+ * presentation attributes. A value that is invalid then is `undefined`, and
+ * left out.
+ */
+function resolveSVGVariables(value: unknown, variables: CSSVariables) {
+  if (typeof value !== 'string' || !value.includes('var(')) return value
+  const resolved = resolveVariables(value, variables)
+  return typeof resolved === 'string' && !resolved.trim() ? undefined : resolved
+}
+
+/** The variables of an element of an SVG, with the inherited ones. */
+function getSVGVariables(style: unknown, inherited: CSSVariables) {
+  if (!style || typeof style !== 'object') return inherited
+  const { variables } = extractCustomProperties(
+    style as Record<string, string | number>
+  )
+  return Object.keys(variables).length
+    ? mergeVariables(inherited, variables)
+    : inherited
+}
+
 function translateSVGNodeToSVGString(
   node:
     | ReactElement
@@ -124,12 +152,20 @@ function translateSVGNodeToSVGString(
     | typeof Fragment
     | (ReactElement | string | typeof Fragment)[],
   inheritedColor: string,
-  convertColors: boolean
+  convertColors: boolean,
+  inheritedVariables: CSSVariables = {}
 ): string {
   if (!node) return ''
   if (Array.isArray(node)) {
     return node
-      .map((n) => translateSVGNodeToSVGString(n, inheritedColor, convertColors))
+      .map((n) =>
+        translateSVGNodeToSVGString(
+          n,
+          inheritedColor,
+          convertColors,
+          inheritedVariables
+        )
+      )
       .join('')
   }
   if (typeof node !== 'object') return escapeXMLText(node)
@@ -142,12 +178,19 @@ function translateSVGNodeToSVGString(
   }
 
   const { children, style, ...restProps } = node.props || {}
-  const currentColor = style?.color
-    ? String(resolveSVGColors(style.color, inheritedColor, convertColors))
+  const variables = getSVGVariables(style, inheritedVariables)
+  const color = resolveSVGVariables(style?.color, variables)
+  const currentColor = color
+    ? String(resolveSVGColors(color, inheritedColor, convertColors))
     : inheritedColor
 
   if ((type as typeof node.type | typeof FragmentSymbol) === FragmentSymbol) {
-    return translateSVGNodeToSVGString(children, currentColor, convertColors)
+    return translateSVGNodeToSVGString(
+      children,
+      currentColor,
+      convertColors,
+      variables
+    )
   }
 
   if (typeof type !== 'string') {
@@ -156,7 +199,13 @@ function translateSVGNodeToSVGString(
 
   const attrs: Record<string, unknown> = {}
   for (const [k, value] of Object.entries(restProps)) {
-    let resolvedValue = resolveSVGColors(value, currentColor, convertColors)
+    const withVariables = resolveSVGVariables(value, variables)
+    if (withVariables === undefined) continue
+    let resolvedValue = resolveSVGColors(
+      withVariables,
+      currentColor,
+      convertColors
+    )
 
     if ((k === 'href' || k === 'xlinkHref') && type === 'image') {
       resolvedValue = cache.get(resolvedValue as string)[0]
@@ -167,22 +216,33 @@ function translateSVGNodeToSVGString(
   }
 
   if (style) {
-    attrs.style = Object.entries(style)
-      .map(
-        ([k, value]) =>
-          `${midline(k)}:${
-            k === 'color'
-              ? currentColor
-              : resolveSVGColors(value, currentColor, convertColors)
-          }`
+    const declarations: string[] = []
+    for (const [k, value] of Object.entries(style)) {
+      // Custom properties are resolved above.
+      if (k.startsWith('--')) continue
+      const resolved =
+        k === 'color' ? currentColor : resolveSVGVariables(value, variables)
+      if (resolved === undefined) continue
+      declarations.push(
+        `${midline(k)}:${
+          k === 'color'
+            ? currentColor
+            : resolveSVGColors(resolved, currentColor, convertColors)
+        }`
       )
-      .join(';')
+    }
+    if (declarations.length) attrs.style = declarations.join(';')
   }
 
   return buildXMLString(
     type,
     attrs,
-    translateSVGNodeToSVGString(children, currentColor, convertColors)
+    translateSVGNodeToSVGString(
+      children,
+      currentColor,
+      convertColors,
+      variables
+    )
   )
 }
 /**
@@ -233,7 +293,8 @@ export async function preProcessNode(node: ReactNode) {
 export async function SVGNodeToImage(
   node: ReactElement,
   inheritedColor: string,
-  convertColors = true
+  convertColors = true,
+  inheritedVariables: CSSVariables = {}
 ): Promise<string> {
   let {
     viewBox,
@@ -253,8 +314,10 @@ export async function SVGNodeToImage(
   // We directly assign the xmlns attribute here to deduplicate.
   restProps.xmlns = 'http://www.w3.org/2000/svg'
 
-  const currentColor = style?.color
-    ? String(resolveSVGColors(style.color, inheritedColor, convertColors))
+  const variables = getSVGVariables(style, inheritedVariables)
+  const color = resolveSVGVariables(style?.color, variables)
+  const currentColor = color
+    ? String(resolveSVGColors(color, inheritedColor, convertColors))
     : inheritedColor
   const viewBoxSize = parseViewBox(viewBox)
 
@@ -269,14 +332,21 @@ export async function SVGNodeToImage(
 
   const attrs: Record<string, unknown> = {}
   for (const [k, value] of Object.entries(restProps)) {
+    const resolved = resolveSVGVariables(value, variables)
+    if (resolved === undefined) continue
     const name = ATTRIBUTE_MAPPING[k] || k
-    attrs[name] = resolveSVGColors(value, currentColor, convertColors)
+    attrs[name] = resolveSVGColors(resolved, currentColor, convertColors)
   }
 
   const serializedSVG = buildXMLString(
     'svg',
     attrs,
-    translateSVGNodeToSVGString(children, currentColor, convertColors)
+    translateSVGNodeToSVGString(
+      children,
+      currentColor,
+      convertColors,
+      variables
+    )
   )
 
   return `data:image/svg+xml;utf8,${serializedSVG.replace(
