@@ -414,11 +414,19 @@ describe('stylesheets', () => {
       </>
     )
 
-    // They're passed to `onStyleError`, and inline styles still throw.
+    // Dropped declarations are passed to `onStyleError` once each, but not
+    // the declarations of feature queries or rules that don't match.
+    const queries = `@supports (display: table) or (transform: banana(1)) {
+      .x { color: red }
+    }
+    @supports not (display: table) { .x { color: blue } }`
     const errors: string[] = []
     await satori(
       <div>
-        <style>{'.x { display: table } .x { display: table }'}</style>
+        <style>
+          {`.x { display: table } .x { display: table }
+          .unused { margin: foo } ${queries}`}
+        </style>
         <div className='x' />
       </div>,
       {
@@ -429,6 +437,22 @@ describe('stylesheets', () => {
       }
     )
     expect(errors).toEqual([expect.stringContaining('"display"')])
+    await satori(
+      <div>
+        <style>{queries}</style>
+        <div className='x' />
+      </div>,
+      {
+        width: 10,
+        height: 10,
+        fonts,
+        onStyleError: (e) => {
+          throw e
+        },
+      }
+    )
+
+    // Inline styles still throw.
     await expect(
       satori(<div style={{ display: 'table' }} />, {
         width: 10,

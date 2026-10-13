@@ -136,6 +136,14 @@ const PSEUDO_CLASSES = new Set([
   'closed',
 ])
 
+/** How the declarations of stylesheets are validated. */
+export interface Validation {
+  /** The error of a declaration, if its value is invalid or unsupported. */
+  getError: (name: string, value: string) => Promise<Error | undefined>
+  /** Reports the errors of declarations that are dropped. */
+  onError?: (error: Error) => void
+}
+
 /**
  * Applies the stylesheets in the tree, which has no components, see
  * `resolveComponents()`. Without stylesheets, the tree is returned as is.
@@ -144,7 +152,7 @@ export async function applyStyleSheets(
   root: ReactNode,
   engine: LayoutEngine,
   viewport: Viewport,
-  isValid?: (name: string, value: string) => Promise<boolean>
+  validation?: Validation
 ): Promise<ReactNode> {
   const sheets: string[] = []
   collectStyleSheets(root, sheets, viewport)
@@ -156,7 +164,10 @@ export async function applyStyleSheets(
     anonymousLayers: 0,
     layers: new Map(),
     viewport,
-    supported: isValid && (await checkSupportsDeclarations(parsed, isValid)),
+    // Feature queries aren't errors, so they're not reported.
+    supported:
+      validation &&
+      (await checkSupportsDeclarations(parsed, validation.getError)),
   }
   const rules: Rule[] = []
   for (const items of parsed) compileRules(items, null, [], rules, state)
@@ -178,8 +189,8 @@ export async function applyStyleSheets(
     node.children.forEach(visit)
   }
   roots.forEach(visit)
-  const invalid = isValid
-    ? await findInvalidDeclarations(nodes, isValid)
+  const invalid = validation
+    ? await findInvalidDeclarations(nodes, validation)
     : new Set<Declaration>()
 
   const children = rebuild(root, roots, invalid)
@@ -657,12 +668,12 @@ const CSS_WIDE_KEYWORDS = /^(inherit|initial|unset|revert|revert-layer)$/i
 /**
  * The declarations of matching rules with invalid or unsupported values,
  * which are dropped like in browsers, so that earlier declarations apply
- * instead. Like in browsers, values with `var()` are valid until they're
- * computed.
+ * instead, and their errors are reported once each, in source order. Like in
+ * browsers, values with `var()` are valid until they're computed.
  */
 async function findInvalidDeclarations(
   nodes: Node[],
-  isValid: (name: string, value: string) => Promise<boolean>
+  { getError, onError }: Validation
 ) {
   const byKey = new Map<string, Declaration[]>()
   for (const node of nodes) {
@@ -686,15 +697,19 @@ async function findInvalidDeclarations(
       }
     }
   }
-  const invalid = new Set<Declaration>()
-  await Promise.all(
-    [...byKey.values()].map(async (declarations) => {
-      const [name, value] = declarations[0]
-      if (!(await isValid(toPropertyName(name), value as string))) {
-        for (const declaration of declarations) invalid.add(declaration)
-      }
-    })
+  const groups = [...byKey.values()]
+  const errors = await Promise.all(
+    groups.map(([[name, value]]) =>
+      getError(toPropertyName(name), value as string)
+    )
   )
+  const invalid = new Set<Declaration>()
+  groups.forEach((declarations, index) => {
+    const error = errors[index]
+    if (!error) return
+    for (const declaration of declarations) invalid.add(declaration)
+    onError?.(error)
+  })
   return invalid
 }
 
@@ -1265,7 +1280,7 @@ function collectSupportsDeclarations(text: string, declarations: Set<string>) {
  */
 async function checkSupportsDeclarations(
   sheets: Item[][],
-  isValid: (name: string, value: string) => Promise<boolean>
+  getError: Validation['getError']
 ) {
   const declarations = new Set<string>()
   const visit = (items: Item[]) => {
@@ -1285,7 +1300,7 @@ async function checkSupportsDeclarations(
         declaration.slice(0, colon).trim().toLowerCase()
       )
       const value = declaration.slice(colon + 1).trim()
-      supported.set(declaration, await isValid(name, value))
+      supported.set(declaration, !(await getError(name, value)))
     })
   )
   return supported

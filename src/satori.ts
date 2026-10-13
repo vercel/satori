@@ -191,13 +191,10 @@ export async function render(
     element,
     layoutEngine,
     { width: definedWidth, height: definedHeight },
-    async (name, value) => {
-      const error = await getStyleError(
-        { [name]: value },
-        options.convertColors ?? true
-      )
-      if (error) options.onStyleError?.(error)
-      return !error
+    {
+      getError: (name, value) =>
+        getStyleError({ [name]: value }, options.convertColors ?? true),
+      onError: options.onStyleError,
     }
   )
 
