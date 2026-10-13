@@ -49,3 +49,16 @@ pnpm dev:test
 It will update snapshot images as well.
 
 You can also use `pnpm test` to only run the test.
+
+## Fidelity Benchmark
+
+`test/fidelity` compares Satori with Chrome on sections of real websites. Each case in `test/fidelity/cases.ts` is a snapshot of a section: its static DOM tree, with its ancestors and the CSS rules that apply to it, and a screenshot of the snapshot in Chrome. To render the snapshots with Satori and compare them with Chrome, run:
+
+```bash
+pnpm build
+pnpm fidelity
+```
+
+It prints the share of pixels that differ from Chrome, overall and of the content, and compares them with `test/fidelity/scores.json`. The images of Satori, the differences and all of them side by side are written to `test/fidelity/output`. Run `pnpm fidelity --update` when a change improves the scores, to update `test/fidelity/scores.json` and the side-by-side images in `test/fidelity/results`, which show the current state of each case.
+
+To add a case or capture the sections again, which requires Chrome, run `pnpm fidelity:capture [names...]`. Fonts are mapped to static font files in the repository, which Chrome and Satori both use. Run `pnpm fidelity:capture --reference` to only render the screenshots again, for example after updating Chrome.
