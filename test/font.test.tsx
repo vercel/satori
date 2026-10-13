@@ -1,9 +1,19 @@
 import { join } from 'node:path'
-import { it, describe, expect } from 'vitest'
+import { it, describe, expect, vi } from 'vitest'
 
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
 import { readFile } from 'node:fs/promises'
+
+// fflate is pinned to 0.7, but apps may resolve 0.8, where the second argument
+// of `inflateSync` is options instead of an output buffer, so it's ignored.
+vi.mock('fflate', async (importOriginal) => {
+  const fflate = await importOriginal<typeof import('fflate')>()
+  return {
+    ...fflate,
+    inflateSync: (data: Uint8Array) => fflate.inflateSync(data),
+  }
+})
 
 describe('Font', () => {
   let fonts
