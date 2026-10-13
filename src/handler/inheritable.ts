@@ -42,6 +42,7 @@ const list = new Set([
   'textDecorationThickness',
   'textUnderlineOffset',
   'whiteSpace',
+  'textWrap',
   'transform',
   'wordBreak',
   'overflowWrap',
