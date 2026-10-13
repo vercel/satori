@@ -1,7 +1,7 @@
 {
   "nextjs-hero": {
-    "mismatch": 1.35,
-    "contentMismatch": 21.95,
+    "mismatch": 1.29,
+    "contentMismatch": 21.02,
     "styleErrors": 0
   },
   "nextjs-features": {
@@ -10,13 +10,13 @@
     "styleErrors": 0
   },
   "nextjs-showcase": {
-    "mismatch": 1.02,
-    "contentMismatch": 8.5,
+    "mismatch": 0.99,
+    "contentMismatch": 8.27,
     "styleErrors": 0
   },
   "nextjs-footer": {
-    "mismatch": 1.94,
-    "contentMismatch": 31.44,
+    "mismatch": 1.66,
+    "contentMismatch": 28.15,
     "styleErrors": 1
   }
 }
