@@ -77,7 +77,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <link rel='shortcut icon' href='/favicon.ico' type='image/x-icon' />
         <link rel='icon' href='/favicon.ico' type='image/x-icon' />
       </Head>
-      <div className={geistMono.className}>
+      <div className={geistMono.variable}>
         <Component {...pageProps} />
       </div>
     </>
