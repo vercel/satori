@@ -56,6 +56,22 @@ try {
     format: 'esm',
     outfile: outfile.pathname,
   })
+
+  // Browsers do not define `Buffer`. Import the browser bundle without it and
+  // render once, so a Node-only decoder fails here the way it fails there.
+  delete globalThis.Buffer
+  const { default: satori } = await import(outfile.href)
+  const font = new Uint8Array(
+    readFileSync(new URL('./assets/Roboto-Regular.ttf', import.meta.url))
+  )
+  await satori(
+    { type: 'div', props: { children: 'Hi', style: { display: 'flex' } } },
+    {
+      width: 100,
+      height: 40,
+      fonts: [{ name: 'Roboto', data: font, weight: 400, style: 'normal' }],
+    }
+  )
 } finally {
   rmSync(outfile, { force: true })
 }

@@ -2,14 +2,18 @@ import { Counters } from './list-marker.js'
 import type { ReactNode } from 'react'
 import type { TwConfig } from 'twrnc'
 import type { SatoriNode } from './layout.js'
-import { ROOT_STYLE, type ReplacedElementHandlers } from './handler/compute.js'
+import {
+  getStyleError,
+  ROOT_STYLE,
+  type ReplacedElementHandlers,
+} from './handler/compute.js'
 import type { ProjectPlane } from './builder/transform.js'
 
 import layout from './layout.js'
 import FontLoader, { FontOptions } from './font.js'
 import svg from './builder/svg.js'
 import { getLayoutEngine } from './layout-engine/wasm.js'
-import { LayoutNode } from './layout-engine/index.js'
+import { LayoutNode, type LayoutEngine } from './layout-engine/index.js'
 import { detectLanguageCode, LangCode, Locale } from './language.js'
 import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
@@ -50,7 +54,10 @@ function getFontLoaderKey(fonts: FontOptions[]): string {
   return key
 }
 
-function getFontLoader(fonts: FontOptions[]): FontLoader {
+function getFontLoader(
+  fonts: FontOptions[],
+  layoutEngine: LayoutEngine
+): FontLoader {
   // Fast path: the exact same array instance.
   if (fontCache.has(fonts)) {
     return fontCache.get(fonts)
@@ -60,7 +67,7 @@ function getFontLoader(fonts: FontOptions[]): FontLoader {
   let loader = fontLoaderCache.get(key)
 
   if (!loader) {
-    loader = new FontLoader(fonts)
+    loader = new FontLoader(fonts, (data) => layoutEngine.decodeWoff2(data))
     if (fontLoaderCache.size >= MAX_FONT_LOADERS) {
       const oldestKey = fontLoaderCache.keys().next().value
       if (oldestKey !== undefined) fontLoaderCache.delete(oldestKey)
@@ -142,7 +149,7 @@ export async function render(
 
   options.fonts = options.fonts || []
 
-  const font = getFontLoader(options.fonts)
+  const font = getFontLoader(options.fonts, layoutEngine)
 
   const definedWidth = 'width' in options ? options.width : undefined
   const definedHeight = 'height' in options ? options.height : undefined
@@ -182,10 +189,17 @@ export async function render(
   // layout, including the images to load and the elements that stylesheets
   // apply to.
   element = await resolveComponents(element)
-  element = applyStyleSheets(element, layoutEngine, {
-    width: definedWidth,
-    height: definedHeight,
-  })
+  // Like in browsers, invalid declarations of stylesheets are dropped.
+  element = await applyStyleSheets(
+    element,
+    layoutEngine,
+    { width: definedWidth, height: definedHeight },
+    {
+      getError: (name, value) =>
+        getStyleError({ [name]: value }, options.convertColors ?? true),
+      onError: options.onStyleError,
+    }
+  )
 
   cache.clear()
   inflightRequests.clear()

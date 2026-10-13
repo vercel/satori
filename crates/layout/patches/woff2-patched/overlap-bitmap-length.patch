@@ -1,0 +1,15 @@
+The overlap bitmap of transformed glyf tables is ceil(numGlyphs / 8) bytes,
+unlike the bbox bitmap, which is padded to 4 bytes. Fonts from Google Fonts
+have it, and failed to decode with "Stream truncated".
+
+--- a/src/glyf_decoder/mod.rs
++++ b/src/glyf_decoder/mod.rs
+@@ -92,7 +92,7 @@
+         assert_eq!(table_buf.position() as usize, GLYF_HEADER_SIZE);
+         let has_overlap_bit_stream = (option_flags & 0x01) == 0x01;
+         let overlap_simple_bit_stream_size = if has_overlap_bit_stream {
+-            bit_stream_byte_length(num_glyphs)
++            num_glyphs.div_ceil(8)
+         } else {
+             0
+         };

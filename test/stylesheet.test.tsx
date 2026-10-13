@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { it, describe, expect } from 'vitest'
 
 import { initFonts, toImage } from './utils.js'
@@ -366,6 +368,100 @@ describe('stylesheets', () => {
     )
   })
 
+  it('should drop invalid declarations like browsers', async () => {
+    await expectSame(
+      `.a { display: flex; display: table; flex-direction: column }
+      .b { margin: 4px; margin: foo; transform: banana(1); color: red }
+      .c {
+        height: 10px;
+        background-image: linear-gradient(red, blue);
+        background-image: image-set("a.png" 1x);
+      }
+      .d { cursor: pointer; transition: all 1s }
+      .e::before { content: "E"; display: table }
+      @supports (display: table) { .f { color: red } }
+      @supports not (display: table) { .g { color: green } }`,
+      <>
+        <div className='a'>
+          <span>1</span>
+          <span>2</span>
+        </div>
+        <div className='b'>B</div>
+        <div className='c' />
+        <div className='d'>D</div>
+        <div className='e' />
+        <div className='f'>F</div>
+        <div className='g'>G</div>
+      </>,
+      <>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span>1</span>
+          <span>2</span>
+        </div>
+        <div style={{ margin: '4px', color: 'red' }}>B</div>
+        <div
+          style={{
+            height: '10px',
+            backgroundImage: 'linear-gradient(red, blue)',
+          }}
+        />
+        <div>D</div>
+        <div>
+          <span>E</span>
+        </div>
+        <div>F</div>
+        <div style={{ color: 'green' }}>G</div>
+      </>
+    )
+
+    // Dropped declarations are passed to `onStyleError` once each, but not
+    // the declarations of feature queries or rules that don't match.
+    const queries = `@supports (display: table) or (transform: banana(1)) {
+      .x { color: red }
+    }
+    @supports not (display: table) { .x { color: blue } }`
+    const errors: string[] = []
+    await satori(
+      <div>
+        <style>
+          {`.x { display: table } .x { display: table }
+          .unused { margin: foo } ${queries}`}
+        </style>
+        <div className='x' />
+      </div>,
+      {
+        width: 10,
+        height: 10,
+        fonts,
+        onStyleError: (e) => errors.push(e.message),
+      }
+    )
+    expect(errors).toEqual([expect.stringContaining('"display"')])
+    await satori(
+      <div>
+        <style>{queries}</style>
+        <div className='x' />
+      </div>,
+      {
+        width: 10,
+        height: 10,
+        fonts,
+        onStyleError: (e) => {
+          throw e
+        },
+      }
+    )
+
+    // Inline styles still throw.
+    await expect(
+      satori(<div style={{ display: 'table' }} />, {
+        width: 10,
+        height: 10,
+        fonts,
+      })
+    ).rejects.toThrow('"display"')
+  })
+
   it('should apply stylesheets of components, inner HTML and SVG', async () => {
     const Card = () => (
       <>
@@ -420,6 +516,312 @@ describe('stylesheets', () => {
         <span>G</span>
       </>
     )
+  })
+
+  it('should generate ::before and ::after', async () => {
+    await expectSame(
+      `.a::before { content: "\\BB  "; color: red }
+      .a::after { content: attr(data-x) "!"; font-weight: bold }
+      .b::before {
+        content: "";
+        display: block;
+        width: 20px;
+        height: 4px;
+        background-color: blue;
+      }
+      .c::before { content: open-quote }
+      .c::after { content: close-quote }
+      .d::before { content: none }
+      .e::after { color: red }
+      .f { &::after { content: "1" } }
+      div.g::before { content: "low" }
+      .g::before { content: "x" }`,
+      <>
+        <div className='a' data-x='hi'>
+          Text
+        </div>
+        <div className='b'>Bar</div>
+        <div className='c'>Quote</div>
+        <div className='d'>None</div>
+        <div className='e'>Normal</div>
+        <div className='f'>Nested</div>
+        <div className='g'>Specificity</div>
+      </>,
+      <>
+        <div>
+          <span style={{ color: 'red' }}>{'\u00bb '}</span>
+          Text
+          <span style={{ fontWeight: 'bold' }}>hi!</span>
+        </div>
+        <div>
+          <span
+            style={{
+              display: 'block',
+              width: '20px',
+              height: '4px',
+              backgroundColor: 'blue',
+            }}
+          />
+          Bar
+        </div>
+        <div>
+          <span>{'\u201c'}</span>Quote<span>{'\u201d'}</span>
+        </div>
+        <div>None</div>
+        <div>Normal</div>
+        <div>
+          Nested<span>1</span>
+        </div>
+        <div>
+          <span>low</span>Specificity
+        </div>
+      </>
+    )
+  })
+
+  it('should resolve counters in pseudo-elements', async () => {
+    await expectSame(
+      `.list { counter-reset: item }
+      .list > div { counter-increment: item }
+      .list > div::before { content: counter(item) ". " }
+      .list > div:last-child::before {
+        content: counter(item, upper-roman) ". "
+      }
+      .tree { counter-reset: n }
+      .n::before { counter-increment: n; content: counters(n, ".") " " }`,
+      <>
+        <div className='list'>
+          <div>One</div>
+          <div>Two</div>
+          <div>Three</div>
+        </div>
+        <div className='tree'>
+          <div className='n'>A</div>
+          <div className='tree'>
+            <div className='n'>B</div>
+            <div className='n'>C</div>
+          </div>
+        </div>
+      </>,
+      <>
+        <div>
+          <div>
+            <span>1. </span>One
+          </div>
+          <div>
+            <span>2. </span>Two
+          </div>
+          <div>
+            <span>III. </span>Three
+          </div>
+        </div>
+        <div>
+          <div>
+            <span>1 </span>A
+          </div>
+          <div>
+            <div>
+              <span>1.1 </span>B
+            </div>
+            <div>
+              <span>1.2 </span>C
+            </div>
+          </div>
+        </div>
+      </>
+    )
+  })
+
+  it('should generate images with url()', async () => {
+    const src =
+      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><rect width='10' height='10' fill='red'/></svg>"
+    await expectSame(
+      `.i::before { content: url("${src}") " Icon" }`,
+      <div className='i'>Text</div>,
+      <div>
+        <span>
+          <img src={src} width={10} height={10} /> Icon
+        </span>
+        Text
+      </div>
+    )
+  })
+
+  it('should not generate pseudo-elements in other cases', async () => {
+    const src =
+      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'></svg>"
+    await expectSame(
+      `img::before, svg::before, rect::before { content: "x" }
+      :is(::before), .k::before .m, .k::before:hover { content: "x" }
+      .k { content: "Ignored" }`,
+      <div className='k'>
+        <img src={src} width={10} height={10} />
+        <svg width='10' height='10'>
+          <rect width='10' height='10' />
+        </svg>
+        <span className='m'>Text</span>
+      </div>,
+      <div>
+        <img src={src} width={10} height={10} />
+        <svg width='10' height='10'>
+          <rect width='10' height='10' />
+        </svg>
+        <span>Text</span>
+      </div>
+    )
+  })
+
+  const withBold = async () => [
+    ...fonts,
+    {
+      name: 'Roboto',
+      data: await readFile(join(process.cwd(), 'test/assets/Roboto-Bold.ttf')),
+      weight: 700,
+      style: 'normal',
+    },
+  ]
+
+  it('should render pseudo-elements in a document', async () => {
+    const css = `
+      .doc {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+        height: 100%;
+        padding: 24px;
+        box-sizing: border-box;
+        background: white;
+        color: #0f172a;
+        font-size: 15px;
+        counter-reset: section;
+      }
+      h2 {
+        margin: 0;
+        font-size: 20px;
+        counter-increment: section;
+        &::before { content: counter(section, upper-roman) ". "; color: #6366f1 }
+        &::after {
+          content: "";
+          display: block;
+          width: 32px;
+          height: 3px;
+          margin-top: 6px;
+          border-radius: 2px;
+          background: #6366f1;
+        }
+      }
+      blockquote {
+        position: relative;
+        margin: 0;
+        padding-left: 16px;
+        color: #475569;
+        &::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 4px;
+          border-radius: 2px;
+          background: #cbd5e1;
+        }
+        & span::before { content: open-quote }
+        & span::after { content: close-quote }
+      }
+      .tags { display: flex; gap: 8px }
+      .tag {
+        padding: 2px 10px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #4338ca;
+        &::after { content: " " attr(data-count); color: #818cf8 }
+      }
+    `
+    const svg = await satori(
+      <div className='doc'>
+        <style>{css}</style>
+        <h2>Pseudo-elements</h2>
+        <blockquote>
+          <span>Generated content is laid out like other content.</span>
+        </blockquote>
+        <h2>Counters</h2>
+        <div className='tags'>
+          <span className='tag' data-count='12'>
+            before
+          </span>
+          <span className='tag' data-count='8'>
+            after
+          </span>
+        </div>
+      </div>,
+      { width: 400, height: 240, fonts: (await withBold()) as any }
+    )
+    expect(await toImage(svg, 400)).toMatchImageSnapshot()
+  })
+
+  it('should render decorative pseudo-elements', async () => {
+    const check =
+      "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><circle cx='8' cy='8' r='8' fill='limegreen'/><path d='M4.5 8.5l2.5 2.5 4.5-5' stroke='white' stroke-width='2' fill='none'/></svg>"
+    const css = `
+      .card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        height: 100%;
+        padding: 24px;
+        box-sizing: border-box;
+        overflow: hidden;
+        background: #0f172a;
+        color: white;
+        font-size: 16px;
+        &::before {
+          content: "";
+          position: absolute;
+          right: -60px;
+          top: -60px;
+          width: 200px;
+          height: 200px;
+          background: radial-gradient(circle, #6366f1, transparent 70%);
+        }
+        &::after {
+          content: "NEW";
+          position: absolute;
+          right: 20px;
+          top: 20px;
+          padding: 2px 8px;
+          border-radius: 4px;
+          background: #f43f5e;
+          font-size: 12px;
+          font-weight: bold;
+          letter-spacing: 1px;
+        }
+      }
+      h3 { margin: 0; font-size: 22px }
+      ul { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0 }
+      li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        &::before { content: url("${check}") }
+        &:last-child::after { content: "(soon)"; color: #94a3b8 }
+      }
+    `
+    const svg = await satori(
+      <div className='card'>
+        <style>{css}</style>
+        <h3>Pseudo-elements</h3>
+        <ul>
+          <li>Generated text and boxes</li>
+          <li>Counters and attributes</li>
+          <li>Images</li>
+        </ul>
+      </div>,
+      { width: 400, height: 200, fonts: (await withBold()) as any }
+    )
+    expect(await toImage(svg, 400)).toMatchImageSnapshot()
   })
 
   it('should render a card styled with a stylesheet', async () => {
