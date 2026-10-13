@@ -1,6 +1,6 @@
 import type { ParsedTransformOrigin } from '../transform-origin.js'
 
-import backgroundImage from './background-image.js'
+import backgroundImage, { getBoxArea } from './background-image.js'
 import radius, { getBorderRadiusClipPath } from './border-radius.js'
 import { boxShadow } from './shadow.js'
 import transform from './transform.js'
@@ -100,36 +100,6 @@ function parseObjectPosition(
     parseValue(xValue, containerWidth),
     parseValue(yValue, containerHeight),
   ]
-}
-
-/**
- * The area of a box (`border-box`, `padding-box` or `content-box`) of an
- * element, which positions its backgrounds. Defaults to the padding box.
- */
-function getBoxArea(
-  {
-    left,
-    top,
-    width,
-    height,
-  }: Record<'left' | 'top' | 'width' | 'height', number>,
-  style: Record<string, number | string>,
-  box = 'padding-box'
-) {
-  const inset = (side: string) => {
-    const borderWidth = box === 'border-box' ? 0 : style[`border${side}Width`]
-    const padding = box === 'content-box' ? style[`padding${side}`] : 0
-    return (
-      (typeof borderWidth === 'number' ? borderWidth : 0) +
-      (typeof padding === 'number' ? padding : 0)
-    )
-  }
-  return {
-    left: left + inset('Left'),
-    top: top + inset('Top'),
-    width: width - inset('Left') - inset('Right'),
-    height: height - inset('Top') - inset('Bottom'),
-  }
 }
 
 export default async function rect(

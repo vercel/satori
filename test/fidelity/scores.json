@@ -5,8 +5,8 @@
     "styleErrors": 0
   },
   "nextjs-features": {
-    "mismatch": 3.05,
-    "contentMismatch": 9.02,
+    "mismatch": 0.56,
+    "contentMismatch": 9.07,
     "styleErrors": 0
   },
   "nextjs-showcase": {
