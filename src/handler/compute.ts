@@ -81,8 +81,19 @@ export function setReplacedElementSize(
     typeof value === 'string' && /^\d*\.?\d+$/.test(value.trim())
       ? Number(value)
       : value
-  let width = style.width || toLength(attributeWidth)
-  let height = style.height || toLength(attributeHeight)
+  // Like in browsers, styles override the attributes, also with `auto`, which
+  // then has the natural ratio, e.g. `height: auto` with a width attribute.
+  const size = (
+    value: number | string | undefined,
+    attribute: number | string | undefined
+  ) =>
+    value === undefined
+      ? toLength(attribute)
+      : value === 'auto'
+      ? undefined
+      : value
+  let width = size(style.width, attributeWidth)
+  let height = size(style.height, attributeHeight)
 
   if (width === undefined && height === undefined) {
     width = '100%'

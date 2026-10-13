@@ -222,6 +222,31 @@ describe('Image', () => {
     expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it('should let styles override the size attributes of images', async () => {
+    // A 200x100 image.
+    const src = `data:image/svg+xml;base64,${Buffer.from(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><rect width="200" height="100" fill="red"/></svg>'
+    ).toString('base64')}`
+    const render = (node: JSX.Element) =>
+      satori(<div style={{ display: 'flex' }}>{node}</div>, {
+        width: 120,
+        height: 60,
+        fonts,
+      })
+    // `auto` has the natural ratio, like with `height: auto` of resets.
+    expect(
+      await render(
+        <img src={src} width={100} height={20} style={{ height: 'auto' }} />
+      )
+    ).toBe(await render(<img src={src} width={100} height={50} />))
+    // `0` isn't replaced by the attribute.
+    expect(
+      await render(
+        <img src={src} width={100} height={20} style={{ width: 0 }} />
+      )
+    ).toBe(await render(<img src={src} width={0} height={20} />))
+  })
+
   it('should resolve non-square image size correctly', async () => {
     const svg = await satori(
       <div
