@@ -36,6 +36,24 @@ export function extractCustomProperties(
 }
 
 /**
+ * CSS-wide keywords that keep the inherited value of custom properties, which
+ * are inherited. `initial` is the guaranteed-invalid value instead.
+ */
+const INHERITING_KEYWORDS = new Set([
+  'inherit',
+  'unset',
+  'revert',
+  'revert-layer',
+])
+
+/**
+ * Whether the value of a custom property is its initial value, the
+ * guaranteed-invalid value, so that `var()` uses its fallback.
+ */
+const isGuaranteedInvalid = (value: string) =>
+  value.trim().toLowerCase() === 'initial'
+
+/**
  * Merges inherited variables with current variables
  * Current variables override inherited ones (cascading)
  */
@@ -43,19 +61,29 @@ export function mergeVariables(
   inherited: CSSVariables,
   current: CSSVariables
 ): CSSVariables {
-  return { ...inherited, ...current }
+  const merged = { ...inherited }
+  for (const name in current) {
+    if (INHERITING_KEYWORDS.has(current[name].trim().toLowerCase())) continue
+    merged[name] = current[name]
+  }
+  return merged
 }
 
 /**
  * Resolves var() references in a CSS value
  * Supports fallback values: var(--name, fallback)
  * Handles nested var() calls
+ *
+ * Returns `undefined` if the value is invalid at computed-value time, like in
+ * browsers: a variable without a value (or with the guaranteed-invalid value
+ * `initial`, or in a cycle) is used without a fallback. The declaration then
+ * behaves as `unset`.
  */
 export function resolveVariables(
   value: string | number,
   variables: CSSVariables,
   visitedVars = new Set<string>()
-): string | number {
+): string | number | undefined {
   // Only process strings
   if (typeof value !== 'string') {
     return value
@@ -68,71 +96,58 @@ export function resolveVariables(
 
   try {
     const parsed = valueParser(value)
-    let hasChanges = false
+    let invalid = false
 
     parsed.walk((node) => {
-      if (node.type === 'function' && node.value === 'var') {
-        hasChanges = true
+      if (
+        invalid ||
+        node.type !== 'function' ||
+        node.value.toLowerCase() !== 'var'
+      ) {
+        return
+      }
 
-        // Extract variable name and optional fallback
-        const args = extractVarArgs(node)
-        if (!args) {
-          // Invalid var() syntax, leave as-is
-          return
-        }
+      // Extract variable name and optional fallback
+      const args = extractVarArgs(node)
+      if (!args) {
+        invalid = true
+        return false
+      }
+      const { varName, fallback } = args
 
-        const { varName, fallback } = args
-
-        // Check for circular reference
-        if (visitedVars.has(varName)) {
-          console.warn(
-            `Circular reference detected for CSS variable: ${varName}`
-          )
-          // Use fallback if available, otherwise use invalid value
-          if (fallback !== undefined) {
-            replaceNode(node, fallback)
-          } else {
-            replaceNode(node, 'initial')
-          }
-          return
-        }
-
-        // Look up the variable
+      let resolved: string | number | undefined
+      if (visitedVars.has(varName)) {
+        console.warn(`Circular reference detected for CSS variable: ${varName}`)
+      } else {
         const variableValue = variables[varName]
-
-        if (variableValue !== undefined) {
-          // Mark this variable as being resolved to detect circular references
-          const newVisitedVars = new Set(visitedVars)
-          newVisitedVars.add(varName)
-
-          // Recursively resolve the variable value in case it contains more var()
-          const resolvedValue = resolveVariables(
+        if (
+          variableValue !== undefined &&
+          !isGuaranteedInvalid(variableValue)
+        ) {
+          // Mark this variable as being resolved to detect circular references,
+          // and resolve var() in its value.
+          resolved = resolveVariables(
             variableValue,
             variables,
-            newVisitedVars
+            new Set(visitedVars).add(varName)
           )
-
-          replaceNode(node, String(resolvedValue))
-        } else if (fallback !== undefined) {
-          // Variable not found, use fallback
-          // Recursively resolve fallback in case it contains var()
-          const resolvedFallback = resolveVariables(
-            fallback,
-            variables,
-            visitedVars
-          )
-          replaceNode(node, String(resolvedFallback))
-        } else {
-          // Variable not found and no fallback, use initial value
-          // According to CSS spec, this should be treated as invalid
-          replaceNode(node, 'initial')
         }
       }
+      // Without a valid value, the fallback is used, which may be empty and
+      // contain var() too.
+      if (resolved === undefined && fallback !== undefined) {
+        resolved = resolveVariables(fallback, variables, visitedVars)
+      }
+      if (resolved === undefined) {
+        invalid = true
+        return false
+      }
+
+      replaceNode(node, String(resolved))
+      return false
     })
 
-    if (hasChanges) {
-      return parsed.toString()
-    }
+    return invalid ? undefined : parsed.toString()
   } catch (err) {
     // If parsing fails, return the original value
     console.warn(`Failed to parse CSS value for variable resolution: ${value}`)
@@ -172,8 +187,9 @@ function extractVarArgs(
 
   const varName = varNameNode.value.trim()
 
-  // Check if there's a fallback value after the comma
-  if (commaIndex !== -1 && commaIndex < node.nodes.length - 1) {
+  // Check if there's a fallback value after the comma, which may be empty, as
+  // in `var(--name,)`.
+  if (commaIndex !== -1) {
     // Collect all nodes after the comma as the fallback
     const fallbackNodes = node.nodes.slice(commaIndex + 1)
     const fallback = valueParser.stringify(fallbackNodes).trim()
@@ -205,7 +221,9 @@ export function resolveStyleVariables(
   const resolved: Record<string, string | number> = {}
 
   for (const prop in style) {
-    resolved[prop] = resolveVariables(style[prop], variables)
+    // Properties that are invalid at computed-value time are left out.
+    const value = resolveVariables(style[prop], variables)
+    if (value !== undefined) resolved[prop] = value
   }
 
   return resolved

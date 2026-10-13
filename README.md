@@ -57,7 +57,7 @@ Under the hood, it handles layout calculation, font, typography and more, to gen
 ### JSX
 
 Satori only accepts JSX elements that are pure and stateless. You can use a subset of HTML
-elements (see section below), or custom React components, but React APIs such as `useState`, `useEffect`, `dangerouslySetInnerHTML` are not supported.
+elements (see section below), or custom React components, but React APIs such as `useState` and `useEffect` are not supported, and `dangerouslySetInnerHTML` is only supported on `<style>` and `<script>`.
 
 #### Experimental: builtin JSX support
 
@@ -101,7 +101,7 @@ await satori(
 
 Satori supports a limited subset of HTML and CSS features, due to its special use cases. In general, only these static and visible elements and properties that are implemented.
 
-For example, the `<input>` HTML element, the `cursor` CSS property are not in consideration. And you can't use `<style>` tags or external resources via `<link>` or `<script>`.
+For example, the `<input>` HTML element, the `cursor` CSS property are not in consideration. `<style>` elements apply their CSS, see [Stylesheets](#stylesheets), but external resources via `<link>` or `<script>` aren't loaded.
 
 Also, Satori does not guarantee that the SVG will 100% match the browser-rendered HTML output since Satori implements its own layout engine based on the [SVG 1.1 spec](https://www.w3.org/TR/SVG11).
 
@@ -202,7 +202,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>display</code></td>
-<td>Supported, with these differences: <code>table</code>, <code>ruby</code> and their inner values, and two-value syntax like <code>inline flow-root</code>, aren't supported and throw. The top-level element is laid out as a block, like the root element of a page. Form controls like <code>button</code> are inline instead of <code>inline-block</code>, and have no default styles.</td>
+<td>Supported, with these differences: <code>table</code>, <code>ruby</code> and their inner values, and two-value syntax like <code>inline flow-root</code>, aren't supported and throw. Form controls like <code>button</code> are inline instead of <code>inline-block</code>, and have no default styles.</td>
 <td></td>
 </tr>
 
@@ -314,18 +314,20 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td>Shorthand (<code>listStyle</code>)</td><td>Supported</td><td></td></tr>
 <tr><td><code>counterReset</code>, <code>counterIncrement</code>, <code>counterSet</code></td><td>Counters other than <code>list-item</code> aren't displayed, since <code>content</code> and <code>counter()</code> aren't supported. Where a marker is placed, and how many items a <code>reversed()</code> counter counts, are found from the <code>style</code> prop and the default styles of elements, not their <code>tw</code> classes</td><td></td></tr>
 
-<tr><td rowspan="8">Font</td></tr>
+<tr><td rowspan="9">Font</td></tr>
 <tr><td><code>fontFamily</code></td><td>Only the fonts passed in the <code>fonts</code> option are used. After the listed families, the other loaded fonts are used as fallbacks in the order they were passed, so generic families like <code>serif</code> don't select a font</td><td></td></tr>
 <tr><td><code>fontSize</code></td><td>Supported</td><td></td></tr>
-<tr><td><code>fontWeight</code></td><td>Bold isn't synthesized when no bold font is loaded</td><td></td></tr>
-<tr><td><code>fontStyle</code></td><td>Italic isn't synthesized when the font has no italic</td><td></td></tr>
+<tr><td><code>fontWeight</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>fontStyle</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>fontSynthesis</code>, <code>fontSynthesisWeight</code>, <code>fontSynthesisStyle</code></td><td><code>small-caps</code> and <code>position</code> have no effect</td><td></td></tr>
 <tr><td><code>fontFeatureSettings</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontKerning</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>fontVariant</code>, <code>fontVariantCaps</code>, <code>fontVariantNumeric</code>, <code>fontVariantLigatures</code>, <code>fontVariantPosition</code>, <code>fontVariantEastAsian</code>, <code>fontVariantAlternates</code>, <code>fontVariantEmoji</code></td><td>Applied with the OpenType features of the font. Small caps aren't synthesized when the font has none, <code>fontVariantAlternates</code> only supports <code>historical-forms</code>, since <code>@font-feature-values</code> isn't supported, and <code>fontVariantEmoji</code> has no effect</td><td></td></tr>
 
-<tr><td rowspan="15">Text</td></tr>
+<tr><td rowspan="17">Text</td></tr>
+<tr><td><code>direction</code></td><td>Also set by the <code>dir</code> attribute, except for <code>auto</code>. With <code>rtl</code>, flex rows, grid columns, block boxes and lines of text start at the right. Lines with inline elements in them are aligned, but their content isn't reordered yet. <code>unicodeBidi</code> isn't supported</td><td></td></tr>
 <tr><td><code>tabSize</code></td><td>Supported</td><td></td></tr>
-<tr><td><code>textAlign</code></td><td><code>start</code> and <code>end</code> are always left and right, since <code>direction</code> isn't supported. <code>match-parent</code> isn't supported</td><td></td></tr>
+<tr><td><code>textAlign</code></td><td><code>start</code> and <code>end</code> follow <code>direction</code>. <code>match-parent</code> isn't supported</td><td></td></tr>
 <tr><td><code>textIndent</code></td><td>Supported except for the <code>hanging</code> and <code>each-line</code> keywords</td><td></td></tr>
 <tr><td><code>verticalAlign</code></td><td><code>middle</code>, <code>top</code>, <code>bottom</code>, <code>text-top</code> and <code>text-bottom</code> only apply to images and other atomic inlines, not to inline elements</td><td></td></tr>
 <tr><td><code>textTransform</code></td><td>Supported. <code>full-width</code> and <code>full-size-kana</code> are also supported, which Chrome doesn't support yet</td><td></td></tr>
@@ -333,7 +335,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>textDecoration</code></td><td>Decorations are drawn per element: <code>textDecoration: none</code> on a descendant removes the parent's lines, and a descendant's own decoration replaces them instead of adding to them. <code>textUnderlinePosition</code> isn't supported</td><td><a href="https://og-playground.vercel.app/?share=pVPLTsMwEPwVaytUkAKkPCRklV4oXwDHXhx7YxtcO3Ic2hLl37GTtEKIQynywTvjndGstG6BO4FAYS70x8oSUoedwce2TTUhCrVUgZLpLM_PptlAbrQI6gcndF0ZtotsaXC7Z1O91B550M7GN-5Ms7b714oJoa2kZJaPTMH4u_SuseLJGeejYlKW5cHN2fCiP5GS25uRkqxK8gS6bmUXqUiTHMYgAbdhidx5NmawzuI0di9SMb-OzceoYiT0Ro_SAzpan5ovg4qzSdVbfCf-noIIFwIK4lH0bgM8KQ0RrFbRqjDNMNyAT8rUFAbJhHP-_1CDl5cFO8-z_lzdX_ySb39DBq5KTjXQFvoVBfqQ5xkMOwz0LgGBRSOBlszUmAGu3Zt-3VXpA4RNj6JP2rPndYECaPANdhkEVsQOhca4jfNGQPcF">Example</a></td></tr>
 <tr><td><code>textShadow</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>lineHeight</code></td><td>Line heights are rounded to whole pixels</td><td></td></tr>
-<tr><td><code>letterSpacing</code></td><td>Isn't added after the last character</td><td></td></tr>
+<tr><td><code>letterSpacing</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>wordSpacing</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>whiteSpace</code></td><td><code>break-spaces</code> is laid out like <code>pre-wrap</code></td><td></td></tr>
 <tr><td><code>wordBreak</code></td><td><code>auto-phrase</code> is laid out like <code>normal</code></td><td></td></tr>
@@ -469,12 +471,15 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <td><a href="https://og-playground.vercel.app/?share=5VPBbtQwEP2VkRFakNKSshxQBBwoXDhwaEFc9uLYk6xbx2PZk-6G1Up8DR_GlzDOkgr13FtPGb_xvPf8ojkoQxZVo95Zd7cJAJknj-8Ph1IDbNH1W25gdVHXz1fVCdw5y9sHmHU5ej0J2nncL2ipP7mEhh0F6Rny4xCWbtTWutA3cFH_Q1ptbvtEY7CX5CnJxLOu6-7ZKPC1-4kNrF_P0PG4CR9KsZh_aP9_X60nc7tQAXgX8NLrIQrbPTjo1LvwkZhpkJF1HferU69IAcxiAN8zWmgnyDQgUAe8RdhR8naVwQsFZgZDQ9TBYa7gK-75_CYDBt16zDDRCExgEmpG6EbvzzLLy-EHtqBj9M7oElguGjKLocQ0q3iZEPIr1Iahk_kxFQUdLLjA2CcZlKuRdpiEGK7GzGetLn6_6Dt9bZKLLOIkz-8l0DSzdjrPtO3ovM3nc6KvJNJHyHa1ho368-s3vDBihQb5fVayEa-BX27UE093-apKUZxNqeag5v1Szdu6rtRpAVXzphwstmOvmk77jJXCgW7ctymW7eXdfBKesiSfhxatajiNeKwU61ZubNF7mmNUx78">Example</a></td>
 </tr>
 
-<tr><td rowspan="6">Mask</td></tr>
+<tr><td rowspan="9">Mask</td></tr>
 <tr><td><code>maskImage</code></td><td>Supported, also as <code>WebkitMaskImage</code></td><td><a href="https://og-playground.vercel.app/?share=pZJfb9MwFMW_imVp2ZDS5s_I1kULSMAkhgRoYlJf-uLYN8ltHTvYDm2o-t2xuxXBXvcQXed3rONj37unXAugJb0V-GulCLFuklDt92FNSAfYdq4k51manp3HT3CLwnUvmEA7SDZ52kjYnWhYf0ID3KFWXuNajr06qUxiq-4d9DZIoByYk7QercNm-qg9VOH8_-XG8x_4G0pymf-Dls9pr9L0mdaMb1qjRyW8x2jkRefcYMskwZ61YOejCrFtN-e6T4ZOOz3LinyRL65v3ubZdTZrari8KkQmbhh_jzuJdWXqWTbP51n0s1oUUdNX66GNuNFD5TP6MkXbKsvTNOK2sqatI9yhqGD60vHPHxq2fMDv67v022NbNA9vTjfqmd3ch0w-p2ECmZy1oXrLC46GSyDMkSI9C19MajlCTJxhPj8zftNfoyXUG3RfX21HkuTYBf-whhhowGMOBBXpXC_DWYfDSr1bqdvET46vNKZ6CH22tNzT44zQMrxDTJ-miJahL1RAPba0bJi0EFPo9RofpyGMoNse_7xRaOZdX4OgpTMjHGLqWO13dCCl3mojBT38AQ">Example</a></td></tr>
 <tr><td><code>maskPosition</code></td><td>Supported</td><td><a href="https://og-playground.vercel.app/?share=pVJda9swFP0rQlC3Ayf-6NKmpt5gW2Ed7KOskJe8yNK1fRNZ8iR5iRfy3yelCayFPfXBvtK5h3uP7j07yrUAWtBbgb-XihDrRgnlbhfOhLSATesKcp6l6dl5_ARuULj2BSbQ9pKNHq0lbE9oOH9CA9yhVj7HtRw6dcoyiY26d9DZkALlwJxSq8E6rMeP2oMq9H-erj3-E_9AQS7zf6DFUe1Vmh7RivF1Y_SghK8xGHnROtfbIkmwYw3Y6aCCbNtOue6SvtVOT7JZPs_n1zdv8-w6m9QVXF7NRCZuGH-PW4lVaapJNs2nWfSrnM-iuitXfRNxo_vSa_RhjDZllqdpxG1pTVNFuEVRwvil5Z8_1GzxgN9Xd-m3x2ZWP7w5vahjdn0fNHmdhglkctKE6EtecDRcAmGOzNKz8MWkkgPExBnm9TPjSc8K_dAWjxP3O-q35PA_MRZQrdF9fX1DkiSHRfnZG2KgBo9zIKhI6zr5stl_RAXafr9U75bqNvEe9JHGVPeBammxowe30SJMNKZPfqRF2DAVUA0NLWomLcQUOr3Cx7EPZnabw80XCra46yoQtHBmgH1MHas8owUp9UYbKej-Lw">Example</a></td></tr>
 <tr><td><code>maskSize</code></td><td>Supported</td><td><a href="https://og-playground.vercel.app/?share=pVLfb9MwEP5XLEvLhpQ2P0a3LlpAAiYxJEATk_rSF8e-JNc6drAd2lD1f8duV8H6yoN19ved7j7ffTvKtQBa0HuBv5aKEOtGCeVuF-6EtIBN6wpymaXpxWV8BDcoXHuGCbS9ZKNHawnbExrun9AAd6iV57iWQ6dOLJPYqEcHnQ0UKAfmRK0G67AeP2oPqtD_NV17_Af-hoJc5_9Aixe1N2n6glaMrxujByV8jcHIq9a53hZJgh1rwE4HFWTbdsp1l_StdnqSzfJ5Pr-9e5tnt9mkruD6ZiYyccf4e9xKrEpTTbJpPs2in-V8FtVdueqbiBvdl16jD2O0KbM8TSNuS2uaKsItihLGLy3__KFmiyf8vnpIvz03s_rpzelHHbPrx6DJ6zRMIJOTJkRf8oqj4RIIc2SWXoQTk0oOEBNnmNfPjE96Veg4Gr-ffkvyvztaQLVG9_X_O5EkOWzID90QAzV4nANBRVrXyfNm52oCv98v1buluk-863ykMdV98IilxY4e_EWLMMOYHh1Ii7BTKqAaGlrUTFqIKXR6hc9jH-zrNoeXLxSM8NBVIGjhzAD7mDpW-YwWpNQbbaSg-z8">Example</a></td></tr>
 <tr><td><code>maskRepeat</code></td><td>Supported</td><td><a href="https://og-playground.vercel.app/?share=nVbpjqNIEn6VkqXVzMg1AhtjQ-3MStwGA-Ywl9U_hssJ5jSHAbf63TdxdfXUzh4_FhllHF8cGZkm4usirKJ48bb4LUrvX8qXl7ab8vj3r19n-uUliVOQdG8vP61Q9G8_vb4LhzTqkr_IorStc3-C0ksejx_SmWbTJg67tCqhLqzyvig_tH6eglLs4qKdVXHZxc2H6tq3XXqZmAoKyzn-v6ovUG6mj_jtBVt_Ejnfs92i6Hdp4IcZaKq-jKCPvsl_jvzOf0sLH8RIXYK_B34bbzevqU0fjQE9CKCi4KOaVsJZAFK0PvMaQ3lwYbPiSNqzgHJV00BFqmk34XaGiEbucHlxslDqMNtRAJpyJkUpM0NTFAcXzqco6ztPUSbggs-8BTgY_AMvwl9UU9Qz_lPvPP0-WaiEz6zinkKoPwLIs9_lkGcATGEO-o6jTUANn3iKeJJ2F-6CJ58PJp8_ICFzA7QeFZqSbqHwBOW1zSeow62UY6HeAxNPzgKZnk18E7jfU2LHzbFMulBY5ZHAgVhYtUGpbGMWTT3HuHuFtZ35wLFRzyRScQ-2EDNEQkuKeaJaDM0GmJSLrNcrzGYQr5uDyFBA20vZ-VqbBuf98BkWRqGZUhXtjeGYEvcIizC5DB9yQU7niRiPpwyXH9QkP8RJdqF9unrEDo56Luig_fXD9yf_3NlVr2GRw3zye5DS01nwtp4j3SNXJ8VU_IH_eD9ygfjifEVTf2-gIVvd5TUO8-CzYC3l8rNWJOo750J-cHBfRKqB6rMf4t2-1mDsPCiN5Bn_uhk15t3umJGT79h9JPCQJ_tP9oSM_YfcP-rGwFrAPViZIUAbiH2v97P-p81BsHcJDc-ZWvGSwfHWkRZUm-8UDuWsMsJM7ITXvl8YYxpVaWIcDFuQMp-lDYZXUyUzNVLX4KYTMBgGNxwFaEUoF84QWe6mXMYz13GVeU91ISF0sPF8oDNpbYtxHVWOmSxRzOXLyHCzEenHcHk5as7liJUdRl2SjhWUE3PZ2gdM43nDPrEUGwnJxHISvL6WuHksd8qjuK66bTDEQyKKHu5qIGNFxvAo5byyizvKZ1y7x28hf-CjZXAw2EGzWn_bP04b2lbtMx3Y0jpXaDNktVtXbPH7o8A3k8q5jhVNxsBWhe0F8jqqYqJnr17XAO9o1UZrAcDRo3tY7Zc5wGhikM4Wilz3YTH1akMOy1XMMGOVEZokexWWlo7HMrJ4mBzVqM7u8aSyN7SWb870cAKdUCqJ6c2z3xr6gV61QqrD22-O_pRosq3iHQHGzFRQ5Yisjo61Tseq0VByWxKmdVrHa9fRk122bBpiUHnDCTG_OR28OudwcW0E4qGozUaOdnHZRLesiUbXkbg1bku7lGdSrNTYBlHqgxtVdr9RjvZyd8xXd4BUYBvou7VvXLoxGkldoSrXdvmzRHnurQiLi9WfDPsgi_dJE5cB4pIZG6gaVm1qkrxQVSUqZU3d0bDMtxfdU3kSiVwJKVrPXy8HaWAJzNBDjq4entTprFOeWL32HNwX1u2dXVfSQJQeeyMecFNHn6ezUUmaO9md4uaKL3twybpTNuQ1QYGym8gitAjRu7DoFaQkWHI7miNzZ2UUsuEE2LlmjNrpp5XTh3mM-eXt_mi2O1kor9tBsfwbxgILhzkJ68PRPh25nlhRkxTTuWQq6dWVpp3BVPWq6ree34P7ivDPAljuwsQbB8fxjnTSn-lsx7sPMdwQe48zB3lI0rI02Vgz2kBmsColkI3M3QuwOSUEzZuCd99fNIykkP0YINFwL6LNUiQmKiAPoo5PqkVFGc1fEaQtxrW6psdO4C5IhRxC1916J3mrxeDerWKcRC_0etLjCiR7IexI2eG0w57VB4S0zd53hq0xZI7sNuqZ2ka4KhmHvBQke2sbO_gn013TtlADlAmPyZEcSqsdVrqFl8IbmAgqnY9pFukjifCFN1mcGPOEFPsIAi-V0rgqfdMZSlIkpEGa4ua3J44SQ4thMqQRr8ujjuxUKgCIq3Iaheg6fbOvF2qN895725IMC-eaTAIA_P77Lx_NvfDbTJw79NvLH3laxn7zK2j8KIUTwM9d9dLMPf71Jcj7-PWla_yyrf0G6n7545P9-3AwTyj1-LJaz8tn90Zcx_48VjRP4tcfSicOsrRTPmXwl6GhvYPlWOQfg4O2V9fnicZ8x0B92OyOLDWIKV2dnbz097B5XMGgMCKICnsK1_MHGk0VczNCzBp-2DG9IDeaKQ4iSwHlJEIsNSrXp49N4Ix9-PjUXGCjiyYcUyb8HhbhfcYpDPmIijDVruPguUYlCjBmho4KMzxUk6Yhpn2-zDDILNeqJ0g_LKDDWDI7v0_dKLMZpJWVyHM45NeqOazgikMfhgJt1KvVzuts66QiOBd5G8D9RuukjgQrFRliCZvOnMvyx0H8ezH_n-P808v_ONQ_Qf_laL99-1L-40v5GwLHXLguXhdVPQ-l7eLt6-I50C7eZpevi_eRd_E2D5GLKA56sHi7-Hkbvy7iorqmp6me5-VueHLQ0Tx5ckUQR4u3runjb6-Lzg8gIonzvBqqJo8W3_4J">Example</a></td></tr>
-<tr><td><code>maskOrigin</code></td><td>Supported. The <code>mask</code> shorthand, <code>maskClip</code>, <code>maskMode</code> and <code>maskComposite</code> aren't supported</td><td></td></tr>
+<tr><td><code>maskOrigin</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>maskClip</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>maskComposite</code></td><td>Supported</td><td></td></tr>
+<tr><td><code>mask</code></td><td>Supported. <code>maskMode</code> isn't supported</td><td></td></tr>
 
 <tr>
 <td rowspan="2"><code>WebkitTextStroke</code></td>
@@ -507,8 +512,20 @@ Note:
 
 1. In 3D transforms, elements in a `preserve-3d` context are drawn back to front by the depth of their centers, and elements that intersect aren't cut where they cross. Perspective is approximated: each element is drawn with the affine transform closest to it around its center, which is exact for elements facing the viewer, such as `translateZ()`. `satori/experimental` [draws perspective exactly](#perspective-experimental).
 2. Percentages in `calc()`, `min()`, `max()` and `clamp()` only work in sizes, margins, paddings, insets, gaps, `flexBasis` and translations. Elsewhere, values with them are ignored.
-3. Properties that aren't listed are ignored, for example `columns`, `direction`, `writingMode` and `fontStretch`.
-4. Invalid values throw an error, which fails the whole render, unless they're ignored with [`onStyleError`](#invalid-styles).
+3. Properties that aren't listed are ignored, for example `columns`, `writingMode` and `fontStretch`.
+4. Invalid values in inline styles throw an error, which fails the whole render, unless they're ignored with [`onStyleError`](#invalid-styles). Stylesheets drop them instead, see [Stylesheets](#stylesheets).
+5. `inherit` on properties that aren't inherited, e.g. `border: inherit`, sets their initial value instead of the value of the parent.
+
+#### Stylesheets
+
+The CSS of `<style>` elements applies to the whole tree, including the elements of components. The declarations of matching rules are merged with inline styles in cascade order, so the table above applies to them too. Selectors, specificity, `!important`, nesting, `@layer`, `@media`, `@supports` and the `media` attribute are supported, with these differences:
+
+- `@media` matches the `width` and `height` of the image, on a static screen in light mode, e.g. `prefers-color-scheme: light` and `hover: none`.
+- Invalid and unsupported declarations are dropped like in browsers, and passed to `onStyleError`. Values with `var()` are only checked when they're computed, where invalid values throw like in inline styles.
+- `@supports` checks declarations the same way, but properties that Satori ignores count as supported. `selector()` is supported, but not `font-tech()` and `font-format()`.
+- `::before` and `::after` are supported, with `content` made of strings, `attr()`, `counter()`, `counters()`, quotes and `url()`. Quotes are always “ and ”, as `quotes` isn't supported. Other pseudo-elements, such as `::marker` and `::first-line`, aren't supported, so rules with them don't apply.
+- Pseudo-classes of interactions such as `:hover` never match, and functional pseudo-classes other than `:is()`, `:where()`, `:not()`, `:has()`, `:nth-*()` and `:lang()` make their rule invalid.
+- Other at-rules are ignored, such as `@font-face`, `@keyframes`, `@container`, `@scope` and `@import`.
 
 #### Perspective (experimental)
 
@@ -546,13 +563,16 @@ Example:
 </div>
 ```
 
-HarfBuzz also improves glyph shaping for complex scripts such as Arabic. Full
-Unicode bidirectional layout is not yet supported, so mixed LTR and RTL text
-may not follow browser ordering.
+HarfBuzz also improves glyph shaping for complex scripts such as Arabic. Words
+are ordered with a simplified Unicode bidirectional algorithm, so right-to-left
+text in a left-to-right element, and left-to-right text and numbers in a
+right-to-left one, follow browser ordering, and lines with `direction: rtl` are
+laid out from the right. Explicit embeddings with `unicodeBidi`, bracket pairs
+and reordering text with inline elements in it aren't supported yet.
 
 #### Fonts
 
-Satori currently supports three font formats: TTF, OTF and WOFF. Note that WOFF2 is not supported at the moment. You must specify the font if any text is rendered with Satori, and pass the font data as ArrayBuffer (web) or Buffer (Node.js):
+Satori supports four font formats: TTF, OTF, WOFF and WOFF2. You must specify the font if any text is rendered with Satori, and pass the font data as ArrayBuffer (web) or Buffer (Node.js):
 
 ```js
 await satori(
@@ -696,7 +716,7 @@ const svg = await satori(
 
 ### Invalid Styles
 
-By default, an invalid or unsupported style declaration throws an error, which fails the whole render. With `onStyleError`, the declaration is ignored instead, and its error is passed to the callback:
+By default, an invalid or unsupported declaration in an inline style throws an error, which fails the whole render. With `onStyleError`, the declaration is ignored instead, and its error is passed to the callback. Declarations of [stylesheets](#stylesheets) are always dropped, like in browsers, and passed to the callback too:
 
 ```jsx
 const svg = await satori(

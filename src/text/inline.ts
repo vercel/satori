@@ -9,7 +9,11 @@
  */
 import type { LayoutContext } from '../layout.js'
 import type { SerializedStyle } from '../handler/expand.js'
-import type { FontEngine, GlyphBox } from '../font.js'
+import {
+  getSyntheticBoldWidth,
+  type FontEngine,
+  type GlyphBox,
+} from '../font.js'
 import type FontLoader from '../font.js'
 import type { Locale } from '../language.js'
 import { LayoutNode, type FloatExclusion } from '../layout-engine/index.js'
@@ -20,6 +24,7 @@ import {
   splitByBreakOpportunities,
 } from '../utils.js'
 import buildText, {
+  buildGlyphPaths,
   container as getContainer,
   getTextFillColor,
   getTextStrokeAttributes,
@@ -37,6 +42,7 @@ import {
   getTabWidth,
   preprocess,
   processTextTransform,
+  resolveTextAlign,
 } from './processor.js'
 import { getFontFeatureSettings } from './font-features.js'
 import buildTextNodes from './index.js'
@@ -628,11 +634,48 @@ export class Paragraph {
     return result
   }
 
-  /** Breaks the paragraph into lines that fit the width, beside floats. */
+  /**
+   * Breaks the paragraph into lines that fit the width, beside floats, and
+   * balances them with `text-wrap: balance`, like plain text.
+   */
   private flow(
     width: number,
     exclusions: FloatExclusion[] = [],
     minContent = false
+  ) {
+    const result = this.breakLines(width, exclusions, minContent)
+    const count = this.lines.length
+    if (
+      this.style.textWrap !== 'balance' ||
+      minContent ||
+      count < 2 ||
+      !Number.isFinite(width)
+    ) {
+      return result
+    }
+    // The narrowest lines that don't make the paragraph longer, still aligned
+    // in the available width.
+    let low = 0
+    let high = width
+    while (high - low > 0.5) {
+      const limit = (low + high) / 2
+      this.breakLines(width, exclusions, false, limit)
+      if (this.lines.length > count) low = limit
+      else high = limit
+    }
+    return this.breakLines(width, exclusions, false, high)
+  }
+
+  /**
+   * Breaks the paragraph into lines that fit the width, beside floats, and
+   * aligns them. Lines are at most `limit` wide, but still aligned in the
+   * available width.
+   */
+  private breakLines(
+    width: number,
+    exclusions: FloatExclusion[] = [],
+    minContent = false,
+    limit = Infinity
   ) {
     const words = this.prepare().slice()
     if (this.atomicWidth !== width) {
@@ -714,7 +757,12 @@ export class Paragraph {
     const strut = this.engine(this.style)
     const strutAscent = Math.round(strut.baseline(STRUT))
     const strutDescent = Math.round(strut.height(STRUT)) - strutAscent
-    const textAlign = this.style.textAlign as string
+    // `start` and `end` follow `direction`. Lines with inline boxes or atomic
+    // inlines are aligned, but their content isn't reordered with `rtl` yet.
+    const textAlign = resolveTextAlign(
+      this.style.textAlign,
+      this.style.direction
+    )
 
     // Lines are shortened by the floats beside them. A line that is at least
     // as tall as the strut is beside the floats from its top to there.
@@ -817,7 +865,8 @@ export class Paragraph {
         if (
           line.words.length &&
           canBreak &&
-          line.width + word.width - word.trailing > line.available + 1e-3
+          line.width + word.width - word.trailing >
+            Math.min(line.available, limit) + 1e-3
         ) {
           line = newLine()
           wrapped = true
@@ -868,7 +917,7 @@ export class Paragraph {
       let gap = 0
       if (Number.isFinite(width)) {
         const remaining = current.available - lineWidth
-        if (textAlign === 'right' || textAlign === 'end') {
+        if (textAlign === 'right') {
           x += remaining
         } else if (textAlign === 'center') {
           x += remaining / 2
@@ -1175,6 +1224,8 @@ export class Paragraph {
     const thickness = getDecorationThickness(style)
 
     let path = ''
+    // The paths of synthetic bold glyphs, which are emboldened.
+    let boldPath = ''
     let elements = ''
     const decorations: {
       left: number
@@ -1229,7 +1280,7 @@ export class Paragraph {
         }
       }
 
-      for (const [partIndex, part] of parts.entries()) {
+      for (const part of parts) {
         const partWidth = isImage(part)
           ? fontSize
           : engine.measure(part, {
@@ -1273,11 +1324,11 @@ export class Paragraph {
             band
           )
           path += svg.path + ' '
+          boldPath += svg.boldPath
           if (band && svg.boxes) glyphBoxes = glyphBoxes.concat(svg.boxes)
         }
-        // Letter spacing is between graphemes, also across parts.
-        pieceX +=
-          partWidth + (partIndex < parts.length - 1 ? letterSpacing || 0 : 0)
+        // Widths include the letter spacing after each character.
+        pieceX += partWidth
       }
 
       if (decorationLines.length) {
@@ -1319,16 +1370,22 @@ export class Paragraph {
       .join('')
 
     const strokeAttributes = getTextStrokeAttributes(style)
-    const shape = path
-      ? !isFullyTransparent(fillColor) || strokeAttributes.stroke || filter
-        ? buildXMLString('path', {
-            fill: filter && isFullyTransparent(fillColor) ? 'black' : fillColor,
-            d: path,
-            transform: matrix || undefined,
-            ...strokeAttributes,
-          })
+    const shape =
+      path || boldPath
+        ? !isFullyTransparent(fillColor) || strokeAttributes.stroke || filter
+          ? buildGlyphPaths(
+              { path, boldPath },
+              {
+                fill:
+                  filter && isFullyTransparent(fillColor) ? 'black' : fillColor,
+                transform: matrix || undefined,
+                ...strokeAttributes,
+              },
+              getSyntheticBoldWidth(fontSize),
+              id
+            )
+          : ''
         : ''
-      : ''
     let result =
       buildXMLString(
         'g',
@@ -1355,9 +1412,9 @@ export class Paragraph {
     const clipText = style._inheritedBackgroundClipTextPath as unknown as
       | { value: string }
       | undefined
-    if (clipText && path) {
+    if (clipText && (path || boldPath)) {
       clipText.value += buildXMLString('path', {
-        d: path,
+        d: path + boldPath,
         transform: matrix || undefined,
       })
     }

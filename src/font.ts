@@ -74,6 +74,18 @@ function splitByFont(
   return result
 }
 
+/** Whether font data is WOFF2, from its `wOF2` signature. */
+function isWoff2(data: ArrayBuffer) {
+  if (data.byteLength < 4) return false
+  const bytes = new Uint8Array(data, 0, 4)
+  return (
+    bytes[0] === 0x77 &&
+    bytes[1] === 0x4f &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x32
+  )
+}
+
 /**
  * Convert WOFF to raw sfnt (TrueType/OpenType) format for HarfBuzz.
  */
@@ -115,9 +127,7 @@ function woffToSfnt(woff: ArrayBuffer): ArrayBuffer {
     // Decompress or copy table data
     if (compLen < origLen) {
       const compressed = new Uint8Array(woff, offset + 2, compLen - 2)
-      const decompressed = new Uint8Array(origLen)
-      inflateSync(compressed, decompressed)
-      outBytes.set(decompressed, tableOffset)
+      outBytes.set(inflateSync(compressed), tableOffset)
     } else {
       outBytes.set(new Uint8Array(woff, offset, origLen), tableOffset)
     }
@@ -147,6 +157,51 @@ export type GlyphBox = {
   x2: number
   y1: number
   y2: number
+}
+
+/**
+ * The width of the stroke that emboldens synthetic bold glyphs, like the fake
+ * bold of Skia, which Chrome uses: 1/24 of the font size at 9px and smaller,
+ * and 1/32 at 36px and larger. Their advances don't change.
+ */
+export function getSyntheticBoldWidth(fontSize: number) {
+  const t = Math.min(1, Math.max(0, (fontSize - 9) / (36 - 9)))
+  return fontSize * (1 / 24 + (1 / 32 - 1 / 24) * t)
+}
+
+/** Synthetic italic glyphs are slanted by a quarter, like in Chrome. */
+const SYNTHETIC_SKEW = 0.25
+
+/** Which styles are synthesized for the glyphs of a font. */
+type Synthesis = (font: opentype.Font) => { bold: boolean; italic: boolean }
+
+/**
+ * Whether a font style is italic or oblique enough to be slanted. Like in
+ * Chrome, oblique angles smaller than 11deg aren't.
+ * https://www.w3.org/TR/css-fonts-4/#font-style-matching
+ */
+function isSlanted(fontStyle: string) {
+  if (fontStyle === 'italic') return true
+  const oblique = /^oblique(?:\s+(-?[\d.]+)deg)?$/.exec(fontStyle.trim())
+  return !!oblique && Number(oblique[1] ?? 14) >= 11
+}
+
+/**
+ * Whether the bold and italic of a font are synthesized when it's missing,
+ * from `fontSynthesis` and its longhands, which are both on by default.
+ */
+function allowsSynthesis(style: {
+  fontSynthesis?: unknown
+  fontSynthesisWeight?: unknown
+  fontSynthesisStyle?: unknown
+}) {
+  const keywords = String(style.fontSynthesis ?? 'weight style').split(/\s+/)
+  const longhand = (value: unknown, keyword: string) =>
+    value === undefined ? keywords.includes(keyword) : value !== 'none'
+  return {
+    weight: longhand(style.fontSynthesisWeight, 'weight'),
+    style: longhand(style.fontSynthesisStyle, 'style'),
+  }
 }
 type SkipInkBand = {
   underlineY: number
@@ -178,10 +233,24 @@ export type FontEngine = {
       letterSpacing: number
       wordSpacing?: number
       fontFeatureSettings?: string
+      /** The shaping direction, guessed from the text by default. */
+      direction?: TextDirection
     },
     band?: SkipInkBand
-  ) => { path: string; boxes: GlyphBox[] }
+  ) => GlyphPaths
 }
+
+/**
+ * The paths of glyphs. Synthetic bold glyphs are in `boldPath`, which is
+ * stroked to embolden them, see `getSyntheticBoldWidth()`.
+ */
+export interface GlyphPaths {
+  path: string
+  boldPath: string
+  boxes: GlyphBox[]
+}
+
+export type TextDirection = 'ltr' | 'rtl'
 
 type ShapedRun = [text: string, font: opentype.Font, glyphs: ShapedGlyph[]]
 
@@ -204,7 +273,8 @@ const toWordSpacing = (value: number | string | undefined) =>
   typeof value === 'number' ? value : 0
 type GetShapedRuns = (
   content: string,
-  fontFeatureSettings?: string
+  fontFeatureSettings?: string,
+  direction?: TextDirection
 ) => ShapedRun[]
 
 type BandPoint = [number, number]
@@ -456,7 +526,13 @@ export default class FontLoader {
   // for the same font configuration) so repeated renders don't re-shape
   // identical text runs with HarfBuzz.
   private shapedRunCache = new Map<string, ShapedRun[]>()
-  constructor(fontOptions: FontOptions[]) {
+  /** Decodes WOFF2 fonts, see `crates/layout`. */
+  private decodeWoff2?: (data: Uint8Array) => ArrayBuffer | undefined
+  constructor(
+    fontOptions: FontOptions[],
+    decodeWoff2?: (data: Uint8Array) => ArrayBuffer | undefined
+  ) {
+    this.decodeWoff2 = decodeWoff2
     this.addFonts(fontOptions)
   }
 
@@ -520,13 +596,22 @@ export default class FontLoader {
         font = cachedParsedFont.get(data)
       } else {
         // Convert Buffer to ArrayBuffer if needed
-        const arrayBuffer =
+        let arrayBuffer =
           'buffer' in data
             ? data.buffer.slice(
                 data.byteOffset,
                 data.byteOffset + data.byteLength
               )
             : data
+
+        // WOFF2 fonts are decoded into TrueType or OpenType fonts.
+        if (isWoff2(arrayBuffer)) {
+          const decoded = this.decodeWoff2?.(new Uint8Array(arrayBuffer))
+          if (!decoded) {
+            throw new Error(`Failed to decode the WOFF2 font "${name}".`)
+          }
+          arrayBuffer = decoded
+        }
 
         font = opentype.parse(
           arrayBuffer,
@@ -581,10 +666,14 @@ export default class FontLoader {
       fontFamily = 'sans-serif',
       fontWeight = 400,
       fontStyle = 'normal',
+      ...synthesisStyle
     }: {
       fontFamily?: string | string[]
       fontWeight?: FontWeight
       fontStyle?: FontStyle
+      fontSynthesis?: unknown
+      fontSynthesisWeight?: unknown
+      fontSynthesisStyle?: unknown
     },
     locale: Locale | undefined
   ): FontEngine {
@@ -701,6 +790,32 @@ export default class FontLoader {
       return font
     }
 
+    // Like in Chrome, bold is synthesized when the weight is at least 600 and
+    // the font isn't bold, and italic when the style is italic or oblique and
+    // the font isn't italic. They're found from the font itself.
+    const requestedWeight =
+      fontWeight === 'bold'
+        ? 700
+        : fontWeight === 'normal'
+        ? 400
+        : Number(fontWeight) || 400
+    const allowed = allowsSynthesis(synthesisStyle)
+    const slanted = isSlanted(String(fontStyle))
+    const synthesis: Synthesis = (font) => {
+      const { os2, head } = font.tables || {}
+      return {
+        bold:
+          allowed.weight &&
+          requestedWeight >= 600 &&
+          (os2?.usWeightClass || 400) < 600,
+        italic:
+          allowed.style &&
+          slanted &&
+          !(os2?.fsSelection & 1) &&
+          !(head?.macStyle & 2),
+      }
+    }
+
     const ascender = (resolvedFont: opentype.Font, useOS2Table = false) => {
       const _ascender =
         (useOS2Table ? resolvedFont.tables?.os2?.sTypoAscender : 0) ||
@@ -743,8 +858,14 @@ export default class FontLoader {
     const engineKey = `${fontFamily.join(',')}|${fontWeight}|${fontStyle}|${
       locale || ''
     }`
-    const getShapedRuns: GetShapedRuns = (content, fontFeatureSettings) => {
-      const key = `${engineKey}\0${fontFeatureSettings || ''}\0${content}`
+    const getShapedRuns: GetShapedRuns = (
+      content,
+      fontFeatureSettings,
+      direction
+    ) => {
+      const key = `${engineKey}\0${fontFeatureSettings || ''}\0${
+        direction || ''
+      }\0${content}`
       const cached = shapedRunCache.get(key)
 
       if (cached !== undefined) {
@@ -760,7 +881,7 @@ export default class FontLoader {
         ([text, font]): ShapedRun => [
           text,
           font,
-          shapeText(font, text, { features }),
+          shapeText(font, text, { features, direction }),
         ]
       )
 
@@ -824,10 +945,11 @@ export default class FontLoader {
           left: number
           letterSpacing: number
           wordSpacing?: number
+          direction?: TextDirection
         },
         band?: SkipInkBand
       ) => {
-        return this.getSVG(s, style, getShapedRuns, band)
+        return this.getSVG(s, style, getShapedRuns, synthesis, band)
       },
     }
 
@@ -909,18 +1031,20 @@ export default class FontLoader {
     const shapedRuns = getShapedRuns(content, fontFeatureSettings)
 
     let totalWidth = 0
-    let glyphCount = 0
+    let clusterCount = 0
     for (const [, font, glyphs] of shapedRuns) {
       let segmentWidth = 0
-      for (const glyph of glyphs) {
-        segmentWidth += glyph.ax
+      for (let i = 0; i < glyphs.length; i++) {
+        segmentWidth += glyphs[i].ax
+        if (glyphs[i + 1]?.cl !== glyphs[i].cl) clusterCount++
       }
 
       totalWidth += (segmentWidth / font.unitsPerEm) * fontSize
-      glyphCount += glyphs.length
     }
 
-    const spacingWidth = letterSpacing * Math.max(0, glyphCount - 1)
+    // Like in browsers, letter spacing is added after every character,
+    // including the last one, and a ligature is one character.
+    const spacingWidth = letterSpacing * clusterCount
     const separators = wordSpacing
       ? content.match(WORD_SEPARATORS)?.length ?? 0
       : 0
@@ -937,6 +1061,7 @@ export default class FontLoader {
       letterSpacing = 0,
       wordSpacing,
       fontFeatureSettings,
+      direction,
     }: {
       fontSize: number
       top: number
@@ -944,32 +1069,40 @@ export default class FontLoader {
       letterSpacing: number
       wordSpacing?: number
       fontFeatureSettings?: string
+      direction?: TextDirection
     },
     getShapedRuns: GetShapedRuns,
+    synthesis: Synthesis,
     band?: SkipInkBand
-  ): { path: string; boxes: GlyphBox[] } {
+  ): GlyphPaths {
     if (fontSize === 0) {
-      return { path: '', boxes: [] }
+      return { path: '', boldPath: '', boxes: [] }
     }
 
-    const shapedRuns = getShapedRuns(
+    let shapedRuns = getShapedRuns(
       content.replace(/\n/g, ''),
-      fontFeatureSettings
+      fontFeatureSettings,
+      direction
     )
+    // The glyphs of each run are in visual order, and so are the runs of
+    // right-to-left text when they're reversed.
+    if (direction === 'rtl') shapedRuns = shapedRuns.slice().reverse()
 
     const boxes: GlyphBox[] = []
 
     let cursorX = left
     const cursorY = top
-    let hasRenderedGlyph = false
 
     let path = ''
+    let boldPath = ''
 
     const extraWordSpacing = toWordSpacing(wordSpacing)
 
     // Process each font segment
     for (const [runText, font, glyphs] of shapedRuns) {
       const scale = fontSize / font.unitsPerEm
+      const { bold, italic } = synthesis(font)
+      const skew = italic ? SYNTHETIC_SKEW : 0
 
       // DEBUG: Uncomment to trace glyph positions
       // console.log(`getSVG segment: "${text}", fontSize=${fontSize}, letterSpacing=${letterSpacing}`)
@@ -977,10 +1110,6 @@ export default class FontLoader {
       // Process shaped glyphs for this segment
       for (let i = 0; i < glyphs.length; i++) {
         const shapedGlyph = glyphs[i]
-
-        if (hasRenderedGlyph) {
-          cursorX += letterSpacing
-        }
 
         // Get the glyph from opentype.js by ID
         const glyph = font.glyphs.get(shapedGlyph.g)
@@ -995,41 +1124,56 @@ export default class FontLoader {
           const gY = cursorY + shapedGlyph.dy * scale
 
           // Like `glyph.getPath()`, scaled by the units per em of the path.
-          path += glyphPathData(
+          const data = glyphPathData(
             glyph.path.commands,
             gX,
             gY,
-            fontSize / (glyph.path.unitsPerEm || 1000)
+            fontSize / (glyph.path.unitsPerEm || 1000),
+            skew
           )
+          if (bold) boldPath += data
+          else path += data
 
           // Compute band boxes for text decoration skip-ink
           if (band) {
-            const bandBoxes = computeBandBox(
-              glyph.getPath(gX, gY, fontSize, {}).commands,
-              band
-            )
+            let commands = glyph.getPath(gX, gY, fontSize, {}).commands
+            if (skew) commands = skewCommands(commands, gY, skew)
+            const bandBoxes = computeBandBox(commands, band)
             if (bandBoxes.length) boxes.push(...bandBoxes)
           }
         }
 
-        // Advance cursor by the shaped advance. Letter spacing is added before
-        // every glyph after the first so it also crosses font fallbacks.
+        // Advance cursor by the shaped advance.
         cursorX += shapedGlyph.ax * scale
 
-        // Word spacing is added after the last glyph of a word separator.
-        if (
-          extraWordSpacing &&
-          glyphs[i + 1]?.cl !== shapedGlyph.cl &&
-          isWordSeparator(runText, shapedGlyph.cl)
-        ) {
-          cursorX += extraWordSpacing
+        // Letter spacing is added after the last glyph of every character,
+        // and word spacing after the last glyph of a word separator.
+        if (glyphs[i + 1]?.cl !== shapedGlyph.cl) {
+          cursorX += letterSpacing
+          if (extraWordSpacing && isWordSeparator(runText, shapedGlyph.cl)) {
+            cursorX += extraWordSpacing
+          }
         }
-        hasRenderedGlyph = true
       }
     }
 
-    return { path, boxes }
+    return { path, boldPath, boxes }
   }
+}
+
+/** Slants path commands in px around the baseline at `y`. */
+function skewCommands(
+  commands: opentype.Path['commands'],
+  y: number,
+  skew: number
+): opentype.Path['commands'] {
+  return commands.map((command) => {
+    const skewed = { ...command } as any
+    if ('x' in command) skewed.x = command.x + skew * (y - command.y)
+    if ('x1' in command) skewed.x1 = command.x1 + skew * (y - command.y1)
+    if ('x2' in command) skewed.x2 = command.x2 + skew * (y - command.y2)
+    return skewed
+  })
 }
 
 // Rounds to 0.1px, half away from zero like `toPathData(1)` of opentype.js.
@@ -1039,34 +1183,36 @@ const round = (value: number) =>
 /**
  * The SVG path data of a glyph, from its commands in font units, positioned at
  * the baseline and scaled to px. Faster than transforming and serializing
- * opentype.js paths.
+ * opentype.js paths. `skew` slants it, by how far it moves points to the
+ * right for each unit above the baseline.
  */
 function glyphPathData(
   commands: opentype.Path['commands'],
   x: number,
   y: number,
-  scale: number
+  scale: number,
+  skew = 0
 ) {
+  const px = (cx: number, cy: number) => round(x + (cx + skew * cy) * scale)
+  const py = (cy: number) => round(y - cy * scale)
   let data = ''
   for (const command of commands) {
     switch (command.type) {
       case 'M':
       case 'L':
-        data += `${command.type}${round(x + command.x * scale)} ${round(
-          y - command.y * scale
-        )}`
+        data += `${command.type}${px(command.x, command.y)} ${py(command.y)}`
         break
       case 'Q':
-        data += `Q${round(x + command.x1 * scale)} ${round(
-          y - command.y1 * scale
-        )} ${round(x + command.x * scale)} ${round(y - command.y * scale)}`
+        data += `Q${px(command.x1, command.y1)} ${py(command.y1)} ${px(
+          command.x,
+          command.y
+        )} ${py(command.y)}`
         break
       case 'C':
-        data += `C${round(x + command.x1 * scale)} ${round(
-          y - command.y1 * scale
-        )} ${round(x + command.x2 * scale)} ${round(
-          y - command.y2 * scale
-        )} ${round(x + command.x * scale)} ${round(y - command.y * scale)}`
+        data += `C${px(command.x1, command.y1)} ${py(command.y1)} ${px(
+          command.x2,
+          command.y2
+        )} ${py(command.y2)} ${px(command.x, command.y)} ${py(command.y)}`
         break
       case 'Z':
         data += 'Z'

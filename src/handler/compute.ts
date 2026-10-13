@@ -5,7 +5,9 @@
  */
 
 import presets from './presets.js'
-import inheritable from './inheritable.js'
+import inheritable, { isInherited } from './inheritable.js'
+import { toPhysicalProperties } from './logical.js'
+import { isLonghandOf } from './shorthands.js'
 import expand, { SerializedStyle } from './expand.js'
 import {
   asPointAutoPercentageLength,
@@ -15,7 +17,11 @@ import {
   parseViewBox,
   v as checkValue,
 } from '../utils.js'
-import type { LayoutNode, LayoutStyle, Length } from '../layout-engine/index.js'
+import {
+  LayoutNode,
+  type LayoutStyle,
+  type Length,
+} from '../layout-engine/index.js'
 import { resolveImageData } from './image.js'
 import {
   parseGridAutoFlow,
@@ -76,8 +82,19 @@ export function setReplacedElementSize(
     typeof value === 'string' && /^\d*\.?\d+$/.test(value.trim())
       ? Number(value)
       : value
-  let width = style.width || toLength(attributeWidth)
-  let height = style.height || toLength(attributeHeight)
+  // Like in browsers, styles override the attributes, also with `auto`, which
+  // then has the natural ratio, e.g. `height: auto` with a width attribute.
+  const size = (
+    value: number | string | undefined,
+    attribute: number | string | undefined
+  ) =>
+    value === undefined
+      ? toLength(attribute)
+      : value === 'auto'
+      ? undefined
+      : value
+  let width = size(style.width, attributeWidth)
+  let height = size(style.height, attributeHeight)
 
   if (width === undefined && height === undefined) {
     width = '100%'
@@ -199,6 +216,92 @@ function getListPresets(
 }
 
 /**
+ * The `dir` attribute sets `direction` like the user agent stylesheet, so the
+ * `direction` property overrides it.
+ */
+/** The inherited style of the root, the initial values of these properties. */
+export const ROOT_STYLE: Record<string, string | number> = {
+  fontSize: 16,
+  fontWeight: 'normal',
+  fontFamily: 'serif',
+  fontStyle: 'normal',
+  lineHeight: 'normal',
+  color: 'black',
+  whiteSpace: 'normal',
+}
+
+const CSS_WIDE_KEYWORDS = new Set([
+  'inherit',
+  'initial',
+  'unset',
+  'revert',
+  'revert-layer',
+])
+
+/**
+ * Resolves the CSS-wide keywords of a style, which override earlier
+ * declarations and the preset. Returns the other declarations, and the
+ * properties that get their initial value: with `initial`, and `unset` and
+ * `inherit` for properties that aren't inherited, as the values of the parent
+ * aren't known here. Other inherited properties keep the inherited value.
+ */
+function resolveKeywords(
+  style: Record<string, string | number>,
+  preset: Record<string, string | number>
+) {
+  const defined: Record<string, string | number> = {}
+  const initial = new Set<string>()
+  for (const prop in style) {
+    const value = style[prop]
+    const keyword =
+      typeof value === 'string' && !prop.startsWith('--')
+        ? value.trim().toLowerCase()
+        : ''
+    if (!CSS_WIDE_KEYWORDS.has(keyword)) {
+      // `all` only accepts CSS-wide keywords.
+      if (prop !== 'all') defined[prop] = value
+      continue
+    }
+
+    // `all` is every property but custom properties and `direction`.
+    const affects = (key: string) =>
+      prop === 'all'
+        ? !key.startsWith('--') && key !== 'direction'
+        : isLonghandOf(key, prop)
+    for (const key in defined) if (affects(key)) delete defined[key]
+    if (keyword === 'revert' || keyword === 'revert-layer') continue
+
+    for (const key in preset) if (affects(key)) delete preset[key]
+    if (keyword === 'initial' || (prop !== 'all' && !isInherited(prop))) {
+      initial.add(prop)
+    } else {
+      initial.delete(prop)
+    }
+  }
+  return { defined, initial }
+}
+
+/**
+ * Elements that browsers hide: with the `hidden` attribute, unless it's
+ * `until-found`, and hidden inputs.
+ */
+function getHiddenPreset(type: string, props: Record<string, any>) {
+  const { hidden, type: inputType } = props ?? {}
+  const hasHidden =
+    hidden != null &&
+    hidden !== false &&
+    String(hidden).toLowerCase() !== 'until-found'
+  const isHiddenInput =
+    type === 'input' && String(inputType).toLowerCase() === 'hidden'
+  return hasHidden || isHiddenInput ? { display: 'none' } : {}
+}
+
+function getDirPreset(props: Record<string, any>) {
+  const dir = typeof props?.dir === 'string' ? props.dir.toLowerCase() : ''
+  return dir === 'ltr' || dir === 'rtl' ? { direction: dir } : {}
+}
+
+/**
  * Snaps a border or outline width to device pixels: widths between 0 and 1
  * device pixel are rounded up, and wider ones down. Layouts that aren't
  * rounded, with a `pointScaleFactor` of 0, aren't snapped either.
@@ -210,6 +313,35 @@ function snapLineWidth(width: number, pointScaleFactor = 1) {
   const pixels = width * pointScaleFactor
   if (Math.abs(pixels - Math.round(pixels)) < 1e-6) return width
   return Math.max(1, Math.floor(pixels)) / pointScaleFactor
+}
+
+/**
+ * The first error of a style, if it has an invalid or unsupported value, from
+ * computing it for an element without context. Stylesheets drop these
+ * declarations, like browsers.
+ */
+export async function getStyleError(
+  style: Record<string, string | number>,
+  convertColors = true
+): Promise<Error | undefined> {
+  let firstError: Error | undefined
+  try {
+    await compute(
+      new LayoutNode(),
+      'div',
+      ROOT_STYLE,
+      style,
+      {},
+      undefined,
+      (error) => {
+        firstError ??= error
+      },
+      convertColors
+    )
+  } catch (error) {
+    firstError ??= error as Error
+  }
+  return firstError
 }
 
 export default async function compute(
@@ -245,17 +377,37 @@ export default async function compute(
   const presetStyle = {
     ...presets[type],
     ...getListPresets(type, props, listDepth),
+    ...getDirPreset(props),
+    ...getHiddenPreset(type, props),
   }
-  for (const prop in definedStyle) delete presetStyle[prop]
+  // Logical properties are physical ones of the element's direction.
+  const ownDirection = String(definedStyle?.direction ?? '')
+    .trim()
+    .toLowerCase()
+  const logicalDirection =
+    ownDirection === 'ltr' || ownDirection === 'rtl'
+      ? ownDirection
+      : String(presetStyle.direction ?? inheritedStyle?.direction ?? 'ltr')
+  const { defined, initial } = resolveKeywords(
+    toPhysicalProperties(definedStyle, logicalDirection),
+    presetStyle
+  )
+  for (const prop in defined) delete presetStyle[prop]
+
+  // Properties without a value have their initial value, except the root
+  // ones. Satori's own properties are kept.
+  const base: SerializedStyle = { ...inheritedStyle }
+  for (const prop of initial) {
+    const resets = (key: string) =>
+      prop === 'all'
+        ? !key.startsWith('_') && !key.startsWith('--') && key !== 'direction'
+        : isLonghandOf(key, prop)
+    for (const key in base) if (resets(key)) delete base[key]
+    for (const key in ROOT_STYLE) if (resets(key)) base[key] = ROOT_STYLE[key]
+  }
   const style: SerializedStyle = Object.assign(
-    {},
-    inheritedStyle,
-    expand(
-      { ...presetStyle, ...definedStyle },
-      inheritedStyle,
-      onStyleError,
-      convertColors
-    )
+    base,
+    expand({ ...presetStyle, ...defined }, base, onStyleError, convertColors)
   )
 
   // An `aspect-ratio` replaces the natural ratio of replaced elements, unless
@@ -287,8 +439,8 @@ export default async function compute(
       style,
       imageWidth,
       imageHeight,
-      // Images of list markers have their natural size.
-      props.width ?? (props.__marker ? imageWidth : undefined),
+      // Images of list markers and generated content have their natural size.
+      props.width ?? (props.__naturalSize ? imageWidth : undefined),
       props.height
     )
     style.__src = resolvedSrc
@@ -405,6 +557,18 @@ export default async function compute(
   style.__innerDisplay = innerDisplay
   style.__listItem = (style.display === 'list-item') as any
   layout.display = innerDisplay === 'inline' ? 'block' : innerDisplay
+
+  // The inline base direction, which is inherited. Flex rows, grid columns
+  // and lines of text start at the right with `rtl`.
+  const direction = v(
+    style.direction,
+    { ltr: 'ltr', rtl: 'rtl' },
+    inheritedStyle.direction === 'rtl' ? 'rtl' : 'ltr',
+    'direction'
+  ) as 'ltr' | 'rtl'
+  style.direction = direction
+  layout.direction = direction
+  const isRTL = direction === 'rtl'
 
   // `align-content` defaults to `normal`. In block containers, other values
   // prevent margins from collapsing.
@@ -573,6 +737,25 @@ export default async function compute(
     'flexWrap'
   )
 
+  // `left` and `right` are physical. On the inline axis, they're the end and
+  // the start with `rtl`, and otherwise they're the start.
+  if (isRTL) {
+    const PHYSICAL = { left: 'end', right: 'start' } as const
+    const isInlineAxis =
+      layout.display === 'grid' ||
+      (layout.display === 'flex' &&
+        (layout.flexDirection === 'row' ||
+          layout.flexDirection === 'row-reverse'))
+    if (isInlineAxis && PHYSICAL[style.justifyContent as string]) {
+      layout.justifyContent = PHYSICAL[style.justifyContent as string]
+    }
+    for (const prop of ['justifyItems', 'justifySelf'] as const) {
+      if (PHYSICAL[style[prop] as string]) {
+        layout[prop] = PHYSICAL[style[prop] as string]
+      }
+    }
+  }
+
   if (typeof style.gap !== 'undefined') {
     layout.rowGap = layout.columnGap = style.gap as number
   }
@@ -710,14 +893,16 @@ export default async function compute(
     position === 'absolute' || position === 'fixed' ? 'absolute' : 'relative'
 
   // Floats only apply in block containers, see `layout()`.
+  const inlineStart = isRTL ? 'right' : 'left'
+  const inlineEnd = isRTL ? 'left' : 'right'
   const float = v(
     style.float,
     {
       none: 'none',
       left: 'left',
       right: 'right',
-      'inline-start': 'left',
-      'inline-end': 'right',
+      'inline-start': inlineStart,
+      'inline-end': inlineEnd,
     },
     'none',
     'float'
@@ -731,8 +916,8 @@ export default async function compute(
       left: 'left',
       right: 'right',
       both: 'both',
-      'inline-start': 'left',
-      'inline-end': 'right',
+      'inline-start': inlineStart,
+      'inline-end': inlineEnd,
     },
     'none',
     'clear'

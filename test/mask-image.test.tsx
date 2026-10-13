@@ -1,6 +1,7 @@
 import { it, describe, expect, beforeEach, afterEach } from 'vitest'
 
 import { initFonts, toImage } from './utils.js'
+import { Resvg } from '@resvg/resvg-js'
 import satori from '../src/index.js'
 
 const PNG_SAMPLE =
@@ -237,5 +238,58 @@ describe('Mask-*', () => {
       { width: 120, height: 120, fonts }
     )
     expect(await toImage(svg, 120)).toMatchImageSnapshot()
+  })
+  it('should composite mask layers', async () => {
+    // With librsvg and resvg, which support different features in masks.
+    const render = async (element: JSX.Element) => {
+      const svg = await satori(
+        <div style={{ display: 'flex', width: 40, height: 40 }}>{element}</div>,
+        { width: 40, height: 40, fonts }
+      )
+      return [await toImage(svg, 40), new Resvg(svg).render().asPng()]
+    }
+    const masked = (mask: string, style = {}) =>
+      render(
+        <div
+          style={{
+            display: 'flex',
+            width: 40,
+            height: 40,
+            backgroundColor: 'red',
+            mask,
+            ...style,
+          }}
+        />
+      )
+    const square = (marginTop: number) =>
+      render(
+        <div
+          style={{ width: 20, height: 20, marginTop, backgroundColor: 'red' }}
+        />
+      )
+    const fill = 'linear-gradient(#fff, #fff)'
+    const left = `${fill} 0 0 / 20px 40px no-repeat`
+    const top = `${fill} 0 0 / 40px 20px no-repeat`
+
+    // Borders with gradients are made with this.
+    expect(
+      await masked(`${fill} content-box exclude, ${fill}`, { padding: 5 })
+    ).toEqual(
+      await render(
+        <div
+          style={{
+            display: 'flex',
+            width: 40,
+            height: 40,
+            border: '5px solid red',
+          }}
+        />
+      )
+    )
+    expect(await masked(`${left} intersect, ${top}`)).toEqual(await square(0))
+    expect(await masked(`${left} subtract, ${top}`)).toEqual(await square(20))
+    expect(
+      await masked(`${left}, ${fill} 20px 0 / 20px 40px no-repeat`)
+    ).toEqual(await masked('none'))
   })
 })

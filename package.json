@@ -84,7 +84,9 @@
     "prettier-check": "prettier --check .",
     "prettier-fix": "prettier --write --list-different . --cache",
     "ci-check": "concurrently \"pnpm prettier-check\" \"pnpm test-type\" \"pnpm lint\"",
-    "benchmark": "node --experimental-strip-types test/benchmark/index.ts"
+    "benchmark": "node --experimental-strip-types test/benchmark/index.ts",
+    "fidelity": "node --experimental-strip-types test/fidelity/index.ts",
+    "fidelity:capture": "node --experimental-strip-types test/fidelity/capture.ts"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -126,6 +128,7 @@
     "jest-image-snapshot": "^6.1.0",
     "lint-staged": "13.1.0",
     "mitata": "^1.0.34",
+    "pixelmatch": "5.3.0",
     "prettier": "^2.7.1",
     "react": "^17.0.2",
     "sharp": "^0.35.5",
@@ -137,13 +140,13 @@
   },
   "dependencies": {
     "@shuding/opentype.js": "1.4.0-beta.0",
-    "fflate": "0.7.3",
     "css-background-parser": "^0.1.0",
     "css-box-shadow": "1.0.0-3",
     "css-gradient-parser": "^0.0.17",
     "css-to-react-native": "^3.0.0",
     "emoji-regex-xs": "^2.0.1",
     "escape-html": "^1.0.3",
+    "fflate": "0.7.3",
     "harfbuzzjs": "0.10.0",
     "linebreak": "^1.1.0",
     "parse-css-color": "^0.2.1",

@@ -92,6 +92,101 @@ describe('display', () => {
     ).toMatchImageSnapshot()
   })
 
+  it('should lay out <html> and <body> like browsers', async () => {
+    const content = <div style={{ height: 20, backgroundColor: 'blue' }} />
+    const options = { width: 100, height: 60, fonts }
+    expect(
+      await satori(
+        <html style={{ backgroundColor: 'gray' }}>
+          <body style={{ backgroundColor: 'red' }}>{content}</body>
+        </html>,
+        options
+      )
+    ).toBe(
+      await satori(
+        <div style={{ display: 'block', backgroundColor: 'gray' }}>
+          <div style={{ display: 'block', margin: 8, backgroundColor: 'red' }}>
+            {content}
+          </div>
+        </div>,
+        options
+      )
+    )
+  })
+
+  it('should hide elements like browsers', async () => {
+    const box = { width: 10, height: 10, background: 'red' }
+    const options = { width: 100, height: 40, fonts }
+    expect(
+      await satori(
+        <div style={{ display: 'flex', gap: 4 }}>
+          <div hidden style={box} />
+          <div {...({ hidden: 'until-found' } as object)} style={box} />
+          <input type='hidden' name='token' />
+          {/* Styles override the user agent stylesheet. */}
+          <div hidden style={{ ...box, display: 'block' }} />
+        </div>,
+        options
+      )
+    ).toBe(
+      await satori(
+        <div style={{ display: 'flex', gap: 4 }}>
+          <div style={{ ...box, display: 'none' }} />
+          <div style={box} />
+          <input style={{ display: 'none' }} />
+          <div style={{ ...box, display: 'block' }} />
+        </div>,
+        options
+      )
+    )
+  })
+
+  it('should not render elements that are hidden by default', async () => {
+    const options = { width: 200, height: 60, fonts }
+    const page = (hidden: any) => (
+      <div style={{ display: 'flex', gap: 4, fontSize: 16 }}>
+        <span>Visible</span>
+        {hidden}
+      </div>
+    )
+    const visible = await satori(page(null), options)
+    expect(
+      await satori(
+        page(
+          <>
+            <head>
+              <title>Title</title>
+              <meta name='description' content='Description' />
+            </head>
+            <style>{'.title { color: red }'}</style>
+            <style dangerouslySetInnerHTML={{ __html: 'p { color: red }' }} />
+            <script dangerouslySetInnerHTML={{ __html: 'alert(1)' }} />
+            <template>Template</template>
+          </>
+        ),
+        options
+      )
+    ).toBe(visible)
+
+    // Their text is still their content.
+    expect(
+      await satori(
+        page(<style style={{ display: 'inline' }}>Visible</style>),
+        options
+      )
+    ).toBe(
+      await satori(
+        page(<span style={{ display: 'inline' }}>Visible</span>),
+        options
+      )
+    )
+
+    // Other elements don't support inner HTML.
+    await expect(
+      satori(page(<div dangerouslySetInnerHTML={{ __html: 'x' }} />), options)
+    ).rejects.toThrow('dangerouslySetInnerHTML property is not supported')
+  })
+
   it('should blockify children of flex containers', async () => {
     expect(
       await render(

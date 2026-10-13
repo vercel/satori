@@ -333,6 +333,28 @@ function parseLineClamp(input: number | string): [number?, string?] {
   return []
 }
 
+/**
+ * The physical alignment of lines. `start` and `end`, and the initial value,
+ * follow the base direction.
+ */
+export function resolveTextAlign(
+  textAlign: unknown,
+  direction: unknown
+): 'left' | 'right' | 'center' | 'justify' {
+  const rtl = direction === 'rtl'
+  switch (textAlign) {
+    case 'left':
+    case 'right':
+    case 'center':
+    case 'justify':
+      return textAlign
+    case 'end':
+      return rtl ? 'left' : 'right'
+    default:
+      return rtl ? 'right' : 'left'
+  }
+}
+
 /** The distance between tab stops, from `tabSize`. */
 export function getTabWidth(style: SerializedStyle, spaceWidth: number) {
   const tabSize = style.tabSize ?? 8

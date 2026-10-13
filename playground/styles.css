@@ -7,19 +7,9 @@
 }
 
 /* UI */
-
-@font-face {
-  font-family: 'iaw-mono-var';
-  font-weight: 100 700;
-  font-style: normal;
-  font-named-instance: 'Regular';
-  font-display: block;
-  src: url('/iaw-mono-var.woff2') format('woff2');
-}
-
 :root {
-  --font: iaw-mono-var, SF Mono, SFMono-Regular, ui-monospace, Menlo, Consolas,
-    monospace;
+  --font: var(--geist-mono), SF Mono, SFMono-Regular, ui-monospace, Menlo,
+    Consolas, monospace;
 }
 
 * {
@@ -30,6 +20,7 @@ html,
 body,
 #__next {
   height: 100%;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
@@ -136,10 +127,9 @@ code {
   --sh-caret-color: #000000;
   --sh-line-number-color: #bfbfbf;
 }
-.code-editor textarea::selection {
-  background: #bad6fd;
+.code-editor textarea {
+  mix-blend-mode: darken;
 }
-
 .container {
   display: flex;
   width: 100%;
@@ -349,7 +339,6 @@ code {
 .controller .copyright {
   flex: 1;
 }
-
 @media screen and (max-width: 999px) {
   .container {
     flex-direction: column-reverse;

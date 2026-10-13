@@ -33,13 +33,26 @@ export default defineConfig({
   },
   esbuildPlugins: [
     {
-      // The default build bundles `layout.wasm` as bytes.
+      // The default build bundles `layout.wasm` as bytes. esbuild's `binary`
+      // loader decodes them with `Buffer`, which browsers do not define, and
+      // this module runs while the bundle is imported. The HarfBuzz wasm in
+      // the same bundle already uses this guard.
       name: 'wasm-binary',
       setup(build) {
-        build.onLoad({ filter: /\.wasm$/ }, async (args) => ({
-          contents: await readFile(args.path),
-          loader: 'binary',
-        }))
+        build.onLoad({ filter: /\.wasm$/ }, async (args) => {
+          const base64 = (await readFile(args.path)).toString('base64')
+          return {
+            contents: `
+              const base64 = ${JSON.stringify(base64)}
+              const bytes =
+                typeof Buffer === 'function'
+                  ? new Uint8Array(Buffer.from(base64, 'base64'))
+                  : Uint8Array.from(atob(base64), (char) => char.charCodeAt(0))
+              export default bytes
+            `,
+            loader: 'js',
+          }
+        })
       },
     },
     {

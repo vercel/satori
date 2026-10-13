@@ -49,64 +49,7 @@ const playgroundTabs: Tabs = {
   </div>
 </div>
 `,
-  rauchg: `<div
-  style={{
-    display: 'flex',
-    height: '100%',
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    letterSpacing: '-.02em',
-    fontWeight: 700,
-    background: 'white',
-  }}
->
-  <div
-    style={{
-      left: 42,
-      top: 42,
-      position: 'absolute',
-      display: 'flex',
-      alignItems: 'center',
-    }}
-  >
-    <span
-      style={{
-        width: 24,
-        height: 24,
-        background: 'black',
-      }}
-    />
-    <span
-      style={{
-        marginLeft: 8,
-        fontSize: 20,
-      }}
-    >
-      rauchg.com
-    </span>
-  </div>
-  <div
-    style={{
-      display: 'flex',
-      flexWrap: 'wrap',
-      justifyContent: 'center',
-      padding: '20px 50px',
-      margin: '0 42px',
-      fontSize: 40,
-      width: 'auto',
-      maxWidth: 550,
-      textAlign: 'center',
-      backgroundColor: 'black',
-      color: 'white',
-      lineHeight: 1.4,
-    }}
-  >
-    Making the Web. Faster.
-  </div>
-</div>
-`,
-  'Tailwind (experimental)': `// Modified based on https://tailwindui.com/components/marketing/sections/cta-sections
+  Tailwind: `// Modified based on https://tailwindui.com/components/marketing/sections/cta-sections
 
 <div tw="flex flex-col w-full h-full items-center justify-center bg-white">
   <div tw="bg-gray-50 flex w-full">
@@ -173,7 +116,7 @@ const playgroundTabs: Tabs = {
   </div>
 </div>
 `,
-  'Color Models': `<div
+  Colors: `<div
   style={{
     display: 'flex',
     justifyContent: 'space-between',
@@ -228,7 +171,7 @@ const playgroundTabs: Tabs = {
     </div>
   </div>
 </div>`,
-  'Block Layout': `// Children of a block container stack vertically and fill its width, and
+  Block: `// Children of a block container stack vertically and fill its width, and
 // the vertical margins between them collapse, like in browsers.
 
 <div
@@ -246,7 +189,6 @@ const playgroundTabs: Tabs = {
     style={{
       fontSize: 16,
       fontWeight: 700,
-      letterSpacing: 2,
       textTransform: 'uppercase',
       color: '#0284c7',
       marginBottom: 24,
@@ -344,7 +286,7 @@ const playgroundTabs: Tabs = {
         area="hero"
         style={{ backgroundImage: 'linear-gradient(135deg, #6366f1, #a855f7)' }}
       >
-        <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 16, fontWeight: 700 }}>
           Satori
         </div>
         <div style={{ fontSize: 44, fontWeight: 700, lineHeight: 1.1, letterSpacing: -1.5 }}>
@@ -384,6 +326,84 @@ const playgroundTabs: Tabs = {
     </div>
   )
 }
+`,
+  Stylesheet: `// Style elements with a <style> tag, like in browsers: selectors,
+// nesting, the cascade, CSS variables and media queries.
+
+<div className="card">
+  <style>{\`
+    .card {
+      --accent: #6366f1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+      width: 100%;
+      padding: 48px;
+      box-sizing: border-box;
+      background: linear-gradient(135deg, #f8fafc, #e0e7ff);
+      color: #0f172a;
+
+      & h1 {
+        margin: 0;
+        font-size: 56px;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+      }
+      & h1 em {
+        font-style: normal;
+        color: var(--accent);
+      }
+
+      & ul {
+        display: flex;
+        gap: 12px;
+        margin: 0;
+        padding: 0;
+      }
+      & li {
+        display: flex;
+        padding: 6px 18px;
+        border: 2px solid var(--accent);
+        border-radius: 999px;
+        color: var(--accent);
+        font-size: 22px;
+
+        &:first-child {
+          background: var(--accent);
+          color: white;
+        }
+      }
+
+      & footer {
+        display: flex;
+        justify-content: space-between;
+        color: #64748b;
+        font-size: 20px;
+      }
+
+      /* Try a width below 600px. */
+      @media (width < 600px) {
+        padding: 24px;
+        & h1 { font-size: 36px }
+        & li:nth-child(n + 3) { display: none }
+      }
+    }
+  \`}</style>
+  <h1>
+    Style your images with <em>CSS</em>
+  </h1>
+  <ul>
+    <li>Selectors</li>
+    <li>Nesting</li>
+    <li>Cascade</li>
+    <li>@media</li>
+  </ul>
+  <footer>
+    <span>vercel/satori</span>
+    <span>og-playground</span>
+  </footer>
+</div>
 `,
   Advanced: `// Fallback fonts and Emoji are dynamically loaded
 // from Google Fonts and CDNs in this demo.

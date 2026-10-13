@@ -408,6 +408,46 @@ describe('SVG', () => {
     expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it('should resolve CSS variables in attributes and styles', async () => {
+    const render = (content: JSX.Element) =>
+      satori(
+        <div style={{ display: 'flex', '--fill': 'red' } as any}>
+          <svg viewBox='0 0 30 10' width='30' height='10'>
+            {content}
+          </svg>
+        </div>,
+        { width: 30, height: 10, fonts }
+      )
+    expect(
+      await render(
+        <>
+          <rect width='10' height='10' fill='var(--fill)' />
+          <g style={{ '--stroke': 'blue' } as any}>
+            <rect x='10' width='10' height='10' stroke='var(--stroke)' />
+          </g>
+          <rect
+            x='20'
+            width='10'
+            height='10'
+            fill='var(--missing)'
+            style={{ opacity: 'var(--opacity, 0.5)' }}
+          />
+        </>
+      )
+    ).toBe(
+      await render(
+        <>
+          <rect width='10' height='10' fill='red' />
+          <g>
+            <rect x='10' width='10' height='10' stroke='blue' />
+          </g>
+          {/* An invalid value is ignored. */}
+          <rect x='20' width='10' height='10' style={{ opacity: '0.5' }} />
+        </>
+      )
+    )
+  })
+
   it('should render fragments inside svg', async () => {
     const svg = await satori(
       <div
