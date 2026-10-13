@@ -8,8 +8,8 @@
 
 /* UI */
 :root {
-  --font: var(--geist-mono), SF Mono, SFMono-Regular, ui-monospace, Menlo, Consolas,
-    monospace;
+  --font: var(--geist-mono), SF Mono, SFMono-Regular, ui-monospace, Menlo,
+    Consolas, monospace;
 }
 
 * {
