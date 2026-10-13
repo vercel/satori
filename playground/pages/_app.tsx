@@ -1,6 +1,12 @@
-import React from 'react'
 import Head from 'next/head'
 import { AppProps } from 'next/app'
+
+import { Geist_Mono } from 'next/font/google'
+const geistMono = Geist_Mono({
+  weight: ['400', '700'],
+  subsets: ['latin-ext'],
+  variable: '--geist-mono',
+})
 
 import '../styles.css'
 
@@ -71,7 +77,9 @@ export default function App({ Component, pageProps }: AppProps) {
         <link rel='shortcut icon' href='/favicon.ico' type='image/x-icon' />
         <link rel='icon' href='/favicon.ico' type='image/x-icon' />
       </Head>
-      <Component {...pageProps} />
+      <div className={geistMono.variable}>
+        <Component {...pageProps} />
+      </div>
     </>
   )
 }
