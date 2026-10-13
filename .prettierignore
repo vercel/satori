@@ -9,3 +9,4 @@ pnpm-lock.yaml
 *.md
 coverage/
 crates/layout/target/
+test/fidelity/cases/

@@ -1,0 +1,24 @@
+{
+  "nextjs-hero": {
+    "mismatch": 100,
+    "contentMismatch": 100,
+    "styleErrors": 27,
+    "error": "Invalid value \"initial\" in transform function translate3d()."
+  },
+  "nextjs-features": {
+    "mismatch": 94.05,
+    "contentMismatch": 96.39,
+    "styleErrors": 41
+  },
+  "nextjs-showcase": {
+    "mismatch": 100,
+    "contentMismatch": 100,
+    "styleErrors": 25,
+    "error": "Invalid value \"initial\" in transform function translate3d()."
+  },
+  "nextjs-footer": {
+    "mismatch": 2,
+    "contentMismatch": 34.58,
+    "styleErrors": 88
+  }
+}

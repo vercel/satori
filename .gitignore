@@ -20,3 +20,6 @@ playground/.webgl-libs
 
 # Rust build output
 crates/layout/target
+
+# The images of `pnpm fidelity`
+test/fidelity/output/
