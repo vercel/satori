@@ -22,7 +22,7 @@ import {
   isFontVariantProperty,
   parseFontVariant,
 } from '../text/font-features.js'
-import { MaskProperty, parseMask } from '../parser/mask.js'
+import { MaskProperty, expandMask, parseMask } from '../parser/mask.js'
 import { splitCornerShapeValues } from '../parser/corner-shape.js'
 import { parseBackdropFilter } from '../parser/backdrop-filter.js'
 import {
@@ -686,6 +686,10 @@ function handleSpecialCase(
 
   if (name === 'background') {
     return expandBackground(String(value).trim())
+  }
+
+  if (name === 'mask' || name === 'WebkitMask') {
+    return expandMask(String(value).trim())
   }
 
   // Parsed by `css-background-parser` as lists of strings.

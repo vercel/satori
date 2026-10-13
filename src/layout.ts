@@ -905,10 +905,16 @@ export default async function* layout(
     // When entering a <svg> node, we need to convert it to a <img> with the
     // SVG data URL embedded.
     const currentColor = computedStyle.color
+    // `var()` in its attributes uses the variables of the element.
+    const variables: Record<string, string> = {}
+    for (const key in computedStyle) {
+      if (key.startsWith('--')) variables[key] = String(computedStyle[key])
+    }
     const src = await SVGNodeToImage(
       element,
       currentColor,
-      context.convertColors
+      context.convertColors,
+      variables
     )
     baseRenderResult = await rect(
       {

@@ -634,11 +634,48 @@ export class Paragraph {
     return result
   }
 
-  /** Breaks the paragraph into lines that fit the width, beside floats. */
+  /**
+   * Breaks the paragraph into lines that fit the width, beside floats, and
+   * balances them with `text-wrap: balance`, like plain text.
+   */
   private flow(
     width: number,
     exclusions: FloatExclusion[] = [],
     minContent = false
+  ) {
+    const result = this.breakLines(width, exclusions, minContent)
+    const count = this.lines.length
+    if (
+      this.style.textWrap !== 'balance' ||
+      minContent ||
+      count < 2 ||
+      !Number.isFinite(width)
+    ) {
+      return result
+    }
+    // The narrowest lines that don't make the paragraph longer, still aligned
+    // in the available width.
+    let low = 0
+    let high = width
+    while (high - low > 0.5) {
+      const limit = (low + high) / 2
+      this.breakLines(width, exclusions, false, limit)
+      if (this.lines.length > count) low = limit
+      else high = limit
+    }
+    return this.breakLines(width, exclusions, false, high)
+  }
+
+  /**
+   * Breaks the paragraph into lines that fit the width, beside floats, and
+   * aligns them. Lines are at most `limit` wide, but still aligned in the
+   * available width.
+   */
+  private breakLines(
+    width: number,
+    exclusions: FloatExclusion[] = [],
+    minContent = false,
+    limit = Infinity
   ) {
     const words = this.prepare().slice()
     if (this.atomicWidth !== width) {
@@ -828,7 +865,8 @@ export class Paragraph {
         if (
           line.words.length &&
           canBreak &&
-          line.width + word.width - word.trailing > line.available + 1e-3
+          line.width + word.width - word.trailing >
+            Math.min(line.available, limit) + 1e-3
         ) {
           line = newLine()
           wrapped = true

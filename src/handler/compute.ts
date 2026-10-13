@@ -6,6 +6,7 @@
 
 import presets from './presets.js'
 import inheritable, { isInherited } from './inheritable.js'
+import { toPhysicalProperties } from './logical.js'
 import { isLonghandOf } from './shorthands.js'
 import expand, { SerializedStyle } from './expand.js'
 import {
@@ -280,6 +281,21 @@ function resolveKeywords(
   return { defined, initial }
 }
 
+/**
+ * Elements that browsers hide: with the `hidden` attribute, unless it's
+ * `until-found`, and hidden inputs.
+ */
+function getHiddenPreset(type: string, props: Record<string, any>) {
+  const { hidden, type: inputType } = props ?? {}
+  const hasHidden =
+    hidden != null &&
+    hidden !== false &&
+    String(hidden).toLowerCase() !== 'until-found'
+  const isHiddenInput =
+    type === 'input' && String(inputType).toLowerCase() === 'hidden'
+  return hasHidden || isHiddenInput ? { display: 'none' } : {}
+}
+
 function getDirPreset(props: Record<string, any>) {
   const dir = typeof props?.dir === 'string' ? props.dir.toLowerCase() : ''
   return dir === 'ltr' || dir === 'rtl' ? { direction: dir } : {}
@@ -362,8 +378,20 @@ export default async function compute(
     ...presets[type],
     ...getListPresets(type, props, listDepth),
     ...getDirPreset(props),
+    ...getHiddenPreset(type, props),
   }
-  const { defined, initial } = resolveKeywords(definedStyle, presetStyle)
+  // Logical properties are physical ones of the element's direction.
+  const ownDirection = String(definedStyle?.direction ?? '')
+    .trim()
+    .toLowerCase()
+  const logicalDirection =
+    ownDirection === 'ltr' || ownDirection === 'rtl'
+      ? ownDirection
+      : String(presetStyle.direction ?? inheritedStyle?.direction ?? 'ltr')
+  const { defined, initial } = resolveKeywords(
+    toPhysicalProperties(definedStyle, logicalDirection),
+    presetStyle
+  )
   for (const prop in defined) delete presetStyle[prop]
 
   // Properties without a value have their initial value, except the root
