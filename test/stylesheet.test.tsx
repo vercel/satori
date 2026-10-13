@@ -133,6 +133,27 @@ describe('stylesheets', () => {
     )
   })
 
+  it('should accept pseudo-classes of shadow trees, which never match', async () => {
+    // Design systems declare variables for `:root` and `:host` in one rule.
+    await expectSame(
+      `:root, :host { --c: red }
+      .a, :host(.a), :host-context(.b) .a { color: var(--c) }
+      .a:host, .a:state(open) { color: blue }
+      a:-webkit-any-link { color: green }
+      a:-webkit-autofill { color: blue }`,
+      <div style={{ display: 'flex', gap: 4 }}>
+        <span className='a'>1</span>
+        <a href='#'>2</a>
+      </div>,
+      <div style={{ display: 'flex', gap: 4 }}>
+        <span style={{ color: 'red' }}>1</span>
+        <a href='#' style={{ color: 'green' }}>
+          2
+        </a>
+      </div>
+    )
+  })
+
   it('should apply the cascade', async () => {
     await expectSame(
       `.a.b { color: red }
