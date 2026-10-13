@@ -32,6 +32,9 @@ interface LayoutExports {
   dealloc_bytes(ptr: number, len: number): void
   parse_css(ptr: number, len: number): number
   css_output(): number
+  decode_woff2(ptr: number, len: number): number
+  font_output(): number
+  release_font_output(): void
 }
 
 export interface ComputeLayoutOptions {
@@ -58,6 +61,11 @@ export interface LayoutEngine {
    * format.
    */
   parseCSS(css: string): string
+  /**
+   * Decodes a WOFF2 font into a TrueType or OpenType font, or returns
+   * `undefined` if it can't be decoded.
+   */
+  decodeWoff2(data: Uint8Array): ArrayBuffer | undefined
 }
 
 /**
@@ -258,6 +266,26 @@ export function createLayoutEngine(): LayoutEngine {
       return new TextDecoder().decode(
         new Uint8Array(exports.memory.buffer, exports.css_output(), length)
       )
+    },
+    decodeWoff2(data) {
+      if (!exports) throw new Error('The layout engine is not initialized.')
+
+      const ptr = exports.alloc_bytes(data.length)
+      let length: number
+      try {
+        new Uint8Array(exports.memory.buffer, ptr, data.length).set(data)
+        length = exports.decode_woff2(ptr, data.length)
+      } finally {
+        exports.dealloc_bytes(ptr, data.length)
+      }
+      if (!length) return
+      // Copied out of the memory of the module, which is then freed.
+      const font = new Uint8Array(length)
+      font.set(
+        new Uint8Array(exports.memory.buffer, exports.font_output(), length)
+      )
+      exports.release_font_output()
+      return font.buffer
     },
   }
 }
