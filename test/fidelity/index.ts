@@ -166,22 +166,35 @@ async function run(name: string) {
   const chromePNG = readFileSync(join(casesDir, name, 'chrome.png'))
   const styleErrors: string[] = []
 
-  const start = performance.now()
+  const element = toSatori(snapshot) as any
   let satoriSVG: string | undefined
   let satoriPNG: Buffer | undefined
   let error: string | undefined
+  // The median time of renders after the first one, without rasterizing.
+  let time: number | undefined
   try {
-    satoriSVG = await satori(toSatori(snapshot) as any, {
+    satoriSVG = await satori(element, {
       width,
       height,
       fonts,
       onStyleError: (styleError) => styleErrors.push(styleError.message),
     })
     satoriPNG = toPNG(satoriSVG)
+    const times: number[] = []
+    for (let i = 0; i < 3; i++) {
+      const start = performance.now()
+      await satori(element, {
+        width,
+        height,
+        fonts,
+        onStyleError: () => undefined,
+      })
+      times.push(performance.now() - start)
+    }
+    time = times.sort((a, b) => a - b)[1]
   } catch (renderError) {
     error = (renderError as Error).message
   }
-  const time = performance.now() - start
 
   let diffPNG: Buffer
   let score: Score
@@ -286,7 +299,7 @@ for (const testCase of selected) {
     'mismatch %': change('mismatch'),
     'content mismatch %': change('contentMismatch'),
     'style errors': score.styleErrors,
-    'time ms': Math.round(time),
+    'satori ms': time === undefined ? '-' : Math.round(time),
   })
   if (score.error) console.error(`${testCase.name}: ${score.error}`)
   scores[testCase.name] = score
