@@ -567,7 +567,7 @@ and reordering text with inline elements in it aren't supported yet.
 
 #### Fonts
 
-Satori currently supports three font formats: TTF, OTF and WOFF. Note that WOFF2 is not supported at the moment. You must specify the font if any text is rendered with Satori, and pass the font data as ArrayBuffer (web) or Buffer (Node.js):
+Satori supports four font formats: TTF, OTF, WOFF and WOFF2. You must specify the font if any text is rendered with Satori, and pass the font data as ArrayBuffer (web) or Buffer (Node.js):
 
 ```js
 await satori(
