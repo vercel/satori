@@ -2,7 +2,11 @@ import { Counters } from './list-marker.js'
 import type { ReactNode } from 'react'
 import type { TwConfig } from 'twrnc'
 import type { SatoriNode } from './layout.js'
-import { ROOT_STYLE, type ReplacedElementHandlers } from './handler/compute.js'
+import {
+  getStyleError,
+  ROOT_STYLE,
+  type ReplacedElementHandlers,
+} from './handler/compute.js'
 import type { ProjectPlane } from './builder/transform.js'
 
 import layout from './layout.js'
@@ -182,10 +186,17 @@ export async function render(
   // layout, including the images to load and the elements that stylesheets
   // apply to.
   element = await resolveComponents(element)
-  element = applyStyleSheets(element, layoutEngine, {
-    width: definedWidth,
-    height: definedHeight,
-  })
+  // Like in browsers, invalid declarations of stylesheets are dropped.
+  element = await applyStyleSheets(
+    element,
+    layoutEngine,
+    { width: definedWidth, height: definedHeight },
+    {
+      getError: (name, value) =>
+        getStyleError({ [name]: value }, options.convertColors ?? true),
+      onError: options.onStyleError,
+    }
+  )
 
   cache.clear()
   inflightRequests.clear()

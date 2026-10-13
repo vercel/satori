@@ -16,7 +16,11 @@ import {
   parseViewBox,
   v as checkValue,
 } from '../utils.js'
-import type { LayoutNode, LayoutStyle, Length } from '../layout-engine/index.js'
+import {
+  LayoutNode,
+  type LayoutStyle,
+  type Length,
+} from '../layout-engine/index.js'
 import { resolveImageData } from './image.js'
 import {
   parseGridAutoFlow,
@@ -282,6 +286,35 @@ function snapLineWidth(width: number, pointScaleFactor = 1) {
   const pixels = width * pointScaleFactor
   if (Math.abs(pixels - Math.round(pixels)) < 1e-6) return width
   return Math.max(1, Math.floor(pixels)) / pointScaleFactor
+}
+
+/**
+ * The first error of a style, if it has an invalid or unsupported value, from
+ * computing it for an element without context. Stylesheets drop these
+ * declarations, like browsers.
+ */
+export async function getStyleError(
+  style: Record<string, string | number>,
+  convertColors = true
+): Promise<Error | undefined> {
+  let firstError: Error | undefined
+  try {
+    await compute(
+      new LayoutNode(),
+      'div',
+      ROOT_STYLE,
+      style,
+      {},
+      undefined,
+      (error) => {
+        firstError ??= error
+      },
+      convertColors
+    )
+  } catch (error) {
+    firstError ??= error as Error
+  }
+  return firstError
 }
 
 export default async function compute(
