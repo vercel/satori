@@ -281,6 +281,21 @@ function resolveKeywords(
   return { defined, initial }
 }
 
+/**
+ * Elements that browsers hide: with the `hidden` attribute, unless it's
+ * `until-found`, and hidden inputs.
+ */
+function getHiddenPreset(type: string, props: Record<string, any>) {
+  const { hidden, type: inputType } = props ?? {}
+  const hasHidden =
+    hidden != null &&
+    hidden !== false &&
+    String(hidden).toLowerCase() !== 'until-found'
+  const isHiddenInput =
+    type === 'input' && String(inputType).toLowerCase() === 'hidden'
+  return hasHidden || isHiddenInput ? { display: 'none' } : {}
+}
+
 function getDirPreset(props: Record<string, any>) {
   const dir = typeof props?.dir === 'string' ? props.dir.toLowerCase() : ''
   return dir === 'ltr' || dir === 'rtl' ? { direction: dir } : {}
@@ -363,6 +378,7 @@ export default async function compute(
     ...presets[type],
     ...getListPresets(type, props, listDepth),
     ...getDirPreset(props),
+    ...getHiddenPreset(type, props),
   }
   // Logical properties are physical ones of the element's direction.
   const ownDirection = String(definedStyle?.direction ?? '')

@@ -114,6 +114,33 @@ describe('display', () => {
     )
   })
 
+  it('should hide elements like browsers', async () => {
+    const box = { width: 10, height: 10, background: 'red' }
+    const options = { width: 100, height: 40, fonts }
+    expect(
+      await satori(
+        <div style={{ display: 'flex', gap: 4 }}>
+          <div hidden style={box} />
+          <div {...({ hidden: 'until-found' } as object)} style={box} />
+          <input type='hidden' name='token' />
+          {/* Styles override the user agent stylesheet. */}
+          <div hidden style={{ ...box, display: 'block' }} />
+        </div>,
+        options
+      )
+    ).toBe(
+      await satori(
+        <div style={{ display: 'flex', gap: 4 }}>
+          <div style={{ ...box, display: 'none' }} />
+          <div style={box} />
+          <input style={{ display: 'none' }} />
+          <div style={{ ...box, display: 'block' }} />
+        </div>,
+        options
+      )
+    )
+  })
+
   it('should not render elements that are hidden by default', async () => {
     const options = { width: 200, height: 60, fonts }
     const page = (hidden: any) => (
