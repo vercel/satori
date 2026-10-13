@@ -5,13 +5,19 @@
  *   pnpm fidelity [names...]            compare with the saved scores
  *   pnpm fidelity --update [names...]   also save the scores
  *
- * Uses `dist`, so run `pnpm build` first. The images of Satori, the
+ * Uses `dist`, so run `pnpm build` first. The SVG and images of Satori, the
  * differences and all of them side by side are written to `output`, and so
  * are the saved scores. They aren't committed, so that changes don't conflict
  * with each other.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { join } from 'node:path'
 import { Resvg } from '@resvg/resvg-js'
 import pixelmatch from 'pixelmatch'
@@ -161,16 +167,17 @@ async function run(name: string) {
   const styleErrors: string[] = []
 
   const start = performance.now()
+  let satoriSVG: string | undefined
   let satoriPNG: Buffer | undefined
   let error: string | undefined
   try {
-    const svg = await satori(toSatori(snapshot) as any, {
+    satoriSVG = await satori(toSatori(snapshot) as any, {
       width,
       height,
       fonts,
       onStyleError: (styleError) => styleErrors.push(styleError.message),
     })
-    satoriPNG = toPNG(svg)
+    satoriPNG = toPNG(satoriSVG)
   } catch (renderError) {
     error = (renderError as Error).message
   }
@@ -238,6 +245,9 @@ async function run(name: string) {
   )
   const dir = join(outputDir, name)
   mkdirSync(dir, { recursive: true })
+  // The SVG of the last render that succeeded would be misleading.
+  if (satoriSVG) writeFileSync(join(dir, 'satori.svg'), satoriSVG)
+  else rmSync(join(dir, 'satori.svg'), { force: true })
   writeFileSync(join(dir, 'satori.png'), satoriPNG)
   writeFileSync(join(dir, 'diff.png'), diffPNG)
   writeFileSync(join(dir, 'compare.png'), compare)
