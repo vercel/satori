@@ -194,4 +194,80 @@ describe('Font', () => {
 
     expect(await render('Habbo.woff')).toBe(await render('Habbo.ttf'))
   })
+
+  describe('WOFF2', () => {
+    const asset = (name: string) =>
+      readFile(join(process.cwd(), 'test', 'assets', name))
+    const text = (
+      <div style={{ display: 'flex', fontSize: 32, fontFamily: 'Roboto' }}>
+        Hello, WOFF2! fi
+      </div>
+    )
+
+    it('should render like the TrueType font it was encoded from', async () => {
+      const [ttf, woff2] = await Promise.all([
+        asset('Roboto-Regular.ttf'),
+        asset('Roboto-Regular.woff2'),
+      ])
+      for (const embedFont of [true, false]) {
+        const render = (data: Buffer) =>
+          satori(text, {
+            width: 300,
+            height: 60,
+            embedFont,
+            fonts: [{ name: 'Roboto', data, weight: 400, style: 'normal' }],
+          })
+        expect(await render(woff2)).toBe(await render(ttf))
+      }
+    })
+
+    it('should decode WOFF2 fonts with overlap bitmaps', async () => {
+      // A subset of Inter from Google Fonts, whose glyf table has an overlap
+      // bitmap, and the TrueType font from Google's reference decoder.
+      const [ttf, woff2] = await Promise.all([
+        asset('Inter-HelloWorld.ttf'),
+        asset('Inter-HelloWorld.woff2'),
+      ])
+      const render = (data: Buffer) =>
+        satori(
+          <div style={{ display: 'flex', fontSize: 32 }}>Hello World</div>,
+          { width: 300, height: 60, fonts: [{ name: 'Inter', data }] }
+        )
+      const svg = await render(woff2)
+      expect(svg).toContain('<path')
+      expect(svg).toBe(await render(ttf))
+    })
+
+    it('should load WOFF2 fonts dynamically', async () => {
+      const [hebrew, ttf, woff2] = await Promise.all([
+        asset('NotoSansHebrew-Regular.ttf'),
+        asset('Roboto-Regular.ttf'),
+        asset('Roboto-Regular.woff2'),
+      ])
+      // The Latin text is missing from the Hebrew font.
+      const render = (data: Buffer) =>
+        satori(text, {
+          width: 300,
+          height: 60,
+          fonts: [{ name: 'Hebrew', data: hebrew, weight: 400 }],
+          loadAdditionalAsset: async () => [
+            { name: 'Roboto', data, weight: 400 },
+          ],
+        })
+      expect(await render(woff2)).toBe(await render(ttf))
+    })
+
+    it('should throw for invalid WOFF2 fonts', async () => {
+      const woff2 = await asset('Roboto-Regular.woff2')
+      await expect(
+        satori(text, {
+          width: 300,
+          height: 60,
+          fonts: [
+            { name: 'Broken', data: woff2.subarray(0, 1000), weight: 400 },
+          ],
+        })
+      ).rejects.toThrow('Failed to decode the WOFF2 font "Broken".')
+    })
+  })
 })

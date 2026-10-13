@@ -110,6 +110,40 @@ pub extern "C" fn css_output() -> *const u8 {
     CSS_OUTPUT.with(|buffer| buffer.borrow().as_ptr())
 }
 
+thread_local! {
+    static FONT_OUTPUT: RefCell<Vec<u8>> = const { RefCell::new(Vec::new()) };
+}
+
+/// Decodes the WOFF2 font in the `len` bytes at `input` into a TrueType or
+/// OpenType font, and returns its length in bytes, or 0 if it can't be
+/// decoded. `font_output` points to it until `release_font_output`.
+///
+/// # Safety
+///
+/// `input` must point to `len` initialized bytes.
+#[no_mangle]
+pub unsafe extern "C" fn decode_woff2(input: *const u8, len: usize) -> usize {
+    let mut data = std::slice::from_raw_parts(input, len);
+    let font = woff2_patched::decode::convert_woff2_to_ttf(&mut data).unwrap_or_default();
+    FONT_OUTPUT.with(|buffer| {
+        let len = font.len();
+        *buffer.borrow_mut() = font;
+        len
+    })
+}
+
+/// The font decoded by the last call to `decode_woff2`.
+#[no_mangle]
+pub extern "C" fn font_output() -> *const u8 {
+    FONT_OUTPUT.with(|buffer| buffer.borrow().as_ptr())
+}
+
+/// Frees the font decoded by `decode_woff2`.
+#[no_mangle]
+pub extern "C" fn release_font_output() {
+    FONT_OUTPUT.with(|buffer| *buffer.borrow_mut() = Vec::new());
+}
+
 /// The handle of the `calc()` expression at `index`, which Taffy passes to
 /// `resolve_calc`. Taffy uses the low 3 bits as a tag, which must be 0.
 fn calc_handle(index: f32) -> *const () {

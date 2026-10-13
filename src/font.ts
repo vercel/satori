@@ -74,6 +74,18 @@ function splitByFont(
   return result
 }
 
+/** Whether font data is WOFF2, from its `wOF2` signature. */
+function isWoff2(data: ArrayBuffer) {
+  if (data.byteLength < 4) return false
+  const bytes = new Uint8Array(data, 0, 4)
+  return (
+    bytes[0] === 0x77 &&
+    bytes[1] === 0x4f &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x32
+  )
+}
+
 /**
  * Convert WOFF to raw sfnt (TrueType/OpenType) format for HarfBuzz.
  */
@@ -514,7 +526,13 @@ export default class FontLoader {
   // for the same font configuration) so repeated renders don't re-shape
   // identical text runs with HarfBuzz.
   private shapedRunCache = new Map<string, ShapedRun[]>()
-  constructor(fontOptions: FontOptions[]) {
+  /** Decodes WOFF2 fonts, see `crates/layout`. */
+  private decodeWoff2?: (data: Uint8Array) => ArrayBuffer | undefined
+  constructor(
+    fontOptions: FontOptions[],
+    decodeWoff2?: (data: Uint8Array) => ArrayBuffer | undefined
+  ) {
+    this.decodeWoff2 = decodeWoff2
     this.addFonts(fontOptions)
   }
 
@@ -578,13 +596,22 @@ export default class FontLoader {
         font = cachedParsedFont.get(data)
       } else {
         // Convert Buffer to ArrayBuffer if needed
-        const arrayBuffer =
+        let arrayBuffer =
           'buffer' in data
             ? data.buffer.slice(
                 data.byteOffset,
                 data.byteOffset + data.byteLength
               )
             : data
+
+        // WOFF2 fonts are decoded into TrueType or OpenType fonts.
+        if (isWoff2(arrayBuffer)) {
+          const decoded = this.decodeWoff2?.(new Uint8Array(arrayBuffer))
+          if (!decoded) {
+            throw new Error(`Failed to decode the WOFF2 font "${name}".`)
+          }
+          arrayBuffer = decoded
+        }
 
         font = opentype.parse(
           arrayBuffer,
