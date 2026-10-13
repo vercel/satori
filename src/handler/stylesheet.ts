@@ -100,8 +100,11 @@ const PSEUDO_CLASSES = new Set([
   'only-of-type',
   'link',
   'any-link',
+  '-webkit-any-link',
   'defined',
   'read-only',
+  // These never match, since there are no shadow trees.
+  'host',
   // These never match, since elements aren't interactive.
   'hover',
   'active',
@@ -127,6 +130,7 @@ const PSEUDO_CLASSES = new Set([
   'read-write',
   'placeholder-shown',
   'autofill',
+  '-webkit-autofill',
   'playing',
   'paused',
   'fullscreen',
@@ -135,6 +139,12 @@ const PSEUDO_CLASSES = new Set([
   'open',
   'closed',
 ])
+
+/**
+ * Functional pseudo-classes of shadow trees and custom elements, which never
+ * match. Browsers accept them, so rules with them aren't dropped.
+ */
+const NEVER_MATCHING_FUNCTIONS = new Set(['host', 'host-context', 'state'])
 
 /** How the declarations of stylesheets are validated. */
 export interface Validation {
@@ -452,6 +462,7 @@ function compileSimple(
         return [':', name, simple[2], simple[3], of]
       }
       if (name === 'lang') return simple
+      if (NEVER_MATCHING_FUNCTIONS.has(name)) return [':', name]
       // Other functional pseudo-classes aren't supported.
       return simple.length === 2 && PSEUDO_CLASSES.has(name) ? simple : null
     }
@@ -974,6 +985,7 @@ function matchesPseudoClass(simple: Simple, node: Node): boolean {
       return simple[2].some((selector: Selector) => matchesHas(selector, node))
     case 'link':
     case 'any-link':
+    case '-webkit-any-link':
       return (
         (node.type === 'a' || node.type === 'area') && node.props.href != null
       )
