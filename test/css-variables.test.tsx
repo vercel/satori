@@ -14,6 +14,139 @@ describe('CSS Variables', () => {
   let fonts
   initFonts((f) => (fonts = f))
 
+  const render = (node: JSX.Element, options = {}) =>
+    satori(node, { width: 100, height: 100, fonts, ...options })
+
+  it('should treat `initial`, `inherit` and missing variables like browsers', async () => {
+    const box = { display: 'flex', height: 20 }
+    expect(
+      await render(
+        <div style={{ display: 'flex', flexDirection: 'column', '--c': 'red' }}>
+          {/* `initial` is the guaranteed-invalid value, so the fallback is used. */}
+          <div
+            style={{
+              ...box,
+              '--c': 'initial',
+              backgroundColor: 'var(--c, blue)',
+            }}
+          />
+          {/* Custom properties are inherited. */}
+          <div
+            style={{ ...box, '--c': 'inherit', backgroundColor: 'var(--c)' }}
+          />
+          {/* Missing variables make declarations behave as `unset`. */}
+          <div style={{ ...box, color: 'green' }}>
+            <span style={{ color: 'var(--missing)' }}>A</span>
+            <span style={{ width: 'var(--missing)', backgroundColor: 'red' }}>
+              B
+            </span>
+          </div>
+        </div>
+      )
+    ).toBe(
+      await render(
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ ...box, backgroundColor: 'blue' }} />
+          <div style={{ ...box, backgroundColor: 'red' }} />
+          <div style={{ ...box, color: 'green' }}>
+            <span>A</span>
+            <span style={{ backgroundColor: 'red' }}>B</span>
+          </div>
+        </div>
+      )
+    )
+  })
+
+  it('should support empty fallbacks of variables', async () => {
+    const box = { display: 'flex', width: 20, height: 20, background: 'red' }
+    expect(
+      await render(
+        <div style={{ display: 'flex', '--b': 'scale(2)' }}>
+          <div
+            style={{
+              ...box,
+              transform: 'var(--a,) var(--b,) rotate(45deg)',
+            }}
+          />
+          {/* Like the transforms of Tailwind CSS without its variables. */}
+          <div style={{ ...box, transform: 'var(--a,) var(--c,)' }} />
+          <div style={{ ...box, translate: 'var(--x) var(--y)' }} />
+        </div>
+      )
+    ).toBe(
+      await render(
+        <div style={{ display: 'flex' }}>
+          <div style={{ ...box, transform: 'scale(2) rotate(45deg)' }} />
+          <div style={box} />
+          <div style={box} />
+        </div>
+      )
+    )
+  })
+
+  it('should resolve variables where they are used', async () => {
+    expect(
+      await render(
+        <div
+          style={{
+            display: 'flex',
+            fontSize: 10,
+            '--padding': '16px',
+            '--size': '2em',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 20,
+              width: 'calc(100% - var(--padding) * 2)',
+              height: 'var(--size)',
+              background: 'red',
+            }}
+          />
+        </div>
+      )
+    ).toBe(
+      await render(
+        <div style={{ display: 'flex', fontSize: 10 }}>
+          <div
+            style={{
+              fontSize: 20,
+              width: 'calc(100% - 32px)',
+              height: 40,
+              background: 'red',
+            }}
+          />
+        </div>
+      )
+    )
+  })
+
+  it('should report invalid arguments of transform functions', async () => {
+    const node = (
+      <div
+        style={{
+          display: 'flex',
+          width: 20,
+          height: 20,
+          background: 'red',
+          transform: 'translate3d(initial, 0, 0)',
+        }}
+      />
+    )
+    const errors: string[] = []
+    expect(
+      await render(node, { onStyleError: (e: Error) => errors.push(e.message) })
+    ).toBe(
+      await render(
+        <div
+          style={{ display: 'flex', width: 20, height: 20, background: 'red' }}
+        />
+      )
+    )
+    expect(errors).toEqual([expect.stringContaining('translate3d')])
+    await expect(render(node)).rejects.toThrow('translate3d')
+  })
+
   it('should support basic CSS variable declaration and usage', async () => {
     const svg = await satori(
       <div
