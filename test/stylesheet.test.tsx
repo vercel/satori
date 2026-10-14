@@ -418,6 +418,30 @@ describe('stylesheets', () => {
     expect(errors).toHaveLength(2)
   })
 
+  it('should not report internal props of containers', async () => {
+    const reported: string[] = []
+    await satori(
+      page(
+        <>
+          <div className='c'>A</div>
+          <div style={{ display: 'none' }}>
+            <div className='c'>B</div>
+          </div>
+        </>,
+        `.c { container-type: inline-size }
+        @container (width > 50px) { .c div { color: red } }`
+      ),
+      {
+        width: 200,
+        height: 160,
+        fonts,
+        onNodeDetected: (node) => reported.push(...Object.keys(node.props)),
+      }
+    )
+    expect(reported).toContain('className')
+    expect(reported.filter((key) => key.startsWith('__'))).toEqual([])
+  })
+
   it('should order cascade layers', async () => {
     await expectSame(
       `@layer base, theme;

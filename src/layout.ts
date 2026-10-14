@@ -230,7 +230,11 @@ function reportHiddenDescendants(children: ReactNode, context: LayoutContext) {
     const element = child as ReactElement
     const isFragment =
       (element.type as unknown) === Symbol.for('react.fragment')
-    const { children: descendants, ...props } = element.props || {}
+    const {
+      children: descendants,
+      [CONTAINER_PROP]: _container,
+      ...props
+    } = element.props || {}
     const type = isFragment ? 'div' : (element.type as string)
     onNodeDetected?.({
       left: 0,
