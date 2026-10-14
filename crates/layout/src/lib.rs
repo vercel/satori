@@ -298,6 +298,7 @@ impl<'a> Reader<'a> {
             2 => MinTrackSizingFunction::percent(min_value),
             3 => MinTrackSizingFunction::min_content(),
             4 => MinTrackSizingFunction::max_content(),
+            8 => MinTrackSizingFunction::calc(calc_handle(min_value)),
             _ => MinTrackSizingFunction::auto(),
         };
         let max = match max_kind {
@@ -308,6 +309,7 @@ impl<'a> Reader<'a> {
             5 => MaxTrackSizingFunction::fr(max_value),
             6 => MaxTrackSizingFunction::fit_content_px(max_value),
             7 => MaxTrackSizingFunction::fit_content_percent(max_value),
+            8 => MaxTrackSizingFunction::calc(calc_handle(max_value)),
             _ => MaxTrackSizingFunction::auto(),
         };
         TrackSizingFunction { min, max }

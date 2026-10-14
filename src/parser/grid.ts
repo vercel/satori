@@ -11,6 +11,7 @@ import type {
   GridTrackList,
   GridTrackSize,
 } from '../layout-engine/node.js'
+import { MATH_FUNCTION, parseMath } from './math.js'
 
 /** Resolves a length to px, or returns `undefined` if it isn't one. */
 export type ResolveLength = (value: string) => number | undefined
@@ -102,6 +103,15 @@ function parseBreadth(
   if (new RegExp(`^${NUMBER}%$`).test(normalized)) {
     return `${parseFloat(normalized)}%`
   }
+  // Math functions with percentages are resolved in the layout, with the size
+  // of the grid container.
+  const math = parseMath(normalized, resolveLength)
+  if (math) {
+    if (math.type !== 'length') return
+    if (math.percentage) return { calc: math.evaluate }
+    const length = math.evaluate(0)
+    return length >= 0 ? length : undefined
+  }
   const length = resolveLength(normalized)
   if (length !== undefined && length >= 0) return length
 }
@@ -120,6 +130,10 @@ function parseTrackSize(
     return { min: isFlex(breadth) ? 'auto' : breadth, max: breadth }
   }
   if (token.type !== 'function') return
+  if (MATH_FUNCTION.test(`${token.name}(`)) {
+    const breadth = parseBreadth(`${token.name}(${token.args})`, resolveLength)
+    return breadth === undefined ? undefined : { min: breadth, max: breadth }
+  }
 
   const args = splitArguments(token.args)
   if (token.name === 'minmax' && args.length === 2) {
