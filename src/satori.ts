@@ -18,7 +18,10 @@ import { detectLanguageCode, LangCode, Locale } from './language.js'
 import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
 import { resolveComponents } from './handler/components.js'
-import { applyStyleSheets } from './handler/stylesheet.js'
+import {
+  applyStyleSheets,
+  type ContainerQueries,
+} from './handler/stylesheet.js'
 import { cache, inflightRequests } from './handler/image.js'
 import { segment } from './utils.js'
 import { initHarfBuzz } from './harfbuzz.js'
@@ -154,16 +157,6 @@ export async function render(
   const definedWidth = 'width' in options ? options.width : undefined
   const definedHeight = 'height' in options ? options.height : undefined
 
-  // Like the initial containing block, the root element is laid out in a
-  // block formatting context.
-  const root = new LayoutNode({
-    display: 'flow-root',
-    width: definedWidth || 'auto',
-    height: definedHeight || 'auto',
-    overflowX: 'hidden',
-    overflowY: 'hidden',
-  })
-
   // Use a null-prototype object so that text matching Object.prototype property
   // names (e.g. "constructor", "toString") doesn't inherit truthy values from
   // the prototype chain when we look it up via `graphemeImages[text]`.
@@ -189,143 +182,196 @@ export async function render(
   // layout, including the images to load and the elements that stylesheets
   // apply to.
   element = await resolveComponents(element)
-  // Like in browsers, invalid declarations of stylesheets are dropped.
-  element = await applyStyleSheets(
-    element,
-    layoutEngine,
-    { width: definedWidth, height: definedHeight },
-    {
-      getError: (name, value) =>
-        getStyleError({ [name]: value }, options.convertColors ?? true),
-      onError: options.onStyleError,
-    }
-  )
+  // Style errors of a first pass, which container queries need, are reported
+  // by the second one instead.
+  let pendingErrors: Error[] | undefined = []
+  const onStyleError =
+    options.onStyleError &&
+    ((error: Error) =>
+      pendingErrors ? pendingErrors.push(error) : options.onStyleError(error))
 
   cache.clear()
   inflightRequests.clear()
-  await preProcessNode(element)
 
-  const fixedElements: FixedElement[] = []
-  const handler = layout(element, {
-    id: 'id',
-    parentStyle: {},
-    inheritedStyle: {
-      ...ROOT_STYLE,
-
-      // Special style properties:
-      _viewportWidth: definedWidth,
-      _viewportHeight: definedHeight,
-    },
-    parent: root,
-    font,
-    embedFont: options.embedFont,
-    debug: options.debug,
-    graphemeImages,
-    canLoadAdditionalAssets: !!options.loadAdditionalAsset,
-    onNodeDetected: options.onNodeDetected,
-    onStyleError: options.onStyleError,
-    convertColors: options.convertColors ?? true,
-    pointScaleFactor: options.pointScaleFactor,
-    replacedElements,
-    projectPlane,
-    // Fixed elements are positioned relative to the viewport by default.
-    fixedContainingBlock: { node: root, offset: { left: 0, top: 0 } },
-    counters: new Counters(),
-    // Sticky elements stick to the viewport by default.
-    parentBox: { node: root, offset: { left: 0, top: 0 } },
-    scrollport: { node: root, offset: { left: 0, top: 0 } },
-    // So are absolutely positioned ones without a positioned ancestor.
-    absoluteContainingBlock: { node: root, offset: { left: 0, top: 0 } },
-    fixedElements,
-    floats: { found: false },
-    formattingContext: 'root',
-    computeLayout: (node, { width }) =>
-      layoutEngine.computeLayout(node, {
-        width,
-        pointScaleFactor: options.pointScaleFactor,
-      }),
-    getTwStyles: (tw, style) => {
-      const twToStyles = getTw({
-        width: definedWidth,
-        height: definedHeight,
-        config: options.tailwindConfig,
+  const containers: ContainerQueries = {}
+  let pass = await layOut()
+  if (containers.queried) {
+    // Container queries use the content box of containers.
+    containers.sizes = new Map()
+    for (const [index, node] of pass.containerNodes) {
+      const { width, height, padding, border } = node.layout
+      if (!padding || !border) continue
+      containers.sizes.set(index, {
+        width:
+          width - padding.left - padding.right - border.left - border.right,
+        height:
+          height - padding.top - padding.bottom - border.top - border.bottom,
       })
-      const twStyles = { ...twToStyles([tw] as any) }
-      if (typeof twStyles.lineHeight === 'number') {
-        twStyles.lineHeight =
-          twStyles.lineHeight / (+twStyles.fontSize || style.fontSize || 16)
-      }
-      if (twStyles.shadowColor && twStyles.boxShadow) {
-        twStyles.boxShadow = (twStyles.boxShadow as string).replace(
-          /rgba?\([^)]+\)/,
-          twStyles.shadowColor as string
-        )
-      }
-      return twStyles
-    },
+    }
+    pendingErrors = undefined
+    pass = await layOut()
+  } else {
+    const errors = pendingErrors
+    pendingErrors = undefined
+    for (const error of errors) options.onStyleError?.(error)
+  }
+
+  const content = (await pass.handler.next([0, 0])).value as string
+
+  return svg({
+    width: pass.root.layout.width,
+    height: pass.root.layout.height,
+    content,
   })
 
-  const segmentsMissingFont = (await handler.next()).value as {
-    word: string
-    locale?: Locale
-  }[]
+  /**
+   * Applies the stylesheets and lays out the tree, which is drawn by the last
+   * step of `handler`.
+   */
+  async function layOut() {
+    // Like in browsers, invalid declarations of stylesheets are dropped.
+    const tree = await applyStyleSheets(
+      element,
+      layoutEngine,
+      { width: definedWidth, height: definedHeight },
+      {
+        getError: (name, value) =>
+          getStyleError({ [name]: value }, options.convertColors ?? true),
+        onError: onStyleError,
+      },
+      containers
+    )
+    await preProcessNode(tree)
 
-  if (options.loadAdditionalAsset) {
-    if (segmentsMissingFont.length) {
-      const languageCodes = convertToLanguageCodes(segmentsMissingFont)
-      const fonts: FontOptions[] = []
-      const images: Record<string, string> = {}
+    // Like the initial containing block, the root element is laid out in a
+    // block formatting context.
+    const root = new LayoutNode({
+      display: 'flow-root',
+      width: definedWidth || 'auto',
+      height: definedHeight || 'auto',
+      overflowX: 'hidden',
+      overflowY: 'hidden',
+    })
 
-      await Promise.all(
-        Object.entries(languageCodes).flatMap(([code, segments]) =>
-          segments.map((_segment) => {
-            const key = `${code}_${_segment}`
-            if (processedWordsMissingFonts.has(key)) {
-              return null
-            }
-            processedWordsMissingFonts.add(key)
+    const fixedElements: FixedElement[] = []
+    const containerNodes = new Map<number, LayoutNode>()
+    const handler = layout(tree, {
+      id: 'id',
+      parentStyle: {},
+      inheritedStyle: {
+        ...ROOT_STYLE,
 
-            return options
-              .loadAdditionalAsset(code, _segment)
-              .then((asset: any) => {
-                if (typeof asset === 'string') {
-                  images[_segment] = asset
-                } else if (asset) {
-                  if (Array.isArray(asset)) {
-                    fonts.push(...asset)
-                  } else {
-                    fonts.push(asset)
+        // Special style properties:
+        _viewportWidth: definedWidth,
+        _viewportHeight: definedHeight,
+      },
+      parent: root,
+      font,
+      embedFont: options.embedFont,
+      debug: options.debug,
+      graphemeImages,
+      canLoadAdditionalAssets: !!options.loadAdditionalAsset,
+      onNodeDetected: options.onNodeDetected,
+      onStyleError,
+      convertColors: options.convertColors ?? true,
+      pointScaleFactor: options.pointScaleFactor,
+      replacedElements,
+      projectPlane,
+      // Fixed elements are positioned relative to the viewport by default.
+      fixedContainingBlock: { node: root, offset: { left: 0, top: 0 } },
+      counters: new Counters(),
+      // Sticky elements stick to the viewport by default.
+      parentBox: { node: root, offset: { left: 0, top: 0 } },
+      scrollport: { node: root, offset: { left: 0, top: 0 } },
+      // So are absolutely positioned ones without a positioned ancestor.
+      absoluteContainingBlock: { node: root, offset: { left: 0, top: 0 } },
+      fixedElements,
+      floats: { found: false },
+      formattingContext: 'root',
+      containers: containerNodes,
+      computeLayout: (node, { width }) =>
+        layoutEngine.computeLayout(node, {
+          width,
+          pointScaleFactor: options.pointScaleFactor,
+        }),
+      getTwStyles: (tw, style) => {
+        const twToStyles = getTw({
+          width: definedWidth,
+          height: definedHeight,
+          config: options.tailwindConfig,
+        })
+        const twStyles = { ...twToStyles([tw] as any) }
+        if (typeof twStyles.lineHeight === 'number') {
+          twStyles.lineHeight =
+            twStyles.lineHeight / (+twStyles.fontSize || style.fontSize || 16)
+        }
+        if (twStyles.shadowColor && twStyles.boxShadow) {
+          twStyles.boxShadow = (twStyles.boxShadow as string).replace(
+            /rgba?\([^)]+\)/,
+            twStyles.shadowColor as string
+          )
+        }
+        return twStyles
+      },
+    })
+
+    const segmentsMissingFont = (await handler.next()).value as {
+      word: string
+      locale?: Locale
+    }[]
+
+    if (options.loadAdditionalAsset) {
+      if (segmentsMissingFont.length) {
+        const languageCodes = convertToLanguageCodes(segmentsMissingFont)
+        const fonts: FontOptions[] = []
+        const images: Record<string, string> = {}
+
+        await Promise.all(
+          Object.entries(languageCodes).flatMap(([code, segments]) =>
+            segments.map((_segment) => {
+              const key = `${code}_${_segment}`
+              if (processedWordsMissingFonts.has(key)) {
+                return null
+              }
+              processedWordsMissingFonts.add(key)
+
+              return options
+                .loadAdditionalAsset(code, _segment)
+                .then((asset: any) => {
+                  if (typeof asset === 'string') {
+                    images[_segment] = asset
+                  } else if (asset) {
+                    if (Array.isArray(asset)) {
+                      fonts.push(...asset)
+                    } else {
+                      fonts.push(asset)
+                    }
                   }
-                }
-              })
-          })
+                })
+            })
+          )
         )
-      )
 
-      // Directly mutate the font provider and the grapheme map.
-      font.addFonts(fonts)
-      Object.assign(graphemeImages, images)
+        // Directly mutate the font provider and the grapheme map.
+        font.addFonts(fonts)
+        Object.assign(graphemeImages, images)
+      }
     }
-  }
 
-  await handler.next()
-  const layoutOptions = {
-    width: definedWidth,
-    height: definedHeight,
-    pointScaleFactor: options.pointScaleFactor,
-  }
-  layoutEngine.computeLayout(root, layoutOptions)
-  // The static position of a fixed element depends on its size.
-  if (sizeStaticPositionPlaceholders(fixedElements)) {
+    await handler.next()
+    const layoutOptions = {
+      width: definedWidth,
+      height: definedHeight,
+      pointScaleFactor: options.pointScaleFactor,
+    }
     layoutEngine.computeLayout(root, layoutOptions)
+    // The static position of a fixed element depends on its size.
+    if (sizeStaticPositionPlaceholders(fixedElements)) {
+      layoutEngine.computeLayout(root, layoutOptions)
+    }
+
+    return { root, handler, containerNodes }
   }
-
-  const content = (await handler.next([0, 0])).value as string
-
-  const computedWidth = root.layout.width
-  const computedHeight = root.layout.height
-
-  return svg({ width: computedWidth, height: computedHeight, content })
 }
 
 function convertToLanguageCodes(
