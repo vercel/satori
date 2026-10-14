@@ -702,7 +702,7 @@ const svg = await satori(
 
 ### Pixel Grid Rounding
 
-Set `pointScaleFactor` to control how layout values are rounded to the pixel grid: they are rounded to multiples of `1 / pointScaleFactor` px, or not rounded with `0`. It defaults to `1`, and higher values improve rendering precision on high-DPI displays.
+Set `pointScaleFactor` to control how layout values are rounded to the pixel grid: they are rounded to multiples of `1 / pointScaleFactor` px, or not rounded with `0`. It defaults to `1`, and higher values improve rendering precision on high-DPI displays. The width of text is rounded up the same way, so that it fits.
 
 ```jsx
 const svg = await satori(

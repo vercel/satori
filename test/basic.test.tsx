@@ -219,6 +219,81 @@ describe('Basic', () => {
     expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it('should size text with the points scale factor', async () => {
+    // The size of text in a flex item and in a block container.
+    const sizes = async (pointScaleFactor: number) => {
+      const result: Record<string, number[]> = {}
+      await satori(
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex' }}>
+            <div key='flex' style={{ display: 'flex' }}>
+              Get Started
+            </div>
+          </div>
+          <div style={{ display: 'flex' }}>
+            <div
+              key='block'
+              style={{
+                display: 'block',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              Get Started
+            </div>
+          </div>
+        </div>,
+        {
+          width: 200,
+          height: 100,
+          fonts,
+          pointScaleFactor,
+          onNodeDetected: ({ key, width, height }) => {
+            if (key) result[key] = [width, height]
+          },
+        }
+      )
+      return result
+    }
+    const [exact, half, whole] = await Promise.all([0, 2, 1].map(sizes))
+    for (const key of ['flex', 'block']) {
+      // Without rounding, text is as wide as it is.
+      expect(exact[key][0]).toBeLessThan(whole[key][0])
+      expect(whole[key][0]).toBe(Math.ceil(exact[key][0]))
+      expect(half[key][0]).toBe(Math.ceil(exact[key][0] * 2) / 2)
+      // It still fits in one line.
+      expect(exact[key][1]).toBe(whole[key][1])
+    }
+
+    // Layouts that aren't rounded are less precise, which made text that
+    // fits overflow.
+    for (const fontSize of [10, 10.1, 10.3, 11]) {
+      const render = (textOverflow: string) =>
+        satori(
+          <div style={{ display: 'flex' }}>
+            <div style={{ display: 'flex', paddingLeft: 12, paddingRight: 12 }}>
+              <span
+                style={{
+                  display: 'inline-block',
+                  paddingLeft: 6,
+                  paddingRight: 6,
+                  overflow: 'hidden',
+                  textOverflow,
+                  whiteSpace: 'nowrap',
+                  fontSize,
+                  letterSpacing: -0.15,
+                }}
+              >
+                Get Started
+              </span>
+            </div>
+          </div>,
+          { width: 200, height: 40, fonts, pointScaleFactor: 0 }
+        )
+      expect(await render('ellipsis')).toBe(await render('clip'))
+    }
+  })
+
   // https://github.com/vercel/satori/issues/746
   it('should render text matching Object.prototype property names as glyphs, not images', async () => {
     for (const word of [

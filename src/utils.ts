@@ -546,3 +546,18 @@ export function splitEffects(
 
   return result
 }
+
+/**
+ * Rounds a size up to a multiple of `1 / pointScaleFactor`, so that rounding
+ * the layout to it doesn't make text wrap. Layouts that aren't rounded, with
+ * `0`, are computed with 32-bit floats, so a small margin keeps them from
+ * making it smaller. `epsilon` absorbs floating point errors.
+ */
+export function roundUpToLayout(
+  value: number,
+  pointScaleFactor = 1,
+  epsilon = 0
+) {
+  if (!pointScaleFactor) return value + 1e-3
+  return Math.ceil(value * pointScaleFactor - epsilon) / pointScaleFactor
+}
