@@ -145,7 +145,12 @@ async function captureInPage(selector: string) {
         if (rule.styleSheet) {
           css += prune(rule.styleSheet.cssRules, rule.styleSheet.href ?? base)
         }
-      } else if (rule instanceof CSSLayerStatementRule) {
+      } else if (
+        rule instanceof CSSLayerStatementRule ||
+        // The initial values of custom properties, like Tailwind's
+        // `--tw-border-style: solid`.
+        rule instanceof CSSPropertyRule
+      ) {
         css += rule.cssText + '\n'
       } else if (
         rule instanceof CSSMediaRule ||
