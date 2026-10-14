@@ -59,6 +59,7 @@ export type GridTrackBreadth =
   | 'min-content'
   | 'max-content'
   | { fitContent: number | `${number}%` }
+  | CalcLength
 
 export interface GridTrackSize {
   min: GridTrackBreadth
