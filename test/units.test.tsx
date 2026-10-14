@@ -1,4 +1,4 @@
-import { it, describe, expect } from 'vitest'
+import { it, describe, expect, vi } from 'vitest'
 
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
@@ -186,6 +186,49 @@ describe('Units', () => {
       { width: 200, height: 100, fonts }
     )
     expect(await toImage(svg, 200)).toMatchImageSnapshot()
+  })
+
+  it('should support viewport and line height units', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const render = (sizes: Record<string, string | number>[]) =>
+      satori(
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            fontSize: 10,
+            lineHeight: 2,
+          }}
+        >
+          {sizes.map((size, i) => (
+            <div key={i} style={{ ...size, background: 'red' }} />
+          ))}
+        </div>,
+        { width: 200, height: 100, fonts }
+      )
+    try {
+      // The small, large and dynamic viewports of an image are the same.
+      expect(
+        await render([
+          { width: '10svw', height: '5dvh' },
+          { width: '10lvi', height: '5svb' },
+          { width: '10dvmin', height: '5lvmax' },
+          { width: 'calc(10svw + 1lh)', height: '1lh', maxWidth: 'none' },
+          { width: '1rlh', height: '1rlh' },
+        ])
+      ).toBe(
+        await render([
+          { width: '10vw', height: '5vh' },
+          { width: '10vw', height: '5vh' },
+          { width: '10vmin', height: '5vmax' },
+          { width: 40, height: 20 },
+          { width: 19.2, height: 19.2 },
+        ])
+      )
+      expect(warn).not.toHaveBeenCalled()
+    } finally {
+      warn.mockRestore()
+    }
   })
 
   it('should resolve font size keywords and percentages', async () => {
