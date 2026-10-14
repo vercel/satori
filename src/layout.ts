@@ -702,7 +702,18 @@ export default async function* layout(
   const segmentsMissingFont: { word: string; locale?: string }[] = []
   // The `order` of the flex or grid item each child generates.
   const childOrders: number[] = []
-  for (const child of normalizedChildren) {
+  for (const [index, child] of normalizedChildren.entries()) {
+    // In flex and grid containers, text with only white space isn't
+    // rendered, even with `white-space: pre`, e.g. the newlines between the
+    // lines of code blocks.
+    if (
+      typeof child === 'string' &&
+      (childFormattingContext === 'flex' ||
+        childFormattingContext === 'grid') &&
+      /^[ \t\n\r\f]*$/.test(child)
+    ) {
+      continue
+    }
     const childCount = childParent.children.length
     const iter = layout(child, {
       id: id + '-' + i++,
@@ -732,7 +743,7 @@ export default async function* layout(
       listDepth:
         (context.listDepth || 0) +
         (['ul', 'ol', 'menu', 'dir'].includes(type) ? 1 : 0),
-      markers: i - 1 === markerTarget ? markers : undefined,
+      markers: index === markerTarget ? markers : undefined,
       parentBox,
       scrollport,
       floats: context.floats,

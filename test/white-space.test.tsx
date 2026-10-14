@@ -313,4 +313,27 @@ describe('white-space', () => {
       expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
   })
+  it('should not render white space between flex and grid items', async () => {
+    // Like the lines of code blocks, with newlines between them.
+    const line = (text: string) => (
+      <span style={{ display: 'flex' }}>{text}</span>
+    )
+    const render = (separator?: string) =>
+      satori(
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <code style={{ display: 'grid', whiteSpace: 'pre' }}>
+            {line('a')}
+            {separator}
+            {line('b')}
+          </code>
+          <div style={{ display: 'flex', whiteSpace: 'pre-wrap' }}>
+            {line('c')}
+            {separator}
+            {line('d')}
+          </div>
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+    expect(await render('\n  ')).toBe(await render())
+  })
 })
