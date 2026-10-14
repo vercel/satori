@@ -675,6 +675,7 @@ export default async function* layout(
         embedFont,
         debug,
         graphemeImages,
+        pointScaleFactor: context.pointScaleFactor,
         computeLayout: context.computeLayout,
       })
     : inlineBox || isContents

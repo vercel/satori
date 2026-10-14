@@ -20,6 +20,7 @@ import { LayoutNode, type FloatExclusion } from '../layout-engine/index.js'
 import {
   buildXMLString,
   lengthToNumber,
+  roundUpToLayout,
   segment as segmentText,
   splitByBreakOpportunities,
 } from '../utils.js'
@@ -53,6 +54,8 @@ export interface InlineEnv {
   embedFont: boolean
   debug?: boolean
   graphemeImages?: Record<string, string>
+  /** The scale that layouts are rounded at, see `roundUpToLayout()`. */
+  pointScaleFactor?: number
   /** Lays out a tree, used for atomic inlines. */
   computeLayout: (
     root: LayoutNode,
@@ -1001,8 +1004,7 @@ export class Paragraph {
     const first = this.lines[0]
     const last = this.lines[this.lines.length - 1]
     return {
-      // Round up, so that rounding the layout doesn't make the text wrap.
-      width: Math.ceil(measuredWidth - 1e-3),
+      width: roundUpToLayout(measuredWidth, this.env.pointScaleFactor, 1e-3),
       height,
       firstBaseline: first ? first.top + first.baseline : undefined,
       lastBaseline: last ? last.top + last.baseline : undefined,
