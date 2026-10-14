@@ -911,11 +911,11 @@ export default class FontLoader {
         s?: string,
         resolvedFont = typeof s === 'undefined' ? fonts[0] : resolveFont(s)
       ) => {
-        const asc = ascender(resolvedFont)
-        const desc = descender(resolvedFont)
-        const contentHeight = asc - desc
-
-        return asc + (height(resolvedFont) - contentHeight) / 2
+        // Like in Chrome, the ascent and descent are rounded to pixels, and
+        // half of the leading is floored.
+        const asc = Math.round(ascender(resolvedFont))
+        const desc = Math.round(-descender(resolvedFont))
+        return asc + Math.floor((height(resolvedFont) - asc - desc) / 2)
       },
       height: (
         s?: string,
