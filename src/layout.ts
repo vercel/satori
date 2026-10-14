@@ -46,6 +46,7 @@ import type {
   ReplacedElementHandlers,
 } from './handler/compute.js'
 import type { ParsedTransformOrigin } from './transform-origin.js'
+import { CONTAINER_PROP } from './handler/stylesheet.js'
 import type { TransformFunction } from './parser/transform.js'
 import {
   getDepth,
@@ -181,6 +182,8 @@ export interface LayoutContext {
   floats?: { found: boolean }
   /** Whether the text fills the width of a block container. */
   blockParagraph?: boolean
+  /** The nodes of query containers, by their `CONTAINER_PROP`. */
+  containers?: Map<number, LayoutNode>
 }
 
 export interface SatoriNode {
@@ -314,6 +317,10 @@ export default async function* layout(
   }
 
   const node = new LayoutNode()
+  // Container queries are evaluated with the sizes of these, see `satori()`.
+  if (typeof props?.[CONTAINER_PROP] === 'number') {
+    context.containers?.set(props[CONTAINER_PROP], node)
+  }
 
   const [computedStyle, newInheritableStyle] = await computeStyle(
     node,
@@ -733,6 +740,7 @@ export default async function* layout(
       formattingContext: childFormattingContext,
       inline: childInline,
       computeLayout: context.computeLayout,
+      containers: context.containers,
     })
     if (canLoadAdditionalAssets) {
       segmentsMissingFont.push(...(((await iter.next()).value as any) || []))
@@ -808,7 +816,11 @@ export default async function* layout(
   // Emit event for the current node. We don't pass the children prop to the
   // event handler because everything is already flattened, unless it's a text
   // node.
-  const { children: childrenNode, ...restProps } = props
+  const {
+    children: childrenNode,
+    [CONTAINER_PROP]: _container,
+    ...restProps
+  } = props
   // Inline boxes are reported like by `getBoundingClientRect()` in browsers,
   // as the union of the border boxes of their fragments on each line.
   let detected = { left, top, width, height }

@@ -25,6 +25,7 @@ interface RawRule {
   s?: RawComplex[]
   m?: string
   u?: string
+  c?: string
   l?: string[]
   b?: Item[]
 }
@@ -47,12 +48,40 @@ interface Rule {
   layer: string[]
   /** The precedence of the layer, see `rankLayers()`. */
   rank: number
+  /** The conditions of the `@container` rules it's in. */
+  containers?: ContainerCondition[]
+}
+
+/** The condition of a `@container` rule, for the container with `name`. */
+interface ContainerCondition {
+  name?: string
+  query: string
 }
 
 export interface Viewport {
   width?: number
   height?: number
 }
+
+/** The size of the content box of a query container. */
+export interface ContainerSize {
+  width: number
+  height: number
+}
+
+/**
+ * Container queries depend on the size of containers, which is known after
+ * layout. Without `sizes`, they don't match, and `queried` is set when they
+ * could, so that the tree is laid out again with the sizes of its containers.
+ */
+export interface ContainerQueries {
+  /** The sizes of containers, by their `CONTAINER_PROP`. */
+  sizes?: Map<number, ContainerSize>
+  queried?: boolean
+}
+
+/** The prop of query containers, their index in tree order. */
+export const CONTAINER_PROP = '__satoriContainer'
 
 /** An element of the tree, for matching selectors. */
 interface Node {
@@ -69,11 +98,19 @@ interface Node {
   lang?: string
   /** Whether it's in an `<svg>`. */
   svg: boolean
+  /** Set if it's a query container, see `getContainer()`. */
+  container?: Container
   /**
    * The rules that match it, and its `::before` and `::after` if it can have
    * them, see `matchRules()`.
    */
   matched?: Partial<Record<'' | 'before' | 'after', MatchedRule[]>>
+}
+
+interface Container {
+  index: number
+  type: 'inline-size' | 'size'
+  names: string[]
 }
 
 interface MatchedRule {
@@ -162,7 +199,8 @@ export async function applyStyleSheets(
   root: ReactNode,
   engine: LayoutEngine,
   viewport: Viewport,
-  validation?: Validation
+  validation?: Validation,
+  containers?: ContainerQueries
 ): Promise<ReactNode> {
   const sheets: string[] = []
   collectStyleSheets(root, sheets, viewport)
@@ -189,16 +227,25 @@ export async function applyStyleSheets(
   // Rules are matched first, so that only the declarations that apply are
   // validated.
   const nodes: Node[] = []
+  const sizes = containers?.sizes
+  let containerCount = 0
   const visit = (node: Node) => {
-    node.matched = { '': matchRules(node, rules) }
+    node.matched = { '': matchRules(node, rules, sizes) }
+    // Containers are known before their descendants are matched, and before
+    // their own pseudo-elements, which can query them.
+    if (state.containerRules && !node.svg) {
+      node.container = getContainer(node, containerCount)
+      if (node.container) containerCount++
+    }
     if (!node.svg && !NO_GENERATED_CONTENT.has(node.type)) {
-      node.matched.before = matchRules(node, rules, 'before')
-      node.matched.after = matchRules(node, rules, 'after')
+      node.matched.before = matchRules(node, rules, sizes, 'before')
+      node.matched.after = matchRules(node, rules, sizes, 'after')
     }
     nodes.push(node)
     node.children.forEach(visit)
   }
   roots.forEach(visit)
+  if (containers) containers.queried = containerCount > 0
   const invalid = validation
     ? await findInvalidDeclarations(nodes, validation)
     : new Set<Declaration>()
@@ -255,6 +302,8 @@ interface CompileState {
   viewport: Viewport
   /** Whether the declarations of `@supports` are supported. */
   supported?: Map<string, boolean>
+  /** Whether there are rules in `@container`. */
+  containerRules?: boolean
 }
 
 /**
@@ -266,7 +315,8 @@ function compileRules(
   parent: Selector[] | null,
   layer: string[],
   rules: Rule[],
-  state: CompileState
+  state: CompileState,
+  containers: ContainerCondition[] = []
 ) {
   let declarations: Declaration[] = []
   const flush = () => {
@@ -277,6 +327,7 @@ function compileRules(
         order: state.order++,
         layer,
         rank: 0,
+        containers: containers.length ? containers : undefined,
       })
     }
     declarations = []
@@ -294,16 +345,22 @@ function compileRules(
         compileSelector(selector, parent)
       )
       if (selectors.every(Boolean)) {
-        compileRules(item.b, selectors, layer, rules, state)
+        compileRules(item.b, selectors, layer, rules, state, containers)
       }
     } else if (item.m !== undefined) {
       if (matchesMedia(item.m, state.viewport)) {
-        compileRules(item.b, parent, layer, rules, state)
+        compileRules(item.b, parent, layer, rules, state, containers)
       }
     } else if (item.u !== undefined) {
       if (matchesSupports(item.u, state.supported)) {
-        compileRules(item.b, parent, layer, rules, state)
+        compileRules(item.b, parent, layer, rules, state, containers)
       }
+    } else if (item.c !== undefined) {
+      state.containerRules = true
+      compileRules(item.b, parent, layer, rules, state, [
+        ...containers,
+        parseContainerPrelude(item.c),
+      ])
     } else if (item.l) {
       if (!item.b) {
         for (const name of item.l) {
@@ -314,7 +371,7 @@ function compileRules(
       const name = item.l[0]?.split('.') ?? [`\0${state.anonymousLayers++}`]
       const nested = [...layer, ...name]
       declareLayer(nested, state)
-      compileRules(item.b, parent, nested, rules, state)
+      compileRules(item.b, parent, nested, rules, state, containers)
     }
   }
   flush()
@@ -559,6 +616,7 @@ function rebuild(
     const props: Record<string, any> = { ...child.props }
     const style = cascade(node, invalid)
     if (style) props.style = style
+    if (node.container) props[CONTAINER_PROP] = node.container.index
     let content: ReactNode[] | undefined =
       props.children === undefined
         ? undefined
@@ -655,10 +713,26 @@ interface Match {
   specificity: number
 }
 
-/** The rules that match an element, or its `pseudo` element. */
-function matchRules(node: Node, rules: Rule[], pseudo?: string) {
+/**
+ * The rules that match an element, or its `pseudo` element. The containers of
+ * its ancestors are known, and its own one for its pseudo-elements.
+ */
+function matchRules(
+  node: Node,
+  rules: Rule[],
+  sizes: Map<number, ContainerSize> | undefined,
+  pseudo?: string
+) {
   const matched: MatchedRule[] = []
   for (const rule of rules) {
+    if (
+      rule.containers &&
+      !rule.containers.every((condition) =>
+        matchesContainer(condition, pseudo ? node : node.parent, sizes)
+      )
+    ) {
+      continue
+    }
     let specificity = -1
     for (const selector of rule.selectors) {
       if (
@@ -1115,26 +1189,118 @@ export function matchesMedia(text: string, viewport: Viewport): boolean {
     const typed = /^(?:(not|only)\s+)?([a-z-]+)(?:\s+and\s+([^]*))?$/.exec(
       query
     )
+    const features: Features = (name) => mediaFeature(name, viewport)
     if (typed && !['not', 'only', 'and', 'or'].includes(typed[2])) {
       const result =
         (typed[2] === 'all' || typed[2] === 'screen') &&
         (typed[3] === undefined ||
           matchesCondition(typed[3], (inner) =>
-            matchesMediaGroup(inner, viewport)
+            matchesMediaGroup(inner, features)
           ))
       return typed[1] === 'not' ? !result : result
     }
     return matchesCondition(query, (inner) =>
-      matchesMediaGroup(inner, viewport)
+      matchesMediaGroup(inner, features)
     )
   })
 }
 
-function matchesMediaGroup(inner: string, viewport: Viewport): boolean {
+/** The values of the features of media or container queries. */
+type Features = (name: string) => string | number | undefined
+
+function matchesMediaGroup(inner: string, features: Features): boolean {
   if (inner.startsWith('(') || /^not\b/.test(inner)) {
-    return matchesCondition(inner, (g) => matchesMediaGroup(g, viewport))
+    return matchesCondition(inner, (g) => matchesMediaGroup(g, features))
   }
-  return matchesMediaFeature(inner, viewport)
+  return matchesMediaFeature(inner, features)
+}
+
+/**
+ * The name and condition of a `@container` rule. The name is optional, and so
+ * is the condition if there's a name.
+ */
+function parseContainerPrelude(prelude: string): ContainerCondition {
+  const text = prelude.trim()
+  const named = /^(-?[a-z_][\w-]*)(?![\w-(])\s*([^]*)$/i.exec(text)
+  if (named && !/^(not|and|or|none)$/i.test(named[1])) {
+    return { name: named[1], query: named[2].toLowerCase() }
+  }
+  return { query: text.toLowerCase() }
+}
+
+/**
+ * The query container of an element, if it's one: its `container-type`, and
+ * its `container-name` for named queries.
+ */
+function getContainer(node: Node, index: number): Container | undefined {
+  const style = cascade(node, new Set()) ?? {}
+  let type = ''
+  let names = ''
+  // The shorthand and longhands override each other in cascade order.
+  for (const [key, value] of Object.entries(style)) {
+    if (key === 'container') {
+      const [name, containerType = 'normal'] = String(value).split('/')
+      names = name
+      type = containerType
+    } else if (key === 'containerType') {
+      type = String(value)
+    } else if (key === 'containerName') {
+      names = String(value)
+    }
+  }
+  type = type.trim().toLowerCase()
+  if (type !== 'inline-size' && type !== 'size') return
+  return {
+    index,
+    type,
+    names: names
+      .trim()
+      .split(/\s+/)
+      .filter((name) => name && name !== 'none'),
+  }
+}
+
+/**
+ * Evaluates a container condition with the nearest container from `start`
+ * that has its name and the size it queries. Heights and ratios are only
+ * known for `size` containers.
+ */
+function matchesContainer(
+  { name, query }: ContainerCondition,
+  start: Node | null,
+  sizes: Map<number, ContainerSize> | undefined
+) {
+  const block = /\b(height|block-size|aspect-ratio|orientation)\b/.test(query)
+  for (let node = start; node; node = node.parent) {
+    const container = node.container
+    if (!container) continue
+    if (name && !container.names.includes(name)) continue
+    if (block && container.type !== 'size') continue
+    const size = sizes?.get(container.index)
+    if (!size) return false
+    if (!query) return true
+    const features: Features = (feature) => containerFeature(feature, size)
+    return matchesCondition(query, (inner) =>
+      matchesMediaGroup(inner, features)
+    )
+  }
+  return false
+}
+
+/** The value of a size feature of a container. */
+function containerFeature(name: string, { width, height }: ContainerSize) {
+  switch (name) {
+    case 'width':
+    case 'inline-size':
+      return width
+    case 'height':
+    case 'block-size':
+      return height
+    case 'aspect-ratio':
+      return height ? width / height : undefined
+    case 'orientation':
+      return height >= width ? 'portrait' : 'landscape'
+  }
 }
 
 /** The value of a media feature, for a static image. */
@@ -1185,9 +1351,9 @@ function compareMedia(
   name: string,
   operator: string,
   text: string,
-  viewport: Viewport
+  features: Features
 ) {
-  const actual = mediaFeature(name, viewport)
+  const actual = features(name)
   if (actual === undefined) return false
   if (typeof actual === 'string') return operator === '=' && actual === text
   const expected = parseMediaValue(text)
@@ -1215,19 +1381,19 @@ const FLIPPED: Record<string, string> = {
   '=': '=',
 }
 
-function matchesMediaFeature(text: string, viewport: Viewport): boolean {
+function matchesMediaFeature(text: string, features: Features): boolean {
   const range = text.split(/\s*(<=|>=|<|>|=)\s*/)
   if (range.length === 3) {
     const [left, operator, right] = range
     return /^[a-z-]+$/.test(left)
-      ? compareMedia(left, operator, right, viewport)
-      : compareMedia(right, FLIPPED[operator], left, viewport)
+      ? compareMedia(left, operator, right, features)
+      : compareMedia(right, FLIPPED[operator], left, features)
   }
   if (range.length === 5) {
     const [low, lowOperator, name, highOperator, high] = range
     return (
-      compareMedia(name, FLIPPED[lowOperator], low, viewport) &&
-      compareMedia(name, highOperator, high, viewport)
+      compareMedia(name, FLIPPED[lowOperator], low, features) &&
+      compareMedia(name, highOperator, high, features)
     )
   }
   if (range.length !== 1) return false
@@ -1235,7 +1401,7 @@ function matchesMediaFeature(text: string, viewport: Viewport): boolean {
   const colon = text.indexOf(':')
   if (colon < 0) {
     // In a boolean context, features match unless they're 0 or none.
-    const value = mediaFeature(text, viewport)
+    const value = features(text)
     return (
       value !== undefined &&
       value !== 0 &&
@@ -1250,7 +1416,7 @@ function matchesMediaFeature(text: string, viewport: Viewport): boolean {
     prefix ? name.slice(4) : name,
     prefix === 'min' ? '>=' : prefix === 'max' ? '<=' : '=',
     value,
-    viewport
+    features
   )
 }
 

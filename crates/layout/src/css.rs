@@ -7,6 +7,8 @@
 //!   `[name,value,important]` and nested rules, in order.
 //! - `{"m":query,"b":items}`: `@media`, with the text of the query.
 //! - `{"u":condition,"b":items}`: `@supports`, with the text of the condition.
+//! - `{"c":prelude,"b":items}`: `@container`, with the text of its name and
+//!   condition.
 //! - `{"l":names,"b":items}`: a `@layer` block, with no name if anonymous.
 //! - `{"l":names}`: a `@layer` statement.
 //!
@@ -57,6 +59,7 @@ enum AtRulePrelude {
     Media(String),
     Supports(String),
     Layer(Vec<String>),
+    Container(String),
 }
 
 impl Rules {
@@ -85,6 +88,7 @@ impl<'i> AtRuleParser<'i> for Rules {
         match name.as_str() {
             "media" => Ok(AtRulePrelude::Media(rest(input))),
             "supports" => Ok(AtRulePrelude::Supports(rest(input))),
+            "container" => Ok(AtRulePrelude::Container(rest(input))),
             "layer" => {
                 if input.is_exhausted() {
                     return Ok(AtRulePrelude::Layer(Vec::new()));
@@ -121,6 +125,9 @@ impl<'i> AtRuleParser<'i> for Rules {
             AtRulePrelude::Media(query) => format!("{{\"m\":{},\"b\":{}}}", json(&query), body),
             AtRulePrelude::Supports(condition) => {
                 format!("{{\"u\":{},\"b\":{}}}", json(&condition), body)
+            }
+            AtRulePrelude::Container(prelude) => {
+                format!("{{\"c\":{},\"b\":{}}}", json(&prelude), body)
             }
             AtRulePrelude::Layer(names) if names.len() <= 1 => {
                 format!("{{\"l\":{},\"b\":{}}}", strings(&names), body)

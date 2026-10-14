@@ -313,6 +313,111 @@ describe('stylesheets', () => {
     )
   })
 
+  it('should apply container queries', async () => {
+    const box = { width: 20, height: 10, background: 'gray' }
+    const inline = {
+      boxSizing: 'border-box',
+      width: 160,
+      padding: '0 20px',
+    } as const
+    await expectSame(
+      `.inline {
+        container-type: inline-size;
+        box-sizing: border-box;
+        width: 160px;
+        padding: 0 20px;
+      }
+      .named { container: card / inline-size; width: 180px }
+      .size { container: box / size; width: 100px; height: 40px }
+      .item { width: 20px; height: 10px; background: gray }
+      /* The content box is 120px wide. */
+      @container (min-width: 120px) { .a { background: red } }
+      @container (width > 120px) { .b { background: red } }
+      @container (width >= 12.5rem) { .c { background: red } }
+      /* The nearest container with the name, which can be queried. */
+      @container card (width > 170px) { .d { background: red } }
+      @container (height > 30px) { .e { background: red } }
+      @container (orientation: landscape) and (height < 50px) {
+        .e::before {
+          content: "";
+          display: block;
+          width: 4px;
+          height: 4px;
+          background: blue;
+        }
+      }
+      @container box (width > 50px) {
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr) }
+      }`,
+      <>
+        <div className='inline'>
+          <div className='item a' />
+          <div className='item b' />
+          <div className='item c' />
+        </div>
+        <div className='named'>
+          <div className='inline'>
+            <div className='item d' />
+            <div className='item e' />
+          </div>
+        </div>
+        <div className='size'>
+          <div className='item e' />
+          <div className='grid'>
+            <div className='item' />
+            <div className='item' />
+          </div>
+        </div>
+      </>,
+      <>
+        <div style={inline}>
+          <div style={{ ...box, background: 'red' }} />
+          <div style={box} />
+          <div style={box} />
+        </div>
+        <div style={{ width: 180 }}>
+          <div style={inline}>
+            <div style={{ ...box, background: 'red' }} />
+            <div style={box} />
+          </div>
+        </div>
+        <div style={{ width: 100, height: 40 }}>
+          <div style={{ ...box, background: 'red' }}>
+            <div style={{ width: 4, height: 4, background: 'blue' }} />
+          </div>
+          <div
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}
+          >
+            <div style={box} />
+            <div style={box} />
+          </div>
+        </div>
+      </>
+    )
+  })
+
+  it('should report style errors once with container queries', async () => {
+    // The tree is laid out twice, to know the sizes of containers.
+    const errors: string[] = []
+    await satori(
+      page(
+        <div className='c' style={{ display: 'table' as any }}>
+          <div className='a'>A</div>
+        </div>,
+        `.c { container-type: inline-size; width: 100px }
+        .a { display: table }
+        @container (width > 50px) { .a { color: red } }`
+      ),
+      {
+        width: 200,
+        height: 160,
+        fonts,
+        onStyleError: (error) => errors.push(error.message),
+      }
+    )
+    expect(errors).toHaveLength(2)
+  })
+
   it('should order cascade layers', async () => {
     await expectSame(
       `@layer base, theme;
