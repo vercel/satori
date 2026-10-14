@@ -120,14 +120,47 @@ export function lengthToNumber(
     case 'ex':
     case 'ch':
       return value * baseFontSize * 0.5
+    // The small, large and dynamic viewports of an image are the same.
     case 'vw':
+    case 'svw':
+    case 'lvw':
+    case 'dvw':
+    case 'vi':
+    case 'svi':
+    case 'lvi':
+    case 'dvi':
       return ~~((value * viewportWidth) / 100)
     case 'vh':
+    case 'svh':
+    case 'lvh':
+    case 'dvh':
+    case 'vb':
+    case 'svb':
+    case 'lvb':
+    case 'dvb':
       return ~~((value * viewportHeight) / 100)
     case 'vmin':
+    case 'svmin':
+    case 'lvmin':
+    case 'dvmin':
       return ~~((value * Math.min(viewportWidth, viewportHeight)) / 100)
     case 'vmax':
+    case 'svmax':
+    case 'lvmax':
+    case 'dvmax':
       return ~~((value * Math.max(viewportWidth, viewportHeight)) / 100)
+    // The line height of the element, as it's inherited, and of the root.
+    // `normal` is about 1.2 times the font size.
+    case 'lh': {
+      const lineHeight = inheritedStyle.lineHeight
+      return (
+        value *
+        (typeof lineHeight === 'number' ? lineHeight : 1.2) *
+        baseFontSize
+      )
+    }
+    case 'rlh':
+      return value * 1.2 * 16
     case '%':
       return percentage ? (value / 100) * baseLength : undefined
   }
@@ -438,6 +471,8 @@ export function asSize(
       const limit = parseFloat(fitContent[1])
       return { fitContent: fitContent[2] === '%' ? `${limit}%` : limit }
     }
+    // Maximums without a limit.
+    if (value === 'none' && /^max/.test(propertyName)) return undefined
   }
   return /^(min|max)/.test(propertyName)
     ? asPointPercentageLength(x, propertyName)
