@@ -141,6 +141,30 @@ describe('display', () => {
     )
   })
 
+  it('should not lay out the content of elements that are hidden', async () => {
+    const requested: string[] = []
+    await satori(
+      <div style={{ display: 'flex' }}>
+        <style>{'.a { color: red } /* 你好 🎉 */'}</style>
+        <div style={{ display: 'none' }}>
+          你好 <span>🎉</span>
+        </div>
+        <div>👋</div>
+      </div>,
+      {
+        width: 100,
+        height: 40,
+        fonts,
+        loadAdditionalAsset: async (languageCode, segment) => {
+          requested.push(`${languageCode} ${segment}`)
+          return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg=='
+        },
+      }
+    )
+    // Only the displayed text needs assets.
+    expect(requested).toEqual(['emoji 👋'])
+  })
+
   it('should not render elements that are hidden by default', async () => {
     const options = { width: 200, height: 60, fonts }
     const page = (hidden: any) => (
