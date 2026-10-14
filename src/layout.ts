@@ -218,6 +218,38 @@ function fragmentRect(
   }
 }
 
+/**
+ * Reports the descendants of an element that isn't displayed, which aren't
+ * laid out, with empty boxes like in browsers. Like in `layout()`, fragments
+ * are `display: contents` elements.
+ */
+function reportHiddenDescendants(children: ReactNode, context: LayoutContext) {
+  const { onNodeDetected, replacedElements } = context
+  for (const child of normalizeChildren(children)) {
+    if (!isReactElement(child)) continue
+    const element = child as ReactElement
+    const isFragment =
+      (element.type as unknown) === Symbol.for('react.fragment')
+    const { children: descendants, ...props } = element.props || {}
+    const type = isFragment ? 'div' : (element.type as string)
+    onNodeDetected?.({
+      left: 0,
+      top: 0,
+      width: 0,
+      height: 0,
+      type,
+      props: isFragment ? { style: { display: 'contents' } } : props,
+      key: element.key ?? undefined,
+      textContent: isReactElement(descendants) ? undefined : descendants,
+    })
+    // Like when they're displayed, the content of SVG and replaced elements
+    // isn't reported.
+    if (type !== 'svg' && !replacedElements?.[type]) {
+      reportHiddenDescendants(descendants, context)
+    }
+  }
+}
+
 export default async function* layout(
   element: ReactNode,
   context: LayoutContext
@@ -623,11 +655,14 @@ export default async function* layout(
 
   // 2. Do layout recursively for its children.
   // Children of replaced elements, e.g. the fallback content of a <canvas>,
-  // are never rendered.
+  // are never rendered, and neither are the ones of elements that aren't
+  // displayed, e.g. the text of <style>, which would be laid out for nothing.
   // The content of SVG elements is drawn as an image.
   const isReplaced = !!context.replacedElements?.[type]
   const normalizedChildren =
-    isReplaced || type === 'svg' ? [] : normalizeChildren(children)
+    isReplaced || type === 'svg' || node.style.display === 'none'
+      ? []
+      : normalizeChildren(children)
   const iterators: ReturnType<typeof layout>[] = []
 
   // The markers of list items are placed at the start of the first line of
@@ -858,6 +893,9 @@ export default async function* layout(
     key: element.key,
     textContent: isReactElement(childrenNode) ? undefined : childrenNode,
   })
+  if (node.style.display === 'none' && context.onNodeDetected) {
+    reportHiddenDescendants(childrenNode, context)
+  }
 
   // Resolve transforms now that the layout is known. Children read the state
   // from their parent's transform list.
