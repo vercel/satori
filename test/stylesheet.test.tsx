@@ -418,6 +418,41 @@ describe('stylesheets', () => {
     expect(errors).toHaveLength(2)
   })
 
+  it('should resolve container units', async () => {
+    await expectSame(
+      `.i { container-type: inline-size; width: 100px }
+      .s { container-type: size; width: 80px; height: 40px }
+      .bar { height: 4px; background: red }
+      .i > .w { width: 50cqw }
+      .i > .h { width: 10cqh }
+      .s > .h { width: 10cqh }
+      .s > .min { width: 10cqmin }
+      .i::before { content: ""; display: block; width: 25cqi; height: 4px; background: blue }`,
+      <>
+        <div className='i'>
+          <div className='bar w' />
+          <div className='bar h' />
+        </div>
+        <div className='s'>
+          <div className='bar h' />
+          <div className='bar min' />
+        </div>
+      </>,
+      <>
+        <div style={{ width: 100 }}>
+          <div style={{ width: 25, height: 4, background: 'blue' }} />
+          <div style={{ width: 50, height: 4, background: 'red' }} />
+          {/* Without a size container, of the viewport. */}
+          <div style={{ width: 16, height: 4, background: 'red' }} />
+        </div>
+        <div style={{ width: 80, height: 40 }}>
+          <div style={{ width: 4, height: 4, background: 'red' }} />
+          <div style={{ width: 4, height: 4, background: 'red' }} />
+        </div>
+      </>
+    )
+  })
+
   it('should use the initial values of registered custom properties', async () => {
     await expectSame(
       `@property --a { syntax: "*"; inherits: false; initial-value: red }
