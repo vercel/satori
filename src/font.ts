@@ -574,11 +574,40 @@ export default class FontLoader {
     return matchedFont[0]
   }
 
+  private chRatios = new Map<string, number>()
+
+  /**
+   * The width of `0` relative to the font size, for the `ch` unit, or
+   * `undefined` without fonts.
+   */
+  public getChRatio(style: {
+    fontFamily?: string | string[]
+    fontWeight?: FontWeight
+    fontStyle?: FontStyle
+  }) {
+    if (!this.fonts.size) return
+    const key = [
+      [style.fontFamily].flat().join(','),
+      style.fontWeight,
+      style.fontStyle,
+    ].join('|')
+    let ratio = this.chRatios.get(key)
+    if (ratio === undefined) {
+      ratio = this.getEngine(1, 'normal', style, undefined).measure('0', {
+        fontSize: 1,
+        letterSpacing: 0,
+      })
+      this.chRatios.set(key, ratio)
+    }
+    return ratio
+  }
+
   public addFonts(fontOptions: FontOptions[]) {
     // Adding fonts can change how text resolves across the font list, so
     // previously shaped runs may no longer be correct.
     if (fontOptions.length && this.fonts.size) {
       this.shapedRunCache.clear()
+      this.chRatios.clear()
     }
     for (const fontOption of fontOptions) {
       const { name, data, lang } = fontOption

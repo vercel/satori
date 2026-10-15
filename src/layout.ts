@@ -370,6 +370,12 @@ export default async function* layout(
     context.pointScaleFactor,
     context.listDepth
   )
+  // For the `ch` unit of descendants and of later properties, in the font of
+  // the element.
+  const chRatio = font.getChRatio(computedStyle as any)
+  if (chRatio !== undefined) {
+    computedStyle._chRatio = newInheritableStyle._chRatio = chRatio
+  }
 
   // Counters are changed in tree order, by elements that are displayed.
   const countersHidden =

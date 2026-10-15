@@ -53,6 +53,7 @@ const list = new Set([
   // Special properties of Satori:
   '_viewportWidth',
   '_viewportHeight',
+  '_chRatio',
   '_inheritedClipPathId',
   '_inheritedMaskId',
   '_inheritedBackgroundClipTextPath',
