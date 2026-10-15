@@ -18,6 +18,9 @@ playground/.webgl-libs
 # Vendor files
 # yoga.wasm
 
+# Copied from harfbuzzjs by `pnpm build:harfbuzz-wasm`
+/harfbuzz.wasm
+
 # Rust build output
 crates/layout/target
 

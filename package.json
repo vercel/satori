@@ -16,7 +16,8 @@
   "license": "MPL-2.0",
   "files": [
     "dist/**",
-    "layout.wasm"
+    "layout.wasm",
+    "harfbuzz.wasm"
   ],
   "imports": {
     "#satori/jsx/jsx-runtime": "./src/jsx/jsx-runtime.ts",
@@ -25,6 +26,7 @@
   "exports": {
     "./package.json": "./package.json",
     "./layout.wasm": "./layout.wasm",
+    "./harfbuzz.wasm": "./harfbuzz.wasm",
     ".": {
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
@@ -71,11 +73,13 @@
     "dev:default": "NODE_ENV=development tsup src/index.ts --watch --ignore-watch playground",
     "dev:playground": "turbo dev --filter=satori-playground...",
     "build:wasm": "node scripts/build-layout-wasm.mjs",
-    "build": "pnpm run build:default && pnpm run build:standalone && pnpm run test:browser-build",
+    "build": "pnpm run build:default && pnpm run build:standalone && pnpm run build:harfbuzz-wasm && pnpm run test:browser-build && pnpm run test:workers-build",
     "build:default": "NODE_ENV=production tsup",
     "build:standalone": "NODE_ENV=production SATORI_STANDALONE=1 tsup",
+    "build:harfbuzz-wasm": "node scripts/copy-harfbuzz-wasm.mjs",
     "test": "NODE_ENV=test vitest run",
     "test:browser-build": "node test/browser-build.mjs",
+    "test:workers-build": "node test/workers-build.mjs",
     "test:ui": "NODE_ENV=test vitest --ui --coverage.enabled",
     "test-type": "tsc -p tsconfig.json --noEmit && tsc -p playground/tsconfig.json --noEmit",
     "dev:test": "NODE_ENV=test vitest --update",
