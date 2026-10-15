@@ -47,6 +47,7 @@ import type {
 } from './handler/compute.js'
 import type { ParsedTransformOrigin } from './transform-origin.js'
 import { CONTAINER_PROP } from './handler/stylesheet.js'
+import { getInputContent, PLACEHOLDER_PROP } from './form-control.js'
 import type { TransformFunction } from './parser/transform.js'
 import {
   getDepth,
@@ -233,6 +234,7 @@ function reportHiddenDescendants(children: ReactNode, context: LayoutContext) {
     const {
       children: descendants,
       [CONTAINER_PROP]: _container,
+      [PLACEHOLDER_PROP]: _placeholder,
       ...props
     } = element.props || {}
     const type = isFragment ? 'div' : (element.type as string)
@@ -376,6 +378,8 @@ export default async function* layout(
   if (chRatio !== undefined) {
     computedStyle._chRatio = newInheritableStyle._chRatio = chRatio
   }
+  // Inputs show their value or placeholder instead of children.
+  if (type === 'input') children = getInputContent(props, computedStyle, font)
 
   // Counters are changed in tree order, by elements that are displayed.
   const countersHidden =
@@ -875,6 +879,7 @@ export default async function* layout(
   const {
     children: childrenNode,
     [CONTAINER_PROP]: _container,
+    [PLACEHOLDER_PROP]: _placeholder,
     ...restProps
   } = props
   // Inline boxes are reported like by `getBoundingClientRect()` in browsers,
