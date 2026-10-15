@@ -123,7 +123,11 @@ export function lengthToNumber(
     case 'ex':
       return value * baseFontSize * 0.5
     // The small, large and dynamic viewports of an image are the same.
+    // Container units are of the viewport without a query container, see
+    // `resolveContainerUnits()` for stylesheets.
     case 'vw':
+    case 'cqw':
+    case 'cqi':
     case 'svw':
     case 'lvw':
     case 'dvw':
@@ -133,6 +137,8 @@ export function lengthToNumber(
     case 'dvi':
       return ~~((value * viewportWidth) / 100)
     case 'vh':
+    case 'cqh':
+    case 'cqb':
     case 'svh':
     case 'lvh':
     case 'dvh':
@@ -142,11 +148,13 @@ export function lengthToNumber(
     case 'dvb':
       return ~~((value * viewportHeight) / 100)
     case 'vmin':
+    case 'cqmin':
     case 'svmin':
     case 'lvmin':
     case 'dvmin':
       return ~~((value * Math.min(viewportWidth, viewportHeight)) / 100)
     case 'vmax':
+    case 'cqmax':
     case 'svmax':
     case 'lvmax':
     case 'dvmax':

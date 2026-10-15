@@ -66,6 +66,14 @@ interface InitialValues {
   notInherited: [name: string, value: string][]
 }
 
+/** What the styles of the rebuilt tree depend on, see `rebuild()`. */
+interface RebuildContext {
+  invalid: Set<Declaration>
+  initial?: InitialValues
+  /** For container units, see `resolveContainerUnits()`. */
+  units?: { sizes?: Map<number, ContainerSize>; viewport: Viewport }
+}
+
 /** The condition of a `@container` rule, for the container with `name`. */
 interface ContainerCondition {
   name?: string
@@ -253,7 +261,7 @@ export async function applyStyleSheets(
     node.matched = { '': matchRules(node, rules, sizes) }
     // Containers are known before their descendants are matched, and before
     // their own pseudo-elements, which can query them.
-    if (state.containerRules && !node.svg) {
+    if ((state.containerRules || state.containerUnits) && !node.svg) {
       node.container = getContainer(node, containerCount)
       if (node.container) containerCount++
     }
@@ -273,7 +281,11 @@ export async function applyStyleSheets(
     ? await findInvalidDeclarations(nodes, validation)
     : new Set<Declaration>()
 
-  const children = rebuild(root, roots, invalid, initial)
+  const children = rebuild(root, roots, {
+    invalid,
+    initial,
+    units: state.containerUnits ? { sizes, viewport } : undefined,
+  })
   return isFragment(root)
     ? {
         ...(root as ReactElement),
@@ -327,6 +339,8 @@ interface CompileState {
   supported?: Map<string, boolean>
   /** Whether there are rules in `@container`. */
   containerRules?: boolean
+  /** Whether declarations have container units, e.g. `cqw`. */
+  containerUnits?: boolean
   /** The custom properties registered with `@property`, by name. */
   properties: Map<string, RegisteredProperty>
 }
@@ -361,6 +375,9 @@ function compileRules(
   for (const item of items) {
     if (Array.isArray(item)) {
       declarations.push(item)
+      if (typeof item[1] === 'string' && CONTAINER_UNIT.test(item[1])) {
+        state.containerUnits = true
+      }
       continue
     }
     flush()
@@ -671,30 +688,25 @@ function buildNodes(
  * Rebuilds the children with the styles of the stylesheets, and the
  * `::before` and `::after` pseudo-elements.
  */
-function rebuild(
-  children: ReactNode,
-  nodes: Node[],
-  invalid: Set<Declaration>,
-  initial: InitialValues | undefined
-) {
+function rebuild(children: ReactNode, nodes: Node[], context: RebuildContext) {
   let index = 0
   return normalizeChildren(children).map((child) => {
     if (!isReactElement(child) || typeof child.type !== 'string') return child
     const node = nodes[index++]
     const props: Record<string, any> = { ...child.props }
-    const style = cascade(node, invalid, undefined, initial)
+    const style = cascade(node, context)
     if (style) props.style = style
     if (node.matched.placeholder?.length) {
-      props[PLACEHOLDER_PROP] = cascade(node, invalid, 'placeholder', initial)
+      props[PLACEHOLDER_PROP] = cascade(node, context, 'placeholder')
     }
     if (node.container) props[CONTAINER_PROP] = node.container.index
     let content: ReactNode[] | undefined =
       props.children === undefined
         ? undefined
-        : rebuild(props.children, node.children, invalid, initial)
+        : rebuild(props.children, node.children, context)
     if (node.matched.before) {
-      const before = generateContent(node, invalid, 'before', initial)
-      const after = generateContent(node, invalid, 'after', initial)
+      const before = generateContent(node, context, 'before')
+      const after = generateContent(node, context, 'after')
       if (before || after) {
         content = [before, ...(content ?? []), after].filter(Boolean)
       }
@@ -739,11 +751,10 @@ const element = (type: string, props: Record<string, unknown>) =>
  */
 function generateContent(
   node: Node,
-  invalid: Set<Declaration>,
-  pseudo: 'before' | 'after',
-  initial: InitialValues | undefined
+  context: RebuildContext,
+  pseudo: 'before' | 'after'
 ) {
-  const style = cascade(node, invalid, pseudo, initial)
+  const style = cascade(node, context, pseudo)
   const content = style?.content
   if (!Array.isArray(content)) return
   delete style.content
@@ -856,9 +867,18 @@ async function findInvalidDeclarations(
   }
   const groups = [...byKey.values()]
   const errors = await Promise.all(
-    groups.map(([[name, value]]) =>
-      getError(toPropertyName(name), value as string)
-    )
+    groups.map(async ([[name, value]]) => {
+      // Container units are resolved in the cascade, so they're checked as
+      // lengths.
+      const original = value as string
+      const checked = CONTAINER_UNIT.test(original)
+        ? replaceContainerUnits(original, () => '0px')
+        : original
+      const error = await getError(toPropertyName(name), checked)
+      return error && checked !== original
+        ? new Error(error.message.split(checked).join(original))
+        : error
+    })
   )
   const invalid = new Set<Declaration>()
   groups.forEach((declarations, index) => {
@@ -879,9 +899,8 @@ async function findInvalidDeclarations(
  */
 function cascade(
   node: Node,
-  invalid: Set<Declaration>,
-  pseudo?: 'before' | 'after' | 'placeholder',
-  initial?: InitialValues
+  { invalid, initial, units }: RebuildContext,
+  pseudo?: 'before' | 'after' | 'placeholder'
 ) {
   const normal: Match[] = []
   const important: Match[] = []
@@ -941,7 +960,127 @@ function cascade(
   for (const [name, value] of values) {
     if (!(name in style)) style[name] = value
   }
+  if (units) resolveContainerUnits(style, pseudo ? node : node.parent, units)
   return style
+}
+
+/** A quick check for container units, see `replaceContainerUnits()`. */
+const CONTAINER_UNIT = /\d(cqw|cqh|cqi|cqb|cqmin|cqmax)\b/i
+const CONTAINER_UNITS = new Set(['cqw', 'cqh', 'cqi', 'cqb', 'cqmin', 'cqmax'])
+
+const isDigit = (char: string | undefined) =>
+  char !== undefined && char >= '0' && char <= '9'
+const isNameStart = (char: string | undefined) =>
+  char !== undefined &&
+  ((char >= 'a' && char <= 'z') ||
+    (char >= 'A' && char <= 'Z') ||
+    char === '_' ||
+    char >= '\u0080')
+const isName = (char: string | undefined) =>
+  isNameStart(char) || isDigit(char) || char === '-'
+
+/**
+ * Replaces the container units in a value, e.g. `1.5cqw`, with the result of
+ * `replace`. Like a CSS tokenizer, it skips strings and identifiers, and it
+ * reads each character once, as values come from stylesheets: a regular
+ * expression could backtrack for a long time on long numbers.
+ */
+function replaceContainerUnits(
+  value: string,
+  replace: (amount: number, unit: string) => string
+) {
+  let result = ''
+  let i = 0
+  while (i < value.length) {
+    const char = value[i]
+    let end = i + 1
+    if (char === '"' || char === "'") {
+      while (end < value.length && value[end] !== char) {
+        end += value[end] === '\\' ? 2 : 1
+      }
+      end = Math.min(end + 1, value.length)
+    } else if (
+      isNameStart(char) ||
+      (char === '-' && (isNameStart(value[i + 1]) || value[i + 1] === '-'))
+    ) {
+      while (isName(value[end])) end++
+    } else {
+      // A number, with a sign, a fraction and an exponent, then its unit.
+      let j = char === '+' || char === '-' ? i + 1 : i
+      if (isDigit(value[j]) || (value[j] === '.' && isDigit(value[j + 1]))) {
+        while (isDigit(value[j])) j++
+        if (value[j] === '.' && isDigit(value[j + 1])) {
+          j++
+          while (isDigit(value[j])) j++
+        }
+        const sign = value[j + 1] === '+' || value[j + 1] === '-' ? 1 : 0
+        if (
+          (value[j] === 'e' || value[j] === 'E') &&
+          isDigit(value[j + 1 + sign])
+        ) {
+          j += 1 + sign
+          while (isDigit(value[j])) j++
+        }
+        end = j
+        while (isName(value[end])) end++
+        const unit = value.slice(j, end).toLowerCase()
+        if (CONTAINER_UNITS.has(unit)) {
+          result += replace(parseFloat(value.slice(i, j)), unit)
+          i = end
+          continue
+        }
+      }
+    }
+    result += value.slice(i, end)
+    i = end
+  }
+  return result
+}
+
+/**
+ * Resolves container units to px, with the size of the nearest query
+ * container that `start` is in or is, whose type allows the axis. Without
+ * one, or before the layout, they're of the viewport, like in browsers.
+ * Custom properties are resolved where they're used, so they're kept.
+ */
+function resolveContainerUnits(
+  style: Record<string, unknown>,
+  start: Node | null,
+  { sizes, viewport }: NonNullable<RebuildContext['units']>
+) {
+  const size = (block: boolean) => {
+    for (let node = start; node; node = node.parent) {
+      const container = node.container
+      if (!container || (block && container.type !== 'size')) continue
+      const containerSize = sizes?.get(container.index)
+      if (containerSize)
+        return block ? containerSize.height : containerSize.width
+      break
+    }
+    return (block ? viewport.height : viewport.width) ?? 0
+  }
+  for (const [name, value] of Object.entries(style)) {
+    if (
+      name.startsWith('--') ||
+      typeof value !== 'string' ||
+      !CONTAINER_UNIT.test(value)
+    ) {
+      continue
+    }
+    style[name] = replaceContainerUnits(value, (amount, unit) => {
+      const inline = size(false)
+      const block = size(true)
+      const base = {
+        cqw: inline,
+        cqi: inline,
+        cqh: block,
+        cqb: block,
+        cqmin: Math.min(inline, block),
+        cqmax: Math.max(inline, block),
+      }[unit]
+      return `${(amount * base) / 100}px`
+    })
+  }
 }
 
 function getCustomProperties(style: Record<string, unknown> | undefined) {
@@ -1336,7 +1475,7 @@ function parseContainerPrelude(prelude: string): ContainerCondition {
  * its `container-name` for named queries.
  */
 function getContainer(node: Node, index: number): Container | undefined {
-  const style = cascade(node, new Set()) ?? {}
+  const style = cascade(node, { invalid: new Set() }) ?? {}
   let type = ''
   let names = ''
   // The shorthand and longhands override each other in cascade order.

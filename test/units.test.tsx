@@ -279,6 +279,20 @@ describe('Units', () => {
     // Relative to the font size of the element.
     expect(widths.nested).toBeCloseTo(widths.ch / 2, 1)
   })
+  it('should resolve container units of the viewport without containers', async () => {
+    const render = (width: string, height: string) =>
+      satori(<div style={{ width, height, background: 'red' }} />, {
+        width: 200,
+        height: 100,
+        fonts,
+      })
+    expect(await render('10cqw', '10cqh')).toBe(await render('10vw', '10vh'))
+    expect(await render('10cqi', '10cqb')).toBe(await render('20px', '10px'))
+    expect(await render('10cqmax', '10cqmin')).toBe(
+      await render('20px', '10px')
+    )
+  })
+
   it('should parse long invalid lengths in linear time', async () => {
     // Regular expressions with `\d+\.?\d*` backtracked for seconds on long
     // numbers that aren't lengths.
