@@ -23,6 +23,7 @@
     "gl": "github:encharm/headless-gl#8c5723171c7081fffb3ef4cea3b05f9220d55ed0",
     "js-base64": "^3.9.3",
     "next": "^16.3.1",
+    "parse5": "^8.0.1",
     "pdfkit": "^0.13.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
