@@ -246,4 +246,37 @@ describe('Units', () => {
     )
     expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
+  it('should use the width of 0 in the font for ch', async () => {
+    const widths: Record<string, number> = {}
+    await satori(
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          fontSize: 20,
+        }}
+      >
+        <div id='zeros'>0000000000</div>
+        <div id='ch' style={{ width: '10ch', height: 10 }} />
+        <div style={{ display: 'flex', fontSize: 10 }}>
+          <div id='nested' style={{ width: '10ch', height: 10 }} />
+        </div>
+      </div>,
+      {
+        width: 300,
+        height: 100,
+        fonts,
+        pointScaleFactor: 0,
+        onNodeDetected: (node) => {
+          if (node.props.id) widths[node.props.id] = node.width
+        },
+      }
+    )
+    // The font's `0` is wider than half of the font size.
+    expect(widths.ch).toBeGreaterThan(100)
+    expect(widths.ch).toBeCloseTo(widths.zeros, 1)
+    // Relative to the font size of the element.
+    expect(widths.nested).toBeCloseTo(widths.ch / 2, 1)
+  })
 })

@@ -116,9 +116,11 @@ export function lengthToNumber(
       return value * baseFontSize
     case 'rem':
       return value * 16
-    // The x-height and the width of `0` are about half the font size.
-    case 'ex':
+    // The width of `0` in the font, see `FontLoader.getChRatio()`. The x-height
+    // is about half the font size.
     case 'ch':
+      return value * baseFontSize * ((inheritedStyle._chRatio as number) || 0.5)
+    case 'ex':
       return value * baseFontSize * 0.5
     // The small, large and dynamic viewports of an image are the same.
     case 'vw':
