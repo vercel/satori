@@ -499,8 +499,10 @@ export default async function* buildTextNodes(
           r = m
         }
       }
+      // The lines are balanced, but like in browsers, the size of the text
+      // doesn't change.
       flow(r)
-      const _width = roundUpToLayout(r, pointScaleFactor)
+      const _width = roundUpToLayout(width, pointScaleFactor)
       measuredTextSize = { width: _width, height }
       return { width: _width, height }
     }
