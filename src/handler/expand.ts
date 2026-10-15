@@ -300,6 +300,31 @@ function parseIndividualTransform(
   return parseTransform(`rotate3d(${axis.join(', ')}, ${angle})`)
 }
 
+/**
+ * A line height as a multiple of the font size. Lengths and percentages are
+ * of the font size, also in math functions, where unitless values are
+ * multiples, e.g. Tailwind's `calc(1.25 / .875)`.
+ */
+function resolveLineHeight(
+  value: string,
+  fontSize: number,
+  inheritedStyle: Record<string, string | number>
+) {
+  const math = MATH_FUNCTION.test(value)
+    ? parseMath(value, (length) =>
+        lengthToNumber(length, fontSize, 0, inheritedStyle)
+      )
+    : undefined
+  if (math) {
+    return math.type === 'number'
+      ? math.evaluate(0)
+      : math.evaluate(fontSize) / fontSize
+  }
+  return (
+    lengthToNumber(value, fontSize, fontSize, inheritedStyle, true) / fontSize
+  )
+}
+
 function splitValues(value: string) {
   const values: string[] = []
   let depth = 0
@@ -1292,14 +1317,11 @@ export default function expand(
     // Line height needs to be relative.
     if (prop === 'lineHeight') {
       if (typeof value === 'string' && value !== 'normal') {
-        value = serializedStyle[prop] =
-          lengthToNumber(
-            value,
-            baseFontSize,
-            baseFontSize,
-            inheritedStyle,
-            true
-          ) / baseFontSize
+        value = serializedStyle[prop] = resolveLineHeight(
+          value,
+          baseFontSize,
+          inheritedStyle
+        )
       }
     } else {
       // Math functions are resolved, except for percentages of lengths that
