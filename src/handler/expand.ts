@@ -101,7 +101,7 @@ function isTextDecorationLength(value: string) {
   return (
     value === 'auto' ||
     value === 'from-font' ||
-    /^[+-]?(\d+\.?\d*|\.\d+)(px|em|rem|vw|vh|%)?$/.test(value)
+    /^[+-]?(\d+(?:\.\d*)?|\.\d+)(px|em|rem|vw|vh|%)?$/.test(value)
   )
 }
 
@@ -111,8 +111,10 @@ const LINE_WIDTH_KEYWORDS = { thin: '1px', medium: '3px', thick: '5px' }
 function parseLineWidth(value: string) {
   const normalized = value.toLowerCase()
   if (normalized in LINE_WIDTH_KEYWORDS) return LINE_WIDTH_KEYWORDS[normalized]
-  if (/^\+?(\d+\.?\d*|\.\d+)$/.test(normalized)) return normalized + 'px'
-  if (/^\+?(\d+\.?\d*|\.\d+)(px|em|rem|vw|vh|vmin|vmax)$/.test(normalized)) {
+  if (/^\+?(\d+(?:\.\d*)?|\.\d+)$/.test(normalized)) return normalized + 'px'
+  if (
+    /^\+?(\d+(?:\.\d*)?|\.\d+)(px|em|rem|vw|vh|vmin|vmax)$/.test(normalized)
+  ) {
     return normalized
   }
 }
@@ -260,7 +262,7 @@ function parseListStyle(value: string) {
   }
 }
 
-const ANGLE = /^[+-]?(\d+\.?\d*|\.\d+)(deg|rad|grad|turn)$|^0$/i
+const ANGLE = /^[+-]?(\d+(?:\.\d*)?|\.\d+)(deg|rad|grad|turn)$|^0$/i
 
 /**
  * Parses `translate`, `rotate` and `scale` into transform functions.
@@ -378,7 +380,7 @@ function splitAlignmentValues(value: string) {
 }
 
 const RATIO =
-  /^(\d*\.?\d+(?:e[+-]?\d+)?)(?:\s*\/\s*(\d*\.?\d+(?:e[+-]?\d+)?))?$/
+  /^((?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?)(?:\s*\/\s*((?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?))?$/
 
 /**
  * Parses `aspect-ratio`: `auto`, a ratio, or both. A ratio with a zero is

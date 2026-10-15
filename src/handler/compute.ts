@@ -79,7 +79,7 @@ export function setReplacedElementSize(
 
   // Attributes are lengths in px.
   const toLength = (value: number | string | undefined) =>
-    typeof value === 'string' && /^\d*\.?\d+$/.test(value.trim())
+    typeof value === 'string' && /^(?:\d+(?:\.\d+)?|\.\d+)$/.test(value.trim())
       ? Number(value)
       : value
   // Like in browsers, styles override the attributes, also with `auto`, which

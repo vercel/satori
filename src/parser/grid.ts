@@ -83,7 +83,7 @@ function splitArguments(args: string) {
   return result
 }
 
-const NUMBER = String.raw`\+?(?:\d+\.?\d*|\.\d+)`
+const NUMBER = String.raw`\+?(?:\d+(?:\.\d*)?|\.\d+)`
 
 function parseBreadth(
   value: string,
