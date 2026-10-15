@@ -15,7 +15,7 @@ import type { ColorStop } from 'css-gradient-parser'
 import valueParser from 'postcss-value-parser'
 
 const POSITION =
-  /^[+-]?(\d+\.?\d*|\.\d+)(px|em|rem|vw|vh|%|deg|turn|rad|grad)?$/i
+  /^[+-]?(\d+(?:\.\d*)?|\.\d+)(px|em|rem|vw|vh|%|deg|turn|rad|grad)?$/i
 
 /**
  * Expands color stops with two positions, e.g. `red 0 50%`, into two stops
