@@ -289,9 +289,10 @@ export async function render(
       floats: { found: false },
       formattingContext: 'root',
       containers: containerNodes,
-      computeLayout: (node, { width }) =>
+      computeLayout: (node, { width, height }) =>
         layoutEngine.computeLayout(node, {
           width,
+          height,
           pointScaleFactor: options.pointScaleFactor,
         }),
       getTwStyles: (tw, style) => {

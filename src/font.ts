@@ -602,6 +602,36 @@ export default class FontLoader {
     return ratio
   }
 
+  /**
+   * The average width of characters relative to the font size, for the width
+   * of text inputs, or `undefined` without fonts. Like in Chrome, it's from
+   * the first font of the family, or the width of `0`.
+   */
+  public getAverageCharRatio(style: {
+    fontFamily?: string | string[]
+    fontWeight?: FontWeight
+    fontStyle?: FontStyle
+  }) {
+    if (!this.fonts.size) return
+    const weight = style.fontWeight ?? 400
+    const fontStyle = style.fontStyle ?? 'normal'
+    let font: opentype.Font | null = null
+    for (const family of [style.fontFamily ?? []].flat()) {
+      const name = family.toLowerCase()
+      font =
+        this.get({ name, weight, style: fontStyle }) ??
+        this.get({ name: name + '_unknown', weight, style: fontStyle })
+      if (font) break
+    }
+    font ??= this.get({
+      name: this.fonts.keys().next().value,
+      weight,
+      style: fontStyle,
+    })
+    const average = font?.tables.os2?.xAvgCharWidth
+    return average > 0 ? average / font.unitsPerEm : this.getChRatio(style)
+  }
+
   public addFonts(fontOptions: FontOptions[]) {
     // Adding fonts can change how text resolves across the font list, so
     // previously shaped runs may no longer be correct.

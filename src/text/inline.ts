@@ -59,7 +59,7 @@ export interface InlineEnv {
   /** Lays out a tree, used for atomic inlines. */
   computeLayout: (
     root: LayoutNode,
-    options: { width?: number | 'min-content' }
+    options: { width?: number | 'min-content'; height?: number }
   ) => void
 }
 
@@ -552,12 +552,40 @@ export class Paragraph {
   }
 
   /** Lays out an atomic inline, which shrinks to fit the width. */
+  /** The content height of the container, if its height is a length. */
+  private containerHeight() {
+    const { height } = this.style
+    if (typeof height !== 'number') return
+    if (this.style.boxSizing === 'content-box') return height
+    const inset = (name: string) => (this.style[name] as number) || 0
+    return Math.max(
+      0,
+      height -
+        inset('paddingTop') -
+        inset('paddingBottom') -
+        inset('borderTopWidth') -
+        inset('borderBottomWidth')
+    )
+  }
+
   private layoutAtomic(atomic: AtomicInline, width: number): AtomicLayout {
     const cached = this.atomicLayouts.get(atomic)
     if (cached && this.atomicWidth === width) return cached
 
     const { node } = atomic
-    const { computeLayout } = this.env
+    // Percentages of heights are of the height of the container, if it's
+    // definite.
+    const height = [
+      node.style.height,
+      node.style.minHeight,
+      node.style.maxHeight,
+    ].some((value) => typeof value === 'string' && value.endsWith('%'))
+      ? this.containerHeight()
+      : undefined
+    const computeLayout = (
+      root: LayoutNode,
+      options: { width?: number | 'min-content' }
+    ) => this.env.computeLayout(root, { ...options, height })
     const marginWidth = () =>
       node.layout.width + node.layout.margin.left + node.layout.margin.right
     const margins = () => node.layout.margin.left + node.layout.margin.right

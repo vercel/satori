@@ -9,6 +9,7 @@ import type { ReactElement, ReactNode } from 'react'
 
 import type { LayoutEngine } from '../layout-engine/index.js'
 import { isReactElement, normalizeChildren } from '../utils.js'
+import { PLACEHOLDER_PROP } from '../form-control.js'
 
 // The JSON from `crates/layout/src/css.rs`.
 type Combinator = ' ' | '>' | '+' | '~'
@@ -117,7 +118,9 @@ interface Node {
    * The rules that match it, and its `::before` and `::after` if it can have
    * them, see `matchRules()`.
    */
-  matched?: Partial<Record<'' | 'before' | 'after', MatchedRule[]>>
+  matched?: Partial<
+    Record<'' | 'before' | 'after' | 'placeholder', MatchedRule[]>
+  >
   /** The custom properties it declares, see `cascade()`. */
   custom?: Set<string>
 }
@@ -257,6 +260,9 @@ export async function applyStyleSheets(
     if (!node.svg && !NO_GENERATED_CONTENT.has(node.type)) {
       node.matched.before = matchRules(node, rules, sizes, 'before')
       node.matched.after = matchRules(node, rules, sizes, 'after')
+    }
+    if (node.type === 'input' && !node.svg) {
+      node.matched.placeholder = matchRules(node, rules, sizes, 'placeholder')
     }
     nodes.push(node)
     node.children.forEach(visit)
@@ -678,6 +684,9 @@ function rebuild(
     const props: Record<string, any> = { ...child.props }
     const style = cascade(node, invalid, undefined, initial)
     if (style) props.style = style
+    if (node.matched.placeholder?.length) {
+      props[PLACEHOLDER_PROP] = cascade(node, invalid, 'placeholder', initial)
+    }
     if (node.container) props[CONTAINER_PROP] = node.container.index
     let content: ReactNode[] | undefined =
       props.children === undefined
@@ -871,7 +880,7 @@ async function findInvalidDeclarations(
 function cascade(
   node: Node,
   invalid: Set<Declaration>,
-  pseudo?: 'before' | 'after',
+  pseudo?: 'before' | 'after' | 'placeholder',
   initial?: InitialValues
 ) {
   const normal: Match[] = []

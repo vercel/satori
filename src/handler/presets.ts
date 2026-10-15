@@ -10,6 +10,7 @@ const DEFAULT_DISPLAY = 'block'
 
 const block = { display: DEFAULT_DISPLAY }
 const hidden = { display: 'none' }
+const inlineBlock = { display: 'inline-block' }
 
 export default {
   // Elements that aren't rendered.
@@ -220,4 +221,10 @@ export default {
   s: {
     textDecoration: 'line-through',
   },
+
+  // Form controls
+  input: inlineBlock,
+  button: inlineBlock,
+  select: inlineBlock,
+  textarea: inlineBlock,
 }
