@@ -27,6 +27,7 @@ interface RawRule {
   u?: string
   c?: string
   l?: string[]
+  p?: string
   b?: Item[]
 }
 type Item = RawRule | Declaration
@@ -50,6 +51,18 @@ interface Rule {
   rank: number
   /** The conditions of the `@container` rules it's in. */
   containers?: ContainerCondition[]
+}
+
+/** A custom property registered with `@property`. */
+interface RegisteredProperty {
+  inherits: boolean
+  initial?: string
+}
+
+/** The initial values of registered custom properties, see `cascade()`. */
+interface InitialValues {
+  all: [name: string, value: string][]
+  notInherited: [name: string, value: string][]
 }
 
 /** The condition of a `@container` rule, for the container with `name`. */
@@ -105,6 +118,8 @@ interface Node {
    * them, see `matchRules()`.
    */
   matched?: Partial<Record<'' | 'before' | 'after', MatchedRule[]>>
+  /** The custom properties it declares, see `cascade()`. */
+  custom?: Set<string>
 }
 
 interface Container {
@@ -212,6 +227,7 @@ export async function applyStyleSheets(
     anonymousLayers: 0,
     layers: new Map(),
     viewport,
+    properties: new Map(),
     // Feature queries aren't errors, so they're not reported.
     supported:
       validation &&
@@ -219,8 +235,9 @@ export async function applyStyleSheets(
   }
   const rules: Rule[] = []
   for (const items of parsed) compileRules(items, null, [], rules, state)
-  if (!rules.length) return root
   rankLayers(rules, state.layers)
+  const initial = getInitialValues(state.properties)
+  if (!rules.length && !initial) return root
 
   const roots: Node[] = []
   buildNodes(root, null, roots)
@@ -250,7 +267,7 @@ export async function applyStyleSheets(
     ? await findInvalidDeclarations(nodes, validation)
     : new Set<Declaration>()
 
-  const children = rebuild(root, roots, invalid)
+  const children = rebuild(root, roots, invalid, initial)
   return isFragment(root)
     ? {
         ...(root as ReactElement),
@@ -304,6 +321,8 @@ interface CompileState {
   supported?: Map<string, boolean>
   /** Whether there are rules in `@container`. */
   containerRules?: boolean
+  /** The custom properties registered with `@property`, by name. */
+  properties: Map<string, RegisteredProperty>
 }
 
 /**
@@ -361,6 +380,8 @@ function compileRules(
         ...containers,
         parseContainerPrelude(item.c),
       ])
+    } else if (item.p !== undefined) {
+      registerProperty(item.p, item.b ?? [], state.properties)
     } else if (item.l) {
       if (!item.b) {
         for (const name of item.l) {
@@ -375,6 +396,46 @@ function compileRules(
     }
   }
   flush()
+}
+
+/**
+ * Registers a custom property of `@property`, if its descriptors are valid.
+ * Like in browsers, the last valid rule for a property wins.
+ */
+function registerProperty(
+  name: string,
+  descriptors: Item[],
+  properties: Map<string, RegisteredProperty>
+) {
+  const values = new Map<string, string>()
+  for (const item of descriptors) {
+    if (Array.isArray(item)) {
+      values.set(item[0].toLowerCase(), String(item[1]).trim())
+    }
+  }
+  const syntax = values.get('syntax')
+  const inherits = values.get('inherits')?.toLowerCase()
+  const initial = values.get('initial-value')
+  if (syntax === undefined || (inherits !== 'true' && inherits !== 'false')) {
+    return
+  }
+  // Only the universal syntax `"*"` doesn't need an initial value.
+  if (initial === undefined && !/^(['"])\s*\*\s*\1$/.test(syntax)) return
+  properties.set(name, { inherits: inherits === 'true', initial })
+}
+
+/** The initial values of registered custom properties, if any. */
+function getInitialValues(
+  properties: Map<string, RegisteredProperty>
+): InitialValues | undefined {
+  const all: InitialValues['all'] = []
+  const notInherited: InitialValues['notInherited'] = []
+  for (const [name, { inherits, initial }] of properties) {
+    if (initial === undefined) continue
+    all.push([name, initial])
+    if (!inherits) notInherited.push([name, initial])
+  }
+  return all.length ? { all, notInherited } : undefined
 }
 
 function declareLayer(layer: string[], state: CompileState) {
@@ -607,23 +668,24 @@ function buildNodes(
 function rebuild(
   children: ReactNode,
   nodes: Node[],
-  invalid: Set<Declaration>
+  invalid: Set<Declaration>,
+  initial: InitialValues | undefined
 ) {
   let index = 0
   return normalizeChildren(children).map((child) => {
     if (!isReactElement(child) || typeof child.type !== 'string') return child
     const node = nodes[index++]
     const props: Record<string, any> = { ...child.props }
-    const style = cascade(node, invalid)
+    const style = cascade(node, invalid, undefined, initial)
     if (style) props.style = style
     if (node.container) props[CONTAINER_PROP] = node.container.index
     let content: ReactNode[] | undefined =
       props.children === undefined
         ? undefined
-        : rebuild(props.children, node.children, invalid)
+        : rebuild(props.children, node.children, invalid, initial)
     if (node.matched.before) {
-      const before = generateContent(node, invalid, 'before')
-      const after = generateContent(node, invalid, 'after')
+      const before = generateContent(node, invalid, 'before', initial)
+      const after = generateContent(node, invalid, 'after', initial)
       if (before || after) {
         content = [before, ...(content ?? []), after].filter(Boolean)
       }
@@ -669,9 +731,10 @@ const element = (type: string, props: Record<string, unknown>) =>
 function generateContent(
   node: Node,
   invalid: Set<Declaration>,
-  pseudo: 'before' | 'after'
+  pseudo: 'before' | 'after',
+  initial: InitialValues | undefined
 ) {
-  const style = cascade(node, invalid, pseudo)
+  const style = cascade(node, invalid, pseudo, initial)
   const content = style?.content
   if (!Array.isArray(content)) return
   delete style.content
@@ -802,12 +865,14 @@ async function findInvalidDeclarations(
  * The style of an element, or of its `pseudo` element, with the matching
  * declarations, in cascade order: normal declarations by layer, specificity
  * and order, then the inline style, then important declarations, where
- * earlier layers win.
+ * earlier layers win. Then the `initial` values of registered properties it
+ * needs, see `initialValuesFor()`.
  */
 function cascade(
   node: Node,
   invalid: Set<Declaration>,
-  pseudo?: 'before' | 'after'
+  pseudo?: 'before' | 'after',
+  initial?: InitialValues
 ) {
   const normal: Match[] = []
   const important: Match[] = []
@@ -823,7 +888,13 @@ function cascade(
       })
     }
   }
-  if (!normal.length && !important.length) return
+  const values = initial
+    ? initialValuesFor(pseudo ? node : node.parent, initial)
+    : []
+  if (!normal.length && !important.length && !values.length) {
+    if (!pseudo) node.custom = getCustomProperties(node.props.style)
+    return
+  }
 
   // Sorting is stable, so declarations of a rule stay in order.
   normal.sort(
@@ -857,7 +928,30 @@ function cascade(
   for (const { declaration } of important) {
     set(toPropertyName(declaration[0]), declaration[1])
   }
+  if (!pseudo) node.custom = getCustomProperties(style)
+  for (const [name, value] of values) {
+    if (!(name in style)) style[name] = value
+  }
   return style
+}
+
+function getCustomProperties(style: Record<string, unknown> | undefined) {
+  if (!style) return
+  const names = Object.keys(style).filter((name) => name.startsWith('--'))
+  return names.length ? new Set(names) : undefined
+}
+
+/**
+ * The initial values of registered custom properties that an element needs,
+ * the child of `parent`. Custom properties are inherited in the layout, so
+ * the root needs all of them. Other elements only need the ones that aren't
+ * inherited, if their parent declares another value, like in browsers.
+ */
+function initialValuesFor(parent: Node | null, initial: InitialValues) {
+  if (!parent) return initial.all
+  const custom = parent.custom
+  if (!custom) return []
+  return initial.notInherited.filter(([name]) => custom.has(name))
 }
 
 /** Matches selectors from right to left. */

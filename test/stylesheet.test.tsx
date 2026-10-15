@@ -418,6 +418,66 @@ describe('stylesheets', () => {
     expect(errors).toHaveLength(2)
   })
 
+  it('should use the initial values of registered custom properties', async () => {
+    await expectSame(
+      `@property --a { syntax: "*"; inherits: false; initial-value: red }
+      @property --b { syntax: "<color>"; inherits: true; initial-value: green }
+      @property --c { syntax: "<color>"; initial-value: blue }
+      @property --d { syntax: "<color>"; inherits: false }
+      @property --x { syntax: "*"; inherits: false; initial-value: 0px }
+      .p { --a: blue; --b: blue }
+      .a { color: var(--a) }
+      .b { color: var(--b) }
+      .c { color: var(--c, gold) }
+      .d { color: var(--d, gold) }
+      .e::before { content: "E"; color: var(--a) }
+      .f { --a: gold; color: var(--a) }
+      .f::before { content: "F"; color: var(--a) }
+      .t { width: 10px; height: 10px; background: black; translate: var(--x) 4px }`,
+      <>
+        <div className='p'>
+          <span className='a'>Not inherited</span>
+          <span className='b'>Inherited</span>
+        </div>
+        <span className='b'>Root</span>
+        <span className='c'>No inherits</span>
+        <span className='d'>No initial value</span>
+        <span className='e'>Pseudo</span>
+        <span className='f'>Declared</span>
+        <div style={{ '--a': 'blue' } as any}>
+          <span className='a'>Inline</span>
+        </div>
+        <div className='t' />
+      </>,
+      <>
+        <div>
+          <span style={{ color: 'red' }}>Not inherited</span>
+          <span style={{ color: 'blue' }}>Inherited</span>
+        </div>
+        <span style={{ color: 'green' }}>Root</span>
+        <span style={{ color: 'gold' }}>No inherits</span>
+        <span style={{ color: 'gold' }}>No initial value</span>
+        <span>
+          <span style={{ color: 'red' }}>E</span>Pseudo
+        </span>
+        <span style={{ color: 'gold' }}>
+          <span style={{ color: 'red' }}>F</span>Declared
+        </span>
+        <div>
+          <span style={{ color: 'red' }}>Inline</span>
+        </div>
+        <div
+          style={{
+            width: 10,
+            height: 10,
+            background: 'black',
+            translate: '0px 4px',
+          }}
+        />
+      </>
+    )
+  })
+
   it('should not report internal props of containers', async () => {
     const reported: string[] = []
     await satori(

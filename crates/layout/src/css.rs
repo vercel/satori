@@ -11,6 +11,8 @@
 //!   condition.
 //! - `{"l":names,"b":items}`: a `@layer` block, with no name if anonymous.
 //! - `{"l":names}`: a `@layer` statement.
+//! - `{"p":name,"b":declarations}`: `@property`, with the name of the custom
+//!   property and its descriptors.
 //!
 //! Other at-rules are dropped. Nested group rules have declarations too.
 //!
@@ -60,6 +62,7 @@ enum AtRulePrelude {
     Supports(String),
     Layer(Vec<String>),
     Container(String),
+    Property(String),
 }
 
 impl Rules {
@@ -89,6 +92,14 @@ impl<'i> AtRuleParser<'i> for Rules {
             "media" => Ok(AtRulePrelude::Media(rest(input))),
             "supports" => Ok(AtRulePrelude::Supports(rest(input))),
             "container" => Ok(AtRulePrelude::Container(rest(input))),
+            "property" => {
+                let name = input.expect_ident()?.to_string();
+                if !name.starts_with("--") {
+                    return Err(ParseError::unexpected_token());
+                }
+                input.expect_exhausted()?;
+                Ok(AtRulePrelude::Property(name))
+            }
             "layer" => {
                 if input.is_exhausted() {
                     return Ok(AtRulePrelude::Layer(Vec::new()));
@@ -120,6 +131,11 @@ impl<'i> AtRuleParser<'i> for Rules {
         _start: &ParserState,
         input: &mut Parser<'i>,
     ) -> Result<String> {
+        if let AtRulePrelude::Property(name) = prelude {
+            // The descriptors are parsed like declarations.
+            let body = Rules { nested: true }.body(input);
+            return Ok(format!("{{\"p\":{},\"b\":{}}}", json(&name), body));
+        }
         let body = self.body(input);
         Ok(match prelude {
             AtRulePrelude::Media(query) => format!("{{\"m\":{},\"b\":{}}}", json(&query), body),
@@ -132,7 +148,9 @@ impl<'i> AtRuleParser<'i> for Rules {
             AtRulePrelude::Layer(names) if names.len() <= 1 => {
                 format!("{{\"l\":{},\"b\":{}}}", strings(&names), body)
             }
-            AtRulePrelude::Layer(_) => return Err(ParseError::unexpected_token()),
+            AtRulePrelude::Layer(_) | AtRulePrelude::Property(_) => {
+                return Err(ParseError::unexpected_token())
+            }
         })
     }
 }

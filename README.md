@@ -518,10 +518,11 @@ Note:
 
 #### Stylesheets
 
-The CSS of `<style>` elements applies to the whole tree, including the elements of components. The declarations of matching rules are merged with inline styles in cascade order, so the table above applies to them too. Selectors, specificity, `!important`, nesting, `@layer`, `@media`, `@supports`, `@container` and the `media` attribute are supported, with these differences:
+The CSS of `<style>` elements applies to the whole tree, including the elements of components. The declarations of matching rules are merged with inline styles in cascade order, so the table above applies to them too. Selectors, specificity, `!important`, nesting, `@layer`, `@media`, `@supports`, `@container`, `@property` and the `media` attribute are supported, with these differences:
 
 - `@media` matches the `width` and `height` of the image, on a static screen in light mode, e.g. `prefers-color-scheme: light` and `hover: none`.
 - `@container` supports size queries, but `style()` and `scroll-state()` queries don't match.
+- `@property` sets the initial values of custom properties and whether they're inherited, but values aren't checked or computed with its `syntax`.
 - Invalid and unsupported declarations are dropped like in browsers, and passed to `onStyleError`. Values with `var()` are only checked when they're computed, where invalid values throw like in inline styles.
 - `@supports` checks declarations the same way, but properties that Satori ignores count as supported. `selector()` is supported, but not `font-tech()` and `font-format()`.
 - `::before` and `::after` are supported, with `content` made of strings, `attr()`, `counter()`, `counters()`, quotes and `url()`. Quotes are always “ and ”, as `quotes` isn't supported. Other pseudo-elements, such as `::marker` and `::first-line`, aren't supported, so rules with them don't apply.
