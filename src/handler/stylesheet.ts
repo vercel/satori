@@ -454,11 +454,12 @@ function getInitialValues(
   const all: InitialValues['all'] = []
   const notInherited: InitialValues['notInherited'] = []
   for (const [name, { inherits, initial }] of properties) {
-    if (initial === undefined) continue
-    all.push([name, initial])
-    if (!inherits) notInherited.push([name, initial])
+    if (initial !== undefined) all.push([name, initial])
+    // Without an initial value, a property that isn't inherited has the
+    // guaranteed-invalid value, `initial`, unless it's declared.
+    if (!inherits) notInherited.push([name, initial ?? 'initial'])
   }
-  return all.length ? { all, notInherited } : undefined
+  return all.length || notInherited.length ? { all, notInherited } : undefined
 }
 
 function declareLayer(layer: string[], state: CompileState) {

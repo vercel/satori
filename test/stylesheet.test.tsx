@@ -418,6 +418,21 @@ describe('stylesheets', () => {
     expect(errors).toHaveLength(2)
   })
 
+  it('should not inherit registered custom properties without initial values', async () => {
+    // Like Tailwind's `--tw-leading`, which `text-sm` uses with a fallback.
+    await expectSame(
+      `@property --l { syntax: "*"; inherits: false }
+      .p { --l: blue; color: var(--l, green) }
+      .p > span { color: var(--l, red) }`,
+      <div className='p'>
+        Parent <span>Child</span>
+      </div>,
+      <div style={{ color: 'blue' }}>
+        Parent <span style={{ color: 'red' }}>Child</span>
+      </div>
+    )
+  })
+
   it('should use the initial values of registered custom properties', async () => {
     await expectSame(
       `@property --a { syntax: "*"; inherits: false; initial-value: red }
