@@ -871,7 +871,9 @@ async function findInvalidDeclarations(
       // Container units are resolved in the cascade, so they're checked as
       // lengths.
       const original = value as string
-      const checked = original.replace(CONTAINER_UNITS, '0px')
+      const checked = CONTAINER_UNIT.test(original)
+        ? replaceContainerUnits(original, () => '0px')
+        : original
       const error = await getError(toPropertyName(name), checked)
       return error && checked !== original
         ? new Error(error.message.split(checked).join(original))
@@ -962,9 +964,78 @@ function cascade(
   return style
 }
 
+/** A quick check for container units, see `replaceContainerUnits()`. */
 const CONTAINER_UNIT = /\d(cqw|cqh|cqi|cqb|cqmin|cqmax)\b/i
-const CONTAINER_UNITS =
-  /([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(cqw|cqh|cqi|cqb|cqmin|cqmax)\b/gi
+const CONTAINER_UNITS = new Set(['cqw', 'cqh', 'cqi', 'cqb', 'cqmin', 'cqmax'])
+
+const isDigit = (char: string | undefined) =>
+  char !== undefined && char >= '0' && char <= '9'
+const isNameStart = (char: string | undefined) =>
+  char !== undefined &&
+  ((char >= 'a' && char <= 'z') ||
+    (char >= 'A' && char <= 'Z') ||
+    char === '_' ||
+    char >= '\u0080')
+const isName = (char: string | undefined) =>
+  isNameStart(char) || isDigit(char) || char === '-'
+
+/**
+ * Replaces the container units in a value, e.g. `1.5cqw`, with the result of
+ * `replace`. Like a CSS tokenizer, it skips strings and identifiers, and it
+ * reads each character once, as values come from stylesheets: a regular
+ * expression could backtrack for a long time on long numbers.
+ */
+function replaceContainerUnits(
+  value: string,
+  replace: (amount: number, unit: string) => string
+) {
+  let result = ''
+  let i = 0
+  while (i < value.length) {
+    const char = value[i]
+    let end = i + 1
+    if (char === '"' || char === "'") {
+      while (end < value.length && value[end] !== char) {
+        end += value[end] === '\\' ? 2 : 1
+      }
+      end = Math.min(end + 1, value.length)
+    } else if (
+      isNameStart(char) ||
+      (char === '-' && (isNameStart(value[i + 1]) || value[i + 1] === '-'))
+    ) {
+      while (isName(value[end])) end++
+    } else {
+      // A number, with a sign, a fraction and an exponent, then its unit.
+      let j = char === '+' || char === '-' ? i + 1 : i
+      if (isDigit(value[j]) || (value[j] === '.' && isDigit(value[j + 1]))) {
+        while (isDigit(value[j])) j++
+        if (value[j] === '.' && isDigit(value[j + 1])) {
+          j++
+          while (isDigit(value[j])) j++
+        }
+        const sign = value[j + 1] === '+' || value[j + 1] === '-' ? 1 : 0
+        if (
+          (value[j] === 'e' || value[j] === 'E') &&
+          isDigit(value[j + 1 + sign])
+        ) {
+          j += 1 + sign
+          while (isDigit(value[j])) j++
+        }
+        end = j
+        while (isName(value[end])) end++
+        const unit = value.slice(j, end).toLowerCase()
+        if (CONTAINER_UNITS.has(unit)) {
+          result += replace(parseFloat(value.slice(i, j)), unit)
+          i = end
+          continue
+        }
+      }
+    }
+    result += value.slice(i, end)
+    i = end
+  }
+  return result
+}
 
 /**
  * Resolves container units to px, with the size of the nearest query
@@ -996,22 +1067,19 @@ function resolveContainerUnits(
     ) {
       continue
     }
-    style[name] = value.replace(
-      CONTAINER_UNITS,
-      (_, number: string, unit: string) => {
-        const inline = size(false)
-        const block = size(true)
-        const base = {
-          cqw: inline,
-          cqi: inline,
-          cqh: block,
-          cqb: block,
-          cqmin: Math.min(inline, block),
-          cqmax: Math.max(inline, block),
-        }[unit.toLowerCase()]
-        return `${(parseFloat(number) * base) / 100}px`
-      }
-    )
+    style[name] = replaceContainerUnits(value, (amount, unit) => {
+      const inline = size(false)
+      const block = size(true)
+      const base = {
+        cqw: inline,
+        cqi: inline,
+        cqh: block,
+        cqb: block,
+        cqmin: Math.min(inline, block),
+        cqmax: Math.max(inline, block),
+      }[unit]
+      return `${(amount * base) / 100}px`
+    })
   }
 }
 

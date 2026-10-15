@@ -453,6 +453,35 @@ describe('stylesheets', () => {
     )
   })
 
+  it('should check container units in linear time', async () => {
+    // A regular expression backtracked for seconds on long numbers, e.g. in
+    // quoted font names.
+    const digits = '1'.repeat(4000)
+    const errors: string[] = []
+    const start = performance.now()
+    await satori(
+      page(
+        <>
+          <div className='a'>A</div>
+          <div className='b'>B</div>
+          <div className='c'>C</div>
+        </>,
+        `.a { font-family: "${digits}", sans-serif }
+        .b { margin: ${digits}cqx 1cqw }
+        .c { font-family: "${digits}1cqw", sans-serif; width: 10cqw }`
+      ),
+      {
+        width: 200,
+        height: 160,
+        fonts,
+        onStyleError: (error) => errors.push(error.message),
+      }
+    )
+    expect(performance.now() - start).toBeLessThan(1000)
+    // The invalid margin is reported with its value.
+    expect(errors.some((error) => error.includes(`${digits}cqx`))).toBe(true)
+  })
+
   it('should use the initial values of registered custom properties', async () => {
     await expectSame(
       `@property --a { syntax: "*"; inherits: false; initial-value: red }
