@@ -292,4 +292,21 @@ describe('Units', () => {
       await render('20px', '10px')
     )
   })
+
+  it('should parse long invalid lengths in linear time', async () => {
+    // Regular expressions with `\d+\.?\d*` backtracked for seconds on long
+    // numbers that aren't lengths.
+    const value = '1'.repeat(32000) + '!'
+    const start = performance.now()
+    await satori(
+      <div style={{ display: 'flex' }}>
+        <style>{`.a { width: ${value}; background-position: ${value}; rotate: ${value} }`}</style>
+        <div className='a' style={{ width: value, rotate: value }}>
+          A
+        </div>
+      </div>,
+      { width: 100, height: 100, fonts, onStyleError: () => undefined }
+    ).catch(() => undefined)
+    expect(performance.now() - start).toBeLessThan(1500)
+  })
 })

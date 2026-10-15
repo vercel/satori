@@ -42,7 +42,7 @@ const POSITION_KEYWORDS = ['left', 'right', 'top', 'bottom', 'center']
 const SIZE_KEYWORDS = ['auto', 'cover', 'contain']
 
 const isLengthPercentage = (word: string) =>
-  /^[+-]?(\d+\.?\d*|\.\d+)(px|em|rem|vw|vh|vmin|vmax|%)?$/i.test(word)
+  /^[+-]?(\d+(?:\.\d*)?|\.\d+)(px|em|rem|vw|vh|vmin|vmax|%)?$/i.test(word)
 
 function invalid(value: string): never {
   throw new Error(`Invalid \`mask\` value: "${value}".`)

@@ -72,7 +72,7 @@ export function normalizeChildren(children: any) {
 }
 
 // A number with an optional unit, e.g. `10px`, `-.5em` or `50%`.
-const DIMENSION = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z]*|%)$/i
+const DIMENSION = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)([a-z]*|%)$/i
 
 // Absolute lengths in px: https://www.w3.org/TR/css-values-4/#absolute-lengths
 const ABSOLUTE_LENGTHS: Record<string, number> = {

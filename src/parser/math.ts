@@ -19,7 +19,7 @@ type Token =
   | { kind: 'function'; name: string }
   | { kind: '(' | ')' | ',' | '+' | '-' | '*' | '/' }
 
-const NUMBER = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z]+|%)?/i
+const NUMBER = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)([a-z]+|%)?/i
 
 function tokenize(input: string): Token[] {
   const tokens: Token[] = []
