@@ -72,7 +72,7 @@ export function normalizeChildren(children: any) {
 }
 
 // A number with an optional unit, e.g. `10px`, `-.5em` or `50%`.
-const DIMENSION = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z]*|%)$/i
+const DIMENSION = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)([a-z]*|%)$/i
 
 // Absolute lengths in px: https://www.w3.org/TR/css-values-4/#absolute-lengths
 const ABSOLUTE_LENGTHS: Record<string, number> = {
@@ -116,18 +116,61 @@ export function lengthToNumber(
       return value * baseFontSize
     case 'rem':
       return value * 16
-    // The x-height and the width of `0` are about half the font size.
-    case 'ex':
+    // The width of `0` in the font, see `FontLoader.getChRatio()`. The x-height
+    // is about half the font size.
     case 'ch':
+      return value * baseFontSize * ((inheritedStyle._chRatio as number) || 0.5)
+    case 'ex':
       return value * baseFontSize * 0.5
+    // The small, large and dynamic viewports of an image are the same.
+    // Container units are of the viewport without a query container, see
+    // `resolveContainerUnits()` for stylesheets.
     case 'vw':
+    case 'cqw':
+    case 'cqi':
+    case 'svw':
+    case 'lvw':
+    case 'dvw':
+    case 'vi':
+    case 'svi':
+    case 'lvi':
+    case 'dvi':
       return ~~((value * viewportWidth) / 100)
     case 'vh':
+    case 'cqh':
+    case 'cqb':
+    case 'svh':
+    case 'lvh':
+    case 'dvh':
+    case 'vb':
+    case 'svb':
+    case 'lvb':
+    case 'dvb':
       return ~~((value * viewportHeight) / 100)
     case 'vmin':
+    case 'cqmin':
+    case 'svmin':
+    case 'lvmin':
+    case 'dvmin':
       return ~~((value * Math.min(viewportWidth, viewportHeight)) / 100)
     case 'vmax':
+    case 'cqmax':
+    case 'svmax':
+    case 'lvmax':
+    case 'dvmax':
       return ~~((value * Math.max(viewportWidth, viewportHeight)) / 100)
+    // The line height of the element, as it's inherited, and of the root.
+    // `normal` is about 1.2 times the font size.
+    case 'lh': {
+      const lineHeight = inheritedStyle.lineHeight
+      return (
+        value *
+        (typeof lineHeight === 'number' ? lineHeight : 1.2) *
+        baseFontSize
+      )
+    }
+    case 'rlh':
+      return value * 1.2 * 16
     case '%':
       return percentage ? (value / 100) * baseLength : undefined
   }
@@ -438,6 +481,8 @@ export function asSize(
       const limit = parseFloat(fitContent[1])
       return { fitContent: fitContent[2] === '%' ? `${limit}%` : limit }
     }
+    // Maximums without a limit.
+    if (value === 'none' && /^max/.test(propertyName)) return undefined
   }
   return /^(min|max)/.test(propertyName)
     ? asPointPercentageLength(x, propertyName)
@@ -545,4 +590,19 @@ export function splitEffects(
   result.push(input.slice(l).trim())
 
   return result
+}
+
+/**
+ * Rounds a size up to a multiple of `1 / pointScaleFactor`, so that rounding
+ * the layout to it doesn't make text wrap. Layouts that aren't rounded, with
+ * `0`, are computed with 32-bit floats, so a small margin keeps them from
+ * making it smaller. `epsilon` absorbs floating point errors.
+ */
+export function roundUpToLayout(
+  value: number,
+  pointScaleFactor = 1,
+  epsilon = 0
+) {
+  if (!pointScaleFactor) return value + 1e-3
+  return Math.ceil(value * pointScaleFactor - epsilon) / pointScaleFactor
 }

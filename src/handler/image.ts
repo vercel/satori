@@ -151,8 +151,8 @@ const ALLOWED_IMAGE_TYPES = [PNG, APNG, JPEG, GIF, SVG, WEBP]
 // Pre-compiled regex patterns for SVG parsing
 const SVG_ATTRS_REGEX = /<svg[^>]*>/i
 const VIEWBOX_REGEX = /viewBox=['"]([^'"]+)['"]/
-const WIDTH_REGEX = /\swidth=['"](\d*\.?\d+)(?:px)?['"]/
-const HEIGHT_REGEX = /\sheight=['"](\d*\.?\d+)(?:px)?['"]/
+const WIDTH_REGEX = /\swidth=['"]((?:\d+(?:\.\d+)?|\.\d+))(?:px)?['"]/
+const HEIGHT_REGEX = /\sheight=['"]((?:\d+(?:\.\d+)?|\.\d+))(?:px)?['"]/
 
 /**
  * Whether an image has a size. An SVG without `width` and `height` only has

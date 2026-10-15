@@ -808,4 +808,38 @@ describe('grid shorthands', () => {
     expect(() => expandGrid('auto-flow / auto-flow')).toThrow()
     expect(() => expandGrid('auto-flow 1fr')).toThrow()
   })
+  it('should support math functions in track sizes', async () => {
+    const cell = (background: string) => (
+      <div style={{ height: 10, background }} />
+    )
+    const render = (gridTemplateColumns: string) =>
+      satori(
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns,
+            columnGap: 0,
+            width: 200,
+            fontSize: 10,
+          }}
+        >
+          {cell('red')}
+          {cell('green')}
+          {cell('blue')}
+          {cell('gold')}
+        </div>,
+        { width: 200, height: 40, fonts }
+      )
+    // Percentages are of the width of the grid container.
+    expect(
+      await render(
+        'minmax(0px, 1fr) minmax(0, calc(100% - 60px)) minmax(min-content, 1fr)'
+      )
+    ).toBe(await render('30px 140px 30px'))
+    expect(await render('calc(10px + 1em) 1fr')).toBe(await render('20px 1fr'))
+    expect(await render('repeat(2, calc(50% - 10px)) 1fr')).toBe(
+      await render('90px 90px 1fr')
+    )
+    expect(await render('min(25%, 60px) 1fr')).toBe(await render('50px 1fr'))
+  })
 })

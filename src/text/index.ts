@@ -10,6 +10,7 @@ import {
   buildXMLString,
   isUndefined,
   lengthToNumber,
+  roundUpToLayout,
 } from '../utils.js'
 import { LayoutNode } from '../layout-engine/index.js'
 import buildText, {
@@ -80,6 +81,7 @@ export default async function* buildTextNodes(
     graphemeImages,
     locale,
     canLoadAdditionalAssets,
+    pointScaleFactor,
   } = context
 
   const {
@@ -497,8 +499,10 @@ export default async function* buildTextNodes(
           r = m
         }
       }
+      // The lines are balanced, but like in browsers, the size of the text
+      // doesn't change.
       flow(r)
-      const _width = Math.ceil(r)
+      const _width = roundUpToLayout(width, pointScaleFactor)
       measuredTextSize = { width: _width, height }
       return { width: _width, height }
     }
@@ -535,9 +539,8 @@ export default async function* buildTextNodes(
       }
     }
 
-    const _width = Math.ceil(width)
+    const _width = roundUpToLayout(width, pointScaleFactor)
     measuredTextSize = { width: _width, height }
-    // Round up, so that rounding the layout doesn't make the text wrap.
     return { width: _width, height }
   }
 

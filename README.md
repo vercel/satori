@@ -101,7 +101,7 @@ await satori(
 
 Satori supports a limited subset of HTML and CSS features, due to its special use cases. In general, only these static and visible elements and properties that are implemented.
 
-For example, the `<input>` HTML element, the `cursor` CSS property are not in consideration. `<style>` elements apply their CSS, see [Stylesheets](#stylesheets), but external resources via `<link>` or `<script>` aren't loaded.
+For example, the `cursor` CSS property is not in consideration. Text inputs show their value or placeholder, styled with `::placeholder`, but other form controls have no content. `<style>` elements apply their CSS, see [Stylesheets](#stylesheets), but external resources via `<link>` or `<script>` aren't loaded.
 
 Also, Satori does not guarantee that the SVG will 100% match the browser-rendered HTML output since Satori implements its own layout engine based on the [SVG 1.1 spec](https://www.w3.org/TR/SVG11).
 
@@ -202,7 +202,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>display</code></td>
-<td>Supported, with these differences: <code>table</code>, <code>ruby</code> and their inner values, and two-value syntax like <code>inline flow-root</code>, aren't supported and throw. Form controls like <code>button</code> are inline instead of <code>inline-block</code>, and have no default styles.</td>
+<td>Supported, with these differences: <code>table</code>, <code>ruby</code> and their inner values, and two-value syntax like <code>inline flow-root</code>, aren't supported and throw. Form controls have no default styles.</td>
 <td></td>
 </tr>
 
@@ -518,14 +518,16 @@ Note:
 
 #### Stylesheets
 
-The CSS of `<style>` elements applies to the whole tree, including the elements of components. The declarations of matching rules are merged with inline styles in cascade order, so the table above applies to them too. Selectors, specificity, `!important`, nesting, `@layer`, `@media`, `@supports` and the `media` attribute are supported, with these differences:
+The CSS of `<style>` elements applies to the whole tree, including the elements of components. The declarations of matching rules are merged with inline styles in cascade order, so the table above applies to them too. Selectors, specificity, `!important`, nesting, `@layer`, `@media`, `@supports`, `@container`, `@property` and the `media` attribute are supported, with these differences:
 
 - `@media` matches the `width` and `height` of the image, on a static screen in light mode, e.g. `prefers-color-scheme: light` and `hover: none`.
+- `@container` supports size queries, but `style()` and `scroll-state()` queries don't match. Container units like `cqw` are supported, but in values of custom properties, they're of the viewport.
+- `@property` sets the initial values of custom properties and whether they're inherited, but values aren't checked or computed with its `syntax`.
 - Invalid and unsupported declarations are dropped like in browsers, and passed to `onStyleError`. Values with `var()` are only checked when they're computed, where invalid values throw like in inline styles.
 - `@supports` checks declarations the same way, but properties that Satori ignores count as supported. `selector()` is supported, but not `font-tech()` and `font-format()`.
 - `::before` and `::after` are supported, with `content` made of strings, `attr()`, `counter()`, `counters()`, quotes and `url()`. Quotes are always “ and ”, as `quotes` isn't supported. Other pseudo-elements, such as `::marker` and `::first-line`, aren't supported, so rules with them don't apply.
 - Pseudo-classes of interactions such as `:hover` never match, and functional pseudo-classes other than `:is()`, `:where()`, `:not()`, `:has()`, `:nth-*()` and `:lang()` make their rule invalid.
-- Other at-rules are ignored, such as `@font-face`, `@keyframes`, `@container`, `@scope` and `@import`.
+- Other at-rules are ignored, such as `@font-face`, `@keyframes`, `@scope` and `@import`.
 
 #### Perspective (experimental)
 
@@ -702,7 +704,7 @@ const svg = await satori(
 
 ### Pixel Grid Rounding
 
-Set `pointScaleFactor` to control how layout values are rounded to the pixel grid: they are rounded to multiples of `1 / pointScaleFactor` px, or not rounded with `0`. It defaults to `1`, and higher values improve rendering precision on high-DPI displays.
+Set `pointScaleFactor` to control how layout values are rounded to the pixel grid: they are rounded to multiples of `1 / pointScaleFactor` px, or not rounded with `0`. It defaults to `1`, and higher values improve rendering precision on high-DPI displays. The width of text is rounded up the same way, so that it fits.
 
 ```jsx
 const svg = await satori(

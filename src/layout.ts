@@ -46,6 +46,8 @@ import type {
   ReplacedElementHandlers,
 } from './handler/compute.js'
 import type { ParsedTransformOrigin } from './transform-origin.js'
+import { CONTAINER_PROP } from './handler/stylesheet.js'
+import { getInputContent, PLACEHOLDER_PROP } from './form-control.js'
 import type { TransformFunction } from './parser/transform.js'
 import {
   getDepth,
@@ -181,6 +183,8 @@ export interface LayoutContext {
   floats?: { found: boolean }
   /** Whether the text fills the width of a block container. */
   blockParagraph?: boolean
+  /** The nodes of query containers, by their `CONTAINER_PROP`. */
+  containers?: Map<number, LayoutNode>
 }
 
 export interface SatoriNode {
@@ -212,6 +216,43 @@ function fragmentRect(
     top: top + paragraph.top + fragment.top + dy,
     width: fragment.width,
     height: fragment.height,
+  }
+}
+
+/**
+ * Reports the descendants of an element that isn't displayed, which aren't
+ * laid out, with empty boxes like in browsers. Like in `layout()`, fragments
+ * are `display: contents` elements.
+ */
+function reportHiddenDescendants(children: ReactNode, context: LayoutContext) {
+  const { onNodeDetected, replacedElements } = context
+  for (const child of normalizeChildren(children)) {
+    if (!isReactElement(child)) continue
+    const element = child as ReactElement
+    const isFragment =
+      (element.type as unknown) === Symbol.for('react.fragment')
+    const {
+      children: descendants,
+      [CONTAINER_PROP]: _container,
+      [PLACEHOLDER_PROP]: _placeholder,
+      ...props
+    } = element.props || {}
+    const type = isFragment ? 'div' : (element.type as string)
+    onNodeDetected?.({
+      left: 0,
+      top: 0,
+      width: 0,
+      height: 0,
+      type,
+      props: isFragment ? { style: { display: 'contents' } } : props,
+      key: element.key ?? undefined,
+      textContent: isReactElement(descendants) ? undefined : descendants,
+    })
+    // Like when they're displayed, the content of SVG and replaced elements
+    // isn't reported.
+    if (type !== 'svg' && !replacedElements?.[type]) {
+      reportHiddenDescendants(descendants, context)
+    }
   }
 }
 
@@ -314,6 +355,10 @@ export default async function* layout(
   }
 
   const node = new LayoutNode()
+  // Container queries are evaluated with the sizes of these, see `satori()`.
+  if (typeof props?.[CONTAINER_PROP] === 'number') {
+    context.containers?.set(props[CONTAINER_PROP], node)
+  }
 
   const [computedStyle, newInheritableStyle] = await computeStyle(
     node,
@@ -327,6 +372,14 @@ export default async function* layout(
     context.pointScaleFactor,
     context.listDepth
   )
+  // For the `ch` unit of descendants and of later properties, in the font of
+  // the element.
+  const chRatio = font.getChRatio(computedStyle as any)
+  if (chRatio !== undefined) {
+    computedStyle._chRatio = newInheritableStyle._chRatio = chRatio
+  }
+  // Inputs show their value or placeholder instead of children.
+  if (type === 'input') children = getInputContent(props, computedStyle, font)
 
   // Counters are changed in tree order, by elements that are displayed.
   const countersHidden =
@@ -616,11 +669,14 @@ export default async function* layout(
 
   // 2. Do layout recursively for its children.
   // Children of replaced elements, e.g. the fallback content of a <canvas>,
-  // are never rendered.
+  // are never rendered, and neither are the ones of elements that aren't
+  // displayed, e.g. the text of <style>, which would be laid out for nothing.
   // The content of SVG elements is drawn as an image.
   const isReplaced = !!context.replacedElements?.[type]
   const normalizedChildren =
-    isReplaced || type === 'svg' ? [] : normalizeChildren(children)
+    isReplaced || type === 'svg' || node.style.display === 'none'
+      ? []
+      : normalizeChildren(children)
   const iterators: ReturnType<typeof layout>[] = []
 
   // The markers of list items are placed at the start of the first line of
@@ -675,6 +731,7 @@ export default async function* layout(
         embedFont,
         debug,
         graphemeImages,
+        pointScaleFactor: context.pointScaleFactor,
         computeLayout: context.computeLayout,
       })
     : inlineBox || isContents
@@ -694,7 +751,18 @@ export default async function* layout(
   const segmentsMissingFont: { word: string; locale?: string }[] = []
   // The `order` of the flex or grid item each child generates.
   const childOrders: number[] = []
-  for (const child of normalizedChildren) {
+  for (const [index, child] of normalizedChildren.entries()) {
+    // In flex and grid containers, text with only white space isn't
+    // rendered, even with `white-space: pre`, e.g. the newlines between the
+    // lines of code blocks.
+    if (
+      typeof child === 'string' &&
+      (childFormattingContext === 'flex' ||
+        childFormattingContext === 'grid') &&
+      /^[ \t\n\r\f]*$/.test(child)
+    ) {
+      continue
+    }
     const childCount = childParent.children.length
     const iter = layout(child, {
       id: id + '-' + i++,
@@ -724,7 +792,7 @@ export default async function* layout(
       listDepth:
         (context.listDepth || 0) +
         (['ul', 'ol', 'menu', 'dir'].includes(type) ? 1 : 0),
-      markers: i - 1 === markerTarget ? markers : undefined,
+      markers: index === markerTarget ? markers : undefined,
       parentBox,
       scrollport,
       floats: context.floats,
@@ -732,6 +800,7 @@ export default async function* layout(
       formattingContext: childFormattingContext,
       inline: childInline,
       computeLayout: context.computeLayout,
+      containers: context.containers,
     })
     if (canLoadAdditionalAssets) {
       segmentsMissingFont.push(...(((await iter.next()).value as any) || []))
@@ -807,7 +876,12 @@ export default async function* layout(
   // Emit event for the current node. We don't pass the children prop to the
   // event handler because everything is already flattened, unless it's a text
   // node.
-  const { children: childrenNode, ...restProps } = props
+  const {
+    children: childrenNode,
+    [CONTAINER_PROP]: _container,
+    [PLACEHOLDER_PROP]: _placeholder,
+    ...restProps
+  } = props
   // Inline boxes are reported like by `getBoundingClientRect()` in browsers,
   // as the union of the border boxes of their fragments on each line.
   let detected = { left, top, width, height }
@@ -834,6 +908,9 @@ export default async function* layout(
     key: element.key,
     textContent: isReactElement(childrenNode) ? undefined : childrenNode,
   })
+  if (node.style.display === 'none' && context.onNodeDetected) {
+    reportHiddenDescendants(childrenNode, context)
+  }
 
   // Resolve transforms now that the layout is known. Children read the state
   // from their parent's transform list.

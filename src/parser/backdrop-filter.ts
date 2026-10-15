@@ -176,7 +176,7 @@ function resolveLength(
 }
 
 function resolveAmount(value: string, functionName: string, property: string) {
-  const percentage = value.match(/^([+-]?(?:\d+\.?\d*|\.\d+))%$/)
+  const percentage = value.match(/^([+-]?(?:\d+(?:\.\d*)?|\.\d+))%$/)
   const amount = percentage ? Number(percentage[1]) / 100 : Number(value)
   if (!Number.isFinite(amount) || amount < 0) {
     throw new Error(

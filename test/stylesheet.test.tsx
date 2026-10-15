@@ -313,6 +313,274 @@ describe('stylesheets', () => {
     )
   })
 
+  it('should apply container queries', async () => {
+    const box = { width: 20, height: 10, background: 'gray' }
+    const inline = {
+      boxSizing: 'border-box',
+      width: 160,
+      padding: '0 20px',
+    } as const
+    await expectSame(
+      `.inline {
+        container-type: inline-size;
+        box-sizing: border-box;
+        width: 160px;
+        padding: 0 20px;
+      }
+      .named { container: card / inline-size; width: 180px }
+      .size { container: box / size; width: 100px; height: 40px }
+      .item { width: 20px; height: 10px; background: gray }
+      /* The content box is 120px wide. */
+      @container (min-width: 120px) { .a { background: red } }
+      @container (width > 120px) { .b { background: red } }
+      @container (width >= 12.5rem) { .c { background: red } }
+      /* The nearest container with the name, which can be queried. */
+      @container card (width > 170px) { .d { background: red } }
+      @container (height > 30px) { .e { background: red } }
+      @container (orientation: landscape) and (height < 50px) {
+        .e::before {
+          content: "";
+          display: block;
+          width: 4px;
+          height: 4px;
+          background: blue;
+        }
+      }
+      @container box (width > 50px) {
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr) }
+      }`,
+      <>
+        <div className='inline'>
+          <div className='item a' />
+          <div className='item b' />
+          <div className='item c' />
+        </div>
+        <div className='named'>
+          <div className='inline'>
+            <div className='item d' />
+            <div className='item e' />
+          </div>
+        </div>
+        <div className='size'>
+          <div className='item e' />
+          <div className='grid'>
+            <div className='item' />
+            <div className='item' />
+          </div>
+        </div>
+      </>,
+      <>
+        <div style={inline}>
+          <div style={{ ...box, background: 'red' }} />
+          <div style={box} />
+          <div style={box} />
+        </div>
+        <div style={{ width: 180 }}>
+          <div style={inline}>
+            <div style={{ ...box, background: 'red' }} />
+            <div style={box} />
+          </div>
+        </div>
+        <div style={{ width: 100, height: 40 }}>
+          <div style={{ ...box, background: 'red' }}>
+            <div style={{ width: 4, height: 4, background: 'blue' }} />
+          </div>
+          <div
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}
+          >
+            <div style={box} />
+            <div style={box} />
+          </div>
+        </div>
+      </>
+    )
+  })
+
+  it('should report style errors once with container queries', async () => {
+    // The tree is laid out twice, to know the sizes of containers.
+    const errors: string[] = []
+    await satori(
+      page(
+        <div className='c' style={{ display: 'table' as any }}>
+          <div className='a'>A</div>
+        </div>,
+        `.c { container-type: inline-size; width: 100px }
+        .a { display: table }
+        @container (width > 50px) { .a { color: red } }`
+      ),
+      {
+        width: 200,
+        height: 160,
+        fonts,
+        onStyleError: (error) => errors.push(error.message),
+      }
+    )
+    expect(errors).toHaveLength(2)
+  })
+
+  it('should not inherit registered custom properties without initial values', async () => {
+    // Like Tailwind's `--tw-leading`, which `text-sm` uses with a fallback.
+    await expectSame(
+      `@property --l { syntax: "*"; inherits: false }
+      .p { --l: blue; color: var(--l, green) }
+      .p > span { color: var(--l, red) }`,
+      <div className='p'>
+        Parent <span>Child</span>
+      </div>,
+      <div style={{ color: 'blue' }}>
+        Parent <span style={{ color: 'red' }}>Child</span>
+      </div>
+    )
+  })
+
+  it('should use the initial values of registered custom properties', async () => {
+    await expectSame(
+      `@property --a { syntax: "*"; inherits: false; initial-value: red }
+      @property --b { syntax: "<color>"; inherits: true; initial-value: green }
+      @property --c { syntax: "<color>"; initial-value: blue }
+      @property --d { syntax: "<color>"; inherits: false }
+      @property --x { syntax: "*"; inherits: false; initial-value: 0px }
+      .p { --a: blue; --b: blue }
+      .a { color: var(--a) }
+      .b { color: var(--b) }
+      .c { color: var(--c, gold) }
+      .d { color: var(--d, gold) }
+      .e::before { content: "E"; color: var(--a) }
+      .f { --a: gold; color: var(--a) }
+      .f::before { content: "F"; color: var(--a) }
+      .t { width: 10px; height: 10px; background: black; translate: var(--x) 4px }`,
+      <>
+        <div className='p'>
+          <span className='a'>Not inherited</span>
+          <span className='b'>Inherited</span>
+        </div>
+        <span className='b'>Root</span>
+        <span className='c'>No inherits</span>
+        <span className='d'>No initial value</span>
+        <span className='e'>Pseudo</span>
+        <span className='f'>Declared</span>
+        <div style={{ '--a': 'blue' } as any}>
+          <span className='a'>Inline</span>
+        </div>
+        <div className='t' />
+      </>,
+      <>
+        <div>
+          <span style={{ color: 'red' }}>Not inherited</span>
+          <span style={{ color: 'blue' }}>Inherited</span>
+        </div>
+        <span style={{ color: 'green' }}>Root</span>
+        <span style={{ color: 'gold' }}>No inherits</span>
+        <span style={{ color: 'gold' }}>No initial value</span>
+        <span>
+          <span style={{ color: 'red' }}>E</span>Pseudo
+        </span>
+        <span style={{ color: 'gold' }}>
+          <span style={{ color: 'red' }}>F</span>Declared
+        </span>
+        <div>
+          <span style={{ color: 'red' }}>Inline</span>
+        </div>
+        <div
+          style={{
+            width: 10,
+            height: 10,
+            background: 'black',
+            translate: '0px 4px',
+          }}
+        />
+      </>
+    )
+  })
+
+  it('should not report internal props of containers', async () => {
+    const reported: string[] = []
+    await satori(
+      page(
+        <>
+          <div className='c'>A</div>
+          <div style={{ display: 'none' }}>
+            <div className='c'>B</div>
+          </div>
+        </>,
+        `.c { container-type: inline-size }
+        @container (width > 50px) { .c div { color: red } }`
+      ),
+      {
+        width: 200,
+        height: 160,
+        fonts,
+        onNodeDetected: (node) => reported.push(...Object.keys(node.props)),
+      }
+    )
+    expect(reported).toContain('className')
+    expect(reported.filter((key) => key.startsWith('__'))).toEqual([])
+  })
+
+  it('should resolve container units', async () => {
+    await expectSame(
+      `.i { container-type: inline-size; width: 100px }
+      .s { container-type: size; width: 80px; height: 40px }
+      .bar { height: 4px; background: red }
+      .i > .w { width: 50cqw }
+      .i > .h { width: 10cqh }
+      .s > .h { width: 10cqh }
+      .s > .min { width: 10cqmin }
+      .i::before { content: ""; display: block; width: 25cqi; height: 4px; background: blue }`,
+      <>
+        <div className='i'>
+          <div className='bar w' />
+          <div className='bar h' />
+        </div>
+        <div className='s'>
+          <div className='bar h' />
+          <div className='bar min' />
+        </div>
+      </>,
+      <>
+        <div style={{ width: 100 }}>
+          <div style={{ width: 25, height: 4, background: 'blue' }} />
+          <div style={{ width: 50, height: 4, background: 'red' }} />
+          {/* Without a size container, of the viewport. */}
+          <div style={{ width: 16, height: 4, background: 'red' }} />
+        </div>
+        <div style={{ width: 80, height: 40 }}>
+          <div style={{ width: 4, height: 4, background: 'red' }} />
+          <div style={{ width: 4, height: 4, background: 'red' }} />
+        </div>
+      </>
+    )
+  })
+
+  it('should check container units in linear time', async () => {
+    // A regular expression backtracked for seconds on long numbers, e.g. in
+    // quoted font names.
+    const digits = '1'.repeat(4000)
+    const errors: string[] = []
+    const start = performance.now()
+    await satori(
+      page(
+        <>
+          <div className='a'>A</div>
+          <div className='b'>B</div>
+          <div className='c'>C</div>
+        </>,
+        `.a { font-family: "${digits}", sans-serif }
+        .b { margin: ${digits}cqx 1cqw }
+        .c { font-family: "${digits}1cqw", sans-serif; width: 10cqw }`
+      ),
+      {
+        width: 200,
+        height: 160,
+        fonts,
+        onStyleError: (error) => errors.push(error.message),
+      }
+    )
+    expect(performance.now() - start).toBeLessThan(1000)
+    // The invalid margin is reported with its value.
+    expect(errors.some((error) => error.includes(`${digits}cqx`))).toBe(true)
+  })
+
   it('should order cascade layers', async () => {
     await expectSame(
       `@layer base, theme;

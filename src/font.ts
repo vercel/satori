@@ -574,11 +574,70 @@ export default class FontLoader {
     return matchedFont[0]
   }
 
+  private chRatios = new Map<string, number>()
+
+  /**
+   * The width of `0` relative to the font size, for the `ch` unit, or
+   * `undefined` without fonts.
+   */
+  public getChRatio(style: {
+    fontFamily?: string | string[]
+    fontWeight?: FontWeight
+    fontStyle?: FontStyle
+  }) {
+    if (!this.fonts.size) return
+    const key = [
+      [style.fontFamily].flat().join(','),
+      style.fontWeight,
+      style.fontStyle,
+    ].join('|')
+    let ratio = this.chRatios.get(key)
+    if (ratio === undefined) {
+      ratio = this.getEngine(1, 'normal', style, undefined).measure('0', {
+        fontSize: 1,
+        letterSpacing: 0,
+      })
+      this.chRatios.set(key, ratio)
+    }
+    return ratio
+  }
+
+  /**
+   * The average width of characters relative to the font size, for the width
+   * of text inputs, or `undefined` without fonts. Like in Chrome, it's from
+   * the first font of the family, or the width of `0`.
+   */
+  public getAverageCharRatio(style: {
+    fontFamily?: string | string[]
+    fontWeight?: FontWeight
+    fontStyle?: FontStyle
+  }) {
+    if (!this.fonts.size) return
+    const weight = style.fontWeight ?? 400
+    const fontStyle = style.fontStyle ?? 'normal'
+    let font: opentype.Font | null = null
+    for (const family of [style.fontFamily ?? []].flat()) {
+      const name = family.toLowerCase()
+      font =
+        this.get({ name, weight, style: fontStyle }) ??
+        this.get({ name: name + '_unknown', weight, style: fontStyle })
+      if (font) break
+    }
+    font ??= this.get({
+      name: this.fonts.keys().next().value,
+      weight,
+      style: fontStyle,
+    })
+    const average = font?.tables.os2?.xAvgCharWidth
+    return average > 0 ? average / font.unitsPerEm : this.getChRatio(style)
+  }
+
   public addFonts(fontOptions: FontOptions[]) {
     // Adding fonts can change how text resolves across the font list, so
     // previously shaped runs may no longer be correct.
     if (fontOptions.length && this.fonts.size) {
       this.shapedRunCache.clear()
+      this.chRatios.clear()
     }
     for (const fontOption of fontOptions) {
       const { name, data, lang } = fontOption
@@ -911,11 +970,11 @@ export default class FontLoader {
         s?: string,
         resolvedFont = typeof s === 'undefined' ? fonts[0] : resolveFont(s)
       ) => {
-        const asc = ascender(resolvedFont)
-        const desc = descender(resolvedFont)
-        const contentHeight = asc - desc
-
-        return asc + (height(resolvedFont) - contentHeight) / 2
+        // Like in Chrome, the ascent and descent are rounded to pixels, and
+        // half of the leading is floored.
+        const asc = Math.round(ascender(resolvedFont))
+        const desc = Math.round(-descender(resolvedFont))
+        return asc + Math.floor((height(resolvedFont) - asc - desc) / 2)
       },
       height: (
         s?: string,

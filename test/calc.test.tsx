@@ -130,4 +130,19 @@ describe('Math functions', () => {
     )
     expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
+  it('should resolve math functions in line-height', async () => {
+    const render = (lineHeight: number | string) =>
+      satori(
+        <div style={{ display: 'flex', fontSize: 20, width: 100 }}>
+          <div style={{ lineHeight }}>Line height</div>
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+    // Unitless values are multiples of the font size.
+    expect(await render('calc(1.25 / 0.875)')).toBe(await render(1.25 / 0.875))
+    expect(await render('var(--x, calc(3 / 2))')).toBe(await render(1.5))
+    // Lengths and percentages are of the font size.
+    expect(await render('calc(10px + 50%)')).toBe(await render(1))
+    expect(await render('max(1em, 30px)')).toBe(await render(1.5))
+  })
 })

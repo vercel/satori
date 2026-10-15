@@ -111,4 +111,38 @@ describe('text-wrap', () => {
       )
     )
   })
+  it('should not change the size of balanced text', async () => {
+    // Like in browsers, the box is as wide as without balancing, and the lines
+    // are balanced in it.
+    const measure = async (textWrap?: string) => {
+      const boxes: { width: number; height: number }[] = []
+      await satori(
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            width: 200,
+            fontSize: 16,
+          }}
+        >
+          <div id='text' style={{ maxWidth: 120, textWrap } as any}>
+            {'aa aa aa aa aa aa aa aa aa'}
+          </div>
+        </div>,
+        {
+          width: 200,
+          height: 100,
+          fonts,
+          onNodeDetected: (node) => {
+            if (node.props.id === 'text') boxes.push(node)
+          },
+        }
+      )
+      return { width: boxes[0].width, height: boxes[0].height }
+    }
+    const balanced = await measure('balance')
+    expect(balanced).toEqual(await measure())
+    expect(balanced.width).toBe(120)
+  })
 })

@@ -18,35 +18,85 @@ const geistMono = (family: string): FontFile[] => [
 const nextjs = [...geist('GeistSans'), ...geistMono('Geist Mono')]
 
 /**
- * The sections to compare. Selectors may use the hashed class names of the
- * page, since snapshots are only captured again on purpose, see `capture.ts`.
+ * The sections to compare. Snapshots are only captured again on purpose, see
+ * `capture.ts`, but selectors avoid the hashed class names of the pages,
+ * which change with each deployment.
  */
 export const cases: FidelityCase[] = [
   {
     name: 'nextjs-hero',
     url: 'https://nextjs.org/',
-    selector: '[class*="_intro"]',
+    selector: 'main > div > section:nth-of-type(1)',
     width: 1280,
     fonts: nextjs,
   },
   {
     name: 'nextjs-features',
     url: 'https://nextjs.org/',
-    selector: 'section[class*="fXK_Ja_root"]',
+    selector: 'main > div > section:nth-of-type(2) > div:nth-of-type(2) > ul',
     width: 1280,
     fonts: nextjs,
   },
   {
     name: 'nextjs-showcase',
     url: 'https://nextjs.org/',
-    selector: 'section[class*="enIFoq_root"]',
+    selector: 'main > div > section:nth-of-type(4) > div:nth-of-type(1)',
     width: 1280,
     fonts: nextjs,
   },
   {
     name: 'nextjs-footer',
     url: 'https://nextjs.org/',
-    selector: 'footer[class*="_footer"]',
+    selector: 'footer',
+    width: 1280,
+    fonts: nextjs,
+  },
+  {
+    name: 'nextjs-learn-hero',
+    url: 'https://nextjs.org/learn',
+    selector: 'main > div > div:nth-of-type(1)',
+    width: 1280,
+    fonts: nextjs,
+  },
+  {
+    name: 'nextjs-learn-courses',
+    url: 'https://nextjs.org/learn',
+    selector: 'main > div > section:nth-of-type(1)',
+    width: 1280,
+    fonts: nextjs,
+  },
+  {
+    name: 'nextjs-learn-deeper',
+    url: 'https://nextjs.org/learn',
+    selector: 'main > div > div:nth-of-type(3)',
+    width: 1280,
+    fonts: nextjs,
+  },
+  {
+    name: 'nextjs-showcase-hero',
+    url: 'https://nextjs.org/showcase',
+    selector: 'main > div > section:nth-of-type(1)',
+    width: 1280,
+    fonts: nextjs,
+  },
+  {
+    name: 'nextjs-showcase-stats',
+    url: 'https://nextjs.org/showcase',
+    selector: 'main > div > section:nth-of-type(2)',
+    width: 1280,
+    fonts: nextjs,
+  },
+  {
+    name: 'nextjs-docs-tabs',
+    url: 'https://nextjs.org/docs/app/getting-started/installation',
+    selector: 'main > article > div:nth-of-type(6) > div:nth-of-type(1)',
+    width: 1280,
+    fonts: nextjs,
+  },
+  {
+    name: 'nextjs-docs-terminal',
+    url: 'https://nextjs.org/docs/app/getting-started/installation',
+    selector: 'main > article > div:nth-of-type(6) > div:nth-of-type(4)',
     width: 1280,
     fonts: nextjs,
   },

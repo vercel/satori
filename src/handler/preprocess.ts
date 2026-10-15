@@ -124,6 +124,15 @@ function resolveSVGColors(
 }
 
 /**
+ * After `z`, a command other than a move starts a subpath where the closed one
+ * started, which resvg can't parse: it panics and ends the process. `m0 0`
+ * moves to that point first, which doesn't change the path.
+ */
+function normalizePathData(data: string) {
+  return data.replace(/[zZ](?=\s*[a-ln-yA-LN-Y])/g, '$&m0 0')
+}
+
+/**
  * Resolves `var()` in an attribute or style value, like browsers do for
  * presentation attributes. A value that is invalid then is `undefined`, and
  * left out.
@@ -209,6 +218,9 @@ function translateSVGNodeToSVGString(
 
     if ((k === 'href' || k === 'xlinkHref') && type === 'image') {
       resolvedValue = cache.get(resolvedValue as string)[0]
+    }
+    if (k === 'd' && typeof resolvedValue === 'string') {
+      resolvedValue = normalizePathData(resolvedValue)
     }
 
     const name = ATTRIBUTE_MAPPING[k] || k

@@ -149,7 +149,7 @@ function encodeStyle(
   data.push(0, style.replaced ? 1 : 0)
   data.push(FLOAT[style.float] ?? 0, CLEAR[style.clear] ?? 0)
   data.push(style.direction === 'rtl' ? 1 : 0)
-  encodeGridStyle(data, style, scale)
+  encodeGridStyle(data, style, scale, calcs)
 }
 
 /** A length, then UTF-16 code units. */
@@ -170,15 +170,18 @@ function pushLineNames(data: number[], lineNames: string[][]) {
 /**
  * Kinds: 0 is auto, 1 a length, 2 a percentage, 3 min-content, 4
  * max-content, 5 a flex fraction, 6 `fit-content()` with a length and 7 with
- * a percentage.
+ * a percentage, and 8 a `calc()` expression, by its index in `calcs`.
  */
 function pushTrackBreadth(
   data: number[],
   breadth: GridTrackBreadth,
-  scale: number
+  scale: number,
+  calcs: CalcLength['calc'][]
 ) {
   if (typeof breadth === 'number') {
     data.push(1, breadth * scale)
+  } else if (typeof breadth === 'object' && 'calc' in breadth) {
+    data.push(8, calcs.push(breadth.calc) - 1)
   } else if (typeof breadth === 'object') {
     const limit = breadth.fitContent
     if (typeof limit === 'number') data.push(6, limit * scale)
@@ -198,12 +201,13 @@ function pushTrackBreadth(
 function pushTrackSizes(
   data: number[],
   tracks: GridTrackSize[],
-  scale: number
+  scale: number,
+  calcs: CalcLength['calc'][]
 ) {
   data.push(tracks.length)
   for (const { min, max } of tracks) {
-    pushTrackBreadth(data, min, scale)
-    pushTrackBreadth(data, max, scale)
+    pushTrackBreadth(data, min, scale, calcs)
+    pushTrackBreadth(data, max, scale, calcs)
   }
 }
 
@@ -215,7 +219,8 @@ function pushTrackSizes(
 function pushTrackList(
   data: number[],
   list: GridTrackList | undefined,
-  scale: number
+  scale: number,
+  calcs: CalcLength['calc'][]
 ) {
   const tracks = list?.tracks ?? []
   data.push(tracks.length)
@@ -224,11 +229,11 @@ function pushTrackList(
       data.push(1)
       if (typeof track.count === 'number') data.push(0, track.count)
       else data.push(track.count === 'auto-fill' ? 1 : 2, 0)
-      pushTrackSizes(data, track.tracks, scale)
+      pushTrackSizes(data, track.tracks, scale, calcs)
       pushLineNames(data, track.lineNames)
     } else {
       data.push(0)
-      pushTrackSizes(data, [track], scale)
+      pushTrackSizes(data, [track], scale, calcs)
     }
   }
   pushLineNames(data, list?.lineNames ?? [])
@@ -261,13 +266,18 @@ const GRID_AUTO_FLOW = {
  * Whether it's a grid container, then its properties. Whether it's placed
  * in a grid, then its lines: row start, row end, column start and end.
  */
-function encodeGridStyle(data: number[], style: LayoutStyle, scale: number) {
+function encodeGridStyle(
+  data: number[],
+  style: LayoutStyle,
+  scale: number,
+  calcs: CalcLength['calc'][]
+) {
   if (style.display === 'grid') {
     data.push(1)
-    pushTrackList(data, style.gridTemplateColumns, scale)
-    pushTrackList(data, style.gridTemplateRows, scale)
-    pushTrackSizes(data, style.gridAutoColumns ?? [], scale)
-    pushTrackSizes(data, style.gridAutoRows ?? [], scale)
+    pushTrackList(data, style.gridTemplateColumns, scale, calcs)
+    pushTrackList(data, style.gridTemplateRows, scale, calcs)
+    pushTrackSizes(data, style.gridAutoColumns ?? [], scale, calcs)
+    pushTrackSizes(data, style.gridAutoRows ?? [], scale, calcs)
     data.push(GRID_AUTO_FLOW[style.gridAutoFlow] ?? 0)
     // The row and column counts, then each area: its name and lines.
     const areas = style.gridTemplateAreas

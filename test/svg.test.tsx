@@ -448,6 +448,20 @@ describe('SVG', () => {
     )
   })
 
+  it('should move to the start of closed subpaths that continue', async () => {
+    // resvg panics when a command other than a move follows `z`.
+    const render = (d: string) =>
+      satori(
+        <svg viewBox='0 0 20 20' width='20' height='20'>
+          <path d={d} />
+        </svg>,
+        { width: 20, height: 20, fonts }
+      )
+    expect(await render('M2 2h6v6z a4 4 0 0 1 8 8Z l2 2')).toBe(
+      await render('M2 2h6v6zm0 0 a4 4 0 0 1 8 8Zm0 0 l2 2')
+    )
+  })
+
   it('should render fragments inside svg', async () => {
     const svg = await satori(
       <div

@@ -9,6 +9,7 @@ import type { ReactElement, ReactNode } from 'react'
 
 import type { LayoutEngine } from '../layout-engine/index.js'
 import { isReactElement, normalizeChildren } from '../utils.js'
+import { PLACEHOLDER_PROP } from '../form-control.js'
 
 // The JSON from `crates/layout/src/css.rs`.
 type Combinator = ' ' | '>' | '+' | '~'
@@ -25,7 +26,9 @@ interface RawRule {
   s?: RawComplex[]
   m?: string
   u?: string
+  c?: string
   l?: string[]
+  p?: string
   b?: Item[]
 }
 type Item = RawRule | Declaration
@@ -47,12 +50,60 @@ interface Rule {
   layer: string[]
   /** The precedence of the layer, see `rankLayers()`. */
   rank: number
+  /** The conditions of the `@container` rules it's in. */
+  containers?: ContainerCondition[]
+}
+
+/** A custom property registered with `@property`. */
+interface RegisteredProperty {
+  inherits: boolean
+  initial?: string
+}
+
+/** The initial values of registered custom properties, see `cascade()`. */
+interface InitialValues {
+  all: [name: string, value: string][]
+  notInherited: [name: string, value: string][]
+}
+
+/** What the styles of the rebuilt tree depend on, see `rebuild()`. */
+interface RebuildContext {
+  invalid: Set<Declaration>
+  initial?: InitialValues
+  /** For container units, see `resolveContainerUnits()`. */
+  units?: { sizes?: Map<number, ContainerSize>; viewport: Viewport }
+}
+
+/** The condition of a `@container` rule, for the container with `name`. */
+interface ContainerCondition {
+  name?: string
+  query: string
 }
 
 export interface Viewport {
   width?: number
   height?: number
 }
+
+/** The size of the content box of a query container. */
+export interface ContainerSize {
+  width: number
+  height: number
+}
+
+/**
+ * Container queries depend on the size of containers, which is known after
+ * layout. Without `sizes`, they don't match, and `queried` is set when they
+ * could, so that the tree is laid out again with the sizes of its containers.
+ */
+export interface ContainerQueries {
+  /** The sizes of containers, by their `CONTAINER_PROP`. */
+  sizes?: Map<number, ContainerSize>
+  queried?: boolean
+}
+
+/** The prop of query containers, their index in tree order. */
+export const CONTAINER_PROP = '__satoriContainer'
 
 /** An element of the tree, for matching selectors. */
 interface Node {
@@ -69,11 +120,23 @@ interface Node {
   lang?: string
   /** Whether it's in an `<svg>`. */
   svg: boolean
+  /** Set if it's a query container, see `getContainer()`. */
+  container?: Container
   /**
    * The rules that match it, and its `::before` and `::after` if it can have
    * them, see `matchRules()`.
    */
-  matched?: Partial<Record<'' | 'before' | 'after', MatchedRule[]>>
+  matched?: Partial<
+    Record<'' | 'before' | 'after' | 'placeholder', MatchedRule[]>
+  >
+  /** The custom properties it declares, see `cascade()`. */
+  custom?: Set<string>
+}
+
+interface Container {
+  index: number
+  type: 'inline-size' | 'size'
+  names: string[]
 }
 
 interface MatchedRule {
@@ -162,7 +225,8 @@ export async function applyStyleSheets(
   root: ReactNode,
   engine: LayoutEngine,
   viewport: Viewport,
-  validation?: Validation
+  validation?: Validation,
+  containers?: ContainerQueries
 ): Promise<ReactNode> {
   const sheets: string[] = []
   collectStyleSheets(root, sheets, viewport)
@@ -174,6 +238,7 @@ export async function applyStyleSheets(
     anonymousLayers: 0,
     layers: new Map(),
     viewport,
+    properties: new Map(),
     // Feature queries aren't errors, so they're not reported.
     supported:
       validation &&
@@ -181,29 +246,46 @@ export async function applyStyleSheets(
   }
   const rules: Rule[] = []
   for (const items of parsed) compileRules(items, null, [], rules, state)
-  if (!rules.length) return root
   rankLayers(rules, state.layers)
+  const initial = getInitialValues(state.properties)
+  if (!rules.length && !initial) return root
 
   const roots: Node[] = []
   buildNodes(root, null, roots)
   // Rules are matched first, so that only the declarations that apply are
   // validated.
   const nodes: Node[] = []
+  const sizes = containers?.sizes
+  let containerCount = 0
   const visit = (node: Node) => {
-    node.matched = { '': matchRules(node, rules) }
+    node.matched = { '': matchRules(node, rules, sizes) }
+    // Containers are known before their descendants are matched, and before
+    // their own pseudo-elements, which can query them.
+    if ((state.containerRules || state.containerUnits) && !node.svg) {
+      node.container = getContainer(node, containerCount)
+      if (node.container) containerCount++
+    }
     if (!node.svg && !NO_GENERATED_CONTENT.has(node.type)) {
-      node.matched.before = matchRules(node, rules, 'before')
-      node.matched.after = matchRules(node, rules, 'after')
+      node.matched.before = matchRules(node, rules, sizes, 'before')
+      node.matched.after = matchRules(node, rules, sizes, 'after')
+    }
+    if (node.type === 'input' && !node.svg) {
+      node.matched.placeholder = matchRules(node, rules, sizes, 'placeholder')
     }
     nodes.push(node)
     node.children.forEach(visit)
   }
   roots.forEach(visit)
+  if (containers) containers.queried = containerCount > 0
   const invalid = validation
     ? await findInvalidDeclarations(nodes, validation)
     : new Set<Declaration>()
 
-  const children = rebuild(root, roots, invalid)
+  const children = rebuild(root, roots, {
+    invalid,
+    initial,
+    units: state.containerUnits ? { sizes, viewport } : undefined,
+  })
   return isFragment(root)
     ? {
         ...(root as ReactElement),
@@ -255,6 +337,12 @@ interface CompileState {
   viewport: Viewport
   /** Whether the declarations of `@supports` are supported. */
   supported?: Map<string, boolean>
+  /** Whether there are rules in `@container`. */
+  containerRules?: boolean
+  /** Whether declarations have container units, e.g. `cqw`. */
+  containerUnits?: boolean
+  /** The custom properties registered with `@property`, by name. */
+  properties: Map<string, RegisteredProperty>
 }
 
 /**
@@ -266,7 +354,8 @@ function compileRules(
   parent: Selector[] | null,
   layer: string[],
   rules: Rule[],
-  state: CompileState
+  state: CompileState,
+  containers: ContainerCondition[] = []
 ) {
   let declarations: Declaration[] = []
   const flush = () => {
@@ -277,6 +366,7 @@ function compileRules(
         order: state.order++,
         layer,
         rank: 0,
+        containers: containers.length ? containers : undefined,
       })
     }
     declarations = []
@@ -285,6 +375,9 @@ function compileRules(
   for (const item of items) {
     if (Array.isArray(item)) {
       declarations.push(item)
+      if (typeof item[1] === 'string' && CONTAINER_UNIT.test(item[1])) {
+        state.containerUnits = true
+      }
       continue
     }
     flush()
@@ -294,16 +387,24 @@ function compileRules(
         compileSelector(selector, parent)
       )
       if (selectors.every(Boolean)) {
-        compileRules(item.b, selectors, layer, rules, state)
+        compileRules(item.b, selectors, layer, rules, state, containers)
       }
     } else if (item.m !== undefined) {
       if (matchesMedia(item.m, state.viewport)) {
-        compileRules(item.b, parent, layer, rules, state)
+        compileRules(item.b, parent, layer, rules, state, containers)
       }
     } else if (item.u !== undefined) {
       if (matchesSupports(item.u, state.supported)) {
-        compileRules(item.b, parent, layer, rules, state)
+        compileRules(item.b, parent, layer, rules, state, containers)
       }
+    } else if (item.c !== undefined) {
+      state.containerRules = true
+      compileRules(item.b, parent, layer, rules, state, [
+        ...containers,
+        parseContainerPrelude(item.c),
+      ])
+    } else if (item.p !== undefined) {
+      registerProperty(item.p, item.b ?? [], state.properties)
     } else if (item.l) {
       if (!item.b) {
         for (const name of item.l) {
@@ -314,10 +415,51 @@ function compileRules(
       const name = item.l[0]?.split('.') ?? [`\0${state.anonymousLayers++}`]
       const nested = [...layer, ...name]
       declareLayer(nested, state)
-      compileRules(item.b, parent, nested, rules, state)
+      compileRules(item.b, parent, nested, rules, state, containers)
     }
   }
   flush()
+}
+
+/**
+ * Registers a custom property of `@property`, if its descriptors are valid.
+ * Like in browsers, the last valid rule for a property wins.
+ */
+function registerProperty(
+  name: string,
+  descriptors: Item[],
+  properties: Map<string, RegisteredProperty>
+) {
+  const values = new Map<string, string>()
+  for (const item of descriptors) {
+    if (Array.isArray(item)) {
+      values.set(item[0].toLowerCase(), String(item[1]).trim())
+    }
+  }
+  const syntax = values.get('syntax')
+  const inherits = values.get('inherits')?.toLowerCase()
+  const initial = values.get('initial-value')
+  if (syntax === undefined || (inherits !== 'true' && inherits !== 'false')) {
+    return
+  }
+  // Only the universal syntax `"*"` doesn't need an initial value.
+  if (initial === undefined && !/^(['"])\s*\*\s*\1$/.test(syntax)) return
+  properties.set(name, { inherits: inherits === 'true', initial })
+}
+
+/** The initial values of registered custom properties, if any. */
+function getInitialValues(
+  properties: Map<string, RegisteredProperty>
+): InitialValues | undefined {
+  const all: InitialValues['all'] = []
+  const notInherited: InitialValues['notInherited'] = []
+  for (const [name, { inherits, initial }] of properties) {
+    if (initial !== undefined) all.push([name, initial])
+    // Without an initial value, a property that isn't inherited has the
+    // guaranteed-invalid value, `initial`, unless it's declared.
+    if (!inherits) notInherited.push([name, initial ?? 'initial'])
+  }
+  return all.length || notInherited.length ? { all, notInherited } : undefined
 }
 
 function declareLayer(layer: string[], state: CompileState) {
@@ -547,25 +689,25 @@ function buildNodes(
  * Rebuilds the children with the styles of the stylesheets, and the
  * `::before` and `::after` pseudo-elements.
  */
-function rebuild(
-  children: ReactNode,
-  nodes: Node[],
-  invalid: Set<Declaration>
-) {
+function rebuild(children: ReactNode, nodes: Node[], context: RebuildContext) {
   let index = 0
   return normalizeChildren(children).map((child) => {
     if (!isReactElement(child) || typeof child.type !== 'string') return child
     const node = nodes[index++]
     const props: Record<string, any> = { ...child.props }
-    const style = cascade(node, invalid)
+    const style = cascade(node, context)
     if (style) props.style = style
+    if (node.matched.placeholder?.length) {
+      props[PLACEHOLDER_PROP] = cascade(node, context, 'placeholder')
+    }
+    if (node.container) props[CONTAINER_PROP] = node.container.index
     let content: ReactNode[] | undefined =
       props.children === undefined
         ? undefined
-        : rebuild(props.children, node.children, invalid)
+        : rebuild(props.children, node.children, context)
     if (node.matched.before) {
-      const before = generateContent(node, invalid, 'before')
-      const after = generateContent(node, invalid, 'after')
+      const before = generateContent(node, context, 'before')
+      const after = generateContent(node, context, 'after')
       if (before || after) {
         content = [before, ...(content ?? []), after].filter(Boolean)
       }
@@ -610,10 +752,10 @@ const element = (type: string, props: Record<string, unknown>) =>
  */
 function generateContent(
   node: Node,
-  invalid: Set<Declaration>,
+  context: RebuildContext,
   pseudo: 'before' | 'after'
 ) {
-  const style = cascade(node, invalid, pseudo)
+  const style = cascade(node, context, pseudo)
   const content = style?.content
   if (!Array.isArray(content)) return
   delete style.content
@@ -655,10 +797,26 @@ interface Match {
   specificity: number
 }
 
-/** The rules that match an element, or its `pseudo` element. */
-function matchRules(node: Node, rules: Rule[], pseudo?: string) {
+/**
+ * The rules that match an element, or its `pseudo` element. The containers of
+ * its ancestors are known, and its own one for its pseudo-elements.
+ */
+function matchRules(
+  node: Node,
+  rules: Rule[],
+  sizes: Map<number, ContainerSize> | undefined,
+  pseudo?: string
+) {
   const matched: MatchedRule[] = []
   for (const rule of rules) {
+    if (
+      rule.containers &&
+      !rule.containers.every((condition) =>
+        matchesContainer(condition, pseudo ? node : node.parent, sizes)
+      )
+    ) {
+      continue
+    }
     let specificity = -1
     for (const selector of rule.selectors) {
       if (
@@ -710,9 +868,18 @@ async function findInvalidDeclarations(
   }
   const groups = [...byKey.values()]
   const errors = await Promise.all(
-    groups.map(([[name, value]]) =>
-      getError(toPropertyName(name), value as string)
-    )
+    groups.map(async ([[name, value]]) => {
+      // Container units are resolved in the cascade, so they're checked as
+      // lengths.
+      const original = value as string
+      const checked = CONTAINER_UNIT.test(original)
+        ? replaceContainerUnits(original, () => '0px')
+        : original
+      const error = await getError(toPropertyName(name), checked)
+      return error && checked !== original
+        ? new Error(error.message.split(checked).join(original))
+        : error
+    })
   )
   const invalid = new Set<Declaration>()
   groups.forEach((declarations, index) => {
@@ -728,12 +895,13 @@ async function findInvalidDeclarations(
  * The style of an element, or of its `pseudo` element, with the matching
  * declarations, in cascade order: normal declarations by layer, specificity
  * and order, then the inline style, then important declarations, where
- * earlier layers win.
+ * earlier layers win. Then the `initial` values of registered properties it
+ * needs, see `initialValuesFor()`.
  */
 function cascade(
   node: Node,
-  invalid: Set<Declaration>,
-  pseudo?: 'before' | 'after'
+  { invalid, initial, units }: RebuildContext,
+  pseudo?: 'before' | 'after' | 'placeholder'
 ) {
   const normal: Match[] = []
   const important: Match[] = []
@@ -749,7 +917,13 @@ function cascade(
       })
     }
   }
-  if (!normal.length && !important.length) return
+  const values = initial
+    ? initialValuesFor(pseudo ? node : node.parent, initial)
+    : []
+  if (!normal.length && !important.length && !values.length) {
+    if (!pseudo) node.custom = getCustomProperties(node.props.style)
+    return
+  }
 
   // Sorting is stable, so declarations of a rule stay in order.
   normal.sort(
@@ -783,7 +957,150 @@ function cascade(
   for (const { declaration } of important) {
     set(toPropertyName(declaration[0]), declaration[1])
   }
+  if (!pseudo) node.custom = getCustomProperties(style)
+  for (const [name, value] of values) {
+    if (!(name in style)) style[name] = value
+  }
+  if (units) resolveContainerUnits(style, pseudo ? node : node.parent, units)
   return style
+}
+
+/** A quick check for container units, see `replaceContainerUnits()`. */
+const CONTAINER_UNIT = /\d(cqw|cqh|cqi|cqb|cqmin|cqmax)\b/i
+const CONTAINER_UNITS = new Set(['cqw', 'cqh', 'cqi', 'cqb', 'cqmin', 'cqmax'])
+
+const isDigit = (char: string | undefined) =>
+  char !== undefined && char >= '0' && char <= '9'
+const isNameStart = (char: string | undefined) =>
+  char !== undefined &&
+  ((char >= 'a' && char <= 'z') ||
+    (char >= 'A' && char <= 'Z') ||
+    char === '_' ||
+    char >= '\u0080')
+const isName = (char: string | undefined) =>
+  isNameStart(char) || isDigit(char) || char === '-'
+
+/**
+ * Replaces the container units in a value, e.g. `1.5cqw`, with the result of
+ * `replace`. Like a CSS tokenizer, it skips strings and identifiers, and it
+ * reads each character once, as values come from stylesheets: a regular
+ * expression could backtrack for a long time on long numbers.
+ */
+function replaceContainerUnits(
+  value: string,
+  replace: (amount: number, unit: string) => string
+) {
+  let result = ''
+  let i = 0
+  while (i < value.length) {
+    const char = value[i]
+    let end = i + 1
+    if (char === '"' || char === "'") {
+      while (end < value.length && value[end] !== char) {
+        end += value[end] === '\\' ? 2 : 1
+      }
+      end = Math.min(end + 1, value.length)
+    } else if (
+      isNameStart(char) ||
+      (char === '-' && (isNameStart(value[i + 1]) || value[i + 1] === '-'))
+    ) {
+      while (isName(value[end])) end++
+    } else {
+      // A number, with a sign, a fraction and an exponent, then its unit.
+      let j = char === '+' || char === '-' ? i + 1 : i
+      if (isDigit(value[j]) || (value[j] === '.' && isDigit(value[j + 1]))) {
+        while (isDigit(value[j])) j++
+        if (value[j] === '.' && isDigit(value[j + 1])) {
+          j++
+          while (isDigit(value[j])) j++
+        }
+        const sign = value[j + 1] === '+' || value[j + 1] === '-' ? 1 : 0
+        if (
+          (value[j] === 'e' || value[j] === 'E') &&
+          isDigit(value[j + 1 + sign])
+        ) {
+          j += 1 + sign
+          while (isDigit(value[j])) j++
+        }
+        end = j
+        while (isName(value[end])) end++
+        const unit = value.slice(j, end).toLowerCase()
+        if (CONTAINER_UNITS.has(unit)) {
+          result += replace(parseFloat(value.slice(i, j)), unit)
+          i = end
+          continue
+        }
+      }
+    }
+    result += value.slice(i, end)
+    i = end
+  }
+  return result
+}
+
+/**
+ * Resolves container units to px, with the size of the nearest query
+ * container that `start` is in or is, whose type allows the axis. Without
+ * one, or before the layout, they're of the viewport, like in browsers.
+ * Custom properties are resolved where they're used, so they're kept.
+ */
+function resolveContainerUnits(
+  style: Record<string, unknown>,
+  start: Node | null,
+  { sizes, viewport }: NonNullable<RebuildContext['units']>
+) {
+  const size = (block: boolean) => {
+    for (let node = start; node; node = node.parent) {
+      const container = node.container
+      if (!container || (block && container.type !== 'size')) continue
+      const containerSize = sizes?.get(container.index)
+      if (containerSize)
+        return block ? containerSize.height : containerSize.width
+      break
+    }
+    return (block ? viewport.height : viewport.width) ?? 0
+  }
+  for (const [name, value] of Object.entries(style)) {
+    if (
+      name.startsWith('--') ||
+      typeof value !== 'string' ||
+      !CONTAINER_UNIT.test(value)
+    ) {
+      continue
+    }
+    style[name] = replaceContainerUnits(value, (amount, unit) => {
+      const inline = size(false)
+      const block = size(true)
+      const base = {
+        cqw: inline,
+        cqi: inline,
+        cqh: block,
+        cqb: block,
+        cqmin: Math.min(inline, block),
+        cqmax: Math.max(inline, block),
+      }[unit]
+      return `${(amount * base) / 100}px`
+    })
+  }
+}
+
+function getCustomProperties(style: Record<string, unknown> | undefined) {
+  if (!style) return
+  const names = Object.keys(style).filter((name) => name.startsWith('--'))
+  return names.length ? new Set(names) : undefined
+}
+
+/**
+ * The initial values of registered custom properties that an element needs,
+ * the child of `parent`. Custom properties are inherited in the layout, so
+ * the root needs all of them. Other elements only need the ones that aren't
+ * inherited, if their parent declares another value, like in browsers.
+ */
+function initialValuesFor(parent: Node | null, initial: InitialValues) {
+  if (!parent) return initial.all
+  const custom = parent.custom
+  if (!custom) return []
+  return initial.notInherited.filter(([name]) => custom.has(name))
 }
 
 /** Matches selectors from right to left. */
@@ -1115,26 +1432,118 @@ export function matchesMedia(text: string, viewport: Viewport): boolean {
     const typed = /^(?:(not|only)\s+)?([a-z-]+)(?:\s+and\s+([^]*))?$/.exec(
       query
     )
+    const features: Features = (name) => mediaFeature(name, viewport)
     if (typed && !['not', 'only', 'and', 'or'].includes(typed[2])) {
       const result =
         (typed[2] === 'all' || typed[2] === 'screen') &&
         (typed[3] === undefined ||
           matchesCondition(typed[3], (inner) =>
-            matchesMediaGroup(inner, viewport)
+            matchesMediaGroup(inner, features)
           ))
       return typed[1] === 'not' ? !result : result
     }
     return matchesCondition(query, (inner) =>
-      matchesMediaGroup(inner, viewport)
+      matchesMediaGroup(inner, features)
     )
   })
 }
 
-function matchesMediaGroup(inner: string, viewport: Viewport): boolean {
+/** The values of the features of media or container queries. */
+type Features = (name: string) => string | number | undefined
+
+function matchesMediaGroup(inner: string, features: Features): boolean {
   if (inner.startsWith('(') || /^not\b/.test(inner)) {
-    return matchesCondition(inner, (g) => matchesMediaGroup(g, viewport))
+    return matchesCondition(inner, (g) => matchesMediaGroup(g, features))
   }
-  return matchesMediaFeature(inner, viewport)
+  return matchesMediaFeature(inner, features)
+}
+
+/**
+ * The name and condition of a `@container` rule. The name is optional, and so
+ * is the condition if there's a name.
+ */
+function parseContainerPrelude(prelude: string): ContainerCondition {
+  const text = prelude.trim()
+  const named = /^(-?[a-z_][\w-]*)(?![\w-(])\s*([^]*)$/i.exec(text)
+  if (named && !/^(not|and|or|none)$/i.test(named[1])) {
+    return { name: named[1], query: named[2].toLowerCase() }
+  }
+  return { query: text.toLowerCase() }
+}
+
+/**
+ * The query container of an element, if it's one: its `container-type`, and
+ * its `container-name` for named queries.
+ */
+function getContainer(node: Node, index: number): Container | undefined {
+  const style = cascade(node, { invalid: new Set() }) ?? {}
+  let type = ''
+  let names = ''
+  // The shorthand and longhands override each other in cascade order.
+  for (const [key, value] of Object.entries(style)) {
+    if (key === 'container') {
+      const [name, containerType = 'normal'] = String(value).split('/')
+      names = name
+      type = containerType
+    } else if (key === 'containerType') {
+      type = String(value)
+    } else if (key === 'containerName') {
+      names = String(value)
+    }
+  }
+  type = type.trim().toLowerCase()
+  if (type !== 'inline-size' && type !== 'size') return
+  return {
+    index,
+    type,
+    names: names
+      .trim()
+      .split(/\s+/)
+      .filter((name) => name && name !== 'none'),
+  }
+}
+
+/**
+ * Evaluates a container condition with the nearest container from `start`
+ * that has its name and the size it queries. Heights and ratios are only
+ * known for `size` containers.
+ */
+function matchesContainer(
+  { name, query }: ContainerCondition,
+  start: Node | null,
+  sizes: Map<number, ContainerSize> | undefined
+) {
+  const block = /\b(height|block-size|aspect-ratio|orientation)\b/.test(query)
+  for (let node = start; node; node = node.parent) {
+    const container = node.container
+    if (!container) continue
+    if (name && !container.names.includes(name)) continue
+    if (block && container.type !== 'size') continue
+    const size = sizes?.get(container.index)
+    if (!size) return false
+    if (!query) return true
+    const features: Features = (feature) => containerFeature(feature, size)
+    return matchesCondition(query, (inner) =>
+      matchesMediaGroup(inner, features)
+    )
+  }
+  return false
+}
+
+/** The value of a size feature of a container. */
+function containerFeature(name: string, { width, height }: ContainerSize) {
+  switch (name) {
+    case 'width':
+    case 'inline-size':
+      return width
+    case 'height':
+    case 'block-size':
+      return height
+    case 'aspect-ratio':
+      return height ? width / height : undefined
+    case 'orientation':
+      return height >= width ? 'portrait' : 'landscape'
+  }
 }
 
 /** The value of a media feature, for a static image. */
@@ -1185,9 +1594,9 @@ function compareMedia(
   name: string,
   operator: string,
   text: string,
-  viewport: Viewport
+  features: Features
 ) {
-  const actual = mediaFeature(name, viewport)
+  const actual = features(name)
   if (actual === undefined) return false
   if (typeof actual === 'string') return operator === '=' && actual === text
   const expected = parseMediaValue(text)
@@ -1215,19 +1624,19 @@ const FLIPPED: Record<string, string> = {
   '=': '=',
 }
 
-function matchesMediaFeature(text: string, viewport: Viewport): boolean {
+function matchesMediaFeature(text: string, features: Features): boolean {
   const range = text.split(/\s*(<=|>=|<|>|=)\s*/)
   if (range.length === 3) {
     const [left, operator, right] = range
     return /^[a-z-]+$/.test(left)
-      ? compareMedia(left, operator, right, viewport)
-      : compareMedia(right, FLIPPED[operator], left, viewport)
+      ? compareMedia(left, operator, right, features)
+      : compareMedia(right, FLIPPED[operator], left, features)
   }
   if (range.length === 5) {
     const [low, lowOperator, name, highOperator, high] = range
     return (
-      compareMedia(name, FLIPPED[lowOperator], low, viewport) &&
-      compareMedia(name, highOperator, high, viewport)
+      compareMedia(name, FLIPPED[lowOperator], low, features) &&
+      compareMedia(name, highOperator, high, features)
     )
   }
   if (range.length !== 1) return false
@@ -1235,7 +1644,7 @@ function matchesMediaFeature(text: string, viewport: Viewport): boolean {
   const colon = text.indexOf(':')
   if (colon < 0) {
     // In a boolean context, features match unless they're 0 or none.
-    const value = mediaFeature(text, viewport)
+    const value = features(text)
     return (
       value !== undefined &&
       value !== 0 &&
@@ -1250,7 +1659,7 @@ function matchesMediaFeature(text: string, viewport: Viewport): boolean {
     prefix ? name.slice(4) : name,
     prefix === 'min' ? '>=' : prefix === 'max' ? '<=' : '=',
     value,
-    viewport
+    features
   )
 }
 
