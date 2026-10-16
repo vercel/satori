@@ -838,7 +838,7 @@ const CSS_WIDE_KEYWORDS = /^(inherit|initial|unset|revert|revert-layer)$/i
  * The declarations of matching rules with invalid or unsupported values,
  * which are dropped like in browsers, so that earlier declarations apply
  * instead, and their errors are reported once each, in source order. Like in
- * browsers, values with `var()` are valid until they're computed.
+ * browsers, values with `var()` or `env()` are valid until they're computed.
  */
 async function findInvalidDeclarations(
   nodes: Node[],
@@ -854,7 +854,7 @@ async function findInvalidDeclarations(
             typeof value !== 'string' ||
             name.startsWith('--') ||
             CSS_WIDE_KEYWORDS.test(value) ||
-            /var\(/i.test(value)
+            /var\(|env\(/i.test(value)
           ) {
             continue
           }
