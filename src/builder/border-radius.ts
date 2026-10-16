@@ -6,6 +6,8 @@
 // https://developer.mozilla.org/en-US/docs/Web/CSS/border-radius
 
 import { buildXMLString, lengthToNumber } from '../utils.js'
+import { MATH_FUNCTION, parseMath } from '../parser/math.js'
+import { splitRadius } from '../parser/border-radius.js'
 import { parseCornerShapeValue } from '../parser/corner-shape.js'
 
 // Getting the intersection of a 45deg ray with the elliptical arc x^2/rx^2 + y^2/ry^2 = 1.
@@ -44,17 +46,32 @@ function resolveRadius(
   style: any
 ): [boolean, undefined | [number, number]] {
   if (typeof v === 'string') {
-    const sides = v.split(' ').map((s) => s.trim())
-    const singleValue = !sides[1] && !sides[0].endsWith('%')
+    const sides = splitRadius(v)
+    // Math functions with percentages are percentages of the width or height.
+    const parse = (side: string, basis: number) =>
+      MATH_FUNCTION.test(side)
+        ? parseMath(side, (length) =>
+            lengthToNumber(length, fontSize, basis, style, true)
+          )
+        : undefined
+    const resolve = (side: string, basis: number) => {
+      const math = parse(side, basis)
+      return (
+        (math
+          ? math.evaluate(basis)
+          : lengthToNumber(side, fontSize, basis, style, true)) ?? 0
+      )
+    }
+    const singleValue =
+      !sides[1] &&
+      !sides[0].endsWith('%') &&
+      !parse(sides[0], width)?.percentage
     sides[1] = sides[1] || sides[0]
     return [
       singleValue,
       [
-        Math.min(lengthToNumber(sides[0], fontSize, width, style, true), width),
-        Math.min(
-          lengthToNumber(sides[1], fontSize, height, style, true),
-          height
-        ),
+        Math.min(resolve(sides[0], width), width),
+        Math.min(resolve(sides[1], height), height),
       ],
     ]
   }
