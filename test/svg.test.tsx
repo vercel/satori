@@ -1,4 +1,4 @@
-import { it, describe, expect } from 'vitest'
+import { it, describe, expect, vi } from 'vitest'
 import { createElement } from 'react'
 
 import { initFonts, toImage } from './utils.js'
@@ -479,5 +479,58 @@ describe('SVG', () => {
     )
 
     expect(await toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should keep the sizes of SVGs', async () => {
+    const warn = vi.spyOn(console, 'warn')
+    const render = (element: JSX.Element) =>
+      satori(
+        <div style={{ display: 'flex', width: 100, height: 100 }}>
+          {element}
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+    try {
+      // Without a viewBox, and with sizes as strings, like in HTML.
+      for (const size of ['0', '20']) {
+        const svg = await render(
+          <svg width={size} height={size}>
+            <rect width='10' height='10' fill='red' />
+          </svg>
+        )
+        expect(svg).not.toMatch(/NaN|Infinity/)
+      }
+      expect(warn).not.toHaveBeenCalled()
+    } finally {
+      warn.mockRestore()
+    }
+
+    // Like in browsers, the viewBox is centered in a box of another ratio.
+    expect(
+      await toImage(
+        await render(
+          <svg width={100} height={50} viewBox='0 0 10 10'>
+            <rect width='10' height='10' fill='red' />
+          </svg>
+        ),
+        100
+      )
+    ).toEqual(
+      await toImage(
+        await render(
+          <div style={{ display: 'flex', width: 100, height: 50 }}>
+            <div
+              style={{
+                width: 50,
+                height: 50,
+                marginLeft: 25,
+                background: 'red',
+              }}
+            />
+          </div>
+        ),
+        100
+      )
+    )
   })
 })

@@ -111,6 +111,7 @@ export default async function rect(
     height,
     isInheritingTransform,
     src,
+    svgAspectRatio,
     debug,
     opacity = 1,
     drawn,
@@ -122,6 +123,11 @@ export default async function rect(
     height: number
     isInheritingTransform: boolean
     src?: string
+    /**
+     * The `preserveAspectRatio` of an inline SVG, which fits its viewBox in
+     * the box without `object-fit`.
+     */
+    svgAspectRatio?: string
     debug?: boolean
     /**
      * The opacity of everything drawn here. Elements with children are drawn
@@ -544,8 +550,8 @@ export default async function rect(
         preserveAspectRatio = 'none'
       }
     } else {
-      // Default/none: fill (stretch)
-      preserveAspectRatio = 'none'
+      // Default/none: fill (stretch), except for inline SVGs.
+      preserveAspectRatio = svgAspectRatio || 'none'
     }
 
     if (style.transform) {

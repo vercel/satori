@@ -488,13 +488,14 @@ export default async function compute(
       }
     } else {
       if (typeof width !== 'undefined') {
+        // `0` is a size too.
         width =
-          lengthToNumber(width, inheritedStyle.fontSize, 1, inheritedStyle) ||
+          lengthToNumber(width, inheritedStyle.fontSize, 1, inheritedStyle) ??
           width
       }
       if (typeof height !== 'undefined') {
         height =
-          lengthToNumber(height, inheritedStyle.fontSize, 1, inheritedStyle) ||
+          lengthToNumber(height, inheritedStyle.fontSize, 1, inheritedStyle) ??
           height
       }
       width ||= viewBoxSize?.[2]
