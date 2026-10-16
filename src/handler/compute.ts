@@ -499,12 +499,32 @@ export default async function compute(
           lengthToNumber(height, inheritedStyle.fontSize, 1, inheritedStyle) ??
           height
       }
-      width ||= viewBoxSize?.[2]
-      height ||= viewBoxSize?.[3]
     }
 
-    if (!style.width && width) style.width = width
-    if (!style.height && height) style.height = height
+    // Like in browsers, an SVG without a size has none, only the natural ratio
+    // of its viewBox, so it's as wide as its container, or 300 by 150 without
+    // a viewBox.
+    const isAuto = (size: unknown) => size === undefined || size === 'auto'
+    if (
+      width === undefined &&
+      height === undefined &&
+      isAuto(style.width) &&
+      isAuto(style.height)
+    ) {
+      if (ratio) {
+        width = '100%'
+      } else {
+        width = 300
+        height = 150
+      }
+    }
+
+    if (isAuto(style.width) && width !== undefined && !style.width) {
+      style.width = width
+    }
+    if (isAuto(style.height) && height !== undefined && !style.height) {
+      style.height = height
+    }
 
     // The natural ratio of the SVG, for a size that's `auto`, e.g. with
     // `width: auto` and the `height` attribute.

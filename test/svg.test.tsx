@@ -612,4 +612,68 @@ describe('SVG', () => {
       )
     ).toMatchImageSnapshot()
   })
+
+  it('should size SVGs without a size like browsers', async () => {
+    const icon = (props: Record<string, unknown> = {}) => (
+      <svg viewBox='0 0 10 5' {...props}>
+        <rect width='10' height='5' fill='red' />
+      </svg>
+    )
+    const cases = {
+      block: <div style={{ display: 'block', width: 300 }}>{icon()}</div>,
+      flexRow: (
+        <div style={{ display: 'flex', width: 300 }}>
+          {icon()}
+          <div style={{ width: 50, height: 10 }} />
+        </div>
+      ),
+      span: (
+        <span style={{ display: 'inline-block', width: 24, height: 24 }}>
+          {icon({ viewBox: '0 -960 960 960', style: { display: 'flex' } })}
+        </span>
+      ),
+      noViewBox: (
+        <div style={{ display: 'block', width: 400 }}>
+          {icon({ viewBox: undefined })}
+        </div>
+      ),
+      cssWidth: (
+        <div style={{ display: 'block', width: 300 }}>
+          {icon({ style: { width: 100 } })}
+        </div>
+      ),
+    }
+    const sizes: Record<string, number[]> = {}
+    const element = (
+      <div style={{ display: 'flex', flexDirection: 'column', width: 400 }}>
+        {Object.entries(cases).map(([name, child]) => (
+          <div key={name} data-case={name} style={{ display: 'flex' }}>
+            {child}
+          </div>
+        ))}
+      </div>
+    )
+    let current = ''
+    const svg = await satori(element, {
+      width: 400,
+      height: 600,
+      fonts,
+      onNodeDetected: (node) => {
+        if (node.props['data-case']) current = node.props['data-case']
+        if (node.type === 'svg') {
+          // Satori rounds the layout to pixels.
+          sizes[current] = [Math.round(node.width), Math.round(node.height)]
+        }
+      },
+    })
+    // Measured in Chrome, rounded.
+    expect(sizes).toEqual({
+      block: [300, 150],
+      flexRow: [257, 129],
+      span: [24, 24],
+      noViewBox: [300, 150],
+      cssWidth: [100, 50],
+    })
+    expect(await toImage(svg, 400)).toMatchImageSnapshot()
+  })
 })
