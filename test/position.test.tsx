@@ -1,4 +1,4 @@
-import { it, describe, expect } from 'vitest'
+import { it, describe, expect, vi } from 'vitest'
 import type { ReactNode } from 'react'
 
 import { initFonts, toImage } from './utils.js'
@@ -9,6 +9,52 @@ describe('Position', () => {
   initFonts((f) => (fonts = f))
 
   describe('absolute', () => {
+    it('should treat auto insets as unset', async () => {
+      const warn = vi.spyOn(console, 'warn')
+      const render = (insets: Record<string, string>) =>
+        satori(
+          <div
+            style={{
+              display: 'flex',
+              width: 100,
+              height: 100,
+              padding: 10,
+              position: 'relative',
+            }}
+          >
+            <div style={{ width: 20, height: 20, background: 'red' }} />
+            {(['absolute', 'fixed'] as const).map((position) => (
+              <div
+                key={position}
+                style={{
+                  position,
+                  width: 10,
+                  height: 10,
+                  background: 'blue',
+                  ...insets,
+                }}
+              />
+            ))}
+          </div>,
+          { width: 100, height: 100, fonts }
+        )
+      try {
+        const expected = await render({})
+        expect(
+          await render({
+            top: 'auto',
+            right: 'auto',
+            bottom: 'auto',
+            left: 'auto',
+          })
+        ).toBe(expected)
+        expect(await render({ inset: 'auto' })).toBe(expected)
+        expect(warn).not.toHaveBeenCalled()
+      } finally {
+        warn.mockRestore()
+      }
+    })
+
     it('should support absolute position', async () => {
       const svg = await satori(
         <div
