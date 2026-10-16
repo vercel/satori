@@ -4,6 +4,7 @@
  */
 
 import { getPropertyName, getStylesForProperty } from 'css-to-react-native'
+import { parseFontShorthand } from '../parser/font.js'
 import { parseElementStyle } from 'css-background-parser'
 import { parse as parseBoxShadow } from 'css-box-shadow'
 import cssColorParse from 'parse-css-color'
@@ -417,6 +418,26 @@ function handleSpecialCase(
 ) {
   if (name === 'inset') {
     return expandEdges(value, ['top', 'right', 'bottom', 'left'])
+  }
+
+  // The longhands of `font` are handled like when they're set by themselves.
+  if (name === 'font') {
+    const longhands: Record<string, unknown> = {}
+    for (const [longhand, longhandValue] of Object.entries(
+      parseFontShorthand(String(value))
+    )) {
+      Object.assign(
+        longhands,
+        handleSpecialCase(
+          longhand,
+          longhandValue,
+          currentColor,
+          inheritedStyle
+        ) ||
+          getStylesForProperty(longhand, purify(longhand, longhandValue), true)
+      )
+    }
+    return longhands
   }
 
   // `place-content`, `place-items` and `place-self` set the alignment on both
