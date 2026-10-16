@@ -505,6 +505,28 @@ describe('SVG', () => {
       warn.mockRestore()
     }
 
+    // The viewBox is fitted by the `preserveAspectRatio` of the SVG.
+    expect(
+      await toImage(
+        await render(
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {['xMidYMid meet', 'xMinYMin meet', 'none'].map((aspect) => (
+              <svg
+                key={aspect}
+                width={100}
+                height={30}
+                viewBox='0 0 10 10'
+                preserveAspectRatio={aspect}
+              >
+                <circle cx='5' cy='5' r='5' fill='red' />
+              </svg>
+            ))}
+          </div>
+        ),
+        100
+      )
+    ).toMatchImageSnapshot()
+
     // Like in browsers, the viewBox is centered in a box of another ratio.
     expect(
       await toImage(
