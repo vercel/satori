@@ -23,6 +23,7 @@ import {
   type Length,
 } from '../layout-engine/index.js'
 import { resolveImageData } from './image.js'
+import { isListBox } from '../form-control.js'
 import {
   parseGridAutoFlow,
   parseGridAutoTracks,
@@ -301,6 +302,11 @@ function getHiddenPreset(type: string, props: Record<string, any>) {
   return hasHidden || isHiddenInput || isClosedDialog ? { display: 'none' } : {}
 }
 
+/** List boxes of Chrome have rounded corners. */
+function getSelectPreset(type: string, props: Record<string, any>) {
+  return type === 'select' && isListBox(props) ? { borderRadius: 2 } : {}
+}
+
 function getDirPreset(props: Record<string, any>) {
   const dir = typeof props?.dir === 'string' ? props.dir.toLowerCase() : ''
   return dir === 'ltr' || dir === 'rtl' ? { direction: dir } : {}
@@ -382,6 +388,7 @@ export default async function compute(
   const presetStyle = {
     ...presets[type],
     ...getListPresets(type, props, listDepth),
+    ...getSelectPreset(type, props),
     ...getDirPreset(props),
     ...getHiddenPreset(type, props),
   }
