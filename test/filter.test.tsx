@@ -198,4 +198,92 @@ describe('filter', () => {
     )
     expect(await toImage(svg, 160)).toMatchImageSnapshot()
   })
+
+  describe('url()', () => {
+    // Paints everything red, keeping the alpha.
+    const definitions = (style = {}) => (
+      <svg
+        width={0}
+        height={0}
+        viewBox='0 0 1 1'
+        style={{ position: 'absolute', ...style }}
+      >
+        <defs>
+          <filter id='red' colorInterpolationFilters='sRGB'>
+            <feColorMatrix
+              type='matrix'
+              values='0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0'
+            />
+          </filter>
+        </defs>
+      </svg>
+    )
+    const render = async (
+      box: Record<string, string | number>,
+      svgStyle = {},
+      errors?: string[]
+    ) => {
+      const svg = await satori(
+        <div style={{ display: 'flex', width: 40, height: 40 }}>
+          {definitions(svgStyle)}
+          <div style={{ width: 20, height: 20, ...box }} />
+        </div>,
+        {
+          width: 40,
+          height: 40,
+          fonts,
+          onStyleError: errors
+            ? (error) => errors.push(error.message)
+            : undefined,
+        }
+      )
+      return { svg, image: await toImage(svg, 40) }
+    }
+
+    it('should apply SVG filters of the document', async () => {
+      const red = (await render({ background: 'red' })).image
+      expect(
+        (await render({ background: 'black', filter: 'url(#red)' })).image
+      ).toEqual(red)
+      // Like in browsers, filters of hidden SVGs can be referenced.
+      expect(
+        (
+          await render(
+            { background: 'black', filter: 'url("#red")' },
+            { display: 'none' }
+          )
+        ).image
+      ).toEqual(red)
+    })
+
+    it('should apply filters in order', async () => {
+      const { svg } = await render({
+        background: 'black',
+        filter: 'url(#red) opacity(0.5)',
+      })
+      // The SVG filter is applied first, inside of the other one.
+      expect(svg).toMatch(
+        /<g filter="url\(#satori_f-id-1-1\)"><filter id="satori_f-id-1"/
+      )
+    })
+
+    it('should ignore the filters with a missing reference', async () => {
+      const { svg, image } = await render({
+        background: 'black',
+        filter: 'url(#missing) blur(4px)',
+      })
+      expect(svg).not.toContain('filter=')
+      expect(image).toEqual((await render({ background: 'black' })).image)
+    })
+
+    it('should report references to other documents', async () => {
+      const errors: string[] = []
+      await render({ filter: 'url(filters.svg#red)' }, {}, errors)
+      await render({ backdropFilter: 'url(#red)' }, {}, errors)
+      expect(errors).toEqual([
+        'Unsupported `url()` in `filter`, only references to SVG filters of the document, e.g. `url(#filter)`, are supported.\n  in CSS rule `filter: url(filters.svg#red)`.',
+        'Unsupported `url()` in `backdropFilter`.\n  in CSS rule `backdropFilter: url(#red)`.',
+      ])
+    })
+  })
 })
