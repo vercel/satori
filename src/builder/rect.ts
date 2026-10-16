@@ -125,7 +125,7 @@ export default async function rect(
     src?: string
     /**
      * The `preserveAspectRatio` of an inline SVG, which fits its viewBox in
-     * the box without `object-fit`.
+     * its box.
      */
     svgAspectRatio?: string
     debug?: boolean
@@ -435,7 +435,11 @@ export default async function rect(
     let imageX = left + offsetLeft
     let imageY = top + offsetTop
 
-    if (style.objectFit === 'contain') {
+    if (svgAspectRatio) {
+      // Like in browsers, `object-fit` doesn't apply to inline SVGs, which
+      // fit their viewBox in their box themselves.
+      preserveAspectRatio = svgAspectRatio
+    } else if (style.objectFit === 'contain') {
       // Scale to fit within container while preserving aspect ratio
       const scaleX = containerInnerWidth / naturalWidth
       const scaleY = containerInnerHeight / naturalHeight
@@ -550,8 +554,8 @@ export default async function rect(
         preserveAspectRatio = 'none'
       }
     } else {
-      // Default/none: fill (stretch), except for inline SVGs.
-      preserveAspectRatio = svgAspectRatio || 'none'
+      // Default/none: fill (stretch)
+      preserveAspectRatio = 'none'
     }
 
     if (style.transform) {

@@ -555,4 +555,61 @@ describe('SVG', () => {
       )
     )
   })
+
+  it('should size and fit SVGs like browsers', async () => {
+    const render = async (element: JSX.Element) =>
+      toImage(
+        await satori(
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              width: 300,
+              height: 160,
+            }}
+          >
+            {element}
+          </div>,
+          { width: 300, height: 160, fonts }
+        ),
+        300
+      )
+    // `width: auto` follows the height and the ratio of the viewBox, like the
+    // logo of Google.
+    const logo = (style: Record<string, string>) => (
+      <div style={{ display: 'flex', maxHeight: 92 }}>
+        <svg
+          width='272'
+          height='92'
+          viewBox='0 0 272 92'
+          style={{ maxHeight: '100%', maxWidth: '100%', ...style }}
+        >
+          <rect width='272' height='92' fill='red' />
+        </svg>
+      </div>
+    )
+    expect(await render(logo({ width: 'auto' }))).toEqual(
+      await render(logo({}))
+    )
+
+    // `object-fit` doesn't apply to inline SVGs.
+    const circle = (style: Record<string, string>) => (
+      <svg width={200} height={60} viewBox='0 0 10 10' style={style}>
+        <circle cx='5' cy='5' r='5' fill='red' />
+      </svg>
+    )
+    expect(
+      await render(circle({ objectFit: 'contain', objectPosition: 'left' }))
+    ).toEqual(await render(circle({})))
+
+    expect(
+      await render(
+        <>
+          {logo({ width: 'auto' })}
+          {circle({ objectFit: 'fill' })}
+        </>
+      )
+    ).toMatchImageSnapshot()
+  })
 })
