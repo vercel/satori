@@ -12,6 +12,13 @@ import {
 import { LayoutNode } from './layout-engine/index.js'
 import { getStickyOffset } from './sticky-position.js'
 import {
+  getBoxShadowExtent,
+  getFilterExtent,
+  getOutlineExtent,
+  isOutside,
+  type PaintBounds,
+} from './culling.js'
+import {
   applyCounters,
   findMarkerTarget,
   getCounterText,
@@ -163,6 +170,11 @@ export interface LayoutContext {
    * to.
    */
   scrollport?: PositionedBox
+  /**
+   * The size of the image, shared by all elements and set once the layout is
+   * known. Elements entirely outside of it aren't drawn.
+   */
+  paintBounds?: PaintBounds
   /**
    * Collects the layers of the stacking context the element is in. The root
    * element has none, and establishes the root stacking context.
@@ -548,6 +560,19 @@ export default async function* layout(
       inheritedStyle.transform as unknown as TransformList
   }
 
+  // Transformed elements, and their descendants, can be drawn elsewhere than
+  // their boxes, so they're always drawn, even when their boxes are outside of
+  // the image. Filters can draw outside of what they filter, e.g. with
+  // `drop-shadow()`, so they're checked with a margin.
+  if (!isInheritingTransform) newInheritableStyle._alwaysDrawn = 1
+  const filterExtent = getFilterExtent(
+    computedStyle._filters as unknown as BackdropFilter[] | undefined
+  )
+  if (filterExtent) {
+    newInheritableStyle._cullMargin =
+      ((inheritedStyle._cullMargin as number) || 0) + filterExtent
+  }
+
   // A `preserve-3d` element establishes a 3D rendering context, or extends
   // the one it's in. Its children are drawn sorted by depth.
   const planes = preserve3d ? context.planes || [] : undefined
@@ -787,6 +812,7 @@ export default async function* layout(
       fixedContainingBlock,
       absoluteContainingBlock,
       fixedElements: context.fixedElements,
+      paintBounds: context.paintBounds,
       counters: context.counters,
       countersHidden,
       listDepth:
@@ -958,8 +984,43 @@ export default async function* layout(
   const rectOpacity = groupOpacity < 1 ? 1 : opacity
   const drawn = { shapes: true }
 
+  // Boxes entirely outside of the image aren't drawn, with their shadows,
+  // unless they define the clip paths or masks of their descendants. The
+  // descendants are checked by themselves.
+  const paintBounds = newInheritableStyle._alwaysDrawn
+    ? undefined
+    : context.paintBounds
+  const definesClip =
+    newInheritableStyle._inheritedClipPathId !==
+      inheritedStyle._inheritedClipPathId ||
+    newInheritableStyle._inheritedMaskId !== inheritedStyle._inheritedMaskId
+  const cullMargin = (newInheritableStyle._cullMargin as number) || 0
+  const shadowExtent =
+    paintBounds && !definesClip
+      ? getBoxShadowExtent(computedStyle) + cullMargin
+      : 0
+  const isCulled = (area: {
+    left: number
+    top: number
+    width: number
+    height: number
+  }) =>
+    !!paintBounds &&
+    !definesClip &&
+    isOutside(
+      paintBounds,
+      area.left,
+      area.top,
+      area.width,
+      area.height,
+      shadowExtent
+    )
+  const isBoxCulled = isCulled({ left, top, width, height })
+
   // Generate the rendered markup for the current node.
-  if (type === 'img' || isReplaced) {
+  if ((type === 'img' || isReplaced || type === 'svg') && isBoxCulled) {
+    // Not drawn, see above.
+  } else if (type === 'img' || isReplaced) {
     // A replaced element without rendered content has no `src`, so it's drawn
     // as a box.
     const src = computedStyle.__src as string | undefined
@@ -1027,11 +1088,13 @@ export default async function* layout(
         fragmentStyle.borderTopRightRadius = 0
         fragmentStyle.borderBottomRightRadius = 0
       }
+      const fragmentBox = fragmentRect(inlineBox, fragment, left, top)
+      if (isCulled(fragmentBox)) continue
       const fragmentDrawn = { shapes: true }
       baseRenderResult += await rect(
         {
           id: `${id}-${index}`,
-          ...fragmentRect(inlineBox, fragment, left, top),
+          ...fragmentBox,
           isInheritingTransform,
           debug,
           opacity: rectOpacity,
@@ -1042,7 +1105,7 @@ export default async function* layout(
       )
       drawn.shapes ||= fragmentDrawn.shapes
     }
-  } else {
+  } else if (!isBoxCulled) {
     baseRenderResult = await rect(
       {
         id,
@@ -1089,7 +1152,17 @@ export default async function* layout(
   // The outline is drawn over the element and its in-flow descendants, and
   // under positioned ones. Outlines of inline boxes aren't drawn.
   const outlineResult =
-    inlineBox || computedStyle.visibility === 'hidden'
+    inlineBox ||
+    computedStyle.visibility === 'hidden' ||
+    (paintBounds &&
+      isOutside(
+        paintBounds,
+        left,
+        top,
+        width,
+        height,
+        getOutlineExtent(computedStyle) + cullMargin
+      ))
       ? ''
       : outline(
           { id, left, top, width, height, isInheritingTransform },
