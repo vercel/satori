@@ -25,4 +25,15 @@ describe('Word Spacing', () => {
     )
     expect(await toImage(svg, 300)).toMatchImageSnapshot()
   })
+
+  it('should treat word-spacing normal as no extra spacing', async () => {
+    const render = (wordSpacing: string | number) =>
+      satori(
+        <div style={{ display: 'flex', fontSize: 20, wordSpacing }}>
+          Hello, World
+        </div>,
+        { width: 200, height: 40, fonts }
+      )
+    expect(await render('normal')).toBe(await render(0))
+  })
 })
