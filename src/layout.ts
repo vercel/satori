@@ -843,6 +843,7 @@ export default async function* layout(
     childOrders.push(added.length === 1 ? added[0].style.order || 0 : 0)
     iterators.push(iter)
   }
+  if (isBlockContainer) childInline.end()
   if (inlineBox) context.inline.closeBox(inlineBox)
   // Counters created by the children are out of scope.
   context.counters.closeScope(id)
