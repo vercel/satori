@@ -573,25 +573,29 @@ export default async function rect(
       )
     }
 
-    shape += buildXMLString('image', {
-      x: imageX,
-      y: imageY,
-      width: imageWidth,
-      height: imageHeight,
-      href: src,
-      preserveAspectRatio,
-      transform: matrix ? matrix : undefined,
-      'clip-path': style.transform
-        ? imageBorderRadius
-          ? `url(#${imageBorderRadius[1]})`
-          : undefined
-        : `url(#satori_cp-${id})`,
-      mask: style.transform
-        ? undefined
-        : miId
-        ? `url(#${miId})`
-        : `url(#satori_om-${id})`,
-    })
+    // An image without an area draws nothing, and renderers like librsvg
+    // fail to draw it.
+    if (imageWidth > 0 && imageHeight > 0) {
+      shape += buildXMLString('image', {
+        x: imageX,
+        y: imageY,
+        width: imageWidth,
+        height: imageHeight,
+        href: src,
+        preserveAspectRatio,
+        transform: matrix ? matrix : undefined,
+        'clip-path': style.transform
+          ? imageBorderRadius
+            ? `url(#${imageBorderRadius[1]})`
+            : undefined
+          : `url(#satori_cp-${id})`,
+        mask: style.transform
+          ? undefined
+          : miId
+          ? `url(#${miId})`
+          : `url(#satori_om-${id})`,
+      })
+    }
   }
 
   if (borderClip) {

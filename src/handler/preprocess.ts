@@ -368,8 +368,9 @@ export async function SVGNodeToImage(
   width = width || (ratio && height ? height / ratio : null)
   height = height || (ratio && width ? width * ratio : null)
 
-  restProps.width = width
-  restProps.height = height
+  // Sizes that are still missing are left out.
+  restProps.width = width ?? undefined
+  restProps.height = height ?? undefined
   if (viewBox) restProps.viewBox = viewBox
 
   const attrs: Record<string, unknown> = {}
