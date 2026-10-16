@@ -77,6 +77,54 @@ describe('display: block', () => {
     expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it('should not make lines of white space between blocks', async () => {
+    // Like the search box of google.com, with the white space of its HTML,
+    // after a float, where paragraphs are laid out to wrap around floats.
+    const page = (whiteSpace: 'normal' | 'pre') => (
+      <div style={{ display: 'block', fontSize: 14, whiteSpace }}>
+        <div style={{ float: 'left', width: 10, height: 10 }} />
+        <div style={{ display: 'block', clear: 'both' }} />
+        <div style={{ display: 'block', paddingTop: 20 }}>
+          <form style={{ display: 'block' }}>
+            {' '}
+            <span> </span>{' '}
+            <div style={{ display: 'block' }}>
+              {' '}
+              <div
+                data-target
+                style={{
+                  display: 'block',
+                  marginTop: 6,
+                  height: 30,
+                  background: 'red',
+                }}
+              />
+              {'\n  '}
+            </div>{' '}
+          </form>
+        </div>
+      </div>
+    )
+    const measure = async (whiteSpace: 'normal' | 'pre') => {
+      let top = -1
+      const svg = await satori(page(whiteSpace), {
+        width: 100,
+        height: 100,
+        fonts,
+        onNodeDetected: (node) => {
+          if (node.props['data-target']) top = node.top
+        },
+      })
+      return { svg, top }
+    }
+    // The margin collapses through its parents, like in Chrome.
+    const { svg, top } = await measure('normal')
+    expect(top).toBe(36)
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
+    // Preserved white space makes lines.
+    expect((await measure('pre')).top).toBeGreaterThan(36)
+  })
+
   it('should center children with auto margins', async () => {
     const svg = await render(
       <div style={{ display: 'block', width: '100%', height: '100%' }}>
