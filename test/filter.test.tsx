@@ -256,6 +256,63 @@ describe('filter', () => {
       ).toEqual(red)
     })
 
+    it('should draw the gooey effect', async () => {
+      const dot = (left: number) => (
+        <div
+          style={{
+            position: 'absolute',
+            top: 15,
+            left,
+            width: 50,
+            height: 50,
+            borderRadius: 25,
+            background: '#e11',
+          }}
+        />
+      )
+      const svg = await satori(
+        <div style={{ display: 'flex', width: 200, height: 80 }}>
+          <svg
+            width={0}
+            height={0}
+            viewBox='0 0 1 1'
+            style={{ position: 'absolute' }}
+          >
+            <defs>
+              <filter id='goo'>
+                <feGaussianBlur
+                  in='SourceGraphic'
+                  stdDeviation='10'
+                  result='blur'
+                />
+                <feColorMatrix
+                  in='blur'
+                  mode='matrix'
+                  values='1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 19 -9'
+                  result='goo'
+                />
+                <feComposite in='SourceGraphic' in2='goo' operator='atop' />
+              </filter>
+            </defs>
+          </svg>
+          <div
+            style={{
+              display: 'flex',
+              width: 200,
+              height: 80,
+              position: 'relative',
+              filter: 'url(#goo)',
+            }}
+          >
+            {dot(45)}
+            {dot(105)}
+          </div>
+        </div>,
+        { width: 200, height: 80, fonts }
+      )
+      expect(await toImage(svg, 200)).toMatchImageSnapshot()
+    })
+
     it('should apply filters in order', async () => {
       const { svg } = await render({
         background: 'black',
