@@ -927,8 +927,13 @@ export default async function compute(
   // layout.
   if (position !== 'static' && position !== 'sticky') {
     for (const edge of ['top', 'bottom', 'left', 'right'] as const) {
-      if (typeof style[edge] !== 'undefined') {
-        layout[edge] = asPointPercentageLength(style[edge], edge)
+      const inset = style[edge]
+      // `auto`, the initial value, leaves the inset unset.
+      if (
+        typeof inset !== 'undefined' &&
+        String(inset).trim().toLowerCase() !== 'auto'
+      ) {
+        layout[edge] = asPointPercentageLength(inset, edge)
       }
     }
   }
