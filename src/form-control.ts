@@ -20,14 +20,22 @@ const TEXT_INPUTS = new Set([
   'number',
 ])
 
+/** The types of button inputs, and their labels without a value. */
+const BUTTON_INPUTS: Record<string, string> = {
+  submit: 'Submit',
+  reset: 'Reset',
+  button: '',
+}
+
 const element = (type: string, props: Record<string, unknown>) =>
   ({ type, key: null, props } as unknown as ReactElement)
 
 /**
  * The content of an `<input>`, like in browsers: the value of a text input,
  * or else its placeholder, on a line that's vertically centered and clipped.
- * By default, the line is `size` average characters wide. Other inputs have
- * no content.
+ * By default, the line is `size` average characters wide. Button inputs show
+ * their value, or a default label, on a centered line. Other inputs have no
+ * content.
  */
 export function getInputContent(
   props: Record<string, any>,
@@ -35,6 +43,30 @@ export function getInputContent(
   font: FontLoader
 ): ReactElement[] {
   const type = String(props.type ?? '').toLowerCase()
+  if (Object.prototype.hasOwnProperty.call(BUTTON_INPUTS, type)) {
+    const value = props.value ?? props.defaultValue
+    const label = (
+      value === undefined || value === null
+        ? BUTTON_INPUTS[type]
+        : String(value)
+    ).replace(/[\r\n]/g, '')
+    if (!label) return []
+    return [
+      element('::input', {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          overflow: 'hidden',
+        },
+        children: element('::input-text', {
+          style: { whiteSpace: 'pre' },
+          children: label,
+        }),
+      }),
+    ]
+  }
   if (!TEXT_INPUTS.has(type)) return []
 
   const value = props.value ?? props.defaultValue

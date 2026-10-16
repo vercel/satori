@@ -42,6 +42,39 @@ describe('Input', () => {
     )
   })
 
+  it('should render the labels of button inputs', async () => {
+    const style = {
+      height: 36,
+      padding: '0 16px',
+      background: '#f8f9fa',
+      border: '1px solid #dadce0',
+      borderRadius: 4,
+      fontSize: 14,
+      color: '#3c4043',
+    }
+    // Without a value, submit and reset inputs have a default label.
+    expect(await render(<input type='submit' style={style} />)).toBe(
+      await render(<input type='submit' value='Submit' style={style} />)
+    )
+    expect(await render(<input type='reset' style={style} />)).toBe(
+      await render(<input type='reset' value='Reset' style={style} />)
+    )
+    expect(
+      await render(<input type='button' value='Go' style={style} />)
+    ).not.toBe(await render(<input type='button' style={style} />))
+    expect(
+      await toImage(
+        await render(
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <input type='submit' value='Google Search' style={style} />
+            <input type='button' value="I'm Feeling Lucky" style={style} />
+          </div>
+        ),
+        200
+      )
+    ).toMatchImageSnapshot()
+  })
+
   it('should size inputs like browsers', async () => {
     const boxes: Record<string, { width: number; height: number }> = {}
     await satori(
