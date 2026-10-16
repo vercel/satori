@@ -15,7 +15,7 @@ describe('Error', () => {
         fonts,
       })
     ).rejects.toThrowError(
-      `Invalid value for CSS property "display". Allowed values: "block" | "flow-root" | "list-item" | "flex" | "-webkit-box" | "grid" | "inline" | "inline-block" | "inline-flex" | "inline-grid" | "contents" | "none". Received: "table".`
+      `Invalid value for CSS property "display". Allowed values: "block" | "flow-root" | "list-item" | "flex" | "-webkit-flex" | "-webkit-box" | "grid" | "inline" | "inline-block" | "inline-flex" | "-webkit-inline-flex" | "inline-grid" | "contents" | "none". Received: "table".`
     )
   })
 

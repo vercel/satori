@@ -144,11 +144,14 @@ const DISPLAY_TYPES: Record<
   // With a marker, see `getListMarkers()`.
   'list-item': ['block', 'block'],
   flex: ['block', 'flex'],
+  // Prefixed aliases, like in browsers.
+  '-webkit-flex': ['block', 'flex'],
   '-webkit-box': ['block', 'flex'],
   grid: ['block', 'grid'],
   inline: ['inline', 'inline'],
   'inline-block': ['inline', 'flow-root'],
   'inline-flex': ['inline', 'flex'],
+  '-webkit-inline-flex': ['inline', 'flex'],
   'inline-grid': ['inline', 'grid'],
   contents: ['contents', 'contents'],
   none: ['none', 'none'],
