@@ -50,6 +50,7 @@ describe('Position', () => {
         ).toBe(expected)
         expect(await render({ inset: 'auto' })).toBe(expected)
         expect(warn).not.toHaveBeenCalled()
+        expect(await toImage(expected, 100)).toMatchImageSnapshot()
       } finally {
         warn.mockRestore()
       }
