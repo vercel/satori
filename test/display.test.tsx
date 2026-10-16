@@ -305,4 +305,40 @@ describe('display', () => {
       )
     ).toMatchImageSnapshot()
   })
+
+  it('should support prefixed flex values', async () => {
+    const errors: string[] = []
+    const element = (flex: string, inlineFlex: string) => (
+      <div style={{ display: 'flex', flexDirection: 'column', width: 200 }}>
+        <div style={{ display: flex, gap: 10, justifyContent: 'center' }}>
+          <div style={{ width: 40, height: 40, background: 'red' }} />
+          <div style={{ width: 40, height: 40, background: 'blue' }} />
+        </div>
+        <div style={{ display: 'block' }}>
+          <div style={{ display: inlineFlex, gap: 10 }}>
+            <div style={{ width: 30, height: 30, background: 'green' }} />
+            <div style={{ width: 30, height: 30, background: 'orange' }} />
+          </div>
+        </div>
+      </div>
+    )
+    const prefixed = await satori(
+      element('-webkit-flex', '-webkit-inline-flex'),
+      {
+        width: 200,
+        height: 120,
+        fonts,
+        onStyleError: (error) => errors.push(error.message),
+      }
+    )
+    expect(errors).toEqual([])
+    expect(prefixed).toBe(
+      await satori(element('flex', 'inline-flex'), {
+        width: 200,
+        height: 120,
+        fonts,
+      })
+    )
+    expect(await toImage(prefixed, 200)).toMatchImageSnapshot()
+  })
 })
