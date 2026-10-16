@@ -4,6 +4,13 @@ import type { MaskProperty } from '../parser/mask.js'
 
 const genMaskImageId = (id: string) => `satori_mi-${id}`
 
+/**
+ * Paints with white, keeping the alpha. SVG masks use the luminance, but the
+ * images of CSS masks use their alpha, unless `mask-mode` is `luminance`.
+ * Gradients are already drawn with white for masks.
+ */
+const ALPHA_MASK_FILTER = '0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'
+
 /** Boxes that SVG and HTML elements share, others are the border box. */
 const toBox = (box: string) =>
   box === 'padding-box' || box === 'content-box' ? box : 'border-box'
@@ -50,14 +57,27 @@ export default async function buildMaskImage(
     const [_id, def] = layer
     const area = clip === 'border-box' ? box : getBoxArea(box, style, clip)
 
+    const alpha = /^url\(/i.test(m.image.trim()) && m.mode !== 'luminance'
+    const filterId = `${miId}-${i}-alpha`
     layers.push({
-      def,
+      def: alpha
+        ? def +
+          buildXMLString(
+            'filter',
+            { id: filterId, 'color-interpolation-filters': 'sRGB' },
+            buildXMLString('feColorMatrix', {
+              type: 'matrix',
+              values: ALPHA_MASK_FILTER,
+            })
+          )
+        : def,
       shape: buildXMLString('rect', {
         x: area.left,
         y: area.top,
         width: area.width,
         height: area.height,
         fill: `url(#${_id})`,
+        filter: alpha ? `url(#${filterId})` : undefined,
       }),
       composite: m.composite,
     })

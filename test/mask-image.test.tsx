@@ -292,4 +292,35 @@ describe('Mask-*', () => {
       await masked(`${left}, ${fill} 20px 0 / 20px 40px no-repeat`)
     ).toEqual(await masked('none'))
   })
+
+  it('should mask with the alpha of images', async () => {
+    const icon = (fill: string) =>
+      `url("data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20'><path d='M0 0h10v20H0z' fill='${fill}'/></svg>`
+      )}")`
+    const render = async (style: Record<string, string | number>) => {
+      const svg = await satori(
+        <div style={{ display: 'flex', width: 40, height: 40 }}>
+          <div
+            style={{
+              width: 20,
+              height: 20,
+              backgroundColor: 'red',
+              ...style,
+            }}
+          />
+        </div>,
+        { width: 40, height: 40, fonts }
+      )
+      return [await toImage(svg, 40), new Resvg(svg).render().asPng()]
+    }
+    // Like in browsers, the colors of images don't matter, unless the mode is
+    // `luminance`.
+    const black = await render({ maskImage: icon('black') })
+    expect(black).toEqual(await render({ maskImage: icon('white') }))
+    expect(black).toEqual(await render({ width: 10 }))
+    expect(
+      await render({ maskImage: icon('black'), maskMode: 'luminance' })
+    ).toEqual(await render({ backgroundColor: 'transparent' }))
+  })
 })
