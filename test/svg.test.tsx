@@ -1,4 +1,4 @@
-import { it, describe, expect } from 'vitest'
+import { it, describe, expect, vi } from 'vitest'
 import { createElement } from 'react'
 
 import { initFonts, toImage } from './utils.js'
@@ -479,5 +479,137 @@ describe('SVG', () => {
     )
 
     expect(await toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should keep the sizes of SVGs', async () => {
+    const warn = vi.spyOn(console, 'warn')
+    const render = (element: JSX.Element) =>
+      satori(
+        <div style={{ display: 'flex', width: 100, height: 100 }}>
+          {element}
+        </div>,
+        { width: 100, height: 100, fonts }
+      )
+    try {
+      // Without a viewBox, and with sizes as strings, like in HTML.
+      for (const size of ['0', '20']) {
+        const svg = await render(
+          <svg width={size} height={size}>
+            <rect width='10' height='10' fill='red' />
+          </svg>
+        )
+        expect(svg).not.toMatch(/NaN|Infinity/)
+      }
+      expect(warn).not.toHaveBeenCalled()
+    } finally {
+      warn.mockRestore()
+    }
+
+    // The viewBox is fitted by the `preserveAspectRatio` of the SVG.
+    expect(
+      await toImage(
+        await render(
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {['xMidYMid meet', 'xMinYMin meet', 'none'].map((aspect) => (
+              <svg
+                key={aspect}
+                width={100}
+                height={30}
+                viewBox='0 0 10 10'
+                preserveAspectRatio={aspect}
+              >
+                <circle cx='5' cy='5' r='5' fill='red' />
+              </svg>
+            ))}
+          </div>
+        ),
+        100
+      )
+    ).toMatchImageSnapshot()
+
+    // Like in browsers, the viewBox is centered in a box of another ratio.
+    expect(
+      await toImage(
+        await render(
+          <svg width={100} height={50} viewBox='0 0 10 10'>
+            <rect width='10' height='10' fill='red' />
+          </svg>
+        ),
+        100
+      )
+    ).toEqual(
+      await toImage(
+        await render(
+          <div style={{ display: 'flex', width: 100, height: 50 }}>
+            <div
+              style={{
+                width: 50,
+                height: 50,
+                marginLeft: 25,
+                background: 'red',
+              }}
+            />
+          </div>
+        ),
+        100
+      )
+    )
+  })
+
+  it('should size and fit SVGs like browsers', async () => {
+    const render = async (element: JSX.Element) =>
+      toImage(
+        await satori(
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              width: 300,
+              height: 160,
+            }}
+          >
+            {element}
+          </div>,
+          { width: 300, height: 160, fonts }
+        ),
+        300
+      )
+    // `width: auto` follows the height and the ratio of the viewBox, like the
+    // logo of Google.
+    const logo = (style: Record<string, string>) => (
+      <div style={{ display: 'flex', maxHeight: 92 }}>
+        <svg
+          width='272'
+          height='92'
+          viewBox='0 0 272 92'
+          style={{ maxHeight: '100%', maxWidth: '100%', ...style }}
+        >
+          <rect width='272' height='92' fill='red' />
+        </svg>
+      </div>
+    )
+    expect(await render(logo({ width: 'auto' }))).toEqual(
+      await render(logo({}))
+    )
+
+    // `object-fit` doesn't apply to inline SVGs.
+    const circle = (style: Record<string, string>) => (
+      <svg width={200} height={60} viewBox='0 0 10 10' style={style}>
+        <circle cx='5' cy='5' r='5' fill='red' />
+      </svg>
+    )
+    expect(
+      await render(circle({ objectFit: 'contain', objectPosition: 'left' }))
+    ).toEqual(await render(circle({})))
+
+    expect(
+      await render(
+        <>
+          {logo({ width: 'auto' })}
+          {circle({ objectFit: 'fill' })}
+        </>
+      )
+    ).toMatchImageSnapshot()
   })
 })

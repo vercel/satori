@@ -448,6 +448,7 @@ export default async function compute(
 
   await replacedElements?.[type]?.(node, style, props)
 
+  let svgAspectRatio: number | undefined
   if (type === 'svg') {
     const viewBox = props.viewBox || props.viewbox
     const viewBoxSize = parseViewBox(viewBox)
@@ -488,13 +489,14 @@ export default async function compute(
       }
     } else {
       if (typeof width !== 'undefined') {
+        // `0` is a size too.
         width =
-          lengthToNumber(width, inheritedStyle.fontSize, 1, inheritedStyle) ||
+          lengthToNumber(width, inheritedStyle.fontSize, 1, inheritedStyle) ??
           width
       }
       if (typeof height !== 'undefined') {
         height =
-          lengthToNumber(height, inheritedStyle.fontSize, 1, inheritedStyle) ||
+          lengthToNumber(height, inheritedStyle.fontSize, 1, inheritedStyle) ??
           height
       }
       width ||= viewBoxSize?.[2]
@@ -503,6 +505,19 @@ export default async function compute(
 
     if (!style.width && width) style.width = width
     if (!style.height && height) style.height = height
+
+    // The natural ratio of the SVG, for a size that's `auto`, e.g. with
+    // `width: auto` and the `height` attribute.
+    const naturalRatio =
+      ratio ??
+      (typeof props.width === 'number' &&
+      typeof props.height === 'number' &&
+      props.width > 0
+        ? props.height / props.width
+        : null)
+    if (aspectRatio === undefined && naturalRatio) {
+      svgAspectRatio = 1 / naturalRatio
+    }
   }
 
   // Set the layout style.
@@ -510,6 +525,8 @@ export default async function compute(
 
   if (aspectRatio !== undefined && type !== 'img') {
     layout.aspectRatio = aspectRatio
+  } else if (svgAspectRatio) {
+    layout.aspectRatio = svgAspectRatio
   }
 
   if (style.order !== undefined) {

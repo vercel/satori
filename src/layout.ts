@@ -1054,6 +1054,10 @@ export default async function* layout(
       context.convertColors,
       variables
     )
+    // Like in browsers, the viewBox is fitted in the box by the
+    // `preserveAspectRatio` of the SVG, which the image applies to it.
+    const aspectRatio = (element.props as Record<string, unknown>)
+      ?.preserveAspectRatio
     baseRenderResult = await rect(
       {
         id,
@@ -1062,6 +1066,10 @@ export default async function* layout(
         width,
         height,
         src,
+        svgAspectRatio:
+          typeof aspectRatio === 'string' && aspectRatio.trim()
+            ? aspectRatio.trim()
+            : 'xMidYMid meet',
         isInheritingTransform,
         debug,
         opacity: rectOpacity,
