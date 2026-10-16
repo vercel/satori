@@ -16,6 +16,8 @@ export interface MaskProperty {
   clip: string
   /** How the layer is composited with the layers below it. */
   composite: string
+  /** Whether the alpha or the luminance of the image masks. */
+  mode: string
 }
 
 const IMAGE_FUNCTION = /^(url|(repeating-)?(linear|radial|conic)-gradient)$/i
@@ -187,6 +189,7 @@ export function parseMask(
   const origin = values('origin', 'border-box')
   const clip = values('clip', 'border-box')
   const composite = values('composite', 'add')
+  const mode = values('mode', 'match-source')
 
   return splitEffects(maskImage || '')
     .map((image, i) => ({
@@ -199,6 +202,7 @@ export function parseMask(
       composite:
         WEBKIT_COMPOSITE_OPERATORS[composite(i).toLowerCase()] ??
         composite(i).toLowerCase(),
+      mode: mode(i).toLowerCase(),
     }))
     .filter(({ image }) => image && image !== 'none')
     .reverse()
