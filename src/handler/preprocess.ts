@@ -258,11 +258,33 @@ function translateSVGNodeToSVGString(
   )
 }
 /**
- * pre process node and resolve absolute link to img data for image element
+ * Serializes an SVG `<filter>` of the document with an `id`, for the
+ * elements that reference it with `filter: url(#id)`.
+ */
+export function serializeSVGFilter(
+  node: ReactElement,
+  id: string,
+  inheritedColor: string,
+  convertColors: boolean
+) {
+  return translateSVGNodeToSVGString(
+    { ...node, props: { ...node.props, id } } as ReactElement,
+    inheritedColor,
+    convertColors
+  )
+}
+
+/**
+ * pre process node and resolve absolute link to img data for image element.
+ * The SVG `<filter>` elements with an `id` are added to `filters`, the first
+ * one for each `id`, like `getElementById()`.
  * @param node ReactNode
  * @returns
  */
-export async function preProcessNode(node: ReactNode) {
+export async function preProcessNode(
+  node: ReactNode,
+  filters?: Map<string, ReactElement>
+) {
   const set = new Set<string | Buffer | ArrayBuffer>()
   const walk = (_node: ReactNode) => {
     if (!_node) return
@@ -287,6 +309,13 @@ export async function preProcessNode(node: ReactNode) {
         } else {
           set.add(_node.props.src)
         }
+      } else if (
+        _node.type === 'filter' &&
+        filters &&
+        typeof _node.props?.id === 'string' &&
+        !filters.has(_node.props.id)
+      ) {
+        filters.set(_node.props.id, _node as ReactElement)
       } else {
         // do nothing
       }

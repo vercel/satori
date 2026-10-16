@@ -7,7 +7,7 @@
  */
 
 import type { SerializedStyle } from './handler/expand.js'
-import type { BackdropFilter } from './parser/backdrop-filter.js'
+import type { BackdropFilter, URLFilter } from './parser/backdrop-filter.js'
 
 /** The size of the image, known once the layout is. */
 export interface PaintBounds {
@@ -72,9 +72,13 @@ export function getBoxShadowExtent(style: SerializedStyle): number {
  * applied one after the other, so their extents add up. Filters of colors
  * draw in place.
  */
-export function getFilterExtent(filters: BackdropFilter[] | undefined) {
+export function getFilterExtent(
+  filters: (BackdropFilter | URLFilter)[] | undefined
+) {
   let extent = 0
   for (const filter of filters || []) {
+    // SVG filters can draw anywhere, e.g. with `<feOffset>`.
+    if (filter.type === 'url') return Infinity
     if (filter.type === 'blur') {
       extent += filter.value * 3
     } else if (filter.type === 'drop-shadow') {

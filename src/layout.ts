@@ -25,7 +25,7 @@ import {
   getListMarker,
   type Counters,
 } from './list-marker.js'
-import { SVGNodeToImage } from './handler/preprocess.js'
+import { SVGNodeToImage, serializeSVGFilter } from './handler/preprocess.js'
 import { svgTransformToCSS } from './parser/svg-transform.js'
 import computeStyle from './handler/compute.js'
 import FontLoader from './font.js'
@@ -45,7 +45,7 @@ import {
   buildFilterPrimitive,
   getExpansion,
 } from './builder/backdrop-filter.js'
-import type { BackdropFilter } from './parser/backdrop-filter.js'
+import type { BackdropFilter, URLFilter } from './parser/backdrop-filter.js'
 import { Locale, normalizeLocale } from './language.js'
 import { SerializedStyle } from './handler/expand.js'
 import type {
@@ -63,6 +63,7 @@ import {
   ROOT_TRANSFORM_STATE,
   type ProjectPlane,
   type TransformState,
+  default as buildTransform,
 } from './builder/transform.js'
 import {
   getFixedElementPosition,
@@ -175,6 +176,8 @@ export interface LayoutContext {
    * known. Elements entirely outside of it aren't drawn.
    */
   paintBounds?: PaintBounds
+  /** The SVG `<filter>` elements of the document, by their `id`. */
+  svgFilters?: Map<string, ReactElement>
   /**
    * Collects the layers of the stacking context the element is in. The root
    * element has none, and establishes the root stacking context.
@@ -566,7 +569,9 @@ export default async function* layout(
   // `drop-shadow()`, so they're checked with a margin.
   if (!isInheritingTransform) newInheritableStyle._alwaysDrawn = 1
   const filterExtent = getFilterExtent(
-    computedStyle._filters as unknown as BackdropFilter[] | undefined
+    computedStyle._filters as unknown as
+      | (BackdropFilter | URLFilter)[]
+      | undefined
   )
   if (filterExtent) {
     newInheritableStyle._cullMargin =
@@ -813,6 +818,7 @@ export default async function* layout(
       absoluteContainingBlock,
       fixedElements: context.fixedElements,
       paintBounds: context.paintBounds,
+      svgFilters: context.svgFilters,
       counters: context.counters,
       countersHidden,
       listDepth:
@@ -1212,43 +1218,90 @@ export default async function* layout(
   // its own clip path clips the filtered result, e.g. the edges of a blur.
   // https://drafts.fxtf.org/filter-effects-1/#placement
   const filters = computedStyle._filters as unknown as
-    | BackdropFilter[]
+    | (BackdropFilter | URLFilter)[]
     | undefined
-  if (result && filters?.length) {
-    // Descendants can be drawn anywhere, so the filter region is the image,
-    // and what the filter draws into it from outside.
-    const filterId = `satori_f-${id}`
-    const expansion = getExpansion(filters)
-    const primitives = filters
-      .map((filter, index) =>
-        buildFilterPrimitive(
-          filter,
-          index ? `${filterId}-${index - 1}` : 'SourceGraphic',
-          `${filterId}-${index}`,
-          false
+  // Like in browsers, a reference to a missing SVG filter makes the whole list
+  // ignored.
+  const isMissing = (filter: BackdropFilter | URLFilter) =>
+    filter.type === 'url' && !context.svgFilters?.get(filter.id)
+  if (result && filters?.length && !filters.some(isMissing)) {
+    // Filter functions are applied together, and SVG filters by themselves,
+    // in order.
+    let count = 0
+    let functions: BackdropFilter[] = []
+    const applyFunctions = () => {
+      if (!functions.length) return
+      // Descendants can be drawn anywhere, so the filter region is the image,
+      // and what the filter draws into it from outside.
+      const filterId = `satori_f-${id}${count ? `-${count}` : ''}`
+      count++
+      const expansion = getExpansion(functions)
+      const primitives = functions
+        .map((filter, index) =>
+          buildFilterPrimitive(
+            filter,
+            index ? `${filterId}-${index - 1}` : 'SourceGraphic',
+            `${filterId}-${index}`,
+            false
+          )
         )
-      )
-      .join('')
-    result =
-      buildXMLString(
-        'filter',
-        {
-          id: filterId,
-          x: -expansion.left,
-          y: -expansion.top,
-          width:
-            (computedStyle._viewportWidth as number) +
-            expansion.left +
-            expansion.right,
-          height:
-            (computedStyle._viewportHeight as number) +
-            expansion.top +
-            expansion.bottom,
-          filterUnits: 'userSpaceOnUse',
-          'color-interpolation-filters': 'sRGB',
-        },
-        primitives
-      ) + buildXMLString('g', { filter: `url(#${filterId})` }, result)
+        .join('')
+      result =
+        buildXMLString(
+          'filter',
+          {
+            id: filterId,
+            x: -expansion.left,
+            y: -expansion.top,
+            width:
+              (computedStyle._viewportWidth as number) +
+              expansion.left +
+              expansion.right,
+            height:
+              (computedStyle._viewportHeight as number) +
+              expansion.top +
+              expansion.bottom,
+            filterUnits: 'userSpaceOnUse',
+            'color-interpolation-filters': 'sRGB',
+          },
+          primitives
+        ) + buildXMLString('g', { filter: `url(#${filterId})` }, result)
+      functions = []
+    }
+    for (const filter of filters) {
+      if (filter.type !== 'url') {
+        functions.push(filter)
+        continue
+      }
+      applyFunctions()
+      const filterId = `satori_f-${id}${count ? `-${count}` : ''}`
+      count++
+      // Like in browsers, the bounding box of the filter, e.g. for its default
+      // region, is at least the border box of the element.
+      const borderBox = buildXMLString('rect', {
+        x: left,
+        y: top,
+        width,
+        height,
+        fill: 'none',
+        transform: computedStyle.transform
+          ? buildTransform(
+              { left, top, width, height },
+              computedStyle.transform,
+              isInheritingTransform
+            ) || undefined
+          : undefined,
+      })
+      result =
+        serializeSVGFilter(
+          context.svgFilters!.get(filter.id)!,
+          filterId,
+          computedStyle.color as string,
+          context.convertColors
+        ) +
+        buildXMLString('g', { filter: `url(#${filterId})` }, borderBox + result)
+    }
+    applyFunctions()
     if (hasClipPath && isInheritingTransform) {
       result = buildXMLString(
         'g',

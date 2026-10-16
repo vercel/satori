@@ -1,5 +1,5 @@
 import { Counters } from './list-marker.js'
-import type { ReactNode } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import type { TwConfig } from 'twrnc'
 import type { SatoriNode } from './layout.js'
 import {
@@ -245,7 +245,8 @@ export async function render(
       },
       containers
     )
-    await preProcessNode(tree)
+    const svgFilters = new Map<string, ReactElement>()
+    await preProcessNode(tree, svgFilters)
 
     // Like the initial containing block, the root element is laid out in a
     // block formatting context.
@@ -292,6 +293,7 @@ export async function render(
       absoluteContainingBlock: { node: root, offset: { left: 0, top: 0 } },
       fixedElements,
       paintBounds,
+      svgFilters,
       floats: { found: false },
       formattingContext: 'root',
       containers: containerNodes,

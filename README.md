@@ -449,7 +449,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>filter</code></td>
-<td>Supported except for <code>url()</code></td>
+<td>Supported, <code>url()</code> only for SVG filters in the document</td>
 <td></td>
 </tr>
 
