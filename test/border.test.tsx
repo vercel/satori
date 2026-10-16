@@ -391,6 +391,15 @@ describe('Border', () => {
         await render({ borderTopLeftRadius: 'max(4px, 10%) calc(2px * 3)' })
       ).toBe(await render({ borderTopLeftRadius: '10px 6px' }))
 
+      expect(
+        await toImage(
+          await render({
+            borderRadius: 'calc(50% - 10px) calc(1rem - 4px)',
+          }),
+          100
+        )
+      ).toMatchImageSnapshot()
+
       const errors: string[] = []
       await render({ borderRadius: '-4px' }, errors)
       await render({ borderRadius: '1px 2px 3px 4px 5px' }, errors)
