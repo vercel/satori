@@ -1180,7 +1180,8 @@ export default class FontLoader {
         if (glyph && glyph.path) {
           // Calculate glyph position
           const gX = cursorX + shapedGlyph.dx * scale
-          const gY = cursorY + shapedGlyph.dy * scale
+          // HarfBuzz offsets point up, SVG y points down.
+          const gY = cursorY - shapedGlyph.dy * scale
 
           // Like `glyph.getPath()`, scaled by the units per em of the path.
           const data = glyphPathData(
