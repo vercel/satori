@@ -283,7 +283,7 @@ function resolveKeywords(
 
 /**
  * Elements that browsers hide: with the `hidden` attribute, unless it's
- * `until-found`, and hidden inputs.
+ * `until-found`, hidden inputs, and dialogs that aren't open.
  */
 function getHiddenPreset(type: string, props: Record<string, any>) {
   const { hidden, type: inputType } = props ?? {}
@@ -293,7 +293,9 @@ function getHiddenPreset(type: string, props: Record<string, any>) {
     String(hidden).toLowerCase() !== 'until-found'
   const isHiddenInput =
     type === 'input' && String(inputType).toLowerCase() === 'hidden'
-  return hasHidden || isHiddenInput ? { display: 'none' } : {}
+  const isClosedDialog =
+    type === 'dialog' && (props?.open == null || props.open === false)
+  return hasHidden || isHiddenInput || isClosedDialog ? { display: 'none' } : {}
 }
 
 function getDirPreset(props: Record<string, any>) {

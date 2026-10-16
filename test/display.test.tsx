@@ -165,6 +165,64 @@ describe('display', () => {
     expect(requested).toEqual(['emoji 👋'])
   })
 
+  it('should hide dialogs that are closed, and draw open ones', async () => {
+    const page = (dialogs: JSX.Element | null) => (
+      <div
+        style={{
+          display: 'block',
+          position: 'relative',
+          width: 300,
+          height: 200,
+          background: '#eee',
+          fontSize: 16,
+        }}
+      >
+        <div style={{ height: 10, background: 'red' }} />
+        {dialogs}
+        <div style={{ height: 10, background: 'blue' }} />
+      </div>
+    )
+    const options = { width: 300, height: 200, fonts }
+    // A closed dialog takes no space.
+    expect(
+      await toImage(
+        await satori(
+          page(
+            <dialog>
+              <div style={{ width: 50, height: 50 }} />
+            </dialog>
+          ),
+          options
+        ),
+        300
+      )
+    ).toEqual(await toImage(await satori(page(null), options), 300))
+
+    // An open one is centered at its static position, after the red box, like
+    // in Chrome.
+    let box: number[] = []
+    const svg = await satori(
+      page(
+        <>
+          <dialog>Closed</dialog>
+          <dialog open>
+            <div style={{ width: 60, height: 20, background: 'green' }} />
+          </dialog>
+        </>
+      ),
+      {
+        ...options,
+        onNodeDetected: (node) => {
+          if (node.type === 'dialog' && node.props.open) {
+            box = [node.left, node.top, node.width, node.height]
+          }
+        },
+      }
+    )
+    expect(box).toEqual([101, 10, 98, 58])
+    expect(await toImage(svg, 300)).toMatchImageSnapshot()
+  })
+
   it('should not render elements that are hidden by default', async () => {
     const options = { width: 200, height: 60, fonts }
     const page = (hidden: any) => (

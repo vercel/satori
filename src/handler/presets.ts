@@ -39,7 +39,22 @@ export default {
   article: block,
   aside: block,
   details: block,
-  dialog: block,
+  // An open dialog that isn't modal. Closed ones are hidden, see
+  // `getHiddenPreset()`.
+  dialog: {
+    display: DEFAULT_DISPLAY,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    width: 'fit-content',
+    height: 'fit-content',
+    margin: 'auto',
+    borderWidth: 3,
+    borderStyle: 'solid',
+    padding: '1em',
+    backgroundColor: 'white',
+    color: 'black',
+  },
   figcaption: block,
   footer: block,
   form: block,
