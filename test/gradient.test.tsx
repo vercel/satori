@@ -786,4 +786,44 @@ describe('Gradient', () => {
     )
     expect(await toImage(svg, 260)).toMatchImageSnapshot()
   })
+
+  it('should support math functions in the positions of color stops', async () => {
+    const render = (style: Record<string, string>) =>
+      satori(
+        <div style={{ display: 'flex', width: 100, height: 100, ...style }} />,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+    expect(
+      await render({
+        backgroundImage:
+          'linear-gradient(to right, red calc(50% - 10px), blue max(60px, 10%))',
+      })
+    ).toBe(
+      await render({
+        backgroundImage: 'linear-gradient(to right, red 40px, blue 60px)',
+      })
+    )
+    expect(
+      await render({
+        backgroundImage: 'radial-gradient(red calc(10% + 5px), blue)',
+      })
+    ).toBe(await render({ backgroundImage: 'radial-gradient(red 15px, blue)' }))
+    expect(
+      await render({
+        backgroundColor: 'red',
+        maskImage:
+          'linear-gradient(to right, transparent, black 24px, black calc(100% - 20%), transparent)',
+      })
+    ).toBe(
+      await render({
+        backgroundColor: 'red',
+        maskImage:
+          'linear-gradient(to right, transparent, black 24px, black 80%, transparent)',
+      })
+    )
+  })
 })

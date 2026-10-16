@@ -9,6 +9,7 @@ import {
   expandColorStops,
   extractInterpolationMethod,
   normalizeStops,
+  resolveMathPositions,
 } from './utils.js'
 
 export function buildRadialGradient(
@@ -31,13 +32,20 @@ export function buildRadialGradient(
   from?: 'background' | 'mask'
 ) {
   const [gradient, method] = extractInterpolationMethod(image)
+  const math: string[] = []
   const {
     shape,
-    stops: colorStops,
+    stops: parsedStops,
     position,
     size,
     repeating,
-  } = parseRadialGradient(withDefaultShape(expandColorStops(gradient)))
+  } = parseRadialGradient(withDefaultShape(expandColorStops(gradient, math)))
+  const colorStops = resolveMathPositions(
+    parsedStops,
+    math,
+    width,
+    inheritableStyle
+  )
   const [xDelta, yDelta] = dimensions
 
   let cx: number = xDelta / 2
