@@ -5,7 +5,10 @@
  */
 
 import opentype from '@shuding/opentype.js'
-import harfbuzzjsPromise from 'harfbuzzjs'
+// Not `harfbuzzjs` itself: its entry starts HarfBuzz as soon as it's imported.
+import createHarfBuzz from 'harfbuzzjs/hb.js'
+import hbjs from 'harfbuzzjs/hbjs.js'
+import { loadWasm, type InitInput } from './load-wasm.js'
 
 // HarfBuzz types (will be populated when module loads)
 let hb: any = null
@@ -41,6 +44,36 @@ const hbFontFinalizer =
     ? new FinalizationRegistry<any>((font) => font.destroy())
     : null
 
+let harfBuzzSource: InitInput | undefined
+
+/**
+ * Makes HarfBuzz use the given `harfbuzz.wasm` module instead of compiling the
+ * bundled one, for `satori/standalone`.
+ */
+export function setHarfBuzzSource(input: InitInput) {
+  harfBuzzSource = input
+}
+
+function instantiateHarfBuzz(input: InitInput): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    createHarfBuzz({
+      instantiateWasm(
+        imports: WebAssembly.Imports,
+        receiveInstance: (
+          instance: WebAssembly.Instance,
+          module: WebAssembly.Module
+        ) => void
+      ) {
+        loadWasm(input, imports).then(
+          ({ instance, module }) => receiveInstance(instance, module),
+          reject
+        )
+        return {}
+      },
+    }).then(resolve, reject)
+  })
+}
+
 /**
  * Initialize HarfBuzz WASM module
  * Must be called before using any shaping functions
@@ -57,14 +90,29 @@ export async function initHarfBuzz(): Promise<void> {
 
   // Start initialization
   initPromise = (async () => {
-    hb = await harfbuzzjsPromise
+    hb = hbjs(
+      await (harfBuzzSource
+        ? instantiateHarfBuzz(harfBuzzSource)
+        : createHarfBuzz())
+    )
 
     if (!hb || typeof hb.createBlob !== 'function') {
       throw new Error('HarfBuzz module loaded but API is not available')
     }
-  })()
+  })().catch((error) => {
+    // Let the next render try again instead of failing forever.
+    hb = null
+    initPromise = null
+    throw error
+  })
 
   await initPromise
+}
+
+if (process.env.SATORI_STANDALONE !== '1') {
+  // Preload the bundled module, like the layout engine. If it fails, the
+  // next render tries again and reports the error.
+  initHarfBuzz().catch(() => undefined)
 }
 
 /**

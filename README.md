@@ -686,6 +686,16 @@ const svg = await satori(...)
 
 Of course, you can also load the `layout.wasm` file from your local disk via `fs.readFile` in Node.js or other methods.
 
+The standalone build still bundles the HarfBuzz module that Satori uses to shape text, and compiles it the first time it renders. Runtimes that only run WebAssembly modules uploaded with your code, like Cloudflare Workers, don't allow that. On them, pass `harfbuzz.wasm` to `init` as well:
+
+```jsx
+import satori, { init } from 'satori/standalone'
+import layout from 'satori/layout.wasm'
+import harfbuzz from 'satori/harfbuzz.wasm'
+
+await init({ layout, harfbuzz })
+```
+
 ### Font Embedding
 
 By default, Satori renders the text as `<path>` in SVG, instead of `<text>`. That means it embeds the font path data as inlined information, so succeeding processes (e.g. render the SVG on another platform) don’t need to deal with font files anymore.
