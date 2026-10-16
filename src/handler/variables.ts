@@ -79,6 +79,22 @@ export function mergeVariables(
  * `initial`, or in a cycle) is used without a fallback. The declaration then
  * behaves as `unset`.
  */
+/**
+ * The environment variables of `env()`, as in browsers on desktops, where no
+ * area is unsafe and there's no virtual keyboard. Others, e.g. the title bar
+ * areas of installed apps, use their fallbacks.
+ */
+const ENVIRONMENT = new Map<string, string>([
+  ['keyboard-inset-width', '0px'],
+  ['keyboard-inset-height', '0px'],
+])
+for (const side of ['top', 'right', 'bottom', 'left']) {
+  ENVIRONMENT.set(`safe-area-inset-${side}`, '0px')
+  ENVIRONMENT.set(`safe-area-max-inset-${side}`, '0px')
+  ENVIRONMENT.set(`keyboard-inset-${side}`, '0px')
+}
+
+/** Resolves `var()` and `env()` in a value. */
 export function resolveVariables(
   value: string | number,
   variables: CSSVariables,
@@ -89,8 +105,8 @@ export function resolveVariables(
     return value
   }
 
-  // Quick check: does this value contain var()?
-  if (!value.includes('var(')) {
+  // Quick check: does this value contain var() or env()?
+  if (!value.includes('var(') && !value.includes('env(')) {
     return value
   }
 
@@ -98,17 +114,14 @@ export function resolveVariables(
     const parsed = valueParser(value)
     let invalid = false
 
-    parsed.walk((node) => {
-      if (
-        invalid ||
-        node.type !== 'function' ||
-        node.value.toLowerCase() !== 'var'
-      ) {
+    parsed.walk((node, index, siblings) => {
+      const name = node.type === 'function' && node.value.toLowerCase()
+      if (invalid || (name !== 'var' && name !== 'env')) {
         return
       }
 
       // Extract variable name and optional fallback
-      const args = extractVarArgs(node)
+      const args = extractVarArgs(node as valueParser.FunctionNode)
       if (!args) {
         invalid = true
         return false
@@ -116,7 +129,9 @@ export function resolveVariables(
       const { varName, fallback } = args
 
       let resolved: string | number | undefined
-      if (visitedVars.has(varName)) {
+      if (name === 'env') {
+        resolved = ENVIRONMENT.get(varName)
+      } else if (visitedVars.has(varName)) {
         console.warn(`Circular reference detected for CSS variable: ${varName}`)
       } else {
         const variableValue = variables[varName]
@@ -143,7 +158,19 @@ export function resolveVariables(
         return false
       }
 
-      replaceNode(node, String(resolved))
+      // Like in browsers, which substitute tokens, the value stays apart from
+      // what's next to it, e.g. in `var(--width)10px` from minifiers, which
+      // leave out spaces after functions.
+      const joins = (sibling: valueParser.Node | undefined) =>
+        sibling?.type === 'word' ||
+        sibling?.type === 'string' ||
+        sibling?.type === 'function'
+      replaceNode(
+        node,
+        (joins(siblings[index - 1]) ? ' ' : '') +
+          String(resolved) +
+          (joins(siblings[index + 1]) ? ' ' : '')
+      )
       return false
     })
 
