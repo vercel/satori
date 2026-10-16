@@ -270,4 +270,92 @@ describe('Font', () => {
       ).rejects.toThrow('Failed to decode the WOFF2 font "Broken".')
     })
   })
+
+  describe('font shorthand', () => {
+    const render = (style: Record<string, unknown>, errors?: string[]) =>
+      satori(
+        <div style={{ display: 'flex', fontSize: 16 }}>
+          <div style={{ display: 'flex', width: 100, ...style }}>Text</div>
+        </div>,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+          onStyleError: errors
+            ? (error) => errors.push(error.message)
+            : undefined,
+        }
+      )
+
+    it('should set the longhands', async () => {
+      expect(
+        await render({
+          font: 'italic 700 20px/30px "Unknown",Roboto, sans-serif',
+        })
+      ).toBe(
+        await render({
+          fontStyle: 'italic',
+          fontWeight: 700,
+          fontSize: 20,
+          lineHeight: '30px',
+          fontFamily: '"Unknown",Roboto, sans-serif',
+        })
+      )
+    })
+
+    it('should support math functions in font sizes', async () => {
+      expect(await render({ font: 'calc(1em + 4px)/normal Roboto' })).toBe(
+        await render({
+          fontSize: 20,
+          lineHeight: 'normal',
+          fontFamily: 'Roboto',
+        })
+      )
+    })
+
+    it('should reset the longhands that are not given', async () => {
+      expect(
+        await render({ lineHeight: 3, fontWeight: 700, font: '16px Roboto' })
+      ).toBe(
+        await render({
+          lineHeight: 'normal',
+          fontWeight: 'normal',
+          fontSize: 16,
+          fontFamily: 'Roboto',
+        })
+      )
+    })
+
+    it('should support the keywords of the longhands', async () => {
+      const errors: string[] = []
+      expect(
+        await render(
+          { font: 'normal small-caps condensed 300 large/1.5 Roboto' },
+          errors
+        )
+      ).toBe(
+        await render({
+          fontVariant: 'small-caps',
+          fontStretch: 'condensed',
+          fontWeight: 300,
+          fontSize: 'large',
+          lineHeight: 1.5,
+          fontFamily: 'Roboto',
+        })
+      )
+      expect(errors).toEqual([])
+    })
+
+    it('should report invalid values', async () => {
+      const errors: string[] = []
+      await render({ font: 'bold' }, errors)
+      await render({ font: '16px/20px' }, errors)
+      await render({ font: 'bold italic bold 16px Roboto' }, errors)
+      expect(errors).toEqual([
+        'Invalid value for CSS property "font": "bold".',
+        'Invalid value for CSS property "font": "16px/20px".',
+        'Invalid value for CSS property "font": "bold italic bold 16px Roboto".',
+      ])
+    })
+  })
 })
