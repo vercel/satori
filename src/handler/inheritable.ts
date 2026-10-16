@@ -58,6 +58,8 @@ const list = new Set([
   '_inheritedMaskId',
   '_inheritedBackgroundClipTextPath',
   '_inheritedBackgroundClipTextHasBackground',
+  '_alwaysDrawn',
+  '_cullMargin',
 ])
 
 /**

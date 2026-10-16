@@ -25,6 +25,7 @@ import {
 import { cache, inflightRequests } from './handler/image.js'
 import { segment } from './utils.js'
 import { initHarfBuzz } from './harfbuzz.js'
+import type { PaintBounds } from './culling.js'
 import {
   sizeStaticPositionPlaceholders,
   type FixedElement,
@@ -216,6 +217,9 @@ export async function render(
     for (const error of errors) options.onStyleError?.(error)
   }
 
+  // What's entirely outside of the image isn't drawn.
+  pass.paintBounds.width = pass.root.layout.width
+  pass.paintBounds.height = pass.root.layout.height
   const content = (await pass.handler.next([0, 0])).value as string
 
   return svg({
@@ -255,6 +259,7 @@ export async function render(
 
     const fixedElements: FixedElement[] = []
     const containerNodes = new Map<number, LayoutNode>()
+    const paintBounds: PaintBounds = { width: 0, height: 0 }
     const handler = layout(tree, {
       id: 'id',
       parentStyle: {},
@@ -286,6 +291,7 @@ export async function render(
       // So are absolutely positioned ones without a positioned ancestor.
       absoluteContainingBlock: { node: root, offset: { left: 0, top: 0 } },
       fixedElements,
+      paintBounds,
       floats: { found: false },
       formattingContext: 'root',
       containers: containerNodes,
@@ -371,7 +377,7 @@ export async function render(
       layoutEngine.computeLayout(root, layoutOptions)
     }
 
-    return { root, handler, containerNodes }
+    return { root, handler, containerNodes, paintBounds }
   }
 }
 
