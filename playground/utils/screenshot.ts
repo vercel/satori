@@ -11,6 +11,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { parse, type DefaultTreeAdapterTypes as Parsed } from 'parse5'
 import satori from 'satori'
+import { assertSafeServerFetchTarget } from '../../src/handler/url-safety'
 
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36'
@@ -20,6 +21,8 @@ const MAX_STYLESHEETS = 40
 const MAX_FONTS = 16
 const MAX_BYTES = 10 * 1024 * 1024
 const TIMEOUT = 10_000
+const MAX_REDIRECTS = 10
+const REDIRECTS = new Set([301, 302, 303, 307, 308])
 
 /** A transparent image, for images without a source, e.g. lazy ones. */
 const EMPTY_IMAGE =
@@ -51,30 +54,56 @@ export interface Screenshot {
   styleErrors: string[]
 }
 
-async function fetchResource(url: URL, accept: string) {
-  let response: Response
-  try {
-    response = await fetch(url, {
-      headers: { 'User-Agent': USER_AGENT, Accept: accept },
-      signal: AbortSignal.timeout(TIMEOUT),
-    })
-  } catch (error) {
-    // The reason, e.g. a DNS error, is the cause of `fetch failed`.
-    const cause = error instanceof Error ? error.cause ?? error : error
-    const reason = cause instanceof Error ? cause.message : String(cause)
-    throw new Error(`Couldn't fetch ${url}: ${reason}`)
+/**
+ * Fetches a URL, and validates it and every redirect, as pages control the
+ * URLs of their stylesheets and fonts. Like the images that Satori fetches,
+ * they must resolve to public addresses, unless they're on `trusted`, the
+ * origin of the URL that the developer entered, e.g. a local server.
+ */
+async function fetchResource(url: URL, accept: string, trusted: string) {
+  let current = url
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    if (current.origin !== trusted) {
+      try {
+        await assertSafeServerFetchTarget(current.href)
+      } catch {
+        throw new Error(
+          `Refused to fetch ${current}: it isn't public, or can't be resolved.`
+        )
+      }
+    }
+    let response: Response
+    try {
+      response = await fetch(current, {
+        headers: { 'User-Agent': USER_AGENT, Accept: accept },
+        signal: AbortSignal.timeout(TIMEOUT),
+        redirect: 'manual',
+      })
+    } catch (error) {
+      // The reason, e.g. a DNS error, is the cause of `fetch failed`.
+      const cause = error instanceof Error ? error.cause ?? error : error
+      const reason = cause instanceof Error ? cause.message : String(cause)
+      throw new Error(`Couldn't fetch ${current}: ${reason}`)
+    }
+    const location = response.headers.get('location')
+    if (REDIRECTS.has(response.status) && location) {
+      await response.body?.cancel()
+      current = new URL(location, current)
+      continue
+    }
+    if (!response.ok) {
+      throw new Error(`${response.status} ${response.statusText}: ${current}`)
+    }
+    if (Number(response.headers.get('content-length')) > MAX_BYTES) {
+      throw new Error(`Larger than ${MAX_BYTES} bytes: ${current}`)
+    }
+    const data = await response.arrayBuffer()
+    if (data.byteLength > MAX_BYTES) {
+      throw new Error(`Larger than ${MAX_BYTES} bytes: ${current}`)
+    }
+    return { data, url: current }
   }
-  if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText}: ${url}`)
-  }
-  if (Number(response.headers.get('content-length')) > MAX_BYTES) {
-    throw new Error(`Larger than ${MAX_BYTES} bytes: ${url}`)
-  }
-  const data = await response.arrayBuffer()
-  if (data.byteLength > MAX_BYTES) {
-    throw new Error(`Larger than ${MAX_BYTES} bytes: ${url}`)
-  }
-  return { data, url: new URL(response.url || url) }
+  throw new Error(`Redirected too many times: ${url}`)
 }
 
 const decode = (data: ArrayBuffer) => new TextDecoder().decode(data)
@@ -270,15 +299,15 @@ function findFontFaces(css: string, base: URL) {
   return faces
 }
 
-async function loadFont(url: string): Promise<ArrayBuffer> {
+async function loadFont(url: string, trusted: string): Promise<ArrayBuffer> {
   if (url.startsWith('data:')) {
     const comma = url.indexOf(',')
     const data = Buffer.from(url.slice(comma + 1), 'base64')
     return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
   }
   return cached(
-    `font:${url}`,
-    async () => (await fetchResource(new URL(url), '*/*')).data
+    `font:${trusted}:${url}`,
+    async () => (await fetchResource(new URL(url), '*/*', trusted)).data
   )
 }
 
@@ -424,7 +453,12 @@ export async function screenshot(
     }
   }
 
-  const page = await time('page', () => fetchResource(url, 'text/html'))
+  // Only the origin of the URL that was entered may be private, see
+  // `fetchResource()`.
+  const trusted = url.origin
+  const page = await time('page', () =>
+    fetchResource(url, 'text/html', trusted)
+  )
   const document = parse(decode(page.data))
   const html = document.childNodes.find(
     (node): node is Parsed.Element => isElement(node) && node.tagName === 'html'
@@ -446,8 +480,8 @@ export async function screenshot(
       linked.map(async (link) => {
         const href = new URL(attribute(link, 'href') ?? '', base)
         try {
-          const css = await cached(`css:${href}`, async () => {
-            const sheet = await fetchResource(href, 'text/css')
+          const css = await cached(`css:${trusted}:${href}`, async () => {
+            const sheet = await fetchResource(href, 'text/css', trusted)
             return absoluteURLs(decode(sheet.data), sheet.url)
           })
           stylesheets.set(link, css)
@@ -484,7 +518,7 @@ export async function screenshot(
         if (!data.has(face.url)) {
           data.set(
             face.url,
-            loadFont(face.url).catch(() => undefined)
+            loadFont(face.url, trusted).catch(() => undefined)
           )
         }
         const fontData = await data.get(face.url)
