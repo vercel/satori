@@ -7,6 +7,34 @@ describe('clipPath', () => {
   let fonts
   initFonts((f) => (fonts = f))
 
+  it.each([
+    ['right center', 180, 50],
+    ['top center', 90, 0],
+    ['bottom center', 90, 100],
+    ['center 20px', 90, 20],
+    ['20px center', 20, 50],
+    ['center right', 180, 50],
+    ['center top', 90, 0],
+  ])(
+    'should resolve center in %s on the correct axis',
+    async (position, x, y) => {
+      for (const shape of ['circle(20px', 'ellipse(20px 10px']) {
+        const svg = await satori(
+          <div
+            style={{
+              width: 180,
+              height: 100,
+              backgroundColor: 'red',
+              clipPath: `${shape} at ${position})`,
+            }}
+          />,
+          { width: 180, height: 100, fonts }
+        )
+        expect(svg).toContain(`cx="${x}" cy="${y}"`)
+      }
+    }
+  )
+
   it('should render clip-path', async () => {
     const svgs = await Promise.all(
       [
