@@ -94,13 +94,13 @@ describe('Image', () => {
           display: 'flex',
         }}
       >
-        <img width='100%' height='100%' src='https://via.placeholder.com/150' />
+        <img width='100%' height='100%' src='https://placehold.co/150' />
       </div>,
       { width: 100, height: 100, fonts }
     )
     expect(await toImage(svg, 100)).toMatchImageSnapshot()
 
-    expect(requests).toEqual(['https://via.placeholder.com/150'])
+    expect(requests).toEqual(['https://placehold.co/150'])
   })
 
   it('should render svg with image', async () => {
@@ -195,14 +195,14 @@ describe('Image', () => {
           display: 'flex',
         }}
       >
-        <img width='10%' height='10%' src='https://via.placeholder.com/200' />
-        <img width='20%' height='30%' src='https://via.placeholder.com/200' />
+        <img width='10%' height='10%' src='https://placehold.co/200' />
+        <img width='20%' height='30%' src='https://placehold.co/200' />
       </div>,
       { width: 100, height: 100, fonts }
     )
     expect(await toImage(svg, 100)).toMatchImageSnapshot()
 
-    expect(requests).toEqual(['https://via.placeholder.com/200'])
+    expect(requests).toEqual(['https://placehold.co/200'])
   })
 
   it('should resolve the image size and scale automatically', async () => {
@@ -215,7 +215,7 @@ describe('Image', () => {
           display: 'flex',
         }}
       >
-        <img width={30} src='https://via.placeholder.com/200' />
+        <img width={30} src='https://placehold.co/200' />
       </div>,
       { width: 100, height: 100, fonts }
     )
@@ -256,7 +256,7 @@ describe('Image', () => {
           display: 'flex',
         }}
       >
-        <img width={100} height={50} src='https://via.placeholder.com/200' />
+        <img width={100} height={50} src='https://placehold.co/200' />
       </div>,
       { width: 100, height: 100, fonts }
     )
@@ -328,7 +328,7 @@ describe('Image', () => {
         <img
           width='100%'
           height='100%'
-          src='https://via.placeholder.com/150'
+          src='https://placehold.co/150'
           style={{
             transform: 'scale(0.8) skew(10deg, 10deg)',
             borderRadius: '10px 20%',
@@ -352,7 +352,7 @@ describe('Image', () => {
         <img
           width='100%'
           height='100%'
-          src='https://via.placeholder.com/150'
+          src='https://placehold.co/150'
           style={{
             opacity: 0.5,
           }}
@@ -372,7 +372,7 @@ describe('Image', () => {
           display: 'flex',
         }}
       >
-        <img width='100%' src='https://via.placeholder.com/150.svg' />
+        <img width='100%' src='https://placehold.co/150.svg' />
       </div>,
       { width: 100, height: 100, fonts }
     )
@@ -391,7 +391,7 @@ describe('Image', () => {
         <img
           width='100%'
           height='100%'
-          src='https://via.placeholder.com/150'
+          src='https://placehold.co/150'
           style={{
             borderRadius: '10px 20%',
             border: '10px solid rgba(0, 0, 0, 0.5)',
@@ -415,7 +415,7 @@ describe('Image', () => {
         <img
           width='100%'
           height='100%'
-          src='https://via.placeholder.com/150'
+          src='https://placehold.co/150'
           style={{
             padding: 10,
             borderRadius: '20px 30%',
@@ -441,7 +441,7 @@ describe('Image', () => {
         <img
           width='100%'
           height='100%'
-          src='https://via.placeholder.com/150'
+          src='https://placehold.co/150'
           style={{
             transform: 'rotate(45deg) translate(30px, 15px)',
             borderRadius: '20px',
@@ -524,7 +524,7 @@ describe('background-image: url()', () => {
           width: '50%',
           height: '50%',
           display: 'flex',
-          backgroundImage: 'url(https://via.placeholder.com/300)',
+          backgroundImage: 'url(https://placehold.co/300)',
         }}
       ></div>,
       { width: 100, height: 100, fonts }
@@ -532,7 +532,7 @@ describe('background-image: url()', () => {
 
     expect(await toImage(svg, 100)).toMatchImageSnapshot()
 
-    expect(requests).toEqual(['https://via.placeholder.com/300'])
+    expect(requests).toEqual(['https://placehold.co/300'])
   })
 
   it('should support single quotes inside url()', async () => {
@@ -543,14 +543,14 @@ describe('background-image: url()', () => {
           width: '50%',
           height: '50%',
           display: 'flex',
-          backgroundImage: "url('https://via.placeholder.com/301')",
+          backgroundImage: "url('https://placehold.co/301')",
         }}
       ></div>,
       { width: 100, height: 100, fonts }
     )
     expect(await toImage(svg, 100)).toMatchImageSnapshot()
 
-    expect(requests).toEqual(['https://via.placeholder.com/301'])
+    expect(requests).toEqual(['https://placehold.co/301'])
   })
 
   it('should support double quotes inside url()', async () => {
@@ -561,7 +561,7 @@ describe('background-image: url()', () => {
           width: '50%',
           height: '50%',
           display: 'flex',
-          backgroundImage: 'url("https://via.placeholder.com/302")',
+          backgroundImage: 'url("https://placehold.co/302")',
         }}
       ></div>,
       { width: 100, height: 100, fonts }
@@ -569,7 +569,7 @@ describe('background-image: url()', () => {
 
     expect(await toImage(svg, 100)).toMatchImageSnapshot()
 
-    expect(requests).toEqual(['https://via.placeholder.com/302'])
+    expect(requests).toEqual(['https://placehold.co/302'])
   })
 
   it('should support SVG data uris with various quotes inside url()', async () => {
@@ -679,7 +679,7 @@ describe('background-image: url()', () => {
           width: '50%',
           height: '50%',
           display: 'flex',
-          backgroundImage: 'url(https://via.placeholder.com/300)',
+          backgroundImage: 'url(https://placehold.co/300)',
           backgroundSize: '100% 100%',
         }}
       ></div>,
