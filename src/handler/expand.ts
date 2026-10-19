@@ -425,6 +425,14 @@ function handleSpecialCase(
     return expandEdges(value, ['top', 'right', 'bottom', 'left'])
   }
 
+  // `normal` spacing is no extra spacing.
+  if (
+    (name === 'letterSpacing' || name === 'wordSpacing') &&
+    String(value).trim().toLowerCase() === 'normal'
+  ) {
+    return { [name]: 0 }
+  }
+
   // The longhands of `font` are handled like when they're set by themselves.
   if (name === 'font') {
     const longhands: Record<string, unknown> = {}

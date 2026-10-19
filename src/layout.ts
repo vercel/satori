@@ -54,7 +54,11 @@ import type {
 } from './handler/compute.js'
 import type { ParsedTransformOrigin } from './transform-origin.js'
 import { CONTAINER_PROP } from './handler/stylesheet.js'
-import { getInputContent, PLACEHOLDER_PROP } from './form-control.js'
+import {
+  getInputContent,
+  getSelectContent,
+  PLACEHOLDER_PROP,
+} from './form-control.js'
 import type { TransformFunction } from './parser/transform.js'
 import {
   getDepth,
@@ -393,8 +397,10 @@ export default async function* layout(
   if (chRatio !== undefined) {
     computedStyle._chRatio = newInheritableStyle._chRatio = chRatio
   }
-  // Inputs show their value or placeholder instead of children.
+  // Inputs show their value or placeholder instead of children, and selects
+  // their options.
   if (type === 'input') children = getInputContent(props, computedStyle, font)
+  else if (type === 'select') children = getSelectContent(props, computedStyle)
 
   // Counters are changed in tree order, by elements that are displayed.
   const countersHidden =
