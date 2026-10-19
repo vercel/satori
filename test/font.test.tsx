@@ -271,6 +271,39 @@ describe('Font', () => {
     })
   })
 
+  describe('variable fonts', () => {
+    it('should render variable fonts as their default instance', async () => {
+      // The Latin subset of the variable Geist Mono of nextjs.org, with a
+      // `wght` axis of 100 to 900, and 400 by default.
+      const [variable, regular] = await Promise.all(
+        ['GeistMono-Variable.woff2', 'GeistMono-Regular.ttf'].map((name) =>
+          readFile(join(process.cwd(), 'test', 'assets', name))
+        )
+      )
+      const render = async (data: Buffer) => {
+        let width = 0
+        const svg = await satori(
+          <div style={{ display: 'flex', fontSize: 32, fontFamily: 'Geist' }}>
+            <span>Hello, World!</span>
+          </div>,
+          {
+            width: 300,
+            height: 60,
+            fonts: [{ name: 'Geist', data, weight: 400, style: 'normal' }],
+            onNodeDetected: (node) => {
+              if (node.type === 'span') width = node.width
+            },
+          }
+        )
+        return { svg, width }
+      }
+      const { svg, width } = await render(variable)
+      expect(svg).toContain('<path')
+      expect(width).toBe((await render(regular)).width)
+      expect(await toImage(svg, 300)).toMatchImageSnapshot()
+    })
+  })
+
   describe('font shorthand', () => {
     const render = (style: Record<string, unknown>, errors?: string[]) =>
       satori(
