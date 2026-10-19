@@ -304,6 +304,31 @@ export function segment(
   return result
 }
 
+/**
+ * Splits the graphemes that are drawn as images, like emojis, from the text
+ * around them. Words can have them, e.g. consecutive keycaps are one word.
+ */
+export function splitImages(
+  text: string,
+  isImage: (grapheme: string) => boolean
+): string[] {
+  const graphemes = segment(text, 'grapheme')
+  if (!graphemes.some(isImage)) return [text]
+
+  const parts: string[] = []
+  let afterImage = true
+  for (const grapheme of graphemes) {
+    const image = isImage(grapheme)
+    if (image || afterImage) {
+      parts.push(grapheme)
+    } else {
+      parts[parts.length - 1] += grapheme
+    }
+    afterImage = image
+  }
+  return parts
+}
+
 /** Build safe SVG markup from element names, attributes, and serialized children. */
 export function buildXMLString(
   type: string,

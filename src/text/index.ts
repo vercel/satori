@@ -6,6 +6,7 @@ import type { LayoutContext } from '../layout.js'
 import {
   v,
   segment,
+  splitImages,
   wordSeparators,
   buildXMLString,
   isUndefined,
@@ -179,6 +180,7 @@ export default async function* buildTextNodes(
       graphemeImages[s]
     )
   }
+  const hasImages = !!graphemeImages && Object.keys(graphemeImages).length > 0
 
   const { measureGrapheme, measureGraphemeArray, measureText } = genMeasurer(
     engine,
@@ -417,10 +419,11 @@ export default async function* buildTextNodes(
           isImage: false,
         })
       } else {
+        let _texts = segment(word, 'word')
+        // Images in words, e.g. consecutive keycaps, are drawn apart.
+        if (hasImages) _texts = _texts.flatMap((s) => splitImages(s, isImage))
         // Parts of words in different directions are reordered separately.
-        const _texts = needsBidi
-          ? segment(word, 'word').flatMap(splitByDirection)
-          : segment(word, 'word')
+        if (needsBidi) _texts = _texts.flatMap(splitByDirection)
 
         for (let j = 0; j < _texts.length; j++) {
           const _text = _texts[j]

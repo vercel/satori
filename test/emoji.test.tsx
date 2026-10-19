@@ -1,4 +1,4 @@
-import { it, describe, expect } from 'vitest'
+import { it, describe, expect, vi } from 'vitest'
 
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
@@ -31,6 +31,56 @@ describe('Emojis', () => {
         "👶🏾",
       ]
     `)
+  })
+
+  const image =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg=='
+
+  // https://github.com/vercel/satori/issues/665
+  it('should draw emojis followed by U+FE0E as text', async () => {
+    const loadAdditionalAsset = vi.fn(async (code: string) =>
+      code === 'emoji' ? image : []
+    )
+    const svg = await satori(<div>{'♥\uFE0E ❤\uFE0E'}</div>, {
+      width: 100,
+      height: 100,
+      fonts,
+      loadAdditionalAsset,
+    })
+    expect(loadAdditionalAsset.mock.calls).toEqual([
+      ['symbol', '♥\uFE0E❤\uFE0E'],
+    ])
+    expect(svg).not.toContain('<image')
+  })
+
+  // https://github.com/vercel/satori/issues/533
+  it('should draw keycaps and characters followed by U+FE0F as emojis', async () => {
+    const loadAdditionalAsset = vi.fn(async (code: string) =>
+      code === 'emoji' ? image : []
+    )
+    const svg = await satori(<div>0️⃣0️⃣ #️⃣ ©️ 0 # ©</div>, {
+      width: 200,
+      height: 100,
+      fonts,
+      loadAdditionalAsset,
+    })
+    expect(loadAdditionalAsset.mock.calls).toEqual([
+      ['emoji', '0️⃣'],
+      ['emoji', '#️⃣'],
+      ['emoji', '©️'],
+    ])
+    expect(svg.match(/<image /g)).toHaveLength(4)
+  })
+
+  it('should draw keycaps as text if their emojis are not loaded', async () => {
+    const render = (loadAdditionalAsset?: () => Promise<[]>) =>
+      satori(<div>0️⃣0️⃣ ©️</div>, {
+        width: 200,
+        height: 100,
+        fonts,
+        loadAdditionalAsset,
+      })
+    expect(await render(async () => [])).toBe(await render())
   })
 
   // https://github.com/vercel/satori/issues/302

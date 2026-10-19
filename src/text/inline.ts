@@ -23,6 +23,7 @@ import {
   roundUpToLayout,
   segment as segmentText,
   splitByBreakOpportunities,
+  splitImages,
 } from '../utils.js'
 import buildText, {
   buildGlyphPaths,
@@ -1258,6 +1259,7 @@ export class Paragraph {
     const { style, inheritedStyle, id } = run
     const { engine, isImage } = this.runState(run)
     const { embedFont, debug, graphemeImages } = this.env
+    const hasImages = !!graphemeImages && Object.keys(graphemeImages).length > 0
     const [dx, dy] = relativeOffset(run.boxes, this.node.layout.width)
     const left = x + this.node.layout.left + dx
     const top = y + this.node.layout.top + dy
@@ -1353,7 +1355,10 @@ export class Paragraph {
       let pieceX = left + piece.x
       // Images of graphemes, e.g. emoji, are drawn as images.
       const parts: string[] = []
-      for (const word of segmentText(piece.text, 'word')) {
+      let words = segmentText(piece.text, 'word')
+      // Images in words, e.g. consecutive keycaps, are drawn apart.
+      if (hasImages) words = words.flatMap((s) => splitImages(s, isImage))
+      for (const word of words) {
         if (isImage(word) || !embedFont) {
           parts.push(word)
         } else if (parts.length && !isImage(parts[parts.length - 1])) {

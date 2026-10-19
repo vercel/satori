@@ -955,6 +955,9 @@ export default class FontLoader {
     const engine = {
       has: (s: string) => {
         if (s === '\n') return true
+        // Characters followed by U+FE0F or a keycap (U+20E3) are emojis, even
+        // if a font has them, like digits and the copyright sign.
+        if (/[\uFE0F\u20E3]/.test(s)) return false
         const font = resolve(s)
         if (!font) return false
         // Use charToGlyphIndex directly instead of stringToGlyphs to avoid
