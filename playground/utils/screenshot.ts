@@ -383,6 +383,94 @@ function* walk(node: Parsed.Node): Generator<Parsed.Element> {
   }
 }
 
+/** A length of `sizes` in px, e.g. `50vw` or `calc(100vw - 2rem)`. */
+function toPx(length: string, viewport: number): number | undefined {
+  const value = length.trim().toLowerCase()
+  const math = /^calc\((.*)\)$/.exec(value)
+  if (math) {
+    // Sums and differences of lengths.
+    let total = 0
+    for (const [, sign, term] of `+ ${math[1]}`.matchAll(
+      /([+-])\s+([^\s]+)/g
+    )) {
+      const px = toPx(term, viewport)
+      if (px === undefined) return undefined
+      total += sign === '-' ? -px : px
+    }
+    return total
+  }
+  const match = /^(-?[\d.]+)(px|vw|r?em)?$/.exec(value)
+  if (!match) return undefined
+  const number = parseFloat(match[1])
+  if (match[2] === 'vw') return (number * viewport) / 100
+  if (match[2] === 'em' || match[2] === 'rem') return number * 16
+  return match[2] === 'px' || number === 0 ? number : undefined
+}
+
+/** Whether a media condition of `sizes` matches, with widths only. */
+function matchesWidth(condition: string, viewport: number) {
+  return condition
+    .toLowerCase()
+    .split(/\s+and\s+/)
+    .every((part) => {
+      const match = /^\(\s*(min|max)-width\s*:\s*([^)]+)\)$/.exec(part.trim())
+      if (!match) return false
+      const width = toPx(match[2], viewport)
+      if (width === undefined) return false
+      return match[1] === 'min' ? viewport >= width : viewport <= width
+    })
+}
+
+/** The width of an image from its `sizes`, like in browsers. */
+function sourceSize(sizes: string | undefined, viewport: number) {
+  for (const entry of splitCSS(sizes ?? '', ',')) {
+    const match = /^(.*?)\s*(calc\(.*\)|[^\s()]+)$/i.exec(entry.trim())
+    if (!match) continue
+    if (match[1] && !matchesWidth(match[1], viewport)) continue
+    const size = toPx(match[2], viewport)
+    if (size !== undefined && size >= 0) return size
+  }
+  return viewport
+}
+
+/**
+ * The source of an image from its `srcset`, like in browsers on a display
+ * with 1 pixel per CSS pixel: the smallest that's at least as dense. Next.js
+ * images have the largest one as their `src`.
+ */
+function pickSource(
+  srcset: string,
+  src: string | undefined,
+  sizes: string | undefined,
+  viewport: number
+) {
+  const candidates: { url: string; width?: number; density?: number }[] = []
+  for (const [, url, descriptor = ''] of srcset.matchAll(
+    /\s*([^\s,][^\s]*?),?(?:\s+([^,]*))?(?:,|$)/g
+  )) {
+    const width = /^(\d+)w$/.exec(descriptor.trim())
+    const density = /^([\d.]+)x$/.exec(descriptor.trim())
+    candidates.push({
+      url,
+      width: width ? Number(width[1]) : undefined,
+      density: density ? Number(density[1]) : width ? undefined : 1,
+    })
+  }
+  const size = sourceSize(sizes, viewport)
+  const withWidths = candidates.some((candidate) => candidate.width)
+  for (const candidate of candidates) {
+    if (candidate.width) candidate.density = candidate.width / (size || 1)
+  }
+  // Without widths, `src` is the 1x source.
+  if (src && !withWidths && !candidates.some((c) => c.density === 1)) {
+    candidates.push({ url: src, density: 1 })
+  }
+  const usable = candidates.filter((c) => c.density && c.density > 0)
+  if (!usable.length) return src
+  usable.sort((a, b) => a.density! - b.density!)
+  return (usable.find((c) => c.density! >= 1) ?? usable[usable.length - 1]).url
+}
+
 /**
  * Converts parsed HTML to elements for Satori. Stylesheets are inlined where
  * they're linked, so that they apply in the same order, and the URLs of images
@@ -391,7 +479,8 @@ function* walk(node: Parsed.Node): Generator<Parsed.Element> {
 function convert(
   node: Parsed.Element,
   base: URL,
-  stylesheets: Map<Parsed.Element, string>
+  stylesheets: Map<Parsed.Element, string>,
+  viewport: number
 ): Element {
   if (isStylesheet(node)) {
     const media = attribute(node, 'media')
@@ -416,12 +505,21 @@ function convert(
       props[name] = resolve(value, base)
     } else props[name] = value
   }
-  // Without `src`, e.g. in `<picture>`, an image uses the first of `srcset`.
-  // Without either, e.g. before a script loads it, it's empty, like in
-  // browsers, where Satori would throw.
+  // An image uses the source of its `srcset` that browsers would use, which
+  // is usually much smaller than its `src`. Without either, e.g. before a
+  // script loads it, it's empty, like in browsers, where Satori would throw.
   const srcset = attribute(node, 'srcset')?.trim()
-  if (node.tagName === 'img' && !props.src) {
-    props.src = srcset ? resolve(srcset.split(/[\s,]+/)[0], base) : EMPTY_IMAGE
+  if (node.tagName === 'img') {
+    const source = srcset
+      ? pickSource(
+          srcset,
+          attribute(node, 'src'),
+          attribute(node, 'sizes'),
+          viewport
+        )
+      : undefined
+    if (source) props.src = resolve(source, base)
+    if (!props.src) props.src = EMPTY_IMAGE
   }
   const children: (Element | string)[] = []
   for (const child of node.childNodes) {
@@ -432,7 +530,7 @@ function convert(
         !SKIPPED.has(child.tagName) &&
         (child.tagName !== 'link' || isStylesheet(child)) &&
         child.tagName !== 'base'
-      if (keep) children.push(convert(child, base, stylesheets))
+      if (keep) children.push(convert(child, base, stylesheets, viewport))
     }
   }
   if (children.length) props.children = children
@@ -541,7 +639,7 @@ export async function screenshot(
     return fonts.filter((font): font is Font => !!font)
   })
 
-  const tree = convert(html, base, stylesheets)
+  const tree = convert(html, base, stylesheets, width)
   const styleErrors: string[] = []
   // The fallback fonts come first, so that unknown families use them.
   fallbackFonts ??= loadFallbackFonts()
