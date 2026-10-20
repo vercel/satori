@@ -146,7 +146,7 @@
     "css-to-react-native": "^3.0.0",
     "emoji-regex-xs": "^2.0.1",
     "escape-html": "^1.0.3",
-    "fflate": "0.7.3",
+    "fflate": "0.7.5",
     "harfbuzzjs": "0.10.0",
     "linebreak": "^1.1.0",
     "parse-css-color": "^0.2.1",
