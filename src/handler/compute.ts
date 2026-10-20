@@ -816,23 +816,23 @@ export default async function compute(
   }
 
   if (typeof style.flexBasis !== 'undefined') {
-    layout.flexBasis = asSize(style.flexBasis, 'flexBasis')
+    layout.flexBasis = asSize(style.flexBasis, 'flexBasis', onStyleError)
   }
   layout.flexGrow = typeof style.flexGrow === 'undefined' ? 0 : style.flexGrow
   layout.flexShrink =
     typeof style.flexShrink === 'undefined' ? 1 : style.flexShrink
 
   if (typeof style.maxHeight !== 'undefined') {
-    layout.maxHeight = asSize(style.maxHeight, 'maxHeight')
+    layout.maxHeight = asSize(style.maxHeight, 'maxHeight', onStyleError)
   }
   if (typeof style.maxWidth !== 'undefined') {
-    layout.maxWidth = asSize(style.maxWidth, 'maxWidth')
+    layout.maxWidth = asSize(style.maxWidth, 'maxWidth', onStyleError)
   }
   if (typeof style.minHeight !== 'undefined') {
-    layout.minHeight = asSize(style.minHeight, 'minHeight')
+    layout.minHeight = asSize(style.minHeight, 'minHeight', onStyleError)
   }
   if (typeof style.minWidth !== 'undefined') {
-    layout.minWidth = asSize(style.minWidth, 'minWidth')
+    layout.minWidth = asSize(style.minWidth, 'minWidth', onStyleError)
   }
 
   // `visible` and `clip` don't make the box a scroll container, so with a
@@ -869,10 +869,26 @@ export default async function compute(
   layout.overflowX = LAYOUT_OVERFLOW[overflowX]
   layout.overflowY = LAYOUT_OVERFLOW[overflowY]
 
-  layout.marginTop = asPointAutoPercentageLength(style.marginTop || 0)
-  layout.marginBottom = asPointAutoPercentageLength(style.marginBottom || 0)
-  layout.marginLeft = asPointAutoPercentageLength(style.marginLeft || 0)
-  layout.marginRight = asPointAutoPercentageLength(style.marginRight || 0)
+  layout.marginTop = asPointAutoPercentageLength(
+    style.marginTop || 0,
+    'marginTop',
+    onStyleError
+  )
+  layout.marginBottom = asPointAutoPercentageLength(
+    style.marginBottom || 0,
+    'marginBottom',
+    onStyleError
+  )
+  layout.marginLeft = asPointAutoPercentageLength(
+    style.marginLeft || 0,
+    'marginLeft',
+    onStyleError
+  )
+  layout.marginRight = asPointAutoPercentageLength(
+    style.marginRight || 0,
+    'marginRight',
+    onStyleError
+  )
 
   // A side without a border style has no width. The width defaults to
   // `medium`, and the color to the current color.
@@ -982,17 +998,19 @@ export default async function compute(
         typeof inset !== 'undefined' &&
         String(inset).trim().toLowerCase() !== 'auto'
       ) {
-        layout[edge] = asPointPercentageLength(inset, edge)
+        layout[edge] = asPointPercentageLength(inset, edge, onStyleError)
       }
     }
   }
 
   layout.height =
     typeof style.height !== 'undefined'
-      ? asSize(style.height, 'height')
+      ? asSize(style.height, 'height', onStyleError)
       : 'auto'
   layout.width =
-    typeof style.width !== 'undefined' ? asSize(style.width, 'width') : 'auto'
+    typeof style.width !== 'undefined'
+      ? asSize(style.width, 'width', onStyleError)
+      : 'auto'
 
   layout.replaced =
     type === 'img' || type === 'svg' || !!replacedElements?.[type]
