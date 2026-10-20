@@ -16,6 +16,8 @@ describe('detectLanguageCode', () => {
     expect(detectLanguageCode('🧑🏻‍💻')).toEqual(['emoji'])
     expect(detectLanguageCode('hello 🌍')).toEqual(['emoji'])
     expect(detectLanguageCode('👋 vs 🌊')).toEqual(['emoji'])
+    expect(detectLanguageCode('♥\uFE0F')).toEqual(['emoji'])
+    expect(detectLanguageCode('😀\uFE0E')).toEqual(['emoji'])
   })
 
   it('should detect japanese(hiragana)', async () => {
@@ -116,6 +118,7 @@ describe('detectLanguageCode', () => {
 
   it('should detect symbol', async () => {
     expect(detectLanguageCode('☻')).toEqual(['symbol'])
+    expect(detectLanguageCode('♥\uFE0E')).toEqual(['symbol'])
   })
 
   it('should not crash when rendering Arabic letters', async () => {
