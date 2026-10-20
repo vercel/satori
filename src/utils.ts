@@ -527,6 +527,8 @@ export function asSize(
     }
     // Maximums without a limit.
     if (value === 'none' && /^max/.test(propertyName)) return undefined
+    // `auto` is the initial minimum, which is left unset. It isn't a maximum.
+    if (value === 'auto' && /^min/.test(propertyName)) return undefined
   }
   return /^(min|max)/.test(propertyName)
     ? asPointPercentageLength(x, propertyName, onError)
@@ -541,7 +543,8 @@ export function asPointAutoPercentageLength(
   if (typeof x === 'number' || typeof x === 'object') {
     return x
   }
-  if (x === 'auto') {
+  // Keywords are case-insensitive.
+  if (x.trim().toLowerCase() === 'auto') {
     return 'auto'
   }
   if (x.endsWith('%')) {

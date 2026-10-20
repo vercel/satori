@@ -219,4 +219,37 @@ describe('Error', () => {
     expect((await render()).width).toBe(30)
     warn.mockRestore()
   })
+
+  it('should keep valid keywords of sizes and margins', async () => {
+    const errors: string[] = []
+    let box: number[] = []
+    const svg = await satori(
+      <div style={{ display: 'flex', width: 40, height: 10 }}>
+        <style>
+          {
+            '.a { min-width: 80px; min-height: 30px } .b { min-width: auto; min-height: AUTO }'
+          }
+        </style>
+        <div
+          data-target
+          className='a b'
+          style={{ width: 100, backgroundColor: 'red' }}
+        />
+        <div style={{ width: 'AUTO', marginLeft: 'AUTO' }} />
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+        onStyleError: (error) => errors.push(error.message),
+        onNodeDetected: (node) => {
+          if (node.props['data-target']) box = [node.width, node.height]
+        },
+      }
+    )
+    expect(errors).toEqual([])
+    // The later `auto` minimums apply, like in Chrome.
+    expect(box).toEqual([40, 10])
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
+  })
 })
