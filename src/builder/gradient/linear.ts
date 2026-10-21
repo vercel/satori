@@ -3,6 +3,7 @@ import {
   expandColorStops,
   extractInterpolationMethod,
   normalizeStops,
+  resolveMathPositions,
 } from './utils.js'
 import { buildXMLString, calcDegree, lengthToNumber } from '../../utils.js'
 
@@ -26,7 +27,8 @@ export function buildLinearGradient(
   from?: 'background' | 'mask'
 ) {
   const [gradient, method] = extractInterpolationMethod(image)
-  const parsed = parseLinearGradient(expandColorStops(gradient))
+  const math: string[] = []
+  const parsed = parseLinearGradient(expandColorStops(gradient, math))
   const [imageWidth, imageHeight] = dimensions
   const repeating = image.startsWith('repeating')
 
@@ -55,13 +57,19 @@ export function buildLinearGradient(
     points = p
   }
 
+  const colorStops = resolveMathPositions(
+    parsed.stops,
+    math,
+    length,
+    inheritableStyle
+  )
   xys = repeating
-    ? calcPercentage(parsed.stops, length, points, inheritableStyle)
+    ? calcPercentage(colorStops, length, points, inheritableStyle)
     : points
 
   const stops = normalizeStops(
-    repeating ? resolveRepeatingCycle(parsed.stops, length) : length,
-    parsed.stops,
+    repeating ? resolveRepeatingCycle(colorStops, length) : length,
+    colorStops,
     inheritableStyle,
     repeating,
     from,

@@ -84,6 +84,98 @@ describe('CSS Variables', () => {
     )
   })
 
+  it('should keep values apart from what is next to them', async () => {
+    // Minifiers leave out spaces after functions.
+    expect(
+      await render(
+        <div
+          style={{
+            display: 'flex',
+            '--width': '40px',
+            '--size': '16px',
+            '--leading': '30px',
+            '--family': 'sans-serif',
+          }}
+        >
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'var(--width)20px',
+              padding: 'var(--size)0',
+            }}
+          >
+            <div style={{ font: 'var(--size)/var(--leading)var(--family)' }}>
+              Hello
+            </div>
+            <div style={{ background: 'red' }} />
+          </div>
+        </div>
+      )
+    ).toBe(
+      await render(
+        <div style={{ display: 'flex' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '40px 20px',
+              padding: '16px 0',
+            }}
+          >
+            <div style={{ font: '16px/30px sans-serif' }}>Hello</div>
+            <div style={{ background: 'red' }} />
+          </div>
+        </div>
+      )
+    )
+  })
+
+  it('should resolve environment variables like on desktops', async () => {
+    const box = { display: 'flex', height: 10, background: 'red' }
+    expect(
+      await render(
+        <div style={{ display: 'flex', flexDirection: 'column', width: 80 }}>
+          <style>{`.inset { padding-left: max(8px, env(safe-area-inset-left)) }`}</style>
+          <div
+            style={{
+              ...box,
+              width: 'calc(50% + max(4px, env(safe-area-inset-right)))',
+            }}
+          />
+          <div style={{ ...box, width: 'env(titlebar-area-width, 30px)' }} />
+          <div
+            style={{
+              ...box,
+              '--width': '20px',
+              width: 'env(unknown, var(--width))',
+            }}
+          />
+          <div style={{ ...box, width: 10 }}>
+            <div style={{ ...box, width: 'env(constructor)' }} />
+          </div>
+          <div className='inset' style={{ display: 'flex' }}>
+            <div style={{ ...box, width: 10 }} />
+          </div>
+        </div>
+      )
+    ).toBe(
+      await render(
+        <div style={{ display: 'flex', flexDirection: 'column', width: 80 }}>
+          {/* The same elements, for the same IDs. */}
+          <style>{''}</style>
+          <div style={{ ...box, width: 'calc(50% + 4px)' }} />
+          <div style={{ ...box, width: 30 }} />
+          <div style={{ ...box, width: 20 }} />
+          <div style={{ ...box, width: 10 }}>
+            <div style={box} />
+          </div>
+          <div style={{ display: 'flex', paddingLeft: 8 }}>
+            <div style={{ ...box, width: 10 }} />
+          </div>
+        </div>
+      )
+    )
+  })
+
   it('should resolve variables where they are used', async () => {
     expect(
       await render(

@@ -12,13 +12,20 @@ import {
 import { LayoutNode } from './layout-engine/index.js'
 import { getStickyOffset } from './sticky-position.js'
 import {
+  getBoxShadowExtent,
+  getFilterExtent,
+  getOutlineExtent,
+  isOutside,
+  type PaintBounds,
+} from './culling.js'
+import {
   applyCounters,
   findMarkerTarget,
   getCounterText,
   getListMarker,
   type Counters,
 } from './list-marker.js'
-import { SVGNodeToImage } from './handler/preprocess.js'
+import { SVGNodeToImage, serializeSVGFilter } from './handler/preprocess.js'
 import { svgTransformToCSS } from './parser/svg-transform.js'
 import computeStyle from './handler/compute.js'
 import FontLoader from './font.js'
@@ -38,7 +45,7 @@ import {
   buildFilterPrimitive,
   getExpansion,
 } from './builder/backdrop-filter.js'
-import type { BackdropFilter } from './parser/backdrop-filter.js'
+import type { BackdropFilter, URLFilter } from './parser/backdrop-filter.js'
 import { Locale, normalizeLocale } from './language.js'
 import { SerializedStyle } from './handler/expand.js'
 import type {
@@ -47,7 +54,11 @@ import type {
 } from './handler/compute.js'
 import type { ParsedTransformOrigin } from './transform-origin.js'
 import { CONTAINER_PROP } from './handler/stylesheet.js'
-import { getInputContent, PLACEHOLDER_PROP } from './form-control.js'
+import {
+  getInputContent,
+  getSelectContent,
+  PLACEHOLDER_PROP,
+} from './form-control.js'
 import type { TransformFunction } from './parser/transform.js'
 import {
   getDepth,
@@ -56,6 +67,7 @@ import {
   ROOT_TRANSFORM_STATE,
   type ProjectPlane,
   type TransformState,
+  default as buildTransform,
 } from './builder/transform.js'
 import {
   getFixedElementPosition,
@@ -163,6 +175,13 @@ export interface LayoutContext {
    * to.
    */
   scrollport?: PositionedBox
+  /**
+   * The size of the image, shared by all elements and set once the layout is
+   * known. Elements entirely outside of it aren't drawn.
+   */
+  paintBounds?: PaintBounds
+  /** The SVG `<filter>` elements of the document, by their `id`. */
+  svgFilters?: Map<string, ReactElement>
   /**
    * Collects the layers of the stacking context the element is in. The root
    * element has none, and establishes the root stacking context.
@@ -378,8 +397,10 @@ export default async function* layout(
   if (chRatio !== undefined) {
     computedStyle._chRatio = newInheritableStyle._chRatio = chRatio
   }
-  // Inputs show their value or placeholder instead of children.
+  // Inputs show their value or placeholder instead of children, and selects
+  // their options.
   if (type === 'input') children = getInputContent(props, computedStyle, font)
+  else if (type === 'select') children = getSelectContent(props, computedStyle)
 
   // Counters are changed in tree order, by elements that are displayed.
   const countersHidden =
@@ -546,6 +567,21 @@ export default async function* layout(
   if (!isInheritingTransform) {
     ;(computedStyle.transform as unknown as TransformList).__parent =
       inheritedStyle.transform as unknown as TransformList
+  }
+
+  // Transformed elements, and their descendants, can be drawn elsewhere than
+  // their boxes, so they're always drawn, even when their boxes are outside of
+  // the image. Filters can draw outside of what they filter, e.g. with
+  // `drop-shadow()`, so they're checked with a margin.
+  if (!isInheritingTransform) newInheritableStyle._alwaysDrawn = 1
+  const filterExtent = getFilterExtent(
+    computedStyle._filters as unknown as
+      | (BackdropFilter | URLFilter)[]
+      | undefined
+  )
+  if (filterExtent) {
+    newInheritableStyle._cullMargin =
+      ((inheritedStyle._cullMargin as number) || 0) + filterExtent
   }
 
   // A `preserve-3d` element establishes a 3D rendering context, or extends
@@ -787,6 +823,8 @@ export default async function* layout(
       fixedContainingBlock,
       absoluteContainingBlock,
       fixedElements: context.fixedElements,
+      paintBounds: context.paintBounds,
+      svgFilters: context.svgFilters,
       counters: context.counters,
       countersHidden,
       listDepth:
@@ -811,6 +849,7 @@ export default async function* layout(
     childOrders.push(added.length === 1 ? added[0].style.order || 0 : 0)
     iterators.push(iter)
   }
+  if (isBlockContainer) childInline.end()
   if (inlineBox) context.inline.closeBox(inlineBox)
   // Counters created by the children are out of scope.
   context.counters.closeScope(id)
@@ -958,8 +997,43 @@ export default async function* layout(
   const rectOpacity = groupOpacity < 1 ? 1 : opacity
   const drawn = { shapes: true }
 
+  // Boxes entirely outside of the image aren't drawn, with their shadows,
+  // unless they define the clip paths or masks of their descendants. The
+  // descendants are checked by themselves.
+  const paintBounds = newInheritableStyle._alwaysDrawn
+    ? undefined
+    : context.paintBounds
+  const definesClip =
+    newInheritableStyle._inheritedClipPathId !==
+      inheritedStyle._inheritedClipPathId ||
+    newInheritableStyle._inheritedMaskId !== inheritedStyle._inheritedMaskId
+  const cullMargin = (newInheritableStyle._cullMargin as number) || 0
+  const shadowExtent =
+    paintBounds && !definesClip
+      ? getBoxShadowExtent(computedStyle) + cullMargin
+      : 0
+  const isCulled = (area: {
+    left: number
+    top: number
+    width: number
+    height: number
+  }) =>
+    !!paintBounds &&
+    !definesClip &&
+    isOutside(
+      paintBounds,
+      area.left,
+      area.top,
+      area.width,
+      area.height,
+      shadowExtent
+    )
+  const isBoxCulled = isCulled({ left, top, width, height })
+
   // Generate the rendered markup for the current node.
-  if (type === 'img' || isReplaced) {
+  if ((type === 'img' || isReplaced || type === 'svg') && isBoxCulled) {
+    // Not drawn, see above.
+  } else if (type === 'img' || isReplaced) {
     // A replaced element without rendered content has no `src`, so it's drawn
     // as a box.
     const src = computedStyle.__src as string | undefined
@@ -993,6 +1067,10 @@ export default async function* layout(
       context.convertColors,
       variables
     )
+    // Like in browsers, the viewBox is fitted in the box by the
+    // `preserveAspectRatio` of the SVG, which the image applies to it.
+    const aspectRatio = (element.props as Record<string, unknown>)
+      ?.preserveAspectRatio
     baseRenderResult = await rect(
       {
         id,
@@ -1001,6 +1079,10 @@ export default async function* layout(
         width,
         height,
         src,
+        svgAspectRatio:
+          typeof aspectRatio === 'string' && aspectRatio.trim()
+            ? aspectRatio.trim()
+            : 'xMidYMid meet',
         isInheritingTransform,
         debug,
         opacity: rectOpacity,
@@ -1027,11 +1109,13 @@ export default async function* layout(
         fragmentStyle.borderTopRightRadius = 0
         fragmentStyle.borderBottomRightRadius = 0
       }
+      const fragmentBox = fragmentRect(inlineBox, fragment, left, top)
+      if (isCulled(fragmentBox)) continue
       const fragmentDrawn = { shapes: true }
       baseRenderResult += await rect(
         {
           id: `${id}-${index}`,
-          ...fragmentRect(inlineBox, fragment, left, top),
+          ...fragmentBox,
           isInheritingTransform,
           debug,
           opacity: rectOpacity,
@@ -1042,7 +1126,7 @@ export default async function* layout(
       )
       drawn.shapes ||= fragmentDrawn.shapes
     }
-  } else {
+  } else if (!isBoxCulled) {
     baseRenderResult = await rect(
       {
         id,
@@ -1089,7 +1173,17 @@ export default async function* layout(
   // The outline is drawn over the element and its in-flow descendants, and
   // under positioned ones. Outlines of inline boxes aren't drawn.
   const outlineResult =
-    inlineBox || computedStyle.visibility === 'hidden'
+    inlineBox ||
+    computedStyle.visibility === 'hidden' ||
+    (paintBounds &&
+      isOutside(
+        paintBounds,
+        left,
+        top,
+        width,
+        height,
+        getOutlineExtent(computedStyle) + cullMargin
+      ))
       ? ''
       : outline(
           { id, left, top, width, height, isInheritingTransform },
@@ -1131,43 +1225,90 @@ export default async function* layout(
   // its own clip path clips the filtered result, e.g. the edges of a blur.
   // https://drafts.fxtf.org/filter-effects-1/#placement
   const filters = computedStyle._filters as unknown as
-    | BackdropFilter[]
+    | (BackdropFilter | URLFilter)[]
     | undefined
-  if (result && filters?.length) {
-    // Descendants can be drawn anywhere, so the filter region is the image,
-    // and what the filter draws into it from outside.
-    const filterId = `satori_f-${id}`
-    const expansion = getExpansion(filters)
-    const primitives = filters
-      .map((filter, index) =>
-        buildFilterPrimitive(
-          filter,
-          index ? `${filterId}-${index - 1}` : 'SourceGraphic',
-          `${filterId}-${index}`,
-          false
+  // Like in browsers, a reference to a missing SVG filter makes the whole list
+  // ignored.
+  const isMissing = (filter: BackdropFilter | URLFilter) =>
+    filter.type === 'url' && !context.svgFilters?.get(filter.id)
+  if (result && filters?.length && !filters.some(isMissing)) {
+    // Filter functions are applied together, and SVG filters by themselves,
+    // in order.
+    let count = 0
+    let functions: BackdropFilter[] = []
+    const applyFunctions = () => {
+      if (!functions.length) return
+      // Descendants can be drawn anywhere, so the filter region is the image,
+      // and what the filter draws into it from outside.
+      const filterId = `satori_f-${id}${count ? `-${count}` : ''}`
+      count++
+      const expansion = getExpansion(functions)
+      const primitives = functions
+        .map((filter, index) =>
+          buildFilterPrimitive(
+            filter,
+            index ? `${filterId}-${index - 1}` : 'SourceGraphic',
+            `${filterId}-${index}`,
+            false
+          )
         )
-      )
-      .join('')
-    result =
-      buildXMLString(
-        'filter',
-        {
-          id: filterId,
-          x: -expansion.left,
-          y: -expansion.top,
-          width:
-            (computedStyle._viewportWidth as number) +
-            expansion.left +
-            expansion.right,
-          height:
-            (computedStyle._viewportHeight as number) +
-            expansion.top +
-            expansion.bottom,
-          filterUnits: 'userSpaceOnUse',
-          'color-interpolation-filters': 'sRGB',
-        },
-        primitives
-      ) + buildXMLString('g', { filter: `url(#${filterId})` }, result)
+        .join('')
+      result =
+        buildXMLString(
+          'filter',
+          {
+            id: filterId,
+            x: -expansion.left,
+            y: -expansion.top,
+            width:
+              (computedStyle._viewportWidth as number) +
+              expansion.left +
+              expansion.right,
+            height:
+              (computedStyle._viewportHeight as number) +
+              expansion.top +
+              expansion.bottom,
+            filterUnits: 'userSpaceOnUse',
+            'color-interpolation-filters': 'sRGB',
+          },
+          primitives
+        ) + buildXMLString('g', { filter: `url(#${filterId})` }, result)
+      functions = []
+    }
+    for (const filter of filters) {
+      if (filter.type !== 'url') {
+        functions.push(filter)
+        continue
+      }
+      applyFunctions()
+      const filterId = `satori_f-${id}${count ? `-${count}` : ''}`
+      count++
+      // Like in browsers, the bounding box of the filter, e.g. for its default
+      // region, is at least the border box of the element.
+      const borderBox = buildXMLString('rect', {
+        x: left,
+        y: top,
+        width,
+        height,
+        fill: 'none',
+        transform: computedStyle.transform
+          ? buildTransform(
+              { left, top, width, height },
+              computedStyle.transform,
+              isInheritingTransform
+            ) || undefined
+          : undefined,
+      })
+      result =
+        serializeSVGFilter(
+          context.svgFilters!.get(filter.id)!,
+          filterId,
+          computedStyle.color as string,
+          context.convertColors
+        ) +
+        buildXMLString('g', { filter: `url(#${filterId})` }, borderBox + result)
+    }
+    applyFunctions()
     if (hasClipPath && isInheritingTransform) {
       result = buildXMLString(
         'g',

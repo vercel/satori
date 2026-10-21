@@ -23,6 +23,7 @@ import {
   roundUpToLayout,
   segment as segmentText,
   splitByBreakOpportunities,
+  splitImages,
 } from '../utils.js'
 import buildText, {
   buildGlyphPaths,
@@ -181,6 +182,23 @@ interface RunState {
 }
 
 const COLLAPSIBLE_WHITE_SPACE = ['normal', 'nowrap', 'pre-line']
+
+const SIDES = ['Top', 'Right', 'Bottom', 'Left']
+
+/** Whether a box has margins, padding or borders on any side. */
+function hasBoxEdges(style: SerializedStyle) {
+  const isZero = (value: unknown) =>
+    value === undefined || value === 0 || value === '0' || value === '0px'
+  return SIDES.some(
+    (side) =>
+      !isZero(style[`margin${side}`]) ||
+      !isZero(style[`padding${side}`]) ||
+      (!isZero(style[`border${side}Width`]) &&
+        !['none', 'hidden', undefined].includes(
+          style[`border${side}Style`] as string
+        ))
+  )
+}
 const PRESERVED_LINE_BREAKS = ['pre', 'pre-wrap', 'pre-line']
 const NO_SOFT_WRAP = ['pre', 'nowrap']
 const OBJECT_REPLACEMENT = '\uFFFC'
@@ -291,7 +309,24 @@ export class InlineFormatting {
         continued: true,
       })
     }
+    this.removeIfCollapsed()
     this.paragraph = null
+  }
+
+  /** The end of the content of the container. */
+  end() {
+    this.removeIfCollapsed()
+  }
+
+  /**
+   * Like in browsers, a paragraph of white space that collapses away has no
+   * line boxes, e.g. between block-level elements, so it's removed. It would
+   * also separate the margins of the elements around it.
+   */
+  private removeIfCollapsed() {
+    if (this.paragraph?.collapsesAway()) {
+      this.container.removeChild(this.paragraph.node)
+    }
   }
 }
 
@@ -299,6 +334,25 @@ export class Paragraph {
   // An anonymous block box of the lines, which wraps around floats.
   readonly node = new LayoutNode({ display: 'block' })
   readonly items: Item[] = []
+
+  /**
+   * Whether the paragraph only has white space that collapses, in inline boxes
+   * without margins, padding or borders.
+   */
+  collapsesAway() {
+    return this.items.every((item) => {
+      if (item.kind === 'open' || item.kind === 'close') {
+        return !hasBoxEdges(item.box.style)
+      }
+      if (item.kind !== 'text') return false
+      const whiteSpace = String(item.run.style.whiteSpace ?? 'normal')
+      if (!COLLAPSIBLE_WHITE_SPACE.includes(whiteSpace)) return false
+      // Preserved line breaks are forced breaks.
+      return PRESERVED_LINE_BREAKS.includes(whiteSpace)
+        ? /^[ \t]*$/.test(item.run.content)
+        : /^[ \t\n\r\f]*$/.test(item.run.content)
+    })
+  }
   private words: Word[] | null = null
   private lines: Line[] = []
   private runStates = new Map<TextRun, RunState>()
@@ -1205,6 +1259,7 @@ export class Paragraph {
     const { style, inheritedStyle, id } = run
     const { engine, isImage } = this.runState(run)
     const { embedFont, debug, graphemeImages } = this.env
+    const hasImages = !!graphemeImages && Object.keys(graphemeImages).length > 0
     const [dx, dy] = relativeOffset(run.boxes, this.node.layout.width)
     const left = x + this.node.layout.left + dx
     const top = y + this.node.layout.top + dy
@@ -1300,7 +1355,10 @@ export class Paragraph {
       let pieceX = left + piece.x
       // Images of graphemes, e.g. emoji, are drawn as images.
       const parts: string[] = []
-      for (const word of segmentText(piece.text, 'word')) {
+      let words = segmentText(piece.text, 'word')
+      // Images in words, e.g. consecutive keycaps, are drawn apart.
+      if (hasImages) words = words.flatMap((s) => splitImages(s, isImage))
+      for (const word of words) {
         if (isImage(word) || !embedFont) {
           parts.push(word)
         } else if (parts.length && !isImage(parts[parts.length - 1])) {

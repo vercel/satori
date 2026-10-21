@@ -304,6 +304,31 @@ export function segment(
   return result
 }
 
+/**
+ * Splits the graphemes that are drawn as images, like emojis, from the text
+ * around them. Words can have them, e.g. consecutive keycaps are one word.
+ */
+export function splitImages(
+  text: string,
+  isImage: (grapheme: string) => boolean
+): string[] {
+  const graphemes = segment(text, 'grapheme')
+  if (!graphemes.some(isImage)) return [text]
+
+  const parts: string[] = []
+  let afterImage = true
+  for (const grapheme of graphemes) {
+    const image = isImage(grapheme)
+    if (image || afterImage) {
+      parts.push(grapheme)
+    } else {
+      parts[parts.length - 1] += grapheme
+    }
+    afterImage = image
+  }
+  return parts
+}
+
 /** Build safe SVG markup from element names, attributes, and serialized children. */
 export function buildXMLString(
   type: string,
@@ -423,9 +448,25 @@ export function isUndefined(x: unknown): x is undefined {
   return typeof x === 'undefined'
 }
 
+/**
+ * Reports an invalid value: to `onError` if there is one, so it's handled like
+ * other invalid values, e.g. dropped in stylesheets, or else as a warning.
+ */
+function reportInvalidValue(
+  message: string,
+  onError: ((error: Error) => void) | undefined
+) {
+  if (onError) onError(new Error(message))
+  else console.warn(message)
+}
+
+const forProperty = (propertyName: string | undefined) =>
+  typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
+
 export function asPointPercentageLength(
   x: string | number | CalcLength,
-  propertyName?: string
+  propertyName?: string,
+  onError?: (error: Error) => void
 ): number | `${number}%` | CalcLength | undefined {
   if (typeof x === 'number' || typeof x === 'object') {
     return x
@@ -433,20 +474,22 @@ export function asPointPercentageLength(
   if (x.endsWith('%')) {
     const percentageValue = parseFloat(x.slice(0, -1))
     if (isNaN(percentageValue)) {
-      console.warn(
-        `Invalid value "${x}"${
-          typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
-        }. Expected a percentage value (e.g., "50%").`
+      reportInvalidValue(
+        `Invalid value "${x}"${forProperty(
+          propertyName
+        )}. Expected a percentage value (e.g., "50%").`,
+        onError
       )
       return undefined
     }
     return `${percentageValue}%`
   }
 
-  console.warn(
-    `Invalid value "${x}"${
-      typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
-    }. Expected a number or a percentage value (e.g., "50%").`
+  reportInvalidValue(
+    `Invalid value "${x}"${forProperty(
+      propertyName
+    )}. Expected a number or a percentage value (e.g., "50%").`,
+    onError
   )
   return undefined
 }
@@ -470,7 +513,8 @@ const SIZING_KEYWORDS = {
  */
 export function asSize(
   x: string | number | CalcLength,
-  propertyName: string
+  propertyName: string,
+  onError?: (error: Error) => void
 ): Size | undefined {
   if (typeof x === 'string') {
     const value = x.trim().toLowerCase()
@@ -483,39 +527,45 @@ export function asSize(
     }
     // Maximums without a limit.
     if (value === 'none' && /^max/.test(propertyName)) return undefined
+    // `auto` is the initial minimum, which is left unset. It isn't a maximum.
+    if (value === 'auto' && /^min/.test(propertyName)) return undefined
   }
   return /^(min|max)/.test(propertyName)
-    ? asPointPercentageLength(x, propertyName)
-    : asPointAutoPercentageLength(x, propertyName)
+    ? asPointPercentageLength(x, propertyName, onError)
+    : asPointAutoPercentageLength(x, propertyName, onError)
 }
 
 export function asPointAutoPercentageLength(
   x: string | number | CalcLength,
-  propertyName?: string
+  propertyName?: string,
+  onError?: (error: Error) => void
 ): number | 'auto' | `${number}%` | CalcLength | undefined {
   if (typeof x === 'number' || typeof x === 'object') {
     return x
   }
-  if (x === 'auto') {
+  // Keywords are case-insensitive.
+  if (x.trim().toLowerCase() === 'auto') {
     return 'auto'
   }
   if (x.endsWith('%')) {
     const percentageValue = parseFloat(x.slice(0, -1))
     if (isNaN(percentageValue)) {
-      console.warn(
-        `Invalid value "${x}"${
-          typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
-        }. Expected a percentage value (e.g., "50%").`
+      reportInvalidValue(
+        `Invalid value "${x}"${forProperty(
+          propertyName
+        )}. Expected a percentage value (e.g., "50%").`,
+        onError
       )
       return undefined
     }
     return `${percentageValue}%`
   }
 
-  console.warn(
-    `Invalid value "${x}"${
-      typeof propertyName === 'string' ? ` for "${propertyName}"` : ''
-    }. Expected a number, "auto", or a percentage value (e.g., "50%").`
+  reportInvalidValue(
+    `Invalid value "${x}"${forProperty(
+      propertyName
+    )}. Expected a number, "auto", or a percentage value (e.g., "50%").`,
+    onError
   )
   return undefined
 }

@@ -6,6 +6,7 @@ import type { LayoutContext } from '../layout.js'
 import {
   v,
   segment,
+  splitImages,
   wordSeparators,
   buildXMLString,
   isUndefined,
@@ -44,6 +45,7 @@ import {
   splitByDirection,
 } from './bidi.js'
 import cssColorParse from 'parse-css-color'
+import { isOutside } from '../culling.js'
 
 const skippedWordWhenFindingMissingFont = new Set([Tab])
 
@@ -82,6 +84,7 @@ export default async function* buildTextNodes(
     locale,
     canLoadAdditionalAssets,
     pointScaleFactor,
+    paintBounds,
   } = context
 
   const {
@@ -177,6 +180,7 @@ export default async function* buildTextNodes(
       graphemeImages[s]
     )
   }
+  const hasImages = !!graphemeImages && Object.keys(graphemeImages).length > 0
 
   const { measureGrapheme, measureGraphemeArray, measureText } = genMeasurer(
     engine,
@@ -415,10 +419,11 @@ export default async function* buildTextNodes(
           isImage: false,
         })
       } else {
+        let _texts = segment(word, 'word')
+        // Images in words, e.g. consecutive keycaps, are drawn apart.
+        if (hasImages) _texts = _texts.flatMap((s) => splitImages(s, isImage))
         // Parts of words in different directions are reordered separately.
-        const _texts = needsBidi
-          ? segment(word, 'word').flatMap(splitByDirection)
-          : segment(word, 'word')
+        if (needsBidi) _texts = _texts.flatMap(splitByDirection)
 
         for (let j = 0; j < _texts.length; j++) {
           const _text = _texts[j]
@@ -881,6 +886,19 @@ export default async function* buildTextNodes(
   let bufferedOffset = 0
   let bufferedRight = 0
 
+  // Lines entirely above or below the image aren't drawn. The margin includes
+  // the baseline of the line, glyphs drawn outside of their lines,
+  // decorations and strokes. Lines are checked as a whole, as words are only
+  // drawn together on the same line.
+  const lineBounds =
+    inheritedStyle._alwaysDrawn || parentStyle.textShadowOffset
+      ? undefined
+      : paintBounds
+  const lineMargin =
+    2 * fontSize +
+    ((parentStyle.WebkitTextStrokeWidth as number) || 0) +
+    ((inheritedStyle._cullMargin as number) || 0)
+
   for (let i = 0; i < texts.length; i++) {
     // Skip whitespace and empty characters.
     const layout = wordPositionInLayout[i]
@@ -911,6 +929,19 @@ export default async function* buildTextNodes(
     if (
       ellipsisPlan &&
       (line > ellipsisPlan.line || ellipsisPlan.hidden.has(i))
+    ) {
+      continue
+    }
+    if (
+      lineBounds &&
+      isOutside(
+        lineBounds,
+        0,
+        top + layout.y,
+        lineBounds.width,
+        0,
+        lineMargin + Math.abs(baselines[line] || 0)
+      )
     ) {
       continue
     }

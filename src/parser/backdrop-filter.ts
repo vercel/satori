@@ -24,6 +24,9 @@ export type BackdropFilter =
       color: string
     }
 
+/** A reference to an SVG `<filter>` of the document, by its `id`. */
+export type URLFilter = { type: 'url'; id: string }
+
 const amountDefaults = {
   brightness: 1,
   contrast: 1,
@@ -42,7 +45,7 @@ export function parseBackdropFilter(
   inheritedStyle: Record<string, string | number>,
   currentColor = 'black',
   property = 'backdropFilter'
-): BackdropFilter[] {
+): (BackdropFilter | URLFilter)[] {
   if (value === 'none') return []
   if (typeof value !== 'string') {
     throw new Error(`Invalid \`${property}\` value: "${value}".`)
@@ -82,6 +85,17 @@ export function parseBackdropFilter(
 
     if (name === 'drop-shadow') {
       return parseDropShadow(argument, inheritedStyle, currentColor, property)
+    }
+
+    // `filter` can reference SVG filters of the document.
+    if (name === 'url' && property === 'filter') {
+      const url = argument.replace(/^(["'])(.*)\1$/, '$2').trim()
+      if (!url.startsWith('#') || url.length < 2) {
+        throw new Error(
+          `Unsupported \`url()\` in \`${property}\`, only references to SVG filters of the document, e.g. \`url(#filter)\`, are supported.`
+        )
+      }
+      return { type: 'url', id: url.slice(1) }
     }
 
     if (name in amountDefaults) {

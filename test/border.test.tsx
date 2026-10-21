@@ -357,6 +357,58 @@ describe('Border', () => {
   })
 
   describe('border-radius', () => {
+    it('should support math functions', async () => {
+      const render = (
+        style: Record<string, string | number>,
+        errors?: string[]
+      ) =>
+        satori(
+          <div style={{ display: 'flex', width: 100, height: 100 }}>
+            <div
+              style={{ width: 100, height: 60, background: 'red', ...style }}
+            />
+          </div>,
+          {
+            width: 100,
+            height: 100,
+            fonts,
+            onStyleError: errors
+              ? (error) => errors.push(error.message)
+              : undefined,
+          }
+        )
+      expect(await render({ borderRadius: 'calc(.5rem - 4px)' })).toBe(
+        await render({ borderRadius: 4 })
+      )
+      // Percentages are of the width and height.
+      expect(await render({ borderRadius: 'calc(50% - 10px)' })).toBe(
+        await render({ borderRadius: '40px / 20px' })
+      )
+      expect(
+        await render({ borderRadius: '0 calc(1rem - 4px) / 0 min(8px, 1rem)' })
+      ).toBe(await render({ borderRadius: '0 12px / 0 8px' }))
+      expect(
+        await render({ borderTopLeftRadius: 'max(4px, 10%) calc(2px * 3)' })
+      ).toBe(await render({ borderTopLeftRadius: '10px 6px' }))
+
+      expect(
+        await toImage(
+          await render({
+            borderRadius: 'calc(50% - 10px) calc(1rem - 4px)',
+          }),
+          100
+        )
+      ).toMatchImageSnapshot()
+
+      const errors: string[] = []
+      await render({ borderRadius: '-4px' }, errors)
+      await render({ borderRadius: '1px 2px 3px 4px 5px' }, errors)
+      expect(errors).toEqual([
+        'Invalid value for CSS property "borderRadius": "-4px".',
+        'Invalid value for CSS property "borderRadius": "1px 2px 3px 4px 5px".',
+      ])
+    })
+
     it('should support the shorthand', async () => {
       const svg = await satori(
         <div

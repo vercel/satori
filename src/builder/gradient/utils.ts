@@ -1,4 +1,5 @@
 import { lengthToNumber } from '../../utils.js'
+import { MATH_FUNCTION, parseMath } from '../../parser/math.js'
 import {
   convertColors,
   isColor,
@@ -17,12 +18,19 @@ import valueParser from 'postcss-value-parser'
 const POSITION =
   /^[+-]?(\d+(?:\.\d*)?|\.\d+)(px|em|rem|vw|vh|%|deg|turn|rad|grad)?$/i
 
+/** The placeholder lengths of math functions start here, see below. */
+const MATH_POSITION = 1e9
+
 /**
  * Expands color stops with two positions, e.g. `red 0 50%`, into two stops
  * with the color, which is how they're defined and the only form
  * `css-gradient-parser` supports.
+ *
+ * With `math`, math functions in the positions of color stops and hints,
+ * which `css-gradient-parser` drops, are replaced by placeholder lengths and
+ * added to it, see `resolveMathPositions()`.
  */
-export function expandColorStops(gradient: string) {
+export function expandColorStops(gradient: string, math?: string[]) {
   const [fn] = valueParser(gradient).nodes
   if (fn?.type !== 'function') return gradient
 
@@ -34,6 +42,18 @@ export function expandColorStops(gradient: string) {
     }
   }
   let changed = false
+  if (math) {
+    args.forEach((tokens, index) => {
+      // The first argument can be the direction or shape instead.
+      if (index === 0 && !isColor(tokens[0] ?? '')) return
+      tokens.forEach((token, i) => {
+        if (!MATH_FUNCTION.test(token)) return
+        tokens[i] = `${MATH_POSITION + math.length}px`
+        math.push(token)
+        changed = true
+      })
+    })
+  }
   const expanded = args.map((tokens) => {
     const [color, start, end] = tokens
     if (
@@ -182,6 +202,42 @@ interface Stop {
   offset?: number
   /** The position of the interpolation hint after the stop. */
   hint?: number
+}
+
+/**
+ * Resolves the math functions of `expandColorStops()` to lengths, with
+ * percentages of the length of the gradient line.
+ */
+export function resolveMathPositions(
+  stops: ColorStop[],
+  math: string[],
+  length: number,
+  inheritedStyle: Record<string, string | number>
+): ColorStop[] {
+  if (!math.length) return stops
+  const resolve = (position: ColorStop['offset']) => {
+    if (!position || position.unit !== 'px') return position
+    const expression = math[Number(position.value) - MATH_POSITION]
+    if (expression === undefined) return position
+    const value = parseMath(expression, (part) =>
+      lengthToNumber(
+        part,
+        inheritedStyle.fontSize as number,
+        length,
+        inheritedStyle,
+        true
+      )
+    )?.evaluate(length)
+    // An invalid position is left out, like an omitted one.
+    return value === undefined || !Number.isFinite(value)
+      ? undefined
+      : { value: String(value), unit: 'px' }
+  }
+  return stops.map((stop) => ({
+    ...stop,
+    offset: resolve(stop.offset),
+    hint: resolve(stop.hint),
+  }))
 }
 
 export function normalizeStops(

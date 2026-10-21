@@ -23,6 +23,7 @@ import {
   type Length,
 } from '../layout-engine/index.js'
 import { resolveImageData } from './image.js'
+import { isListBox } from '../form-control.js'
 import {
   parseGridAutoFlow,
   parseGridAutoTracks,
@@ -144,11 +145,14 @@ const DISPLAY_TYPES: Record<
   // With a marker, see `getListMarkers()`.
   'list-item': ['block', 'block'],
   flex: ['block', 'flex'],
+  // Prefixed aliases, like in browsers.
+  '-webkit-flex': ['block', 'flex'],
   '-webkit-box': ['block', 'flex'],
   grid: ['block', 'grid'],
   inline: ['inline', 'inline'],
   'inline-block': ['inline', 'flow-root'],
   'inline-flex': ['inline', 'flex'],
+  '-webkit-inline-flex': ['inline', 'flex'],
   'inline-grid': ['inline', 'grid'],
   contents: ['contents', 'contents'],
   none: ['none', 'none'],
@@ -283,7 +287,7 @@ function resolveKeywords(
 
 /**
  * Elements that browsers hide: with the `hidden` attribute, unless it's
- * `until-found`, and hidden inputs.
+ * `until-found`, hidden inputs, and dialogs that aren't open.
  */
 function getHiddenPreset(type: string, props: Record<string, any>) {
   const { hidden, type: inputType } = props ?? {}
@@ -293,7 +297,14 @@ function getHiddenPreset(type: string, props: Record<string, any>) {
     String(hidden).toLowerCase() !== 'until-found'
   const isHiddenInput =
     type === 'input' && String(inputType).toLowerCase() === 'hidden'
-  return hasHidden || isHiddenInput ? { display: 'none' } : {}
+  const isClosedDialog =
+    type === 'dialog' && (props?.open == null || props.open === false)
+  return hasHidden || isHiddenInput || isClosedDialog ? { display: 'none' } : {}
+}
+
+/** List boxes of Chrome have rounded corners. */
+function getSelectPreset(type: string, props: Record<string, any>) {
+  return type === 'select' && isListBox(props) ? { borderRadius: 2 } : {}
 }
 
 function getDirPreset(props: Record<string, any>) {
@@ -377,6 +388,7 @@ export default async function compute(
   const presetStyle = {
     ...presets[type],
     ...getListPresets(type, props, listDepth),
+    ...getSelectPreset(type, props),
     ...getDirPreset(props),
     ...getHiddenPreset(type, props),
   }
@@ -448,6 +460,7 @@ export default async function compute(
 
   await replacedElements?.[type]?.(node, style, props)
 
+  let svgAspectRatio: number | undefined
   if (type === 'svg') {
     const viewBox = props.viewBox || props.viewbox
     const viewBoxSize = parseViewBox(viewBox)
@@ -488,21 +501,55 @@ export default async function compute(
       }
     } else {
       if (typeof width !== 'undefined') {
+        // `0` is a size too.
         width =
-          lengthToNumber(width, inheritedStyle.fontSize, 1, inheritedStyle) ||
+          lengthToNumber(width, inheritedStyle.fontSize, 1, inheritedStyle) ??
           width
       }
       if (typeof height !== 'undefined') {
         height =
-          lengthToNumber(height, inheritedStyle.fontSize, 1, inheritedStyle) ||
+          lengthToNumber(height, inheritedStyle.fontSize, 1, inheritedStyle) ??
           height
       }
-      width ||= viewBoxSize?.[2]
-      height ||= viewBoxSize?.[3]
     }
 
-    if (!style.width && width) style.width = width
-    if (!style.height && height) style.height = height
+    // Like in browsers, an SVG without a size has none, only the natural ratio
+    // of its viewBox, so it's as wide as its container, or 300 by 150 without
+    // a viewBox.
+    const isAuto = (size: unknown) => size === undefined || size === 'auto'
+    if (
+      width === undefined &&
+      height === undefined &&
+      isAuto(style.width) &&
+      isAuto(style.height)
+    ) {
+      if (ratio) {
+        width = '100%'
+      } else {
+        width = 300
+        height = 150
+      }
+    }
+
+    if (isAuto(style.width) && width !== undefined && !style.width) {
+      style.width = width
+    }
+    if (isAuto(style.height) && height !== undefined && !style.height) {
+      style.height = height
+    }
+
+    // The natural ratio of the SVG, for a size that's `auto`, e.g. with
+    // `width: auto` and the `height` attribute.
+    const naturalRatio =
+      ratio ??
+      (typeof props.width === 'number' &&
+      typeof props.height === 'number' &&
+      props.width > 0
+        ? props.height / props.width
+        : null)
+    if (aspectRatio === undefined && naturalRatio) {
+      svgAspectRatio = 1 / naturalRatio
+    }
   }
 
   // Set the layout style.
@@ -510,6 +557,8 @@ export default async function compute(
 
   if (aspectRatio !== undefined && type !== 'img') {
     layout.aspectRatio = aspectRatio
+  } else if (svgAspectRatio) {
+    layout.aspectRatio = svgAspectRatio
   }
 
   if (style.order !== undefined) {
@@ -767,23 +816,23 @@ export default async function compute(
   }
 
   if (typeof style.flexBasis !== 'undefined') {
-    layout.flexBasis = asSize(style.flexBasis, 'flexBasis')
+    layout.flexBasis = asSize(style.flexBasis, 'flexBasis', onStyleError)
   }
   layout.flexGrow = typeof style.flexGrow === 'undefined' ? 0 : style.flexGrow
   layout.flexShrink =
     typeof style.flexShrink === 'undefined' ? 1 : style.flexShrink
 
   if (typeof style.maxHeight !== 'undefined') {
-    layout.maxHeight = asSize(style.maxHeight, 'maxHeight')
+    layout.maxHeight = asSize(style.maxHeight, 'maxHeight', onStyleError)
   }
   if (typeof style.maxWidth !== 'undefined') {
-    layout.maxWidth = asSize(style.maxWidth, 'maxWidth')
+    layout.maxWidth = asSize(style.maxWidth, 'maxWidth', onStyleError)
   }
   if (typeof style.minHeight !== 'undefined') {
-    layout.minHeight = asSize(style.minHeight, 'minHeight')
+    layout.minHeight = asSize(style.minHeight, 'minHeight', onStyleError)
   }
   if (typeof style.minWidth !== 'undefined') {
-    layout.minWidth = asSize(style.minWidth, 'minWidth')
+    layout.minWidth = asSize(style.minWidth, 'minWidth', onStyleError)
   }
 
   // `visible` and `clip` don't make the box a scroll container, so with a
@@ -820,10 +869,26 @@ export default async function compute(
   layout.overflowX = LAYOUT_OVERFLOW[overflowX]
   layout.overflowY = LAYOUT_OVERFLOW[overflowY]
 
-  layout.marginTop = asPointAutoPercentageLength(style.marginTop || 0)
-  layout.marginBottom = asPointAutoPercentageLength(style.marginBottom || 0)
-  layout.marginLeft = asPointAutoPercentageLength(style.marginLeft || 0)
-  layout.marginRight = asPointAutoPercentageLength(style.marginRight || 0)
+  layout.marginTop = asPointAutoPercentageLength(
+    style.marginTop || 0,
+    'marginTop',
+    onStyleError
+  )
+  layout.marginBottom = asPointAutoPercentageLength(
+    style.marginBottom || 0,
+    'marginBottom',
+    onStyleError
+  )
+  layout.marginLeft = asPointAutoPercentageLength(
+    style.marginLeft || 0,
+    'marginLeft',
+    onStyleError
+  )
+  layout.marginRight = asPointAutoPercentageLength(
+    style.marginRight || 0,
+    'marginRight',
+    onStyleError
+  )
 
   // A side without a border style has no width. The width defaults to
   // `medium`, and the color to the current color.
@@ -927,18 +992,25 @@ export default async function compute(
   // layout.
   if (position !== 'static' && position !== 'sticky') {
     for (const edge of ['top', 'bottom', 'left', 'right'] as const) {
-      if (typeof style[edge] !== 'undefined') {
-        layout[edge] = asPointPercentageLength(style[edge], edge)
+      const inset = style[edge]
+      // `auto`, the initial value, leaves the inset unset.
+      if (
+        typeof inset !== 'undefined' &&
+        String(inset).trim().toLowerCase() !== 'auto'
+      ) {
+        layout[edge] = asPointPercentageLength(inset, edge, onStyleError)
       }
     }
   }
 
   layout.height =
     typeof style.height !== 'undefined'
-      ? asSize(style.height, 'height')
+      ? asSize(style.height, 'height', onStyleError)
       : 'auto'
   layout.width =
-    typeof style.width !== 'undefined' ? asSize(style.width, 'width') : 'auto'
+    typeof style.width !== 'undefined'
+      ? asSize(style.width, 'width', onStyleError)
+      : 'auto'
 
   layout.replaced =
     type === 'img' || type === 'svg' || !!replacedElements?.[type]

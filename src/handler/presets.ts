@@ -39,7 +39,22 @@ export default {
   article: block,
   aside: block,
   details: block,
-  dialog: block,
+  // An open dialog that isn't modal. Closed ones are hidden, see
+  // `getHiddenPreset()`.
+  dialog: {
+    display: DEFAULT_DISPLAY,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    width: 'fit-content',
+    height: 'fit-content',
+    margin: 'auto',
+    borderWidth: 3,
+    borderStyle: 'solid',
+    padding: '1em',
+    backgroundColor: 'white',
+    color: 'black',
+  },
   figcaption: block,
   footer: block,
   form: block,
@@ -225,6 +240,25 @@ export default {
   // Form controls
   input: inlineBlock,
   button: inlineBlock,
-  select: inlineBlock,
+  // The default styles of Chrome. List boxes have rounded corners, see
+  // `getSelectPreset()`.
+  select: {
+    display: 'inline-block',
+    boxSizing: 'border-box',
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: '#767676',
+    backgroundColor: 'white',
+    color: 'black',
+    fontSize: '13.333333px',
+    fontWeight: 'normal',
+    fontStyle: 'normal',
+    lineHeight: 'normal',
+    letterSpacing: 'normal',
+    textTransform: 'none',
+    textIndent: 0,
+    textAlign: 'start',
+    whiteSpace: 'pre',
+  },
   textarea: inlineBlock,
 }

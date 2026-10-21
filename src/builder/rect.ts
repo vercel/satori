@@ -111,6 +111,7 @@ export default async function rect(
     height,
     isInheritingTransform,
     src,
+    svgAspectRatio,
     debug,
     opacity = 1,
     drawn,
@@ -122,6 +123,11 @@ export default async function rect(
     height: number
     isInheritingTransform: boolean
     src?: string
+    /**
+     * The `preserveAspectRatio` of an inline SVG, which fits its viewBox in
+     * its box.
+     */
+    svgAspectRatio?: string
     debug?: boolean
     /**
      * The opacity of everything drawn here. Elements with children are drawn
@@ -429,7 +435,11 @@ export default async function rect(
     let imageX = left + offsetLeft
     let imageY = top + offsetTop
 
-    if (style.objectFit === 'contain') {
+    if (svgAspectRatio) {
+      // Like in browsers, `object-fit` doesn't apply to inline SVGs, which
+      // fit their viewBox in their box themselves.
+      preserveAspectRatio = svgAspectRatio
+    } else if (style.objectFit === 'contain') {
       // Scale to fit within container while preserving aspect ratio
       const scaleX = containerInnerWidth / naturalWidth
       const scaleY = containerInnerHeight / naturalHeight
@@ -563,25 +573,29 @@ export default async function rect(
       )
     }
 
-    shape += buildXMLString('image', {
-      x: imageX,
-      y: imageY,
-      width: imageWidth,
-      height: imageHeight,
-      href: src,
-      preserveAspectRatio,
-      transform: matrix ? matrix : undefined,
-      'clip-path': style.transform
-        ? imageBorderRadius
-          ? `url(#${imageBorderRadius[1]})`
-          : undefined
-        : `url(#satori_cp-${id})`,
-      mask: style.transform
-        ? undefined
-        : miId
-        ? `url(#${miId})`
-        : `url(#satori_om-${id})`,
-    })
+    // An image without an area draws nothing, and renderers like librsvg
+    // fail to draw it.
+    if (imageWidth > 0 && imageHeight > 0) {
+      shape += buildXMLString('image', {
+        x: imageX,
+        y: imageY,
+        width: imageWidth,
+        height: imageHeight,
+        href: src,
+        preserveAspectRatio,
+        transform: matrix ? matrix : undefined,
+        'clip-path': style.transform
+          ? imageBorderRadius
+            ? `url(#${imageBorderRadius[1]})`
+            : undefined
+          : `url(#satori_cp-${id})`,
+        mask: style.transform
+          ? undefined
+          : miId
+          ? `url(#${miId})`
+          : `url(#satori_om-${id})`,
+      })
+    }
   }
 
   if (borderClip) {

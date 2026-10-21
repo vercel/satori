@@ -101,7 +101,7 @@ await satori(
 
 Satori supports a limited subset of HTML and CSS features, due to its special use cases. In general, only these static and visible elements and properties that are implemented.
 
-For example, the `cursor` CSS property is not in consideration. Text inputs show their value or placeholder, styled with `::placeholder`, but other form controls have no content. `<style>` elements apply their CSS, see [Stylesheets](#stylesheets), but external resources via `<link>` or `<script>` aren't loaded.
+For example, the `cursor` CSS property is not in consideration. Text inputs show their value or placeholder, styled with `::placeholder`, button inputs their label, and selects their selected option, or their options with `multiple` or `size`, but other form controls have no content. `<style>` elements apply their CSS, see [Stylesheets](#stylesheets), but external resources via `<link>` or `<script>` aren't loaded.
 
 Also, Satori does not guarantee that the SVG will 100% match the browser-rendered HTML output since Satori implements its own layout engine based on the [SVG 1.1 spec](https://www.w3.org/TR/SVG11).
 
@@ -202,7 +202,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>display</code></td>
-<td>Supported, with these differences: <code>table</code>, <code>ruby</code> and their inner values, and two-value syntax like <code>inline flow-root</code>, aren't supported and throw. Form controls have no default styles.</td>
+<td>Supported, with these differences: <code>table</code>, <code>ruby</code> and their inner values, and two-value syntax like <code>inline flow-root</code>, aren't supported and throw. Form controls have no default styles, except selects, which have the ones of Chrome.</td>
 <td></td>
 </tr>
 
@@ -449,7 +449,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 
 <tr>
 <td colspan="2"><code>filter</code></td>
-<td>Supported except for <code>url()</code></td>
+<td>Supported, <code>url()</code> only for SVG filters in the document</td>
 <td></td>
 </tr>
 
@@ -574,7 +574,7 @@ and reordering text with inline elements in it aren't supported yet.
 
 #### Fonts
 
-Satori supports four font formats: TTF, OTF, WOFF and WOFF2. You must specify the font if any text is rendered with Satori, and pass the font data as ArrayBuffer (web) or Buffer (Node.js):
+Satori supports four font formats: TTF, OTF, WOFF and WOFF2. Variable fonts are rendered as their default instance, e.g. the regular weight. You must specify the font if any text is rendered with Satori, and pass the font data as ArrayBuffer (web) or Buffer (Node.js):
 
 ```js
 await satori(

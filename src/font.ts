@@ -86,6 +86,35 @@ function isWoff2(data: ArrayBuffer) {
   )
 }
 
+const FVAR = 0x66766172
+
+/**
+ * Variable fonts are read as their default instance. opentype.js fails to
+ * parse their `fvar` table, as it reads the names of the axes from the `name`
+ * table, which it doesn't parse. So it's given a copy where the table is
+ * renamed, and skips it.
+ */
+function withoutVariations(data: ArrayBuffer) {
+  const view = new DataView(data)
+  if (data.byteLength < 12) return data
+  // The table records of WOFF and of TrueType or OpenType fonts.
+  const isWoff = view.getUint32(0) === 0x774f4646
+  const count = view.getUint16(isWoff ? 12 : 4)
+  const start = isWoff ? 44 : 12
+  const size = isWoff ? 20 : 16
+  for (let i = 0; i < count; i++) {
+    const record = start + i * size
+    if (record + 4 > data.byteLength) break
+    if (view.getUint32(record) === FVAR) {
+      const copy = data.slice(0)
+      // `_var`
+      new DataView(copy).setUint32(record, 0x5f766172)
+      return copy
+    }
+  }
+  return data
+}
+
 /**
  * Convert WOFF to raw sfnt (TrueType/OpenType) format for HarfBuzz.
  */
@@ -673,7 +702,7 @@ export default class FontLoader {
         }
 
         font = opentype.parse(
-          arrayBuffer,
+          withoutVariations(arrayBuffer),
           // @ts-ignore
           { lowMemory: true }
         )
@@ -955,6 +984,9 @@ export default class FontLoader {
     const engine = {
       has: (s: string) => {
         if (s === '\n') return true
+        // Characters followed by U+FE0F or a keycap (U+20E3) are emojis, even
+        // if a font has them, like digits and the copyright sign.
+        if (/[\uFE0F\u20E3]/.test(s)) return false
         const font = resolve(s)
         if (!font) return false
         // Use charToGlyphIndex directly instead of stringToGlyphs to avoid

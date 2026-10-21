@@ -4,6 +4,12 @@
  */
 
 import { getPropertyName, getStylesForProperty } from 'css-to-react-native'
+import { parseFontShorthand } from '../parser/font.js'
+import {
+  expandBorderRadius,
+  isRadius,
+  splitRadius,
+} from '../parser/border-radius.js'
 import { parseElementStyle } from 'css-background-parser'
 import { parse as parseBoxShadow } from 'css-box-shadow'
 import cssColorParse from 'parse-css-color'
@@ -419,6 +425,34 @@ function handleSpecialCase(
     return expandEdges(value, ['top', 'right', 'bottom', 'left'])
   }
 
+  // `normal` spacing is no extra spacing.
+  if (
+    (name === 'letterSpacing' || name === 'wordSpacing') &&
+    String(value).trim().toLowerCase() === 'normal'
+  ) {
+    return { [name]: 0 }
+  }
+
+  // The longhands of `font` are handled like when they're set by themselves.
+  if (name === 'font') {
+    const longhands: Record<string, unknown> = {}
+    for (const [longhand, longhandValue] of Object.entries(
+      parseFontShorthand(String(value))
+    )) {
+      Object.assign(
+        longhands,
+        handleSpecialCase(
+          longhand,
+          longhandValue,
+          currentColor,
+          inheritedStyle
+        ) ||
+          getStylesForProperty(longhand, purify(longhand, longhandValue), true)
+      )
+    }
+    return longhands
+  }
+
   // `place-content`, `place-items` and `place-self` set the alignment on both
   // axes. Without a second value, `justify-content` can't be `baseline`, so
   // it's `start`.
@@ -528,19 +562,20 @@ function handleSpecialCase(
     }
   }
 
-  if (name === 'borderRadius') {
-    if (typeof value !== 'string' || !value.includes('/')) {
-      // Regular border radius
-      return
+  // Radii can have math functions, and different vertical radii, e.g.
+  // `border-radius: calc(1rem - 4px) / 8px`.
+  if (name === 'borderRadius' && typeof value === 'string') {
+    return expandBorderRadius(value)
+  }
+  if (
+    typeof value === 'string' &&
+    /^border(Top|Bottom)(Left|Right)Radius$/.test(name)
+  ) {
+    const radii = splitRadius(value)
+    if (!radii.length || radii.length > 2 || !radii.every(isRadius)) {
+      throw new Error(`Invalid value for CSS property "${name}": "${value}".`)
     }
-    // Support the `border-radius: 10px / 20px` syntax.
-    const [horizontal, vertical] = value.split('/')
-    const vh = getStylesForProperty(name, horizontal, true)
-    const vv = getStylesForProperty(name, vertical, true)
-    for (const k in vh) {
-      vv[k] = purify(name, vh[k]) + ' ' + purify(name, vv[k])
-    }
-    return vv
+    return { [name]: radii.join(' ') }
   }
 
   if (name === 'cornerShape') {

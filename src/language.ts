@@ -58,7 +58,14 @@ export function detectLanguageCode(
   segment: string,
   locale?: Locale
 ): Array<Locale> | ['unknown'] | [SpecialCodeKey] {
+  // U+FE0E asks for a character that is text by default, like a heart, to be
+  // drawn as text. Characters that are emojis by default stay emojis, which
+  // is how browsers draw them when no font has them as text.
+  const isTextPresentation =
+    segment.includes('\uFE0E') && !/\p{Emoji_Presentation}/u.test(segment)
+
   for (const c of Object.keys(specialCode) as SpecialCodeKey[]) {
+    if (c === 'emoji' && isTextPresentation) continue
     if (specialCode[c].test(segment)) {
       return [c]
     }
