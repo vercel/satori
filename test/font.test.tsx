@@ -302,6 +302,80 @@ describe('Font', () => {
       expect(width).toBe((await render(regular)).width)
       expect(await toImage(svg, 300)).toMatchImageSnapshot()
     })
+
+    const loadGeistMono = () =>
+      Promise.all(
+        ['GeistMono-Variable.woff2', 'GeistMono-Regular.ttf'].map((name) =>
+          readFile(join(process.cwd(), 'test', 'assets', name))
+        )
+      )
+    const weights = (
+      geist: { name: string; data: Buffer; weight?: 400 }[],
+      list: number[]
+    ) =>
+      satori(
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            fontSize: 24,
+            fontFamily: 'Geist',
+          }}
+        >
+          {list.map((weight) => (
+            <span key={weight} style={{ fontWeight: weight as any }}>
+              Hello {weight}
+            </span>
+          ))}
+        </div>,
+        { width: 200, height: list.length * 30, fonts: geist }
+      )
+
+    it('should render the weights of variable fonts', async () => {
+      const [variable] = await loadGeistMono()
+      const geist = [{ name: 'Geist', data: variable, weight: 400 as const }]
+      const [thin, regular, bold] = await Promise.all(
+        [100, 400, 700].map((weight) => weights(geist, [weight]))
+      )
+      // The instances of the `wght` axis, without synthesized bold.
+      expect(new Set([thin, regular, bold]).size).toBe(3)
+      expect(bold).not.toContain('stroke-width')
+      // The default instance is the font itself.
+      expect(regular).toBe(
+        await satori(
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              fontSize: 24,
+              fontFamily: 'Geist',
+            }}
+          >
+            <span>Hello 400</span>
+          </div>,
+          { width: 200, height: 30, fonts: geist }
+        )
+      )
+      expect(
+        await toImage(await weights(geist, [100, 400, 700, 900]), 200)
+      ).toMatchImageSnapshot()
+    })
+
+    it('should prefer the weights of variable fonts to synthesized ones', async () => {
+      const [variable, regular] = await loadGeistMono()
+      // A static regular font synthesizes bold.
+      const geist = [{ name: 'Geist', data: regular, weight: 400 as const }]
+      expect(await weights(geist, [700])).toContain('stroke-width')
+      // With a variable font of the family too, its bold is used.
+      expect(
+        await weights(
+          [...geist, { name: 'Geist', data: variable, weight: 400 }],
+          [700]
+        )
+      ).toBe(
+        await weights([{ name: 'Geist', data: variable, weight: 400 }], [700])
+      )
+    })
   })
 
   describe('font shorthand', () => {

@@ -5,6 +5,7 @@ import opentype from '@shuding/opentype.js'
 import { inflateSync } from 'fflate'
 import { Locale, locales, isValidLocale } from './language.js'
 import {
+  getGlyphPath,
   shapeText,
   parseFontFeatureSettings,
   type ShapedGlyph,
@@ -113,6 +114,133 @@ function withoutVariations(data: ArrayBuffer) {
     }
   }
   return data
+}
+
+/** The minimum, default and maximum of variation axes, by tag. */
+type VariationAxes = Record<string, [number, number, number]>
+
+/**
+ * The variation axes of a TrueType or OpenType font, from its `fvar` table,
+ * e.g. `wght`, or `undefined` if it isn't a variable font.
+ */
+function getVariationAxes(data: ArrayBuffer): VariationAxes | undefined {
+  const view = new DataView(data)
+  if (data.byteLength < 12 || view.getUint32(0) === 0x774f4646) return
+  const count = view.getUint16(4)
+  for (let i = 0; i < count; i++) {
+    const record = 12 + i * 16
+    if (record + 16 > data.byteLength) return
+    if (view.getUint32(record) !== FVAR) continue
+    const offset = view.getUint32(record + 8)
+    if (offset + 16 > data.byteLength) return
+    const axesOffset = view.getUint16(offset + 4)
+    const axisCount = view.getUint16(offset + 8)
+    const axisSize = view.getUint16(offset + 10)
+    const axes: VariationAxes = {}
+    for (let a = 0; a < axisCount; a++) {
+      const p = offset + axesOffset + a * axisSize
+      if (p + 16 > data.byteLength) break
+      const tag = String.fromCharCode(...new Uint8Array(data.slice(p, p + 4)))
+      axes[tag] = [
+        view.getInt32(p + 4) / 65536,
+        view.getInt32(p + 8) / 65536,
+        view.getInt32(p + 12) / 65536,
+      ]
+    }
+    return axes
+  }
+}
+
+/** The commands of SVG path data from HarfBuzz, like the ones of opentype.js. */
+function parsePathData(data: string): opentype.Path['commands'] {
+  const commands: any[] = []
+  for (const [, type, args] of data.matchAll(/([MLCQZ])([^MLCQZ]*)/g)) {
+    const n = (args.match(/-?[\d.]+(?:e[-+]?\d+)?/gi) || []).map(Number)
+    if (type === 'M' || type === 'L') commands.push({ type, x: n[0], y: n[1] })
+    else if (type === 'Q') {
+      commands.push({ type, x1: n[0], y1: n[1], x: n[2], y: n[3] })
+    } else if (type === 'C') {
+      commands.push({
+        type,
+        x1: n[0],
+        y1: n[1],
+        x2: n[2],
+        y2: n[3],
+        x: n[4],
+        y: n[5],
+      })
+    } else commands.push({ type: 'Z' })
+  }
+  return commands
+}
+
+const variations = new WeakMap<opentype.Font, Map<number, opentype.Font>>()
+
+/**
+ * The instance of a variable font at a weight, within its `wght` axis: the
+ * font with outlines and advances from HarfBuzz with that weight. The default
+ * instance is the font itself.
+ */
+function getVariation(font: opentype.Font, weight: number): opentype.Font {
+  const axis = (font as any)._axes?.wght as VariationAxes[string] | undefined
+  if (!axis) return font
+  const value = Math.min(axis[2], Math.max(axis[0], weight))
+  if (value === axis[1]) return font
+  let instances = variations.get(font)
+  if (!instances) variations.set(font, (instances = new Map()))
+  let instance = instances.get(value)
+  if (instance) return instance
+
+  instance = Object.create(font) as opentype.Font
+  ;(instance as any)._variations = { wght: value }
+  // Bold isn't synthesized for bold instances.
+  const { os2 } = font.tables || {}
+  instance.tables = {
+    ...font.tables,
+    ...(os2 ? { os2: { ...os2, usWeightClass: value } } : undefined),
+  }
+  const glyphs = new Map<number, opentype.Glyph>()
+  const base = font.glyphs
+  const derived = instance
+  instance.glyphs = Object.create(base, {
+    get: {
+      value(index: number) {
+        let glyph = glyphs.get(index)
+        if (glyph) return glyph
+        const original = base.get(index)
+        if (!original) return original
+        const commands = parsePathData(getGlyphPath(derived, index))
+        const unitsPerEm = font.unitsPerEm
+        glyph = Object.create(original, {
+          path: { value: { commands, unitsPerEm } },
+          getPath: {
+            // Like `glyph.getPath()` of opentype.js, in px at the baseline.
+            value(x = 0, y = 0, fontSize = 72) {
+              const scale = fontSize / unitsPerEm
+              const px = (cx: number) => x + cx * scale
+              const py = (cy: number) => y - cy * scale
+              return {
+                commands: commands.map((command: any) => {
+                  const moved = { ...command }
+                  if ('x' in command) moved.x = px(command.x)
+                  if ('y' in command) moved.y = py(command.y)
+                  if ('x1' in command) moved.x1 = px(command.x1)
+                  if ('y1' in command) moved.y1 = py(command.y1)
+                  if ('x2' in command) moved.x2 = px(command.x2)
+                  if ('y2' in command) moved.y2 = py(command.y2)
+                  return moved
+                }),
+              }
+            },
+          },
+        }) as opentype.Glyph
+        glyphs.set(index, glyph)
+        return glyph
+      },
+    },
+  })
+  instances.set(value, instance)
+  return instance
 }
 
 /**
@@ -584,7 +712,27 @@ export default class FontLoader {
     if (typeof weight === 'string')
       weight = Number.parseInt(weight, 10) as Weight
 
-    const fonts = [...this.fonts.get(name)]
+    // Variable fonts have every weight of their `wght` axis, so the closest
+    // of them is compared.
+    const requested = weight
+    const fonts = this.fonts
+      .get(name)
+      .map(
+        ([font, fontWeight, fontStyle]): [
+          opentype.Font,
+          Weight | undefined,
+          FontStyle | undefined
+        ] => {
+          const axis = (font as any)._axes?.wght
+          return [
+            font,
+            axis
+              ? (Math.min(axis[2], Math.max(axis[0], requested)) as Weight)
+              : fontWeight,
+            fontStyle,
+          ]
+        }
+      )
 
     let matchedFont = fonts[0]
 
@@ -600,7 +748,7 @@ export default class FontLoader {
       }
     }
 
-    return matchedFont[0]
+    return getVariation(matchedFont[0], requested)
   }
 
   private chRatios = new Map<string, number>()
@@ -706,6 +854,7 @@ export default class FontLoader {
           // @ts-ignore
           { lowMemory: true }
         )
+        ;(font as any)._axes = getVariationAxes(arrayBuffer)
 
         // Store the raw font data for HarfBuzz (convert WOFF to sfnt if needed)
         const bytes = new Uint8Array(arrayBuffer)
