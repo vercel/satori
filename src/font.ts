@@ -603,6 +603,30 @@ export default class FontLoader {
     return matchedFont[0]
   }
 
+  /**
+   * The other fonts of a family with the same weight and style as one of
+   * them, e.g. the subsets of a family for other scripts, as fallbacks.
+   */
+  private getSubsets(name: string, font: opentype.Font) {
+    const fonts = this.fonts.get(name) ?? []
+    const match = fonts.find(([candidate]) => candidate === font)
+    if (!match) return []
+    return fonts
+      .filter(
+        ([candidate, weight, style]) =>
+          candidate !== font && weight === match[1] && style === match[2]
+      )
+      .map(([candidate]) => candidate)
+  }
+
+  /** A copy of the loader, so that fonts can be added for one render. */
+  public fork(): FontLoader {
+    const copy = new FontLoader([], this.decodeWoff2)
+    copy.defaultFont = this.defaultFont
+    for (const [name, fonts] of this.fonts) copy.fonts.set(name, [...fonts])
+    return copy
+  }
+
   private chRatios = new Map<string, number>()
 
   /**
@@ -782,7 +806,7 @@ export default class FontLoader {
         style: fontStyle,
       })
       if (getNormal) {
-        fonts.push(getNormal)
+        fonts.push(getNormal, ...this.getSubsets(face, getNormal))
         return
       }
 
@@ -793,7 +817,10 @@ export default class FontLoader {
       })
 
       if (getUnknown) {
-        fonts.push(getUnknown)
+        fonts.push(
+          getUnknown,
+          ...this.getSubsets(face + '_unknown', getUnknown)
+        )
         return
       }
     })

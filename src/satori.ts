@@ -18,6 +18,7 @@ import { detectLanguageCode, LangCode, Locale } from './language.js'
 import getTw from './handler/tailwind.js'
 import { preProcessNode } from './handler/preprocess.js'
 import { resolveComponents } from './handler/components.js'
+import { loadFontFaces, type FontFace } from './font-face.js'
 import {
   applyStyleSheets,
   type ContainerQueries,
@@ -234,6 +235,7 @@ export async function render(
    */
   async function layOut() {
     // Like in browsers, invalid declarations of stylesheets are dropped.
+    const fontFaces: FontFace[] = []
     const tree = await applyStyleSheets(
       element,
       layoutEngine,
@@ -243,8 +245,28 @@ export async function render(
           getStyleError({ [name]: value }, options.convertColors ?? true),
         onError: onStyleError,
       },
-      containers
+      containers,
+      fontFaces
     )
+    // The fonts of `@font-face` rules that text uses are loaded, and added to
+    // a copy of the font loader, as they're only for this render.
+    let pageFont = font
+    if (fontFaces.length) {
+      const provided = new Set(
+        options.fonts.map((option) => option.name.toLowerCase())
+      )
+      const loaded = await loadFontFaces(fontFaces, tree, provided)
+      if (loaded.length) {
+        pageFont = font.fork()
+        for (const fontOption of loaded) {
+          try {
+            pageFont.addFonts([fontOption])
+          } catch {
+            // Fonts that Satori can't read are skipped, like in browsers.
+          }
+        }
+      }
+    }
     const svgFilters = new Map<string, ReactElement>()
     await preProcessNode(tree, svgFilters)
 
@@ -272,7 +294,7 @@ export async function render(
         _viewportHeight: definedHeight,
       },
       parent: root,
-      font,
+      font: pageFont,
       embedFont: options.embedFont,
       debug: options.debug,
       graphemeImages,
@@ -363,6 +385,7 @@ export async function render(
 
         // Directly mutate the font provider and the grapheme map.
         font.addFonts(fonts)
+        if (pageFont !== font) pageFont.addFonts(fonts)
         Object.assign(graphemeImages, images)
       }
     }

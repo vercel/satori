@@ -13,6 +13,7 @@
 //! - `{"l":names}`: a `@layer` statement.
 //! - `{"p":name,"b":declarations}`: `@property`, with the name of the custom
 //!   property and its descriptors.
+//! - `{"f":1,"b":declarations}`: `@font-face`, with its descriptors.
 //!
 //! Other at-rules are dropped. Nested group rules have declarations too.
 //!
@@ -63,6 +64,7 @@ enum AtRulePrelude {
     Layer(Vec<String>),
     Container(String),
     Property(String),
+    FontFace,
 }
 
 impl Rules {
@@ -100,6 +102,10 @@ impl<'i> AtRuleParser<'i> for Rules {
                 input.expect_exhausted()?;
                 Ok(AtRulePrelude::Property(name))
             }
+            "font-face" => {
+                input.expect_exhausted()?;
+                Ok(AtRulePrelude::FontFace)
+            }
             "layer" => {
                 if input.is_exhausted() {
                     return Ok(AtRulePrelude::Layer(Vec::new()));
@@ -136,6 +142,10 @@ impl<'i> AtRuleParser<'i> for Rules {
             let body = Rules { nested: true }.body(input);
             return Ok(format!("{{\"p\":{},\"b\":{}}}", json(&name), body));
         }
+        if let AtRulePrelude::FontFace = prelude {
+            let body = Rules { nested: true }.body(input);
+            return Ok(format!("{{\"f\":1,\"b\":{}}}", body));
+        }
         let body = self.body(input);
         Ok(match prelude {
             AtRulePrelude::Media(query) => format!("{{\"m\":{},\"b\":{}}}", json(&query), body),
@@ -148,7 +158,7 @@ impl<'i> AtRuleParser<'i> for Rules {
             AtRulePrelude::Layer(names) if names.len() <= 1 => {
                 format!("{{\"l\":{},\"b\":{}}}", strings(&names), body)
             }
-            AtRulePrelude::Layer(_) | AtRulePrelude::Property(_) => {
+            AtRulePrelude::Layer(_) | AtRulePrelude::Property(_) | AtRulePrelude::FontFace => {
                 return Err(ParseError::unexpected_token())
             }
         })
