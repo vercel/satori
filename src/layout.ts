@@ -59,6 +59,7 @@ import {
   getSelectContent,
   PLACEHOLDER_PROP,
 } from './form-control.js'
+import { resolveImageData, type DeferredImage } from './handler/image.js'
 import type { TransformFunction } from './parser/transform.js'
 import {
   getDepth,
@@ -180,6 +181,8 @@ export interface LayoutContext {
    * known. Elements entirely outside of it aren't drawn.
    */
   paintBounds?: PaintBounds
+  /** Images that are loaded when they're drawn, see `canDeferImage()`. */
+  deferredImages?: DeferredImage[]
   /** The SVG `<filter>` elements of the document, by their `id`. */
   svgFilters?: Map<string, ReactElement>
   /**
@@ -583,6 +586,24 @@ export default async function* layout(
     newInheritableStyle._cullMargin =
       ((inheritedStyle._cullMargin as number) || 0) + filterExtent
   }
+  // Fixed and sticky elements, and their descendants, are moved after layout.
+  if (
+    computedStyle.position === 'fixed' ||
+    computedStyle.position === 'sticky'
+  ) {
+    newInheritableStyle._movesAfterLayout = 1
+  }
+  if (computedStyle.__deferredSrc) {
+    context.deferredImages?.push({
+      src: computedStyle.__deferredSrc as string,
+      // Atomic inlines are positioned in their paragraph when it's drawn.
+      node: atomicInline?.paragraph?.node ?? node,
+      moves: !!(
+        newInheritableStyle._alwaysDrawn ||
+        newInheritableStyle._movesAfterLayout
+      ),
+    })
+  }
 
   // A `preserve-3d` element establishes a 3D rendering context, or extends
   // the one it's in. Its children are drawn sorted by depth.
@@ -824,6 +845,7 @@ export default async function* layout(
       absoluteContainingBlock,
       fixedElements: context.fixedElements,
       paintBounds: context.paintBounds,
+      deferredImages: context.deferredImages,
       svgFilters: context.svgFilters,
       counters: context.counters,
       countersHidden,
@@ -1034,6 +1056,15 @@ export default async function* layout(
   if ((type === 'img' || isReplaced || type === 'svg') && isBoxCulled) {
     // Not drawn, see above.
   } else if (type === 'img' || isReplaced) {
+    // Deferred images are loaded when they're drawn.
+    if (computedStyle.__deferredSrc) {
+      const [resolved, naturalWidth, naturalHeight] = await resolveImageData(
+        computedStyle.__deferredSrc as string
+      )
+      computedStyle.__src = resolved
+      computedStyle.__naturalWidth = naturalWidth
+      computedStyle.__naturalHeight = naturalHeight
+    }
     // A replaced element without rendered content has no `src`, so it's drawn
     // as a box.
     const src = computedStyle.__src as string | undefined

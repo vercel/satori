@@ -118,6 +118,8 @@ await satori(
 )
 ```
 
+With both a width and a height, from attributes or styles, an image from a URL is only loaded if it's drawn, so images outside of the image aren't loaded. Without them, it's loaded before layout, which needs its natural size.
+
 When using `background-image`, the image will be stretched to fit the element by default if you don't specify the size.
 
 If you want to render the generated SVG to another image format such as PNG, it would be better to use base64 encoded image data (or buffer) directly as `props.src` so no extra I/O is needed in Satori:

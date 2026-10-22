@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode, Fragment } from 'react'
 import { Fragment as FragmentSymbol } from '../jsx/jsx-runtime.js'
-import { resolveImageData, cache } from './image.js'
+import { canDeferImage, resolveImageData, cache } from './image.js'
 import { convertColors as convertColorValues } from '../parser/color.js'
 import {
   extractCustomProperties,
@@ -304,7 +304,11 @@ export async function preProcessNode(
           }
         }
       } else if (_node.type === 'img') {
-        if (set.has(_node.props.src)) {
+        // Images that are loaded when they're drawn, with their styles of
+        // stylesheets. Layout checks again with computed styles.
+        if (canDeferImage(_node.props, _node.props.style)) {
+          // do nothing
+        } else if (set.has(_node.props.src)) {
           // do nothing
         } else {
           set.add(_node.props.src)

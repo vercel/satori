@@ -60,6 +60,7 @@ const list = new Set([
   '_inheritedBackgroundClipTextHasBackground',
   '_alwaysDrawn',
   '_cullMargin',
+  '_movesAfterLayout',
 ])
 
 /**
