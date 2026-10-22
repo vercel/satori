@@ -305,4 +305,39 @@ describe('transform', () => {
     )
     expect(await toImage(svg, 420)).toMatchImageSnapshot()
   })
+
+  describe('none', () => {
+    it('should accept transform none as identity', async () => {
+      const withNone = await satori(
+        <div
+          style={{
+            width: 10,
+            height: 10,
+            backgroundColor: 'red',
+            transform: 'none',
+          }}
+        />,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      const without = await satori(
+        <div
+          style={{
+            width: 10,
+            height: 10,
+            backgroundColor: 'red',
+          }}
+        />,
+        {
+          width: 100,
+          height: 100,
+          fonts,
+        }
+      )
+      expect(withNone).toBe(without)
+    })
+  })
 })
