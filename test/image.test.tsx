@@ -1310,3 +1310,119 @@ describe('Image error reporting', () => {
     expect(output).toContain('text/html')
   })
 })
+
+describe('Images that are loaded when drawn', () => {
+  const src = (name: string) => `https://example.com/${name}.png`
+  const loaded = () =>
+    requests.map((url) => /\/(\w+)\.png$/.exec(String(url))?.[1]).sort()
+
+  it('should only load images that are drawn', async () => {
+    const svg = await satori(
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <img src={src('top')} width={50} height={50} />
+        <img
+          src={src('below')}
+          style={{ width: 50, height: 50, marginTop: 100 }}
+        />
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(loaded()).toEqual(['top'])
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should load images whose size depends on them before layout', async () => {
+    let box: number[] = []
+    await satori(
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ height: 200 }} />
+        <img src={src('natural')} style={{ width: 50, height: 'auto' }} />
+      </div>,
+      {
+        width: 100,
+        height: 100,
+        fonts,
+        onNodeDetected: (node) => {
+          if (node.type === 'img') box = [node.width, node.height]
+        },
+      }
+    )
+    // Its height is of its natural ratio, 1:1.
+    expect(loaded()).toEqual(['natural'])
+    expect(box).toEqual([50, 50])
+  })
+
+  it('should load images that are moved into the image', async () => {
+    const svg = await satori(
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ height: 150 }} />
+        <div style={{ display: 'flex', transform: 'translateY(-125px)' }}>
+          <img src={src('transformed')} width={50} height={50} />
+        </div>
+        {/* It sticks to the bottom of the image. */}
+        <div
+          style={{
+            display: 'flex',
+            position: 'sticky',
+            bottom: 0,
+            marginLeft: 50,
+          }}
+        >
+          <img src={src('sticky')} width={50} height={50} />
+        </div>
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(loaded()).toEqual(['sticky', 'transformed'])
+    expect(svg.match(/<image/g)).toHaveLength(2)
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should load images in text that are drawn', async () => {
+    const svg = await satori(
+      <div style={{ display: 'block', fontSize: 16 }}>
+        <p style={{ margin: 0 }}>
+          A <img src={src('inline')} width={16} height={16} /> B
+        </p>
+        <p style={{ margin: '200px 0 0' }}>
+          C <img src={src('later')} width={16} height={16} /> D
+        </p>
+      </div>,
+      { width: 100, height: 100, fonts }
+    )
+    expect(loaded()).toEqual(['inline'])
+    expect(svg.match(/<image/g)).toHaveLength(1)
+    expect(await toImage(svg, 100)).toMatchImageSnapshot()
+  })
+
+  it('should draw like images that are loaded before layout', async () => {
+    const page = (url: string) => (
+      <div style={{ display: 'flex', gap: 4 }}>
+        <img src={url} width={30} height={20} style={{ objectFit: 'cover' }} />
+        <div style={{ position: 'relative', width: 40, height: 40 }}>
+          <img
+            src={url}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              borderRadius: 8,
+            }}
+          />
+        </div>
+      </div>
+    )
+    const options = { width: 100, height: 50, fonts }
+    // Data URIs are loaded before layout.
+    expect(await satori(page(src('deferred')), options)).toBe(
+      await satori(
+        page(
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg=='
+        ),
+        options
+      )
+    )
+  })
+})

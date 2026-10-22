@@ -22,7 +22,12 @@ import {
   applyStyleSheets,
   type ContainerQueries,
 } from './handler/stylesheet.js'
-import { cache, inflightRequests } from './handler/image.js'
+import {
+  cache,
+  inflightRequests,
+  preloadDeferredImages,
+  type DeferredImage,
+} from './handler/image.js'
 import { segment } from './utils.js'
 import { initHarfBuzz } from './harfbuzz.js'
 import type { PaintBounds } from './culling.js'
@@ -217,9 +222,11 @@ export async function render(
     for (const error of errors) options.onStyleError?.(error)
   }
 
-  // What's entirely outside of the image isn't drawn.
+  // What's entirely outside of the image isn't drawn, and images that may be
+  // drawn are loaded in parallel.
   pass.paintBounds.width = pass.root.layout.width
   pass.paintBounds.height = pass.root.layout.height
+  preloadDeferredImages(pass.deferredImages, pass.root)
   const content = (await pass.handler.next([0, 0])).value as string
 
   return svg({
@@ -261,6 +268,7 @@ export async function render(
     const fixedElements: FixedElement[] = []
     const containerNodes = new Map<number, LayoutNode>()
     const paintBounds: PaintBounds = { width: 0, height: 0 }
+    const deferredImages: DeferredImage[] = []
     const handler = layout(tree, {
       id: 'id',
       parentStyle: {},
@@ -293,6 +301,7 @@ export async function render(
       absoluteContainingBlock: { node: root, offset: { left: 0, top: 0 } },
       fixedElements,
       paintBounds,
+      deferredImages,
       svgFilters,
       floats: { found: false },
       formattingContext: 'root',
@@ -379,7 +388,7 @@ export async function render(
       layoutEngine.computeLayout(root, layoutOptions)
     }
 
-    return { root, handler, containerNodes, paintBounds }
+    return { root, handler, containerNodes, paintBounds, deferredImages }
   }
 }
 

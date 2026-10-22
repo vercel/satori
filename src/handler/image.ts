@@ -141,6 +141,7 @@ function parsePNG(buf: ArrayBuffer) {
 
 import { createLRU, parseViewBox } from '../utils.js'
 import { safeServerFetch } from './url-safety.js'
+import type { LayoutNode } from '../layout-engine/index.js'
 
 type ResolvedImageData = [string, number?, number?] | readonly []
 export const cache = createLRU<ResolvedImageData>(500)
@@ -263,6 +264,83 @@ function arrayBufferToDataUri(data: ArrayBuffer, responseType?: string) {
     `data:${imageType};base64,${arrayBufferToBase64(data)}`,
     imageSize,
   ] as const
+}
+
+/** Whether a size is a length or a percentage, rather than e.g. `auto`. */
+function isDefiniteSize(value: unknown) {
+  if (typeof value === 'number') return Number.isFinite(value)
+  // Math functions with percentages.
+  if (value && typeof value === 'object') return true
+  if (typeof value !== 'string') return false
+  const size = value.trim().toLowerCase()
+  if (size.includes('var(')) return false
+  return (
+    /^-?(\d+\.?\d*|\.\d+)([a-z]+|%)?$/.test(size) ||
+    /^(calc|min|max|clamp)\(/.test(size)
+  )
+}
+
+/**
+ * Whether an `<img>` can be loaded after layout, as only drawing it needs it:
+ * when it's from a URL, and its width and height don't depend on its natural
+ * size. Images that aren't drawn, e.g. outside of the image, are then never
+ * loaded. Like in `setReplacedElementSize()`, styles override the attributes.
+ */
+export function canDeferImage(
+  props: Record<string, any>,
+  style: Record<string, any> | undefined
+) {
+  const { src } = props ?? {}
+  if (typeof src !== 'string' || !/^https?:\/\//i.test(src)) return false
+  // List markers and generated content have their natural size.
+  if (props.__naturalSize) return false
+  const size = (value: unknown, attribute: unknown) =>
+    value === undefined ? attribute : value
+  return (
+    isDefiniteSize(size(style?.width, props.width)) &&
+    isDefiniteSize(size(style?.height, props.height))
+  )
+}
+
+/** An image that's loaded when it's drawn, see `canDeferImage()`. */
+export interface DeferredImage {
+  src: string
+  /** The node of its box, or of the paragraph it's in. */
+  node: LayoutNode
+  /** Whether it may be drawn elsewhere than its box, e.g. when transformed. */
+  moves: boolean
+}
+
+/**
+ * Starts loading the deferred images that may be drawn, in parallel, before
+ * they're drawn: the ones whose boxes are in the image, and the ones that may
+ * be drawn elsewhere. Others are loaded when they're drawn, if they are.
+ */
+export function preloadDeferredImages(
+  images: DeferredImage[],
+  root: LayoutNode
+) {
+  const { width, height } = root.layout
+  for (const image of images) {
+    let left = 0
+    let top = 0
+    let node: LayoutNode | null = image.node
+    for (; node && node !== root; node = node.parent) {
+      left += node.layout.left
+      top += node.layout.top
+    }
+    // Nodes outside of the tree are laid out by themselves.
+    const box = image.node.layout
+    const inImage =
+      left < width &&
+      top < height &&
+      left + box.width > 0 &&
+      top + box.height > 0
+    if (image.moves || node !== root || inImage) {
+      // Errors are thrown when the image is drawn.
+      resolveImageData(image.src).catch(() => undefined)
+    }
+  }
 }
 
 export async function resolveImageData(

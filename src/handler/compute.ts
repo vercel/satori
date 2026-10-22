@@ -22,7 +22,7 @@ import {
   type LayoutStyle,
   type Length,
 } from '../layout-engine/index.js'
-import { resolveImageData } from './image.js'
+import { canDeferImage, resolveImageData } from './image.js'
 import { isListBox } from '../form-control.js'
 import {
   parseGridAutoFlow,
@@ -429,7 +429,12 @@ export default async function compute(
   const replacesNaturalRatio =
     aspectRatio !== undefined && !style._aspectRatioAuto
 
-  if (type === 'img') {
+  if (type === 'img' && canDeferImage(props, style)) {
+    // Its natural size is only needed to draw it, so it's loaded then, see
+    // `layout()`.
+    setReplacedElementSize(node, style, NaN, NaN, props.width, props.height)
+    style.__deferredSrc = props.src
+  } else if (type === 'img') {
     let [resolvedSrc, imageWidth, imageHeight] = await resolveImageData(
       props.src
     )
