@@ -5,6 +5,7 @@
  * rest of Satori handles them like inline styles.
  */
 
+import { parseFontFace, type FontFace } from '../font-face.js'
 import type { ReactElement, ReactNode } from 'react'
 
 import type { LayoutEngine } from '../layout-engine/index.js'
@@ -29,6 +30,8 @@ interface RawRule {
   c?: string
   l?: string[]
   p?: string
+  /** `@font-face`. */
+  f?: number
   b?: Item[]
 }
 type Item = RawRule | Declaration
@@ -226,7 +229,8 @@ export async function applyStyleSheets(
   engine: LayoutEngine,
   viewport: Viewport,
   validation?: Validation,
-  containers?: ContainerQueries
+  containers?: ContainerQueries,
+  fontFaces?: FontFace[]
 ): Promise<ReactNode> {
   const sheets: string[] = []
   collectStyleSheets(root, sheets, viewport)
@@ -239,6 +243,7 @@ export async function applyStyleSheets(
     layers: new Map(),
     viewport,
     properties: new Map(),
+    fontFaces: [],
     // Feature queries aren't errors, so they're not reported.
     supported:
       validation &&
@@ -246,6 +251,10 @@ export async function applyStyleSheets(
   }
   const rules: Rule[] = []
   for (const items of parsed) compileRules(items, null, [], rules, state)
+  for (const descriptors of state.fontFaces) {
+    const face = parseFontFace(descriptors)
+    if (face) fontFaces?.push(face)
+  }
   rankLayers(rules, state.layers)
   const initial = getInitialValues(state.properties)
   if (!rules.length && !initial) return root
@@ -343,6 +352,8 @@ interface CompileState {
   containerUnits?: boolean
   /** The custom properties registered with `@property`, by name. */
   properties: Map<string, RegisteredProperty>
+  /** The descriptors of the `@font-face` rules that apply. */
+  fontFaces: Item[][]
 }
 
 /**
@@ -405,6 +416,8 @@ function compileRules(
       ])
     } else if (item.p !== undefined) {
       registerProperty(item.p, item.b ?? [], state.properties)
+    } else if (item.f) {
+      state.fontFaces.push(item.b ?? [])
     } else if (item.l) {
       if (!item.b) {
         for (const name of item.l) {

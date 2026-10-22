@@ -527,7 +527,7 @@ The CSS of `<style>` elements applies to the whole tree, including the elements 
 - `@supports` checks declarations the same way, but properties that Satori ignores count as supported. `selector()` is supported, but not `font-tech()` and `font-format()`.
 - `::before` and `::after` are supported, with `content` made of strings, `attr()`, `counter()`, `counters()`, quotes and `url()`. Quotes are always “ and ”, as `quotes` isn't supported. Other pseudo-elements, such as `::marker` and `::first-line`, aren't supported, so rules with them don't apply.
 - Pseudo-classes of interactions such as `:hover` never match, and functional pseudo-classes other than `:is()`, `:where()`, `:not()`, `:has()`, `:nth-*()` and `:lang()` make their rule invalid.
-- Other at-rules are ignored, such as `@font-face`, `@keyframes`, `@scope` and `@import`.
+- `@font-face` loads fonts, see [Fonts](#fonts). Other at-rules are ignored, such as `@keyframes`, `@scope` and `@import`.
 
 #### Perspective (experimental)
 
@@ -599,6 +599,8 @@ await satori(
   }
 )
 ```
+
+The `@font-face` rules of [stylesheets](#stylesheets) load fonts too, like in browsers: the fonts of the families that text uses are loaded before layout, and only the ones whose `unicode-range` has its characters. Their sources are tried in order, from absolute or `data:` URLs, and fonts that fail to load are skipped. Families in the `fonts` option take precedence over them, and they're only used in their render.
 
 Multiple fonts can be passed to Satori and used in `fontFamily`.
 
