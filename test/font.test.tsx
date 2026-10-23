@@ -3,6 +3,8 @@ import { it, describe, expect, vi } from 'vitest'
 
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
+import { getLayoutEngine } from '../src/layout-engine/wasm.bundled.js'
+import { zlibSync } from 'fflate'
 import { readFile } from 'node:fs/promises'
 
 // fflate is pinned to 0.7, but apps may resolve 0.8, where the second argument
@@ -302,6 +304,105 @@ describe('Font', () => {
       expect(width).toBe((await render(regular)).width)
       expect(await toImage(svg, 300)).toMatchImageSnapshot()
     })
+
+    const loadGeistMono = () =>
+      Promise.all(
+        ['GeistMono-Variable.woff2', 'GeistMono-Regular.ttf'].map((name) =>
+          readFile(join(process.cwd(), 'test', 'assets', name))
+        )
+      )
+    const weights = (
+      geist: { name: string; data: Buffer; weight?: 400 }[],
+      list: number[]
+    ) =>
+      satori(
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            fontSize: 24,
+            fontFamily: 'Geist',
+          }}
+        >
+          {list.map((weight) => (
+            <span key={weight} style={{ fontWeight: weight as any }}>
+              Hello {weight}
+            </span>
+          ))}
+        </div>,
+        { width: 200, height: list.length * 30, fonts: geist }
+      )
+
+    it('should render the weights of variable fonts', async () => {
+      const [variable] = await loadGeistMono()
+      const geist = [{ name: 'Geist', data: variable, weight: 400 as const }]
+      const [thin, regular, bold] = await Promise.all(
+        [100, 400, 700].map((weight) => weights(geist, [weight]))
+      )
+      // The instances of the `wght` axis, without synthesized bold.
+      expect(new Set([thin, regular, bold]).size).toBe(3)
+      expect(bold).not.toContain('stroke-width')
+      // The default instance is the font itself.
+      expect(regular).toBe(
+        await satori(
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              fontSize: 24,
+              fontFamily: 'Geist',
+            }}
+          >
+            <span>Hello 400</span>
+          </div>,
+          { width: 200, height: 30, fonts: geist }
+        )
+      )
+      expect(
+        await toImage(await weights(geist, [100, 400, 700, 900]), 200)
+      ).toMatchImageSnapshot()
+    })
+
+    it('should render the weights of variable WOFF fonts', async () => {
+      const [variable] = await loadGeistMono()
+      // The font as WOFF, with compressed and uncompressed tables, from the
+      // TrueType font decoded from WOFF2.
+      const engine = await getLayoutEngine()
+      const sfnt = engine.decodeWoff2(new Uint8Array(variable))!
+      for (const compress of [true, false]) {
+        const woff = Buffer.from(toWoff(sfnt, compress))
+        expect(woff.subarray(0, 4).toString()).toBe('wOFF')
+        for (const weight of [100, 700, 900]) {
+          expect(
+            await weights(
+              [{ name: 'Geist', data: woff, weight: 400 }],
+              [weight]
+            )
+          ).toBe(
+            await weights(
+              [{ name: 'Geist', data: variable, weight: 400 }],
+              [weight]
+            )
+          )
+        }
+      }
+    })
+
+    it('should prefer the weights of variable fonts to synthesized ones', async () => {
+      const [variable, regular] = await loadGeistMono()
+      // A static regular font synthesizes bold.
+      const geist = [{ name: 'Geist', data: regular, weight: 400 as const }]
+      expect(await weights(geist, [700])).toContain('stroke-width')
+      // With a variable font of the family too, its bold is used.
+      expect(
+        await weights(
+          [...geist, { name: 'Geist', data: variable, weight: 400 }],
+          [700]
+        )
+      ).toBe(
+        await weights([{ name: 'Geist', data: variable, weight: 400 }], [700])
+      )
+    })
   })
 
   describe('font shorthand', () => {
@@ -392,3 +493,52 @@ describe('Font', () => {
     })
   })
 })
+
+/**
+ * Wraps a TrueType or OpenType font as WOFF, with its tables compressed with
+ * zlib when that makes them smaller, or else uncompressed.
+ */
+function toWoff(sfnt: ArrayBuffer, compress: boolean): ArrayBuffer {
+  const view = new DataView(sfnt)
+  const count = view.getUint16(4)
+  const tables = Array.from({ length: count }, (_, i) => {
+    const record = 12 + i * 16
+    const offset = view.getUint32(record + 8)
+    const length = view.getUint32(record + 12)
+    const original = new Uint8Array(sfnt, offset, length)
+    const compressed = compress ? zlibSync(original) : original
+    return {
+      tag: view.getUint32(record),
+      checksum: view.getUint32(record + 4),
+      length,
+      data: compressed.length < length ? compressed : original,
+    }
+  })
+  const align = (length: number) => (length + 3) & ~3
+  let size = 44 + count * 20
+  const offsets = tables.map((table) => {
+    const offset = size
+    size += align(table.data.length)
+    return offset
+  })
+  const woff = new ArrayBuffer(size)
+  const out = new DataView(woff)
+  out.setUint32(0, 0x774f4646)
+  out.setUint32(4, view.getUint32(0))
+  out.setUint32(8, size)
+  out.setUint16(12, count)
+  out.setUint32(
+    16,
+    12 + count * 16 + tables.reduce((sum, t) => sum + align(t.length), 0)
+  )
+  tables.forEach((table, i) => {
+    const entry = 44 + i * 20
+    out.setUint32(entry, table.tag)
+    out.setUint32(entry + 4, offsets[i])
+    out.setUint32(entry + 8, table.data.length)
+    out.setUint32(entry + 12, table.length)
+    out.setUint32(entry + 16, table.checksum)
+    new Uint8Array(woff, offsets[i], table.data.length).set(table.data)
+  })
+  return woff
+}

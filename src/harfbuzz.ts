@@ -105,12 +105,24 @@ function getHarfBuzzFont(font: opentype.Font): any {
   // The caller scales by (fontSize / unitsPerEm) to convert to pixels.
   const upem = font.unitsPerEm
   hbFont.setScale(upem, upem)
+  // Instances of variable fonts, see `getVariation()` in `font.ts`.
+  const variations = (font as any)._variations
+  if (variations) hbFont.setVariations(variations)
 
   // Cache the HarfBuzz font
   hbFontCache.set(font, hbFont)
   hbFontFinalizer?.register(font, hbFont)
 
   return hbFont
+}
+
+/**
+ * The outline of a glyph as SVG path data in font units, with the
+ * variations of the font, e.g. of an instance of a variable font.
+ */
+export function getGlyphPath(font: opentype.Font, glyphId: number): string {
+  if (!hb) throw new Error('HarfBuzz not initialized')
+  return getHarfBuzzFont(font).glyphToPath(glyphId)
 }
 
 /**
