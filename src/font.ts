@@ -854,8 +854,6 @@ export default class FontLoader {
           // @ts-ignore
           { lowMemory: true }
         )
-        ;(font as any)._axes = getVariationAxes(arrayBuffer)
-
         // Store the raw font data for HarfBuzz (convert WOFF to sfnt if needed)
         const bytes = new Uint8Array(arrayBuffer)
         const isWoff =
@@ -863,9 +861,11 @@ export default class FontLoader {
           bytes[1] === 0x4f &&
           bytes[2] === 0x46 &&
           bytes[3] === 0x46
-        ;(font as any)._rawFontData = isWoff
-          ? woffToSfnt(arrayBuffer)
-          : arrayBuffer
+        const rawFontData = isWoff ? woffToSfnt(arrayBuffer) : arrayBuffer
+        ;(font as any)._rawFontData = rawFontData
+        // The axes are read from the sfnt data, as the tables of WOFF fonts
+        // are compressed.
+        ;(font as any)._axes = getVariationAxes(rawFontData)
 
         // Modify the `charToGlyphIndex` method, so we can know which char is
         // being mapped to which glyph.
