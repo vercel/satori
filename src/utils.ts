@@ -570,6 +570,9 @@ export function asPointAutoPercentageLength(
   return undefined
 }
 
+// Thai, Lao, Khmer and Myanmar, which don't have spaces between words.
+const SPACELESS_SCRIPT = /[\p{sc=Thai}\p{sc=Lao}\p{sc=Khmer}\p{sc=Myanmar}]/u
+
 export function splitByBreakOpportunities(
   content: string,
   wordBreak: string
@@ -581,17 +584,64 @@ export function splitByBreakOpportunities(
     return { words: segment(content, 'grapheme'), requiredBreaks: [] }
   }
 
-  if (wordBreak === 'keep-all') {
-    return { words: segment(content, 'word'), requiredBreaks: [] }
+  // `linebreak` doesn't break between the words of those scripts, so
+  // `keep-all` breaks them between the words of `Intl.Segmenter`, like
+  // browsers do with a dictionary.
+  const hasSpacelessScript =
+    wordBreak === 'keep-all' && SPACELESS_SCRIPT.test(content)
+  const dictionaryBreaks: number[] = []
+  if (hasSpacelessScript) {
+    let position = 0
+    for (const word of segment(content, 'word')) {
+      position += word.length
+      if (
+        SPACELESS_SCRIPT.test(content.slice(position - 1, position)) &&
+        SPACELESS_SCRIPT.test(content.slice(position, position + 1))
+      ) {
+        dictionaryBreaks.push(position)
+      }
+    }
   }
+  let nextDictionaryBreak = 0
 
   const breaker = new LineBreaker(content)
   let last = 0
+  // The last break opportunity, which `keep-all` may skip.
+  let previous = 0
   let bk = breaker.nextBreak()
   const words = []
   const requiredBreaks = [false]
 
   while (bk) {
+    // `keep-all` doesn't break between letters or numbers, even of different
+    // scripts like in "Satori를", only where `normal` breaks next to other
+    // characters, e.g. at spaces and after punctuation, or next to those
+    // scripts. Letters can have marks after them, and a character can be 2
+    // code units.
+    if (
+      wordBreak === 'keep-all' &&
+      /[\p{L}\p{N}]\p{M}*$/u.test(content.slice(previous, bk.position)) &&
+      /^[\p{L}\p{N}]/u.test(content.slice(bk.position, bk.position + 2)) &&
+      !(
+        hasSpacelessScript &&
+        SPACELESS_SCRIPT.test(content.slice(bk.position - 1, bk.position + 1))
+      )
+    ) {
+      previous = bk.position
+      bk = breaker.nextBreak()
+      continue
+    }
+
+    // The words of those scripts before the break.
+    while (dictionaryBreaks[nextDictionaryBreak] < bk.position) {
+      const position = dictionaryBreaks[nextDictionaryBreak++]
+      if (position > last) {
+        words.push(content.slice(last, position))
+        requiredBreaks.push(false)
+        last = position
+      }
+    }
+
     const word = content.slice(last, bk.position)
     words.push(word)
 
@@ -601,7 +651,7 @@ export function splitByBreakOpportunities(
       requiredBreaks.push(false)
     }
 
-    last = bk.position
+    last = previous = bk.position
     bk = breaker.nextBreak()
   }
 

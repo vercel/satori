@@ -1,7 +1,13 @@
 import { it, describe, expect } from 'vitest'
 
-import { initFonts, loadDynamicAsset, toImage } from './utils.js'
+import {
+  getDynamicAsset,
+  initFonts,
+  loadDynamicAsset,
+  toImage,
+} from './utils.js'
 import satori from '../src/index.js'
+import { splitByBreakOpportunities } from '../src/utils.js'
 
 describe('word-break', () => {
   let fonts
@@ -205,6 +211,88 @@ describe('word-break', () => {
       )
 
       expect(await toImage(svg, 200)).toMatchImageSnapshot()
+    })
+  })
+
+  describe('keep-all', () => {
+    it('should not break between letters or numbers of different scripts', async () => {
+      const text = 'Vercel아 안녕. Satori나 2024년 안녕Satori'
+      const korean = {
+        name: 'Korean',
+        data: await getDynamicAsset('안녕'),
+        weight: 400,
+        style: 'normal',
+      } as const
+      // The lines of the text, which is in `<text>` elements since the fonts
+      // aren't embedded.
+      const render = async (width: number, textWrap: string) => {
+        const svg = await satori(
+          <div
+            style={
+              { width, fontSize: 32, wordBreak: 'keep-all', textWrap } as any
+            }
+          >
+            {text}
+          </div>,
+          {
+            width: 600,
+            height: 400,
+            fonts: [...fonts, korean],
+            embedFont: false,
+          }
+        )
+        const lines = new Map<string, string>()
+        for (const [, y, content] of svg.matchAll(
+          /<text[^>]* y="([^"]+)"[^>]*>([^<]*)<\/text>/g
+        )) {
+          lines.set(y, (lines.get(y) || '') + content)
+        }
+        return [...lines.values()]
+      }
+
+      // Every opportunity is taken in a narrow box: at the spaces, but not
+      // between Latin and Hangul letters, numbers and Hangul, or before a
+      // period.
+      expect(await render(1, 'wrap')).toEqual([
+        'Vercel아 ',
+        '안녕. ',
+        'Satori나 ',
+        '2024년 ',
+        '안녕Satori',
+      ])
+
+      // So lines only end at the spaces, also when they're balanced.
+      for (const textWrap of ['wrap', 'balance']) {
+        for (const width of [100, 160, 200, 300, 400, 500]) {
+          const lines = await render(width, textWrap)
+          expect(lines.join('')).toBe(text)
+          expect(
+            lines.slice(0, -1).filter((line) => !line.endsWith(' '))
+          ).toEqual([])
+        }
+      }
+    })
+
+    it('should break lines at line breaks like normal', async () => {
+      const render = (wordBreak: 'keep-all' | 'normal') =>
+        satori(
+          <div style={{ whiteSpace: 'pre-wrap', wordBreak }}>
+            {'hello\nworld'}
+          </div>,
+          { width: 100, height: 100, fonts, embedFont: false }
+        )
+      expect(await render('keep-all')).toBe(await render('normal'))
+    })
+
+    it('should break between Thai words, which have no spaces', () => {
+      // There's no Thai font in the tests, so the words between break
+      // opportunities are checked directly.
+      expect(
+        splitByBreakOpportunities(
+          'สวัสดีชาวโลก Satori나 ภาษาไทย안녕',
+          'keep-all'
+        ).words
+      ).toEqual(['สวัสดี', 'ชาว', 'โลก ', 'Satori나 ', 'ภาษา', 'ไทย', '안녕'])
     })
   })
 
