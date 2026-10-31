@@ -11,7 +11,7 @@ import {
   splitRadius,
 } from '../parser/border-radius.js'
 import { parseElementStyle } from 'css-background-parser'
-import { parse as parseBoxShadow } from 'css-box-shadow'
+import { parseBoxShadow, type BoxShadow } from '../parser/box-shadow.js'
 import cssColorParse from 'parse-css-color'
 import {
   convertColors as convertColorValues,
@@ -684,9 +684,10 @@ function handleSpecialCase(
     if (!value) {
       throw new Error('Invalid `boxShadow` value: "' + value + '".')
     }
-    return {
-      [name]: typeof value === 'string' ? parseBoxShadow(value) : value,
-    }
+    if (typeof value !== 'string') return { [name]: value }
+    // `none` has no shadows to draw.
+    const shadows = parseBoxShadow(value, currentColor)
+    return shadows.length ? { [name]: shadows } : {}
   }
 
   if (name === 'filter') {
@@ -1443,6 +1444,41 @@ export default function expand(
         if (!onStyleError) throw error
         onStyleError(error)
         delete serializedStyle.transform
+      }
+    }
+
+    if (prop === 'boxShadow') {
+      // Convert the lengths to px (number). A declaration with an invalid
+      // length is ignored, like other invalid values.
+      const resolve = (length: string | number | undefined) => {
+        if (length === undefined || typeof length === 'number') {
+          return length ?? 0
+        }
+        const resolveLength = (l: string) =>
+          lengthToNumber(l, baseFontSize, 0, inheritedStyle)
+        const math = parseMath(length, resolveLength)
+        const px = math ? math.evaluate(0) : resolveLength(length)
+        if (typeof px !== 'number' || Number.isNaN(px)) {
+          throw new Error(
+            `Invalid length in CSS property "boxShadow": "${length}".`
+          )
+        }
+        return px
+      }
+      try {
+        serializedStyle.boxShadow = (
+          value as unknown as BoxShadow<string | number>[]
+        ).map((shadow) => ({
+          ...shadow,
+          offsetX: resolve(shadow.offsetX),
+          offsetY: resolve(shadow.offsetY),
+          blurRadius: resolve(shadow.blurRadius),
+          spreadRadius: resolve(shadow.spreadRadius),
+        })) as any
+      } catch (error) {
+        if (!onStyleError) throw error
+        onStyleError(error)
+        delete serializedStyle.boxShadow
       }
     }
 

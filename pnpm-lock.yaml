@@ -19,9 +19,6 @@ importers:
       css-background-parser:
         specifier: ^0.1.0
         version: 0.1.0
-      css-box-shadow:
-        specifier: 1.0.0-3
-        version: 1.0.0-3
       css-gradient-parser:
         specifier: ^0.0.17
         version: 0.0.17
@@ -2596,9 +2593,6 @@ packages:
 
   css-background-parser@0.1.0:
     resolution: {integrity: sha512-2EZLisiZQ+7m4wwur/qiYJRniHX4K5Tc9w93MT3AS0WS1u5kaZ4FKXlOTBhOjc+CgEgPiGY+fX1yWD8UwpEqUA==}
-
-  css-box-shadow@1.0.0-3:
-    resolution: {integrity: sha512-9jaqR6e7Ohds+aWwmhe6wILJ99xYQbfmK9QQB9CcMjDbTxPZjwEmUQpU91OG05Xgm8BahT5fW+svbsQGjS/zPg==}
 
   css-color-keywords@1.0.0:
     resolution: {integrity: sha512-FyyrDHZKEjXDpNJYvVsV960FiqQyXc/LlYmsxl2BcdMb2WPx0OGRVgTg55rPSyLSNMqP52R9r8geSp7apN3Ofg==}
@@ -8051,8 +8045,6 @@ snapshots:
   crypto-js@4.1.1: {}
 
   css-background-parser@0.1.0: {}
-
-  css-box-shadow@1.0.0-3: {}
 
   css-color-keywords@1.0.0: {}
 

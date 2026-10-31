@@ -170,6 +170,68 @@ describe('Shadow', () => {
       expect(await toImage(svg, 100)).toMatchImageSnapshot()
     })
 
+    const renderBoxShadow = (
+      boxShadow?: string,
+      onStyleError?: (error: Error) => void
+    ) =>
+      satori(
+        <div
+          style={{
+            width: 50,
+            height: 50,
+            margin: '25px 25px',
+            background: 'white',
+            color: 'blue',
+            fontSize: 8,
+            boxShadow,
+          }}
+        ></div>,
+        { width: 100, height: 100, fonts, onStyleError }
+      )
+
+    it('should parse the color and inset before or after the lengths', async () => {
+      const svg = await renderBoxShadow(
+        'inset 10px -10px 4.5px 5px rgba(0, 0, 0, 0.5), 10px 10px 4px red'
+      )
+      expect(svg).not.toContain('NaN')
+      expect(
+        await renderBoxShadow(
+          'rgba(0, 0, 0, 0.5) 10px -10px 4.5px 5px inset, red 10px 10px 4px'
+        )
+      ).toBe(svg)
+    })
+
+    it('should default the blur and spread radii to 0', async () => {
+      const svg = await renderBoxShadow('10px 10px 0 0 red')
+      expect(await renderBoxShadow('10px 10px red')).toBe(svg)
+      expect(svg).not.toContain('NaN')
+    })
+
+    it('should draw box shadows without a color in the current color', async () => {
+      expect(await renderBoxShadow('10px 10px 4px')).toBe(
+        await renderBoxShadow('10px 10px 4px blue')
+      )
+    })
+
+    it('should resolve relative lengths and math functions', async () => {
+      const svg = await renderBoxShadow('8px 4px 16px red')
+      expect(await renderBoxShadow('1em .5em 1rem red')).toBe(svg)
+      expect(await renderBoxShadow('calc(4px + 4px) 4px 16px red')).toBe(svg)
+    })
+
+    it('should not draw box shadows of none', async () => {
+      expect(await renderBoxShadow('none')).toBe(await renderBoxShadow())
+    })
+
+    it('should report invalid box shadows with onStyleError', async () => {
+      const errors: string[] = []
+      const svg = await renderBoxShadow('10px red', (error) =>
+        errors.push(error.message)
+      )
+      expect(errors).toHaveLength(1)
+      expect(svg).toBe(await renderBoxShadow())
+    })
+
     it('should show box shadow without specifying height', async () => {
       const svg = await satori(
         <div
