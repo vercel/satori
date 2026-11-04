@@ -1,4 +1,4 @@
-import cssColorParse from 'parse-css-color'
+import { isColor } from './color.js'
 
 import { calcDegree, lengthToNumber, splitEffects } from '../utils.js'
 
@@ -129,7 +129,7 @@ function parseDropShadow(
   const lengths: string[] = []
 
   for (const part of parts) {
-    if (cssColorParse(part)) {
+    if (isColor(part)) {
       color = part
     } else {
       lengths.push(part)

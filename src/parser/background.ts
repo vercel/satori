@@ -4,7 +4,7 @@
  */
 
 import valueParser from 'postcss-value-parser'
-import cssColorParse from 'parse-css-color'
+import { isColor } from './color.js'
 
 const IMAGE_FUNCTION = /^(url|(repeating-)?(linear|radial|conic)-gradient)$/i
 const REPEAT_KEYWORDS = ['repeat', 'space', 'round', 'no-repeat']
@@ -107,7 +107,7 @@ function parseLayer(
       isFinal &&
       color === undefined &&
       (node.type === 'word' || node.type === 'function') &&
-      (word === 'transparent' || cssColorParse(valueParser.stringify(node)))
+      (word === 'transparent' || isColor(valueParser.stringify(node)))
     ) {
       color = valueParser.stringify(node)
     } else {
