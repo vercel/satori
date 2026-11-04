@@ -238,6 +238,28 @@ describe('background', () => {
       backgroundOrigin: 'padding-box, padding-box',
       backgroundClip: undefined,
     })
+    expect(expandBackground('oklch(0.6 0.2 150)')).toEqual({
+      backgroundColor: 'oklch(0.6 0.2 150)',
+      backgroundImage: undefined,
+      backgroundPosition: undefined,
+      backgroundSize: undefined,
+      backgroundRepeat: undefined,
+      backgroundOrigin: undefined,
+      backgroundClip: undefined,
+    })
+    expect(
+      expandBackground(
+        'url(a.png) top left / cover no-repeat, color(display-p3 0 1 0)'
+      )
+    ).toEqual({
+      backgroundColor: 'color(display-p3 0 1 0)',
+      backgroundImage: 'url(a.png), none',
+      backgroundPosition: 'top left, 0% 0%',
+      backgroundSize: 'cover, auto',
+      backgroundRepeat: 'no-repeat, repeat',
+      backgroundOrigin: 'padding-box, padding-box',
+      backgroundClip: undefined,
+    })
   })
 
   it('should throw for invalid values', () => {

@@ -74,6 +74,34 @@ describe('backdrop-filter', () => {
         color: 'rgba(0, 0, 0, .4)',
       },
     ])
+    expect(
+      parseBackdropFilter(
+        'drop-shadow(2px 4px 8px oklch(0.6 0.2 150))',
+        inheritedStyle
+      )
+    ).toEqual([
+      {
+        type: 'drop-shadow',
+        offsetX: 2,
+        offsetY: 4,
+        blurRadius: 8,
+        color: 'oklch(0.6 0.2 150)',
+      },
+    ])
+    expect(
+      parseBackdropFilter(
+        'drop-shadow(1px 2px 3px color(display-p3 0 1 0))',
+        inheritedStyle
+      )
+    ).toEqual([
+      {
+        type: 'drop-shadow',
+        offsetX: 1,
+        offsetY: 2,
+        blurRadius: 3,
+        color: 'color(display-p3 0 1 0)',
+      },
+    ])
     expect(parseBackdropFilter('none', inheritedStyle)).toEqual([])
     expect(() => parseBackdropFilter('blur(-2px)', inheritedStyle)).toThrow(
       'Invalid `blur()` radius'
