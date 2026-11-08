@@ -690,5 +690,25 @@ describe('Border', () => {
       })
       expect(await toImage(scaled, 520)).toMatchImageSnapshot()
     })
+
+    it('should support all length units', async () => {
+      const render = (style: Record<string, string | number>) =>
+        satori(
+          <div style={{ display: 'flex', width: 40, height: 40, ...style }} />,
+          { width: 400, height: 100, fonts }
+        )
+      // All of these are 4px.
+      for (const width of ['3pt', '.25pc', '1vw', '1cqw']) {
+        expect(await render({ border: `${width} solid black` })).toBe(
+          await render({ border: '4px solid black' })
+        )
+        expect(
+          await render({ borderTopWidth: width, borderTopStyle: 'solid' })
+        ).toBe(await render({ borderTopWidth: 4, borderTopStyle: 'solid' }))
+        expect(await render({ outline: `${width} solid red` })).toBe(
+          await render({ outline: '4px solid red' })
+        )
+      }
+    })
   })
 })
