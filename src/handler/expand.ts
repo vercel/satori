@@ -118,8 +118,11 @@ function parseLineWidth(value: string) {
   const normalized = value.toLowerCase()
   if (normalized in LINE_WIDTH_KEYWORDS) return LINE_WIDTH_KEYWORDS[normalized]
   if (/^\+?(\d+(?:\.\d*)?|\.\d+)$/.test(normalized)) return normalized + 'px'
+  // The length units of `lengthToNumber()`.
   if (
-    /^\+?(\d+(?:\.\d*)?|\.\d+)(px|em|rem|vw|vh|vmin|vmax)$/.test(normalized)
+    /^\+?(\d+(?:\.\d*)?|\.\d+)(px|in|cm|mm|q|pt|pc|r?em|ch|ex|r?lh|[sld]?v(?:w|h|i|b|min|max)|cq(?:w|h|i|b|min|max))$/.test(
+      normalized
+    )
   ) {
     return normalized
   }
