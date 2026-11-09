@@ -492,6 +492,28 @@ describe('Image', () => {
     expect(await toImage(svg, 100)).toMatchImageSnapshot()
   })
 
+  it.each([false, true])(
+    'should support Buffer as src (sliced: %s)',
+    async (sliced) => {
+      const buffer = Buffer.from(PNG_SAMPLE_ARRAYBUFFER)
+      const src = sliced
+        ? Buffer.concat([
+            Buffer.alloc(7, 0xff),
+            buffer,
+            Buffer.alloc(11, 0xff),
+          ]).subarray(7, 7 + buffer.length)
+        : buffer
+      const render = (data: ArrayBuffer | Buffer) =>
+        satori(<img src={data as any} />, {
+          width: 100,
+          height: 100,
+          fonts: [],
+        })
+
+      expect(await render(src)).toBe(await render(PNG_SAMPLE_ARRAYBUFFER))
+    }
+  )
+
   it('should not throw when image is not valid', async () => {
     const svg = await satori(
       <div

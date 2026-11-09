@@ -266,15 +266,15 @@ function arrayBufferToDataUri(data: ArrayBuffer, responseType?: string) {
 }
 
 export async function resolveImageData(
-  src: string | ArrayBuffer
+  src: string | ArrayBuffer | Uint8Array
 ): Promise<ResolvedImageData> {
   if (!src) {
     throw new Error('Image source is not provided.')
   }
 
-  // ArrayBuffer
+  // ArrayBuffer or Buffer. Copy views so only their own bytes are used.
   if (typeof src === 'object') {
-    const [newSrc, imageSize] = arrayBufferToDataUri(src)
+    const [newSrc, imageSize] = arrayBufferToDataUri(new Uint8Array(src).buffer)
     return [newSrc, ...imageSize] as ResolvedImageData
   }
 
