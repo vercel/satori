@@ -52,7 +52,7 @@ describe('direction', () => {
 
   describe('bidi', () => {
     it('should classify pieces of text by their first strong character', () => {
-      expect(getBidiClass('مرحبا')).toBe('R')
+      expect(getBidiClass('مرحبا')).toBe('AL')
       expect(getBidiClass('שלום')).toBe('R')
       expect(getBidiClass('Hello')).toBe('L')
       expect(getBidiClass('3rd')).toBe('L')
@@ -62,6 +62,12 @@ describe('direction', () => {
       expect(getBidiClass(' ')).toBe('N')
       expect(getBidiClass('(')).toBe('N')
       expect(getBidiClass('\u200f')).toBe('R')
+      expect(getBidiClass('\u061c')).toBe('AL')
+      expect(getBidiClass('/')).toBe('CS')
+      expect(getBidiClass(':')).toBe('CS')
+      expect(getBidiClass('،')).toBe('CS')
+      expect(getBidiClass('-')).toBe('ES')
+      expect(getBidiClass('//')).toBe('N')
     })
 
     it('should split text with right-to-left letters by direction', () => {
@@ -92,6 +98,35 @@ describe('direction', () => {
       expect(resolveLevels(['L', 'N', 'AN'], 1)).toEqual([2, 1, 2])
       // Neutrals at the start and end have the base direction.
       expect(resolveLevels(['N', 'L', 'N'], 1)).toEqual([1, 2, 1])
+    })
+
+    it('should join numbers with a separator between them', () => {
+      // "24/7" and "12:30" in right-to-left text.
+      expect(resolveLevels(['R', 'N', 'EN', 'CS', 'EN'], 1)).toEqual([
+        1, 1, 2, 2, 2,
+      ])
+      expect(resolveLevels(['AL', 'N', 'EN', 'CS', 'EN'], 1)).toEqual([
+        1, 1, 2, 2, 2,
+      ])
+      expect(resolveLevels(['AL', 'N', 'AN', 'CS', 'AN'], 1)).toEqual([
+        1, 1, 2, 2, 2,
+      ])
+      // "Cafe مقهى 24/7 Amman" in left-to-right text.
+      expect(
+        resolveLevels(['L', 'N', 'AL', 'N', 'EN', 'CS', 'EN', 'N', 'L'], 0)
+      ).toEqual([0, 0, 1, 1, 2, 2, 2, 0, 0])
+      // A European separator only joins European numbers, which numbers
+      // after Arabic letters aren't.
+      expect(resolveLevels(['R', 'N', 'EN', 'ES', 'EN'], 1)).toEqual([
+        1, 1, 2, 2, 2,
+      ])
+      expect(resolveLevels(['AL', 'N', 'EN', 'ES', 'EN'], 1)).toEqual([
+        1, 1, 2, 1, 2,
+      ])
+      // Separators that aren't between two numbers are neutral.
+      expect(resolveLevels(['EN', 'CS', 'N', 'EN'], 1)).toEqual([2, 1, 1, 2])
+      expect(resolveLevels(['ES', 'EN'], 1)).toEqual([1, 2])
+      expect(resolveLevels(['EN', 'CS', 'CS', 'EN'], 1)).toEqual([2, 1, 1, 2])
     })
 
     it('should resolve levels with a left-to-right base direction', () => {
@@ -282,6 +317,19 @@ describe('direction', () => {
           <div style={line}>מה שלום? (טוב) Next.js 15!</div>
         </div>,
         { width: 400, height: 190, fonts, embedFont: true }
+      )
+      expect(await toImage(svg, 400)).toMatchImageSnapshot()
+    })
+
+    it('should keep numbers joined by separators in order', async () => {
+      const svg = await satori(
+        <div style={{ ...container, direction: 'rtl' }}>
+          <div style={line}>مفتوح 24/7 والساعة 12:30</div>
+          <div style={line}>תאריך 25/10/2026 או 2026-10-25</div>
+          <div style={line}>الموعد 2026-10-25</div>
+          <div style={{ ...line, direction: 'ltr' }}>Cafe مقهى 24/7 Amman</div>
+        </div>,
+        { width: 400, height: 236, fonts, embedFont: true }
       )
       expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
