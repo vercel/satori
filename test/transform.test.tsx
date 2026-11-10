@@ -7,6 +7,51 @@ describe('transform', () => {
   let fonts
   initFonts((f) => (fonts = f))
 
+  it.each(['initial', 'unset', 'inherit', 'all'])(
+    'should keep ancestor transforms when resetting %s',
+    async (keyword) => {
+      const render = (reset: boolean, stylesheet: boolean) => {
+        const declaration =
+          keyword === 'all'
+            ? { all: 'initial' as const }
+            : { transform: keyword }
+        return satori(
+          <div
+            style={{
+              display: 'flex',
+              transform: 'translateX(23px) rotate(15deg)',
+            }}
+          >
+            {stylesheet && (
+              <style>{`.reset { transform: translateX(99px); ${
+                keyword === 'all' ? 'all' : 'transform'
+              }: ${keyword === 'all' ? 'initial' : keyword} }`}</style>
+            )}
+            <div
+              className={reset && stylesheet ? 'reset' : undefined}
+              style={{
+                ...(reset && !stylesheet ? declaration : {}),
+                display: 'flex',
+                width: 30,
+                height: 30,
+                backgroundColor: 'red',
+              }}
+            >
+              <div style={{ width: 10, height: 10, backgroundColor: 'blue' }} />
+            </div>
+            <div style={{ width: 10, height: 10, backgroundColor: 'green' }} />
+          </div>,
+          { width: 100, height: 100, fonts }
+        )
+      }
+      for (const stylesheet of [false, true]) {
+        expect(await render(true, stylesheet)).toBe(
+          await render(false, stylesheet)
+        )
+      }
+    }
+  )
+
   describe('translate', () => {
     it('should translate shape', async () => {
       const svg = await satori(

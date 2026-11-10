@@ -414,7 +414,10 @@ export default async function compute(
       prop === 'all'
         ? !key.startsWith('_') && !key.startsWith('--') && key !== 'direction'
         : isLonghandOf(key, prop)
-    for (const key in base) if (resets(key)) delete base[key]
+    // `transform` carries ancestor state, not an inherited CSS declaration.
+    for (const key in base) {
+      if (key !== 'transform' && resets(key)) delete base[key]
+    }
     for (const key in ROOT_STYLE) if (resets(key)) base[key] = ROOT_STYLE[key]
   }
   const style: SerializedStyle = Object.assign(
