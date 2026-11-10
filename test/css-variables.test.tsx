@@ -334,6 +334,99 @@ describe('CSS Variables', () => {
     }
   )
 
+  it.each([
+    [
+      'wordWrap',
+      { overflowWrap: 'anywhere' },
+      { overflowWrap: 'normal' },
+      'normal',
+    ],
+    [
+      'WebkitBackdropFilter',
+      { backdropFilter: 'blur(3px)' },
+      { backdropFilter: 'none' },
+      'contrast(2)',
+    ],
+    [
+      'backdropFilter',
+      { WebkitBackdropFilter: 'blur(3px)' },
+      { backdropFilter: 'none' },
+      'contrast(2)',
+    ],
+    [
+      'WebkitBackgroundClip',
+      { backgroundClip: 'text' },
+      { backgroundClip: 'border-box' },
+      'border-box',
+    ],
+    [
+      'overflowClipMargin',
+      { 'overflow-clip-margin': 'content-box 8px' },
+      { overflowClipMargin: '0px' },
+      'content-box 4px',
+    ],
+  ] as const)(
+    'should unset the serialized output of invalid %s aliases',
+    async (property, before, initial, valid) => {
+      const node = (style: Record<string, string>) => (
+        <div
+          style={{ display: 'flex', width: 100, height: 100, '--value': valid }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              width: 40,
+              height: 40,
+              background: 'red',
+            }}
+          />
+          <div
+            style={{
+              width: 40,
+              height: 60,
+              fontSize: 16,
+              padding: 12,
+              overflow: 'clip',
+              background: 'linear-gradient(red, blue)',
+              ...style,
+            }}
+          >
+            abcdefghijklmnopqrstuv
+          </div>
+        </div>
+      )
+      for (const [value, resolved] of [
+        ['var(--missing)', false],
+        ['var(--invalid)', false],
+        ['var(--missing,)', false],
+        ['env(unknown)', false],
+        ['env(unknown,)', false],
+        [`var(--missing, ${valid})`, true],
+        [`env(unknown, ${valid})`, true],
+        ['var(--value)', true],
+        ['var(--local)', true],
+      ] as const) {
+        for (const first of [true, false]) {
+          const style = first
+            ? { ...before, [property]: value }
+            : { [property]: value, ...before }
+          const expected = resolved
+            ? first
+              ? { ...before, [property]: valid }
+              : { [property]: valid, ...before }
+            : first
+            ? { ...before, ...initial }
+            : before
+          expect(
+            await render(
+              node({ '--invalid': 'initial', '--local': valid, ...style })
+            )
+          ).toBe(await render(node(expected)))
+        }
+      }
+    }
+  )
+
   it('should ignore invalid substitutions in unknown properties', async () => {
     const box = { width: 20, height: 20, background: 'red' }
     for (const property of ['unknownProperty', 'constructor', 'toString']) {
