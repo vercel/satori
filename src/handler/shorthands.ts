@@ -35,6 +35,11 @@ const LONGHANDS: Record<string, string[]> = {
     'borderBottomRightRadius',
     'borderBottomLeftRadius',
   ],
+  cornerShape: sides('corner', 'Shape'),
+  cornerTopShape: ['cornerTopLeftShape', 'cornerTopRightShape'],
+  cornerRightShape: ['cornerTopRightShape', 'cornerBottomRightShape'],
+  cornerBottomShape: ['cornerBottomLeftShape', 'cornerBottomRightShape'],
+  cornerLeftShape: ['cornerTopLeftShape', 'cornerBottomLeftShape'],
   borderImage: [
     'borderImageSource',
     'borderImageSlice',
@@ -113,15 +118,18 @@ const LONGHANDS: Record<string, string[]> = {
     'maskComposite',
     'maskMode',
   ],
+  WebkitMask: ['mask'],
   // Satori stores these shorthands as its own longhands.
   textShadow: ['textShadowOffset', 'textShadowColor', 'textShadowRadius'],
   WebkitTextStroke: ['WebkitTextStrokeWidth', 'WebkitTextStrokeColor'],
 }
 
 const cache = new Map<string, Set<string>>()
+const empty = new Set<string>()
 
 /** The longhands of a property, recursively, if it's a shorthand. */
 export function getLonghands(prop: string): Set<string> {
+  if (!Object.prototype.hasOwnProperty.call(LONGHANDS, prop)) return empty
   let longhands = cache.get(prop)
   if (!longhands) {
     longhands = new Set()

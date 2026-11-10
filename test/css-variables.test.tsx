@@ -57,6 +57,249 @@ describe('CSS Variables', () => {
     )
   })
 
+  it.each(['padding', 'margin'])(
+    'should unset invalid %s longhands after a shorthand',
+    async (property) => {
+      const sides = ['Top', 'Right', 'Bottom', 'Left']
+      const values = [
+        ['var(--missing)', 0],
+        ['var(--invalid)', 0],
+        ['var(--missing,)', 0],
+        ['env(unknown)', 0],
+        ['env(unknown,)', 0],
+        ['var(--missing, 8px)', 8],
+        ['env(unknown, 8px)', 8],
+        ['var(--space)', 8],
+        ['var(--local)', 6],
+      ] as const
+      const node = (style: Record<string, string | number>) => (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            '--space': '8px',
+          }}
+        >
+          <div style={{ display: 'flex', background: 'green' }}>
+            <div
+              style={{
+                display: 'flex',
+                background: 'red',
+                '--invalid': 'initial',
+                '--local': '6px',
+                ...style,
+              }}
+            >
+              <div style={{ width: 10, height: 10, background: 'blue' }} />
+            </div>
+          </div>
+        </div>
+      )
+      for (const length of [24, 32]) {
+        for (const side of sides) {
+          const longhand = property + side
+          for (const [value, initial] of values) {
+            for (const shorthandFirst of [true, false]) {
+              const style = shorthandFirst
+                ? { [property]: `${length}px`, [longhand]: value }
+                : { [longhand]: value, [property]: `${length}px` }
+              // Chromium computes the invalid longhand to 0px, not the shorthand's side.
+              const expected = Object.fromEntries(
+                sides.map((edge) => [property + edge, `${length}px`])
+              )
+              expected[longhand] = `${shorthandFirst ? initial : length}px`
+              expect(await render(node(style))).toBe(
+                await render(node(expected))
+              )
+            }
+          }
+        }
+      }
+    }
+  )
+
+  it.each([
+    [
+      'borderLeftWidth',
+      { border: '12px solid red' },
+      { borderLeftWidth: 3 },
+      '8px',
+    ],
+    [
+      'borderLeftStyle',
+      { border: '12px solid red' },
+      { borderLeftStyle: 'none' },
+      'dashed',
+    ],
+    [
+      'borderLeft',
+      { border: '12px solid red' },
+      { borderLeft: 'none' },
+      '8px dashed blue',
+    ],
+    ['left', { inset: '32px' }, { left: 'auto' }, '8px'],
+    ['columnGap', { gap: 32 }, { columnGap: 0 }, '8px'],
+    ['rowGap', { gap: 32 }, { rowGap: 0 }, '8px'],
+    ['padding', { paddingLeft: 32 }, { paddingLeft: 0 }, '8px'],
+    ['margin', { marginLeft: 32 }, { marginLeft: 0 }, '8px'],
+    [
+      'border',
+      { borderWidth: 12, borderStyle: 'solid', borderColor: 'red' },
+      { borderWidth: 0, borderStyle: 'none', borderColor: 'black' },
+      '8px dashed blue',
+    ],
+  ] as const)(
+    'should unset every longhand of an invalid %s declaration',
+    async (property, before, initial, valid) => {
+      const node = (style: Record<string, string | number>) => (
+        <div
+          style={{
+            display: 'flex',
+            position: 'relative',
+            width: 600,
+            height: 300,
+            '--space': valid,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: property === 'rowGap' ? 'column' : 'row',
+              position: 'absolute',
+              width: 100,
+              height: 200,
+              background: 'green',
+              ...style,
+            }}
+          >
+            <div
+              style={{
+                width: 20,
+                height: 20,
+                flexShrink: 0,
+                background: 'blue',
+              }}
+            />
+            <div
+              style={{
+                width: 20,
+                height: 20,
+                flexShrink: 0,
+                background: 'red',
+              }}
+            />
+          </div>
+        </div>
+      )
+      const values = [
+        ['var(--missing)', false],
+        ['var(--invalid)', false],
+        ['var(--missing,)', false],
+        ['env(unknown)', false],
+        ['env(unknown,)', false],
+        [`var(--missing, ${valid})`, true],
+        [`env(unknown, ${valid})`, true],
+        ['var(--space)', true],
+        ['var(--local)', true],
+      ] as const
+      for (const [value, resolved] of values) {
+        for (const shorthandFirst of [true, false]) {
+          const declarations = shorthandFirst
+            ? { ...before, [property]: value }
+            : { [property]: value, ...before }
+          // Chromium's computed values: only the invalid declaration is unset.
+          const expected = resolved
+            ? shorthandFirst
+              ? { ...before, [property]: valid }
+              : { [property]: valid, ...before }
+            : shorthandFirst
+            ? { ...before, ...initial }
+            : before
+          expect(
+            await render(
+              node({
+                '--invalid': 'initial',
+                '--local': valid,
+                ...declarations,
+              }),
+              { width: 600, height: 300 }
+            )
+          ).toBe(await render(node(expected), { width: 600, height: 300 }))
+        }
+      }
+    }
+  )
+
+  it.each([
+    [
+      {
+        borderRadius: 24,
+        cornerTopLeftShape: 'bevel',
+        cornerShape: 'var(--missing)',
+      },
+      { borderRadius: 24 },
+    ],
+    [
+      {
+        maskImage: 'linear-gradient(transparent, transparent)',
+        WebkitMask: 'var(--missing)',
+      },
+      {},
+    ],
+  ])(
+    'should unset expanded corners and mask aliases',
+    async (style, initial) => {
+      const box = { width: 60, height: 60, background: 'red' }
+      expect(await render(<div style={{ ...box, ...style } as any} />)).toBe(
+        await render(<div style={{ ...box, ...initial }} />)
+      )
+    }
+  )
+
+  it('should ignore invalid substitutions in unknown properties', async () => {
+    const box = { width: 20, height: 20, background: 'red' }
+    for (const property of ['unknownProperty', 'constructor', 'toString']) {
+      expect(
+        await render(<div style={{ ...box, [property]: 'var(--missing)' }} />)
+      ).toBe(await render(<div style={box} />))
+    }
+  })
+
+  it.each([24, 32])(
+    'should unset optional theme padding in a %spx OG card',
+    async (padding) => {
+      const card = (theme: boolean, resolved: boolean) => (
+        <div
+          style={{
+            display: 'flex',
+            '--theme-space': theme ? '8px' : 'initial',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              width: 600,
+              height: 300,
+              padding,
+              paddingLeft: resolved ? (theme ? 8 : 0) : 'var(--theme-space)',
+              background: '#fafafa',
+            }}
+          >
+            <div style={{ fontSize: 32 }}>A new release</div>
+            <div style={{ fontSize: 20 }}>Build something great.</div>
+          </div>
+        </div>
+      )
+      for (const theme of [false, true]) {
+        expect(
+          await render(card(theme, false), { width: 600, height: 300 })
+        ).toBe(await render(card(theme, true), { width: 600, height: 300 }))
+      }
+    }
+  )
+
   it('should support empty fallbacks of variables', async () => {
     const box = { display: 'flex', width: 20, height: 20, background: 'red' }
     expect(

@@ -18,6 +18,7 @@ import {
   isColor,
 } from '../parser/color.js'
 import valueParser from 'postcss-value-parser'
+import { getLonghands } from './shorthands.js'
 
 import parseTransformOrigin, {
   ParsedTransformOrigin,
@@ -1230,6 +1231,11 @@ export default function expand(
           !resolvedValue.trim() &&
           resolvedValue !== processableStyle[prop])
       ) {
+        // Unset this declaration, not an earlier value it overrides.
+        delete serializedStyle[name]
+        for (const longhand of getLonghands(name)) {
+          delete serializedStyle[longhand]
+        }
         continue
       }
       // Colors are converted to be parsed. When they're kept, the converted
