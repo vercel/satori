@@ -552,6 +552,14 @@ function handleSpecialCase(
     return { tabSize: typeof value === 'number' ? value : String(value).trim() }
   }
 
+  if (name === 'fontSynthesis') {
+    const keywords = String(value).split(/\s+/)
+    return {
+      fontSynthesisWeight: keywords.includes('weight') ? 'auto' : 'none',
+      fontSynthesisStyle: keywords.includes('style') ? 'auto' : 'none',
+    }
+  }
+
   if (name === 'fontFamily') {
     return {
       fontFamily: (value as string).split(',').map((_v) => {
@@ -1216,7 +1224,10 @@ export default function expand(
         continue
       }
 
-      const name = getPropertyName(prop)
+      const name = getPropertyName(prop).replace(
+        /^WebkitMask(Image|Position|Size|Repeat|Origin|Clip|Composite|Mode)$/,
+        (_, part) => 'mask' + part
+      )
       // Resolve CSS variables before preprocessing
       const resolvedValue = resolveVariables(
         processableStyle[prop],

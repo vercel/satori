@@ -257,6 +257,83 @@ describe('CSS Variables', () => {
     }
   )
 
+  it.each(['fontSynthesisWeight', 'fontSynthesisStyle'])(
+    'should inherit an invalid %s without keeping the synthesis shorthand',
+    async (property) => {
+      const node = (style: Record<string, string>, inherited: string) => (
+        <div style={{ fontSynthesis: inherited, '--synthesis': 'auto' }}>
+          <span
+            style={{
+              fontSize: 32,
+              fontWeight: 700,
+              fontStyle: 'italic',
+              ...style,
+            }}
+          >
+            Spacing
+          </span>
+        </div>
+      )
+      for (const inherited of ['weight style', 'none']) {
+        for (const [value, resolved] of [
+          ['var(--missing)', false],
+          ['var(--missing,)', false],
+          ['env(unknown)', false],
+          ['env(unknown,)', false],
+          ['var(--missing, auto)', true],
+          ['var(--synthesis)', true],
+        ] as const) {
+          for (const shorthandFirst of [true, false]) {
+            const style = shorthandFirst
+              ? { fontSynthesis: 'none', [property]: value }
+              : { [property]: value, fontSynthesis: 'none' }
+            expect(await render(node(style, inherited))).toBe(
+              await render(
+                node(
+                  {
+                    fontSynthesis: 'none',
+                    [property]:
+                      shorthandFirst && (resolved || inherited !== 'none')
+                        ? 'auto'
+                        : 'none',
+                  },
+                  inherited
+                )
+              )
+            )
+          }
+        }
+      }
+    }
+  )
+
+  it.each(['maskImage', 'WebkitMaskImage'])(
+    'should unset %s after its other spelling',
+    async (property) => {
+      const other = property === 'maskImage' ? 'WebkitMaskImage' : 'maskImage'
+      const box = { width: 60, height: 60, background: 'red' }
+      for (const value of [
+        'var(--missing)',
+        'var(--missing,)',
+        'env(unknown)',
+      ]) {
+        const svg = await render(
+          <div
+            style={{
+              ...box,
+              [other]: 'linear-gradient(black 50%, transparent 50%)',
+              [property]: value,
+            }}
+          />
+        )
+        // Initial masking and explicit none paint alike, with different unused URLs.
+        expect(await toImage(svg)).toEqual(
+          await toImage(await render(<div style={box} />))
+        )
+      }
+    }
+  )
+
   it('should ignore invalid substitutions in unknown properties', async () => {
     const box = { width: 20, height: 20, background: 'red' }
     for (const property of ['unknownProperty', 'constructor', 'toString']) {
