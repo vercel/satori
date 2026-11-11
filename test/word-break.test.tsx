@@ -280,5 +280,37 @@ describe('word-break', () => {
       )
       expect(await toImage(svg, 200)).toMatchImageSnapshot()
     })
+
+    it('should break words after forced breaks without empty lines', async () => {
+      const word = 'Supercalifragilisticexpialidocious'
+      const svg = await satori(
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 6,
+            padding: 4,
+            alignItems: 'flex-start',
+          }}
+        >
+          {box(
+            { overflowWrap: 'break-word', whiteSpace: 'pre-line' },
+            `Short\n${word}`
+          )}
+          {box(
+            { overflowWrap: 'break-word', whiteSpace: 'pre-line' },
+            `\n${word}`
+          )}
+          {box({ overflowWrap: 'break-word' }, ['Short', <br />, word])}
+          {box({ overflowWrap: 'break-word', textAlign: 'justify' }, [
+            'Short words',
+            <br />,
+            <span style={{ color: 'red' }}>{word}</span>,
+          ])}
+        </div>,
+        { width: 300, height: 140, fonts }
+      )
+      expect(await toImage(svg, 300)).toMatchImageSnapshot()
+    })
   })
 })
