@@ -364,4 +364,196 @@ describe('Text Indent', () => {
     )
     expect(await toImage(svg, 200)).toMatchImageSnapshot()
   })
+
+  it('Should indent the lines after the first with hanging', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 20,
+          fontWeight: 600,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            maxWidth: '190px',
+            textIndent: '40px hanging',
+            backgroundColor: '#ff6c2f',
+            color: 'white',
+          }}
+        >
+          This is a multiline text that should have every line but the first
+          indented by 40 pixels
+        </div>
+      </div>,
+      { width: 200, height: 200, fonts, embedFont: true }
+    )
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
+  })
+
+  it('Should indent the lines after forced breaks with each-line', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 20,
+          fontWeight: 600,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            maxWidth: '190px',
+            whiteSpace: 'pre-line',
+            textIndent: 'each-line 30px',
+            backgroundColor: '#ff6c2f',
+            color: 'white',
+          }}
+        >
+          {
+            'The first line is indented\nand so is the first line after a line break'
+          }
+        </div>
+      </div>,
+      { width: 200, height: 200, fonts, embedFont: true }
+    )
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
+  })
+
+  it('Should only indent wrapped lines with hanging and each-line', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 20,
+          fontWeight: 600,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            maxWidth: '190px',
+            whiteSpace: 'pre-line',
+            textIndent: 'hanging each-line 30px',
+            backgroundColor: '#ff6c2f',
+            color: 'white',
+          }}
+        >
+          {
+            'Only the lines that wrap are indented\nnot those after a line break'
+          }
+        </div>
+      </div>,
+      { width: 200, height: 200, fonts, embedFont: true }
+    )
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
+  })
+
+  it('Should support hanging and each-line with inline elements', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 20,
+          fontWeight: 600,
+        }}
+      >
+        <div
+          style={{
+            display: 'block',
+            width: '190px',
+            textIndent: '30px each-line hanging',
+            backgroundColor: '#ff6c2f',
+            color: 'white',
+          }}
+        >
+          Only the lines that <span style={{ color: 'black' }}>wrap</span> are
+          indented
+          <br />
+          not those after a line break
+        </div>
+      </div>,
+      { width: 200, height: 200, fonts, embedFont: true }
+    )
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
+  })
+
+  it('Should break words wider than the line beside its indent', async () => {
+    const svg = await satori(
+      <div
+        style={{
+          height: '100%',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+          fontSize: 20,
+          fontWeight: 600,
+        }}
+      >
+        <div
+          style={{
+            display: 'block',
+            width: '190px',
+            overflowWrap: 'break-word',
+            textIndent: '60px hanging',
+            backgroundColor: '#ff6c2f',
+            color: 'white',
+          }}
+        >
+          A long word: Supercalifragilistic
+        </div>
+      </div>,
+      { width: 200, height: 200, fonts, embedFont: true }
+    )
+    expect(await toImage(svg, 200)).toMatchImageSnapshot()
+  })
+
+  it('Should ignore values with repeated keywords or without a length', async () => {
+    const render = (textIndent: string) =>
+      satori(
+        <div
+          style={{
+            display: 'flex',
+            width: '190px',
+            fontSize: 20,
+            textIndent,
+          }}
+        >
+          This is a multiline text that should not be indented
+        </div>,
+        { width: 200, height: 200, fonts, embedFont: true }
+      )
+    const unindented = await render('0px')
+    expect(await render('hanging')).toBe(unindented)
+    expect(await render('each-line hanging')).toBe(unindented)
+    expect(await render('20px hanging hanging')).toBe(unindented)
+  })
 })

@@ -33,6 +33,8 @@ import { genMeasurer } from './measurer.js'
 import {
   getTabAdvance,
   getTabWidth,
+  isIndentedLine,
+  parseTextIndent,
   preprocess,
   resolveTextAlign,
 } from './processor.js'
@@ -135,13 +137,16 @@ export default async function* buildTextNodes(
   const align = resolveTextAlign(textAlign, parentStyle.direction)
   const needsBidi = isRTL || hasRTL(processedContent)
 
-  // The indent of the first line, at its start. Percentages are of the width
-  // the text is laid out in, and of 0 for its max-content size.
+  // The indent of the indented lines, at their start, see `isIndentedLine()`.
+  // Percentages are of the width the text is laid out in, and of 0 for its
+  // max-content size.
+  const parsedTextIndent = parseTextIndent(textIndent)
   const getIndent = (width: number) => {
+    const { length } = parsedTextIndent
     const indent =
-      typeof textIndent === 'string'
-        ? lengthToNumber(textIndent, fontSize, width, parentStyle, true)
-        : textIndent
+      typeof length === 'string'
+        ? lengthToNumber(length, fontSize, width, parentStyle, true)
+        : length
     return Number.isFinite(indent) ? (indent as number) : 0
   }
 
@@ -242,6 +247,8 @@ export default async function* buildTextNodes(
   // Global variables used to compute the text layout.
   // @TODO: Use segments instead of words to properly support kerning.
   let lineWidths = []
+  // Whether each line is indented.
+  let lineIndented: boolean[] = []
   let baselines = []
   let lastBaseline: number | undefined
   let lineSegmentNumber = []
@@ -271,6 +278,7 @@ export default async function* buildTextNodes(
     let currentBaselineOffset = 0
 
     lineWidths = []
+    lineIndented = []
     baselines = []
     lineSegmentNumber = [0]
     texts = []
@@ -281,10 +289,16 @@ export default async function* buildTextNodes(
     const words = segmentedWords.slice()
     const requiredBreaks = segmentedRequiredBreaks.slice()
 
-    // The first line is shorter by the indent. Tab stops are from the start
+    // Indented lines are shorter by the indent. Tab stops are from the start
     // of the container, before the indent.
     const indent = getIndent(width)
-    const lineIndent = () => (lines === 0 ? indent : 0)
+    const indentOf = (line: number, afterForcedBreak: boolean) =>
+      isIndentedLine(line, afterForcedBreak, parsedTextIndent) ? indent : 0
+    // Whether the current line starts after a forced break.
+    let afterForcedBreak = false
+    const isIndented = () =>
+      isIndentedLine(lines, afterForcedBreak, parsedTextIndent)
+    const lineIndent = () => (isIndented() ? indent : 0)
 
     // We naively implement the width calculation without proper kerning.
     // @TODO: Support different writing modes.
@@ -329,13 +343,18 @@ export default async function* buildTextNodes(
 
       // Need to break the word if:
       // - we have break-word
-      // - the word is wider than the container width
+      // - the word is wider than the container width beside the indent of
+      //   its line, the next one if it wraps or follows a forced break
       // - the word will be put at the beginning of the line
       // A single grapheme can't be broken, even if it's wider than the
       // container, e.g. when measuring the min-content width.
+      const wordLineIndent =
+        willWrap || forceBreak
+          ? indentOf(lines + 1, !!forceBreak)
+          : lineIndent()
       const needToBreakWord =
         (measuringMinContent ? allowBreakWordInMinContent : allowBreakWord) &&
-        w > width - lineIndent() &&
+        w > width - wordLineIndent &&
         (!currentWidth || willWrap || forceBreak)
       const chars = needToBreakWord ? segment(word, 'grapheme') : undefined
 
@@ -351,8 +370,10 @@ export default async function* buildTextNodes(
         if (currentWidth > 0) {
           // Start a new line, spaces can be ignored.
           lineWidths.push(currentWidth - prevLineEndingSpacesWidth)
+          lineIndented.push(isIndented())
           baselines.push(currentBaselineOffset)
           lines++
+          afterForcedBreak = !!forceBreak
           height += currentLineHeight
           currentWidth = 0
           currentLineHeight = 0
@@ -364,16 +385,19 @@ export default async function* buildTextNodes(
         continue
       }
       if (forceBreak || willWrap) {
+        lineWidths.push(currentWidth - prevLineEndingSpacesWidth)
+        lineIndented.push(isIndented())
+        baselines.push(currentBaselineOffset)
+        lines++
+        afterForcedBreak = !!forceBreak
+
         // Start a new line, spaces can be ignored.
         if (shouldCollapseTabsAndSpaces && word === Space) {
           w = 0
         } else if (word.includes(Tab)) {
-          w = calc(word, 0).originWidth
+          w = calc(word, lineIndent()).originWidth
         }
 
-        lineWidths.push(currentWidth - prevLineEndingSpacesWidth)
-        baselines.push(currentBaselineOffset)
-        lines++
         height += currentLineHeight
         currentWidth = w
         currentLineHeight = w ? Math.round(engine.height(word)) : 0
@@ -469,6 +493,7 @@ export default async function* buildTextNodes(
       if (lines < lineLimit) {
         height += currentLineHeight
       }
+      lineIndented.push(isIndented())
       lines++
       lineWidths.push(currentWidth)
       baselines.push(currentBaselineOffset)
@@ -662,7 +687,7 @@ export default async function* buildTextNodes(
         const remainingWidth =
           containerWidth -
           lineWidths[line] -
-          (line === 0 ? textIndentNumber : 0)
+          (lineIndented[line] ? textIndentNumber : 0)
         const gutter = gaps ? remainingWidth / gaps : 0
         let count = 0
         order.forEach((index, k) => {
@@ -678,11 +703,11 @@ export default async function* buildTextNodes(
   type PlacedPiece = NonNullable<typeof wordPositionInLayout[number]>
 
   // Where a piece is drawn in the container, after its line is indented and
-  // aligned, and the left of its line. The first line is aligned beside its
+  // aligned, and the left of its line. Indented lines are aligned beside the
   // indent.
   function placePiece(layout: PlacedPiece) {
     const { line } = layout
-    const indent = line === 0 ? textIndentNumber : 0
+    const indent = lineIndented[line] ? textIndentNumber : 0
     const remainingWidth = containerWidth - lineWidths[line] - indent
     const isJustified = align === 'justify' && line < lineWidths.length - 1
 
@@ -976,7 +1001,7 @@ export default async function* buildTextNodes(
         top: top + topOffset + baselineDelta,
         ascender: baselineOfWord,
         width: extendedWidth
-          ? containerWidth - (line === 0 ? textIndentNumber : 0)
+          ? containerWidth - (lineIndented[line] ? textIndentNumber : 0)
           : lineWidths[line],
       }
     }
