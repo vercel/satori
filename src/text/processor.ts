@@ -355,6 +355,54 @@ export function resolveTextAlign(
   }
 }
 
+export interface TextIndent {
+  /** The length or percentage, without the keywords. */
+  length: number | string
+  hanging: boolean
+  eachLine: boolean
+}
+
+/**
+ * Splits `textIndent` into its length and its `hanging` and `each-line`
+ * keywords, which can be in any order. A value with a repeated keyword or
+ * without a length is invalid, and like other invalid values indents nothing.
+ * https://drafts.csswg.org/css-text-3/#text-indent-property
+ */
+export function parseTextIndent(textIndent: unknown): TextIndent {
+  if (!isString(textIndent)) {
+    return {
+      length: typeof textIndent === 'number' ? textIndent : 0,
+      hanging: false,
+      eachLine: false,
+    }
+  }
+  const keywords: string[] = []
+  const length = textIndent
+    .replace(/(^|\s)(hanging|each-line)(?=\s|$)/gi, (_, space, keyword) => {
+      keywords.push(keyword.toLowerCase())
+      return space
+    })
+    .trim()
+  const hanging = keywords.includes('hanging')
+  const eachLine = keywords.includes('each-line')
+  if (!length || keywords.length !== +hanging + +eachLine) {
+    return { length: 0, hanging: false, eachLine: false }
+  }
+  return { length, hanging, eachLine }
+}
+
+/**
+ * Whether a line is indented: the first line, and with `each-line` the lines
+ * after forced breaks. `hanging` indents the other lines instead.
+ */
+export function isIndentedLine(
+  line: number,
+  afterForcedBreak: boolean,
+  { hanging, eachLine }: TextIndent
+) {
+  return (line === 0 || (eachLine && afterForcedBreak)) !== hanging
+}
+
 /** The distance between tab stops, from `tabSize`. */
 export function getTabWidth(style: SerializedStyle, spaceWidth: number) {
   const tabSize = style.tabSize ?? 8

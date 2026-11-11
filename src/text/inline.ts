@@ -42,6 +42,8 @@ import {
   canBreakWords,
   getTabAdvance,
   getTabWidth,
+  isIndentedLine,
+  parseTextIndent,
   preprocess,
   processTextTransform,
   resolveTextAlign,
@@ -158,6 +160,8 @@ interface Line {
   top: number
   /** Where the line starts, beside floats on the left. */
   left: number
+  /** The indent of the line, after `left`. */
+  indent: number
   /** The width for the content of the line, beside floats and the indent. */
   available: number
   /** The distance of the baseline from the top. */
@@ -835,8 +839,9 @@ export class Paragraph {
     const allowBreakWord = minContent
       ? breakWords.allowBreakWordInMinContent
       : breakWords.allowBreakWord
-    // The first line is shorter by the indent.
-    const indent = toNumber(this.style.textIndent, this.style, containerWidth)
+    // Indented lines are shorter by the indent.
+    const textIndent = parseTextIndent(this.style.textIndent)
+    const indent = toNumber(textIndent.length, this.style, containerWidth)
 
     // Line heights include the strut of the container.
     const strut = this.engine(this.style)
@@ -865,7 +870,7 @@ export class Paragraph {
       }
       line.top = top
       line.left = left
-      line.available = width - left - right - (lines.length === 1 ? indent : 0)
+      line.available = width - left - right - line.indent
     }
     // The next position below `top` where floats end.
     const nextFloatBottom = (top: number) => {
@@ -924,7 +929,7 @@ export class Paragraph {
       top = current.top + current.height
     }
 
-    const newLine = (): Line => {
+    const newLine = (afterForcedBreak: boolean): Line => {
       if (line) finishLine(line)
       const created: Line = {
         words: [],
@@ -932,6 +937,9 @@ export class Paragraph {
         trailing: 0,
         top: 0,
         left: 0,
+        indent: isIndentedLine(lines.length, afterForcedBreak, textIndent)
+          ? indent
+          : 0,
         available: width,
         baseline: 0,
         height: 0,
@@ -944,21 +952,21 @@ export class Paragraph {
     for (let i = 0; i < words.length; i++) {
       const word = words[i]
       if (!line || (i > 0 && word.forceBreak)) {
-        line = newLine()
+        line = newLine(i > 0 && word.forceBreak)
       } else {
-        placeTabs(word, line.width + (lines.length === 1 ? indent : 0))
+        placeTabs(word, line.width + line.indent)
         if (
           line.words.length &&
           canBreak &&
           line.width + word.width - word.trailing >
             Math.min(line.available, limit) + 1e-3
         ) {
-          line = newLine()
+          line = newLine(false)
           wrapped = true
         }
       }
       if (!line.words.length) {
-        placeTabs(word, lines.length === 1 ? indent : 0)
+        placeTabs(word, line.indent)
       }
 
       // A line that doesn't fit beside floats moves down until it does.
@@ -996,9 +1004,8 @@ export class Paragraph {
     lines.forEach((current, index) => {
       // Align the line.
       const lineWidth = current.width - current.trailing
-      const lineIndent = index === 0 ? indent : 0
-      maxWidth = Math.max(maxWidth, current.left + lineWidth + lineIndent)
-      let x = current.left + lineIndent
+      maxWidth = Math.max(maxWidth, current.left + lineWidth + current.indent)
+      let x = current.left + current.indent
       let gap = 0
       if (Number.isFinite(width)) {
         const remaining = current.available - lineWidth

@@ -328,7 +328,7 @@ Satori uses [Taffy](https://github.com/DioxusLabs/taffy) to lay out Flexbox, Gri
 <tr><td><code>direction</code></td><td>Also set by the <code>dir</code> attribute, except for <code>auto</code>. With <code>rtl</code>, flex rows, grid columns, block boxes and lines of text start at the right. Lines with inline elements in them are aligned, but their content isn't reordered yet. <code>unicodeBidi</code> isn't supported</td><td></td></tr>
 <tr><td><code>tabSize</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>textAlign</code></td><td><code>start</code> and <code>end</code> follow <code>direction</code>. <code>match-parent</code> isn't supported</td><td></td></tr>
-<tr><td><code>textIndent</code></td><td>Supported except for the <code>hanging</code> and <code>each-line</code> keywords</td><td></td></tr>
+<tr><td><code>textIndent</code></td><td>Supported</td><td></td></tr>
 <tr><td><code>verticalAlign</code></td><td><code>middle</code>, <code>top</code>, <code>bottom</code>, <code>text-top</code> and <code>text-bottom</code> only apply to images and other atomic inlines, not to inline elements</td><td></td></tr>
 <tr><td><code>textTransform</code></td><td>Supported. <code>full-width</code> and <code>full-size-kana</code> are also supported, which Chrome doesn't support yet</td><td></td></tr>
 <tr><td><code>textOverflow</code></td><td><code>ellipsis</code> only applies to text without inline elements in it</td><td></td></tr>
