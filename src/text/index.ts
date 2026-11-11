@@ -340,15 +340,18 @@ export default async function* buildTextNodes(
       const chars = needToBreakWord ? segment(word, 'grapheme') : undefined
 
       if (chars && chars.length > 1) {
-        // Break the word into multiple segments and continue the loop.
+        // Break the word into multiple segments and continue the loop. When
+        // the word starts a new line here, its first segment is at the start
+        // of that line, so it doesn't force another break.
+        const startsLine = currentWidth > 0
         words.splice(i, 1, ...chars)
         requiredBreaks.splice(
           i,
           1,
-          forceBreak,
+          forceBreak && !startsLine,
           ...chars.slice(1).map(() => false)
         )
-        if (currentWidth > 0) {
+        if (startsLine) {
           // Start a new line, spaces can be ignored.
           lineWidths.push(currentWidth - prevLineEndingSpacesWidth)
           baselines.push(currentBaselineOffset)

@@ -943,7 +943,9 @@ export class Paragraph {
 
     for (let i = 0; i < words.length; i++) {
       const word = words[i]
-      if (!line || (i > 0 && word.forceBreak)) {
+      // The first part of a broken word keeps its forced break, e.g. for
+      // `justify`, but is on the line that the word started, which is empty.
+      if (!line || (i > 0 && word.forceBreak && line.words.length)) {
         line = newLine()
       } else {
         placeTabs(word, line.width + (lines.length === 1 ? indent : 0))
