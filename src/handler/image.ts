@@ -149,10 +149,44 @@ export const inflightRequests = new Map<string, Promise<ResolvedImageData>>()
 const ALLOWED_IMAGE_TYPES = [PNG, APNG, JPEG, GIF, SVG, WEBP]
 
 // Pre-compiled regex patterns for SVG parsing
-const SVG_ATTRS_REGEX = /<svg[^>]*>/i
 const VIEWBOX_REGEX = /viewBox=['"]([^'"]+)['"]/
 const WIDTH_REGEX = /\swidth=['"]((?:\d+(?:\.\d+)?|\.\d+))(?:px)?['"]/
 const HEIGHT_REGEX = /\sheight=['"]((?:\d+(?:\.\d+)?|\.\d+))(?:px)?['"]/
+
+// Find the opening tag once instead of retrying an unbounded match at each
+// `<svg` when the closing `>` is missing. Keep case-insensitive matching.
+function getSvgTag(data: string) {
+  const start = data.search(/<svg/i)
+  if (start === -1) return null
+  const end = data.indexOf('>', start + 4)
+  return end === -1 ? null : data.slice(start, end + 1)
+}
+
+function parseDataUri(src: string) {
+  const comma = src.indexOf(',')
+  if (comma === -1) return null
+
+  // Only metadata precedes the first comma; the payload can contain commas.
+  const [imageType, ...parameters] = src.slice(5, comma).split(';')
+  if (!/^[a-z/+]+$/.test(imageType)) return null
+
+  // Preserve the optional terminal encoding (base64, utf8, etc.) and the
+  // existing name=value parameters, without backtracking across the payload.
+  const encodingType = parameters.pop()
+  if (encodingType === '') return null
+  for (const parameter of parameters) {
+    const equals = parameter.indexOf('=')
+    if (
+      equals <= 0 ||
+      equals === parameter.length - 1 ||
+      parameter.indexOf('=', equals + 1) !== -1
+    ) {
+      return null
+    }
+  }
+
+  return { imageType, encodingType, dataString: src.slice(comma + 1) }
+}
 
 /**
  * Whether an image has a size. An SVG without `width` and `height` only has
@@ -169,7 +203,7 @@ export function hasIntrinsicSize(src: string) {
   } catch {
     return true
   }
-  const tag = data.match(SVG_ATTRS_REGEX)?.[0]
+  const tag = getSvgTag(data)
   return !tag || WIDTH_REGEX.test(tag) || HEIGHT_REGEX.test(tag)
 }
 
@@ -198,10 +232,9 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
 
 function parseSvgImageSize(src: string, data: string) {
   // Parse the SVG image size
-  const svgMatch = data.match(SVG_ATTRS_REGEX)
-  if (!svgMatch) throw new Error(`Failed to parse SVG from ${src}`)
+  const svgTag = getSvgTag(data)
+  if (!svgTag) throw new Error(`Failed to parse SVG from ${src}`)
 
-  const svgTag = svgMatch[0]
   const viewBoxMatch = VIEWBOX_REGEX.exec(svgTag)
   const widthMatch = WIDTH_REGEX.exec(svgTag)
   const heightMatch = HEIGHT_REGEX.exec(svgTag)
@@ -294,14 +327,8 @@ export async function resolveImageData(
   }
 
   if (src.startsWith('data:')) {
-    let decodedURI: { imageType; encodingType; dataString }
-
-    try {
-      decodedURI =
-        /data:(?<imageType>[a-z/+]+)(;[^;=]+=[^;=]+)*?(;(?<encodingType>[^;,]+))?,(?<dataString>.*)/g.exec(
-          src
-        ).groups as typeof decodedURI
-    } catch (err) {
+    const decodedURI = parseDataUri(src)
+    if (!decodedURI) {
       console.warn('Image data URI resolved without size:' + src)
       return [src]
     }
