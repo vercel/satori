@@ -2,6 +2,12 @@ import { it, describe, expect, beforeEach, afterEach, vi } from 'vitest'
 
 import { initFonts, toImage } from './utils.js'
 import satori from '../src/index.js'
+import {
+  cache,
+  hasIntrinsicSize,
+  inflightRequests,
+  resolveImageData,
+} from '../src/handler/image.js'
 
 const PNG_SAMPLE =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAPCAYAAADkmO9VAAAAAXNSR0IArs4c6QAAAIRlWElmTU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgEoAAMAAAABAAIAAIdpAAQAAAABAAAAWgAAAAAAAABIAAAAAQAAAEgAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAABSgAwAEAAAAAQAAAA8AAAAAVtc7bQAAAAlwSFlzAAALEwAACxMBAJqcGAAAAVlpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDYuMC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KGV7hBwAAA1FJREFUOBGNVFtME0EUnd3S3T5paamRxidoihRKRVGJkaDBRCFNiMkSP9QPiaHhgwRREwOGEUn8MfERIDEqMfxZEtEoSviQGh8Qg4YagQCipVIepdoWSh+03XFndRXkx/uxc+fOPWfO3nt3AfhtDGMTCf6VK3PFFRVTDADdGhyDEJEAAUI4z+7Mzmj1t6bwewhIIY5XPgkDICRYAMZ1Vmv0FkEsH5qcFKFd+bKRDwPUsa6uzT4BVNVZBbVJ2lMBScDPqtm65vzm54yNEXWUdyRwDomVYbL2doe8uDjYtrgYOUpRsUggEBxXK1H+lg3B8wJZU0/jHcmyuNr9w+1eCCxok8PJLYo3inWYDCLIKyWNRoZXOTNDq0pLqWyzWbQ8MoJCuSZasRQKB1sGiQMC4SxayhPLVN5t8gxkSM0MO/1OWU2ixorP096n8SUT2e2XWQh7k+rr8wNFRWc3arTKYplE5I2RbIKmpSrLd7enrdqkrdxXWJE25VJ7iFCi3nPDr/MpKXdoVu4MOV+7Ol1vg/og6bQ72aRftxdx9QMAoXVXFZJAYXqmcmfUuTRVKLIvyPI+b/X9kDbNP3o4p99fAooIMnpAv0cnl6fQYNF9/dXJ/msYa2+wJwD83RQcEBozYJtQDWnTDQpYW5aG2svD2oJw8nYDq8zNFROaFBkxMhrv9tTerj5+ugfktTkwlp8Agnty9mcU8IYfD0jgi9g+E7BE9lW1RmLRWb3ZpCRpWuy1Wucle3anqvzr67LGnj6wMUaq3DgU5wD8G2KOVTOEu81AyJeBlJSMijXJy7RCop1ou6Yaugv18aZGg+7chYxwWWYOBhuZBk7FXzIc48HYESwLwhinnSDePRsbLC3oi8/4LEvmg4Th8BFSGYvHfP39A/Hxb/dwvmd4+I8yAb9KIQ5yNUAdkBFj//smx2N2BxtGEf/o/KcXX6YTL6Pegvt1e590fB2yQeoghHGct9LWEPKHDQw/9VSuaWw6RwkWLXrNZA6d5NJRKlnGJV6VR7f6VQXSVU0RgnhF3LdLcJ173nXmYiyhPhGNBlxikdQx9/FmYyUEIeF8Jea//d7eMrXNBqQCAJMJ/r/rmqasTEAIcUCCk/rIj+OQ/7NAbg/XNEPA/QQBqVjfA25FYgAAAABJRU5ErkJggg=='
@@ -81,6 +87,110 @@ beforeEach(() => {
 
 afterEach(() => {
   delete globalThis.fetch
+})
+
+describe('Image source parsing', () => {
+  const toSvgUri = (svg: string) => `data:image/svg+xml;base64,${btoa(svg)}`
+
+  beforeEach(() => {
+    cache.clear()
+    inflightRequests.clear()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('should reject an unterminated SVG without rescanning each opening tag', async () => {
+    const src = toSvgUri('<svg'.repeat(40_000))
+    const start = performance.now()
+    await expect(
+      satori(<img src={src} width={100} height={100} />, {
+        width: 100,
+        height: 100,
+        fonts: [],
+      })
+    ).rejects.toThrow('Failed to parse SVG')
+    expect(hasIntrinsicSize(src)).toBe(true)
+    // Generous bound: the previous quadratic scan takes seconds per call.
+    expect(performance.now() - start).toBeLessThan(1000)
+  })
+
+  it('should handle unterminated fetched SVGs without rescanning', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    globalThis.fetch = vi.fn(async () => ({
+      headers: { get: () => 'image/svg+xml' },
+      text: async () => '<svg'.repeat(40_000),
+    })) as any
+    const start = performance.now()
+    // Public literal: no DNS lookup or actual network request.
+    await expect(
+      resolveImageData('https://8.8.8.8/unterminated.svg')
+    ).resolves.toEqual([])
+    expect(performance.now() - start).toBeLessThan(1000)
+  })
+
+  it('should preserve mixed-case SVG tags, preambles and long attributes', async () => {
+    const src = toSvgUri(
+      `<?xml version="1.0"?><SvG data-padding="${'x'.repeat(
+        10_000
+      )}" width="20" height="10"></SvG>`
+    )
+    await expect(resolveImageData(src)).resolves.toEqual([src, 20, 10])
+    expect(hasIntrinsicSize(src)).toBe(true)
+    expect(hasIntrinsicSize(toSvgUri('<SVG viewBox="0 0 20 10"/>'))).toBe(false)
+    await expect(resolveImageData(toSvgUri('not an SVG'))).rejects.toThrow(
+      'Failed to parse SVG'
+    )
+  })
+
+  it('should preserve data URI encodings, parameters and commas in payloads', async () => {
+    const svg = '<svg viewBox="0 0 20 10"><path d="M0,0 L20,10"/></svg>'
+    for (const metadata of [
+      'image/svg+xml',
+      'image/svg+xml;utf8',
+      'image/svg+xml;charset=utf-8',
+      'image/svg+xml;charset=utf-8;name=example;utf8',
+    ]) {
+      await expect(
+        resolveImageData(`data:${metadata},${svg}`)
+      ).resolves.toEqual([toSvgUri(svg), 20, 10])
+      await expect(
+        resolveImageData(`data:${metadata},${encodeURIComponent(svg)}`)
+      ).resolves.toEqual([toSvgUri(svg), 20, 10])
+    }
+    for (const metadata of [
+      'image/svg+xml;base64',
+      'image/svg+xml;charset=utf-8;base64',
+      `image/svg+xml${';a=b'.repeat(10_000)};base64`,
+    ]) {
+      const src = `data:${metadata},${btoa(svg)}`
+      await expect(resolveImageData(src)).resolves.toEqual([src, 20, 10])
+    }
+    await expect(resolveImageData(PNG_SAMPLE)).resolves.toEqual([
+      PNG_SAMPLE,
+      20,
+      15,
+    ])
+  })
+
+  it('should fall back for malformed data URIs without searching for another data prefix', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const start = performance.now()
+    for (const src of [
+      'data:a;a=b'.repeat(6400),
+      'data:a;a=b'.repeat(6400) + ',',
+      'data:image/svg+xml;;base64,',
+      'data:image/svg+xml;a=;base64,',
+      'data:image/svg+xml;a=b=c;base64,',
+      'data:image/svg+xml;base64;utf8,',
+      'data:image/svg+xml;,',
+      'data:!data:image/svg+xml,<svg width="20" height="10"/>',
+    ]) {
+      await expect(resolveImageData(src)).resolves.toEqual([src])
+    }
+    expect(performance.now() - start).toBeLessThan(1000)
+  })
 })
 
 describe('Image', () => {
