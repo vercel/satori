@@ -57,6 +57,226 @@ describe('CSS Variables', () => {
     )
   })
 
+  const substitutions = (valid: string) =>
+    [
+      ['var(--missing)', false],
+      ['var(--invalid)', false],
+      ['var(--missing,)', false],
+      ['env(unknown)', false],
+      ['env(unknown,)', false],
+      [`var(--missing, ${valid})`, true],
+      [`env(unknown, ${valid})`, true],
+      ['var(--space)', true],
+      ['var(--local)', true],
+    ] as const
+  const renderStyle = (style: Record<string, string | number>, valid = '8px') =>
+    render(
+      <div style={{ display: 'flex', '--space': valid }}>
+        <div
+          style={
+            {
+              display: 'flex',
+              position: 'relative',
+              width: 100,
+              height: 200,
+              background: 'linear-gradient(red, blue)',
+              fontSize: 32,
+              overflow: 'clip',
+              '--invalid': 'initial',
+              '--local': valid,
+              ...style,
+            } as any
+          }
+        >
+          <div style={{ width: 20, height: 20, flexShrink: 0 }}>Spacing</div>
+          <div
+            style={{ width: 20, height: 20, flexShrink: 0, background: 'blue' }}
+          />
+        </div>
+      </div>,
+      { width: 600, height: 300 }
+    )
+
+  it.each(['padding', 'margin'])(
+    'should unset invalid %s longhands without disturbing other sides or later overrides',
+    async (property) => {
+      const sides = ['Top', 'Right', 'Bottom', 'Left']
+      for (const length of [24, 32]) {
+        const before = Object.fromEntries(
+          sides.map((side) => [property + side, length])
+        )
+        for (const side of sides) {
+          const longhand = property + side
+          for (const [value, valid] of substitutions('8px')) {
+            for (const first of [true, false]) {
+              const style = first
+                ? { [property]: length, [longhand]: value }
+                : { [longhand]: value, [property]: length }
+              // Chromium computes only the invalid side to 0px.
+              expect(await renderStyle(style)).toBe(
+                await renderStyle({
+                  ...before,
+                  [longhand]: first ? (valid ? 8 : 0) : length,
+                })
+              )
+            }
+          }
+        }
+      }
+    }
+  )
+
+  it.each([
+    [
+      'borderLeftWidth',
+      { border: '12px solid red' },
+      { borderLeftWidth: 3 },
+      '8px',
+    ],
+    [
+      'borderLeftStyle',
+      { border: '12px solid red' },
+      { borderLeftStyle: 'none' },
+      'dashed',
+    ],
+    [
+      'borderLeft',
+      { border: '12px solid red' },
+      { borderLeft: 'none' },
+      '8px dashed blue',
+    ],
+    ['left', { inset: '32px', position: 'absolute' }, { left: 'auto' }, '8px'],
+    ['columnGap', { gap: 32 }, { columnGap: 0 }, '8px'],
+    ['rowGap', { gap: 32, flexDirection: 'column' }, { rowGap: 0 }, '8px'],
+    ['padding', { paddingLeft: 32 }, { paddingLeft: 0 }, '8px'],
+    ['margin', { marginLeft: 32 }, { marginLeft: 0 }, '8px'],
+    [
+      'border',
+      { borderWidth: 12, borderStyle: 'solid', borderColor: 'red' },
+      { borderWidth: 0, borderStyle: 'none', borderColor: 'black' },
+      '8px dashed blue',
+    ],
+    [
+      'cornerShape',
+      { borderRadius: 24, cornerTopLeftShape: 'bevel' },
+      { cornerTopLeftShape: 'round' },
+      'bevel',
+    ],
+    [
+      'wordWrap',
+      { overflowWrap: 'anywhere' },
+      { overflowWrap: 'normal' },
+      'normal',
+    ],
+    [
+      'WebkitBackdropFilter',
+      { backdropFilter: 'blur(3px)' },
+      { backdropFilter: 'none' },
+      'contrast(2)',
+    ],
+    [
+      'backdropFilter',
+      { WebkitBackdropFilter: 'blur(3px)' },
+      { backdropFilter: 'none' },
+      'contrast(2)',
+    ],
+    [
+      'WebkitBackgroundClip',
+      { backgroundClip: 'text' },
+      { backgroundClip: 'border-box' },
+      'border-box',
+    ],
+    [
+      'overflowClipMargin',
+      { 'overflow-clip-margin': 'content-box 8px' },
+      { overflowClipMargin: '0px' },
+      'content-box 4px',
+    ],
+  ] as const)(
+    'should unset the expanded output of invalid %s declarations',
+    async (property, before, initial, valid) => {
+      for (const [value, resolved] of substitutions(valid)) {
+        for (const first of [true, false]) {
+          const style = first
+            ? { ...before, [property]: value }
+            : { [property]: value, ...before }
+          // Chromium's computed values, including the initial 3px border width.
+          const expected = resolved
+            ? first
+              ? { ...before, [property]: valid }
+              : { [property]: valid, ...before }
+            : first
+            ? { ...before, ...initial }
+            : before
+          expect(await renderStyle(style, valid)).toBe(
+            await renderStyle(expected, valid)
+          )
+        }
+      }
+    }
+  )
+
+  it.each(['fontSynthesisWeight', 'fontSynthesisStyle'])(
+    'should inherit invalid %s after a synthesis shorthand',
+    async (property) => {
+      for (const inherited of ['weight style', 'none']) {
+        const node = (style) => (
+          <div style={{ fontSynthesis: inherited }}>
+            <span
+              style={{
+                fontSize: 32,
+                fontWeight: 700,
+                fontStyle: 'italic',
+                ...style,
+              }}
+            >
+              Spacing
+            </span>
+          </div>
+        )
+        expect(
+          await render(
+            node({ fontSynthesis: 'none', [property]: 'var(--missing)' })
+          )
+        ).toBe(
+          await render(
+            node({
+              fontSynthesis: 'none',
+              [property]: inherited === 'none' ? 'none' : 'auto',
+            })
+          )
+        )
+      }
+    }
+  )
+
+  it.each(['maskImage', 'WebkitMaskImage', 'WebkitMask'])(
+    'should unset %s after its other spelling',
+    async (property) => {
+      const other = property === 'maskImage' ? 'WebkitMaskImage' : 'maskImage'
+      const box = (style = {}) =>
+        render(
+          <div style={{ width: 60, height: 60, background: 'red', ...style }} />
+        )
+      expect(
+        await toImage(
+          await box({
+            [other]: 'linear-gradient(black 50%, transparent 50%)',
+            [property]: 'var(--missing)',
+          })
+        )
+      ).toEqual(await toImage(await box()))
+    }
+  )
+
+  it('should ignore invalid substitutions in unknown properties', async () => {
+    for (const property of ['unknownProperty', 'constructor', 'toString']) {
+      expect(await renderStyle({ [property]: 'var(--missing)' })).toBe(
+        await renderStyle({})
+      )
+    }
+  })
+
   it('should support empty fallbacks of variables', async () => {
     const box = { display: 'flex', width: 20, height: 20, background: 'red' }
     expect(

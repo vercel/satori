@@ -18,6 +18,7 @@ import {
   isColor,
 } from '../parser/color.js'
 import valueParser from 'postcss-value-parser'
+import { getLonghands } from './shorthands.js'
 
 import parseTransformOrigin, {
   ParsedTransformOrigin,
@@ -549,6 +550,14 @@ function handleSpecialCase(
   // A length isn't converted to a number, which would be a number of spaces.
   if (name === 'tabSize') {
     return { tabSize: typeof value === 'number' ? value : String(value).trim() }
+  }
+
+  if (name === 'fontSynthesis') {
+    const keywords = String(value).split(/\s+/)
+    return {
+      fontSynthesisWeight: keywords.includes('weight') ? 'auto' : 'none',
+      fontSynthesisStyle: keywords.includes('style') ? 'auto' : 'none',
+    }
   }
 
   if (name === 'fontFamily') {
@@ -1215,7 +1224,10 @@ export default function expand(
         continue
       }
 
-      const name = getPropertyName(prop)
+      const name = getPropertyName(prop).replace(
+        /^WebkitMask(Image|Position|Size|Repeat|Origin|Clip|Composite|Mode)$/,
+        (_, part) => 'mask' + part
+      )
       // Resolve CSS variables before preprocessing
       const resolvedValue = resolveVariables(
         processableStyle[prop],
@@ -1230,6 +1242,11 @@ export default function expand(
           !resolvedValue.trim() &&
           resolvedValue !== processableStyle[prop])
       ) {
+        // Unset this declaration, not an earlier value it overrides.
+        delete serializedStyle[name]
+        for (const longhand of getLonghands(name)) {
+          delete serializedStyle[longhand]
+        }
         continue
       }
       // Colors are converted to be parsed. When they're kept, the converted
