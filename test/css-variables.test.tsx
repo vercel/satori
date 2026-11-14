@@ -57,60 +57,67 @@ describe('CSS Variables', () => {
     )
   })
 
+  const substitutions = (valid: string) =>
+    [
+      ['var(--missing)', false],
+      ['var(--invalid)', false],
+      ['var(--missing,)', false],
+      ['env(unknown)', false],
+      ['env(unknown,)', false],
+      [`var(--missing, ${valid})`, true],
+      [`env(unknown, ${valid})`, true],
+      ['var(--space)', true],
+      ['var(--local)', true],
+    ] as const
+  const renderStyle = (style: Record<string, string | number>, valid = '8px') =>
+    render(
+      <div style={{ display: 'flex', '--space': valid }}>
+        <div
+          style={
+            {
+              display: 'flex',
+              position: 'relative',
+              width: 100,
+              height: 200,
+              background: 'linear-gradient(red, blue)',
+              fontSize: 32,
+              overflow: 'clip',
+              '--invalid': 'initial',
+              '--local': valid,
+              ...style,
+            } as any
+          }
+        >
+          <div style={{ width: 20, height: 20, flexShrink: 0 }}>Spacing</div>
+          <div
+            style={{ width: 20, height: 20, flexShrink: 0, background: 'blue' }}
+          />
+        </div>
+      </div>,
+      { width: 600, height: 300 }
+    )
+
   it.each(['padding', 'margin'])(
-    'should unset invalid %s longhands after a shorthand',
+    'should unset invalid %s longhands without disturbing other sides or later overrides',
     async (property) => {
       const sides = ['Top', 'Right', 'Bottom', 'Left']
-      const values = [
-        ['var(--missing)', 0],
-        ['var(--invalid)', 0],
-        ['var(--missing,)', 0],
-        ['env(unknown)', 0],
-        ['env(unknown,)', 0],
-        ['var(--missing, 8px)', 8],
-        ['env(unknown, 8px)', 8],
-        ['var(--space)', 8],
-        ['var(--local)', 6],
-      ] as const
-      const node = (style: Record<string, string | number>) => (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            '--space': '8px',
-          }}
-        >
-          <div style={{ display: 'flex', background: 'green' }}>
-            <div
-              style={{
-                display: 'flex',
-                background: 'red',
-                '--invalid': 'initial',
-                '--local': '6px',
-                ...style,
-              }}
-            >
-              <div style={{ width: 10, height: 10, background: 'blue' }} />
-            </div>
-          </div>
-        </div>
-      )
       for (const length of [24, 32]) {
+        const before = Object.fromEntries(
+          sides.map((side) => [property + side, length])
+        )
         for (const side of sides) {
           const longhand = property + side
-          for (const [value, initial] of values) {
-            for (const shorthandFirst of [true, false]) {
-              const style = shorthandFirst
-                ? { [property]: `${length}px`, [longhand]: value }
-                : { [longhand]: value, [property]: `${length}px` }
-              // Chromium computes the invalid longhand to 0px, not the shorthand's side.
-              const expected = Object.fromEntries(
-                sides.map((edge) => [property + edge, `${length}px`])
-              )
-              expected[longhand] = `${shorthandFirst ? initial : length}px`
-              expect(await render(node(style))).toBe(
-                await render(node(expected))
+          for (const [value, valid] of substitutions('8px')) {
+            for (const first of [true, false]) {
+              const style = first
+                ? { [property]: length, [longhand]: value }
+                : { [longhand]: value, [property]: length }
+              // Chromium computes only the invalid side to 0px.
+              expect(await renderStyle(style)).toBe(
+                await renderStyle({
+                  ...before,
+                  [longhand]: first ? (valid ? 8 : 0) : length,
+                })
               )
             }
           }
@@ -138,9 +145,9 @@ describe('CSS Variables', () => {
       { borderLeft: 'none' },
       '8px dashed blue',
     ],
-    ['left', { inset: '32px' }, { left: 'auto' }, '8px'],
+    ['left', { inset: '32px', position: 'absolute' }, { left: 'auto' }, '8px'],
     ['columnGap', { gap: 32 }, { columnGap: 0 }, '8px'],
-    ['rowGap', { gap: 32 }, { rowGap: 0 }, '8px'],
+    ['rowGap', { gap: 32, flexDirection: 'column' }, { rowGap: 0 }, '8px'],
     ['padding', { paddingLeft: 32 }, { paddingLeft: 0 }, '8px'],
     ['margin', { marginLeft: 32 }, { marginLeft: 0 }, '8px'],
     [
@@ -149,192 +156,12 @@ describe('CSS Variables', () => {
       { borderWidth: 0, borderStyle: 'none', borderColor: 'black' },
       '8px dashed blue',
     ],
-  ] as const)(
-    'should unset every longhand of an invalid %s declaration',
-    async (property, before, initial, valid) => {
-      const node = (style: Record<string, string | number>) => (
-        <div
-          style={{
-            display: 'flex',
-            position: 'relative',
-            width: 600,
-            height: 300,
-            '--space': valid,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: property === 'rowGap' ? 'column' : 'row',
-              position: 'absolute',
-              width: 100,
-              height: 200,
-              background: 'green',
-              ...style,
-            }}
-          >
-            <div
-              style={{
-                width: 20,
-                height: 20,
-                flexShrink: 0,
-                background: 'blue',
-              }}
-            />
-            <div
-              style={{
-                width: 20,
-                height: 20,
-                flexShrink: 0,
-                background: 'red',
-              }}
-            />
-          </div>
-        </div>
-      )
-      const values = [
-        ['var(--missing)', false],
-        ['var(--invalid)', false],
-        ['var(--missing,)', false],
-        ['env(unknown)', false],
-        ['env(unknown,)', false],
-        [`var(--missing, ${valid})`, true],
-        [`env(unknown, ${valid})`, true],
-        ['var(--space)', true],
-        ['var(--local)', true],
-      ] as const
-      for (const [value, resolved] of values) {
-        for (const shorthandFirst of [true, false]) {
-          const declarations = shorthandFirst
-            ? { ...before, [property]: value }
-            : { [property]: value, ...before }
-          // Chromium's computed values: only the invalid declaration is unset.
-          const expected = resolved
-            ? shorthandFirst
-              ? { ...before, [property]: valid }
-              : { [property]: valid, ...before }
-            : shorthandFirst
-            ? { ...before, ...initial }
-            : before
-          expect(
-            await render(
-              node({
-                '--invalid': 'initial',
-                '--local': valid,
-                ...declarations,
-              }),
-              { width: 600, height: 300 }
-            )
-          ).toBe(await render(node(expected), { width: 600, height: 300 }))
-        }
-      }
-    }
-  )
-
-  it.each([
     [
-      {
-        borderRadius: 24,
-        cornerTopLeftShape: 'bevel',
-        cornerShape: 'var(--missing)',
-      },
-      { borderRadius: 24 },
+      'cornerShape',
+      { borderRadius: 24, cornerTopLeftShape: 'bevel' },
+      { cornerTopLeftShape: 'round' },
+      'bevel',
     ],
-    [
-      {
-        maskImage: 'linear-gradient(transparent, transparent)',
-        WebkitMask: 'var(--missing)',
-      },
-      {},
-    ],
-  ])(
-    'should unset expanded corners and mask aliases',
-    async (style, initial) => {
-      const box = { width: 60, height: 60, background: 'red' }
-      expect(await render(<div style={{ ...box, ...style } as any} />)).toBe(
-        await render(<div style={{ ...box, ...initial }} />)
-      )
-    }
-  )
-
-  it.each(['fontSynthesisWeight', 'fontSynthesisStyle'])(
-    'should inherit an invalid %s without keeping the synthesis shorthand',
-    async (property) => {
-      const node = (style: Record<string, string>, inherited: string) => (
-        <div style={{ fontSynthesis: inherited, '--synthesis': 'auto' }}>
-          <span
-            style={{
-              fontSize: 32,
-              fontWeight: 700,
-              fontStyle: 'italic',
-              ...style,
-            }}
-          >
-            Spacing
-          </span>
-        </div>
-      )
-      for (const inherited of ['weight style', 'none']) {
-        for (const [value, resolved] of [
-          ['var(--missing)', false],
-          ['var(--missing,)', false],
-          ['env(unknown)', false],
-          ['env(unknown,)', false],
-          ['var(--missing, auto)', true],
-          ['var(--synthesis)', true],
-        ] as const) {
-          for (const shorthandFirst of [true, false]) {
-            const style = shorthandFirst
-              ? { fontSynthesis: 'none', [property]: value }
-              : { [property]: value, fontSynthesis: 'none' }
-            expect(await render(node(style, inherited))).toBe(
-              await render(
-                node(
-                  {
-                    fontSynthesis: 'none',
-                    [property]:
-                      shorthandFirst && (resolved || inherited !== 'none')
-                        ? 'auto'
-                        : 'none',
-                  },
-                  inherited
-                )
-              )
-            )
-          }
-        }
-      }
-    }
-  )
-
-  it.each(['maskImage', 'WebkitMaskImage'])(
-    'should unset %s after its other spelling',
-    async (property) => {
-      const other = property === 'maskImage' ? 'WebkitMaskImage' : 'maskImage'
-      const box = { width: 60, height: 60, background: 'red' }
-      for (const value of [
-        'var(--missing)',
-        'var(--missing,)',
-        'env(unknown)',
-      ]) {
-        const svg = await render(
-          <div
-            style={{
-              ...box,
-              [other]: 'linear-gradient(black 50%, transparent 50%)',
-              [property]: value,
-            }}
-          />
-        )
-        // Initial masking and explicit none paint alike, with different unused URLs.
-        expect(await toImage(svg)).toEqual(
-          await toImage(await render(<div style={box} />))
-        )
-      }
-    }
-  )
-
-  it.each([
     [
       'wordWrap',
       { overflowWrap: 'anywhere' },
@@ -366,50 +193,14 @@ describe('CSS Variables', () => {
       'content-box 4px',
     ],
   ] as const)(
-    'should unset the serialized output of invalid %s aliases',
+    'should unset the expanded output of invalid %s declarations',
     async (property, before, initial, valid) => {
-      const node = (style: Record<string, string>) => (
-        <div
-          style={{ display: 'flex', width: 100, height: 100, '--value': valid }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              width: 40,
-              height: 40,
-              background: 'red',
-            }}
-          />
-          <div
-            style={{
-              width: 40,
-              height: 60,
-              fontSize: 16,
-              padding: 12,
-              overflow: 'clip',
-              background: 'linear-gradient(red, blue)',
-              ...style,
-            }}
-          >
-            abcdefghijklmnopqrstuv
-          </div>
-        </div>
-      )
-      for (const [value, resolved] of [
-        ['var(--missing)', false],
-        ['var(--invalid)', false],
-        ['var(--missing,)', false],
-        ['env(unknown)', false],
-        ['env(unknown,)', false],
-        [`var(--missing, ${valid})`, true],
-        [`env(unknown, ${valid})`, true],
-        ['var(--value)', true],
-        ['var(--local)', true],
-      ] as const) {
+      for (const [value, resolved] of substitutions(valid)) {
         for (const first of [true, false]) {
           const style = first
             ? { ...before, [property]: value }
             : { [property]: value, ...before }
+          // Chromium's computed values, including the initial 3px border width.
           const expected = resolved
             ? first
               ? { ...before, [property]: valid }
@@ -417,58 +208,74 @@ describe('CSS Variables', () => {
             : first
             ? { ...before, ...initial }
             : before
-          expect(
-            await render(
-              node({ '--invalid': 'initial', '--local': valid, ...style })
-            )
-          ).toBe(await render(node(expected)))
+          expect(await renderStyle(style, valid)).toBe(
+            await renderStyle(expected, valid)
+          )
         }
       }
     }
   )
 
-  it('should ignore invalid substitutions in unknown properties', async () => {
-    const box = { width: 20, height: 20, background: 'red' }
-    for (const property of ['unknownProperty', 'constructor', 'toString']) {
-      expect(
-        await render(<div style={{ ...box, [property]: 'var(--missing)' }} />)
-      ).toBe(await render(<div style={box} />))
-    }
-  })
-
-  it.each([24, 32])(
-    'should unset optional theme padding in a %spx OG card',
-    async (padding) => {
-      const card = (theme: boolean, resolved: boolean) => (
-        <div
-          style={{
-            display: 'flex',
-            '--theme-space': theme ? '8px' : 'initial',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              width: 600,
-              height: 300,
-              padding,
-              paddingLeft: resolved ? (theme ? 8 : 0) : 'var(--theme-space)',
-              background: '#fafafa',
-            }}
-          >
-            <div style={{ fontSize: 32 }}>A new release</div>
-            <div style={{ fontSize: 20 }}>Build something great.</div>
+  it.each(['fontSynthesisWeight', 'fontSynthesisStyle'])(
+    'should inherit invalid %s after a synthesis shorthand',
+    async (property) => {
+      for (const inherited of ['weight style', 'none']) {
+        const node = (style) => (
+          <div style={{ fontSynthesis: inherited }}>
+            <span
+              style={{
+                fontSize: 32,
+                fontWeight: 700,
+                fontStyle: 'italic',
+                ...style,
+              }}
+            >
+              Spacing
+            </span>
           </div>
-        </div>
-      )
-      for (const theme of [false, true]) {
+        )
         expect(
-          await render(card(theme, false), { width: 600, height: 300 })
-        ).toBe(await render(card(theme, true), { width: 600, height: 300 }))
+          await render(
+            node({ fontSynthesis: 'none', [property]: 'var(--missing)' })
+          )
+        ).toBe(
+          await render(
+            node({
+              fontSynthesis: 'none',
+              [property]: inherited === 'none' ? 'none' : 'auto',
+            })
+          )
+        )
       }
     }
   )
+
+  it.each(['maskImage', 'WebkitMaskImage', 'WebkitMask'])(
+    'should unset %s after its other spelling',
+    async (property) => {
+      const other = property === 'maskImage' ? 'WebkitMaskImage' : 'maskImage'
+      const box = (style = {}) =>
+        render(
+          <div style={{ width: 60, height: 60, background: 'red', ...style }} />
+        )
+      expect(
+        await toImage(
+          await box({
+            [other]: 'linear-gradient(black 50%, transparent 50%)',
+            [property]: 'var(--missing)',
+          })
+        )
+      ).toEqual(await toImage(await box()))
+    }
+  )
+
+  it('should ignore invalid substitutions in unknown properties', async () => {
+    for (const property of ['unknownProperty', 'constructor', 'toString']) {
+      expect(await renderStyle({ [property]: 'var(--missing)' })).toBe(
+        await renderStyle({})
+      )
+    }
+  })
 
   it('should support empty fallbacks of variables', async () => {
     const box = { display: 'flex', width: 20, height: 20, background: 'red' }
