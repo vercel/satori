@@ -136,7 +136,7 @@ function parseGIF(buf: ArrayBuffer) {
 
 function parsePNG(buf: ArrayBuffer) {
   const v = new DataView(buf)
-  return [v.getUint16(18, false), v.getUint16(22, false)] as [number, number]
+  return [v.getUint32(16, false), v.getUint32(20, false)] as [number, number]
 }
 
 import { createLRU, parseViewBox } from '../utils.js'
