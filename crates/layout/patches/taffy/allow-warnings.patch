@@ -1,0 +1,12 @@
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -69,6 +69,9 @@
+ #![cfg_attr(not(feature = "default"), allow(dead_code))]
+ #![cfg_attr(not(feature = "default"), allow(unused_imports))]
+ #![cfg_attr(not(feature = "default"), allow(unused_variables))]
++// Like a dependency from crates.io, which Cargo caps the lints of. This is a
++// path dependency, so it would warn about its own code.
++#![allow(warnings)]
+ #![cfg_attr(not(feature = "default"), allow(unused_mut))]
+ 
+ // We always need std for the tests

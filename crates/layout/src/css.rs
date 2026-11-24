@@ -149,7 +149,7 @@ impl<'i> AtRuleParser<'i> for Rules {
                 format!("{{\"l\":{},\"b\":{}}}", strings(&names), body)
             }
             AtRulePrelude::Layer(_) | AtRulePrelude::Property(_) => {
-                return Err(ParseError::unexpected_token())
+                return Err(ParseError::unexpected_token());
             }
         })
     }
@@ -204,7 +204,7 @@ impl<'i> DeclarationParser<'i> for Rules {
                 // a nested rule that starts with an identifier, e.g. `a:hover {}`,
                 // which is parsed as a rule instead.
                 Ok(Token::CurlyBracketBlock) if !custom => {
-                    return Err(ParseError::unexpected_token())
+                    return Err(ParseError::unexpected_token());
                 }
                 Ok(token) => (
                     matches!(token, Token::Delim('!')),
