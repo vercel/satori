@@ -1,0 +1,195 @@
+import { ReactNode } from 'react';
+
+declare const code: {
+    readonly 'ja-JP': RegExp;
+    readonly 'ko-KR': RegExp;
+    readonly 'zh-CN': RegExp;
+    readonly 'zh-TW': RegExp;
+    readonly 'zh-HK': RegExp;
+    readonly 'th-TH': RegExp;
+    readonly 'bn-IN': RegExp;
+    readonly 'ar-AR': RegExp;
+    readonly 'ta-IN': RegExp;
+    readonly 'ml-IN': RegExp;
+    readonly 'he-IL': RegExp;
+    readonly 'te-IN': RegExp;
+    readonly devanagari: RegExp;
+    readonly kannada: RegExp;
+};
+type Locale = keyof typeof code;
+
+/**
+ * This class handles everything related to fonts.
+ */
+
+type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
+type FontStyle = 'normal' | 'italic';
+interface FontOptions {
+    data: Buffer | ArrayBuffer;
+    name: string;
+    weight?: Weight;
+    style?: FontStyle;
+    lang?: string;
+}
+
+declare type Style = {
+    [key: string]: string[] | string | number | boolean | Style;
+};
+declare type NotImplemented = (...args: any) => unknown;
+declare type AddedUtilities = Record<string, Style | string>;
+declare type PluginFunction = (obj: {
+    addUtilities(utilities: AddedUtilities): unknown;
+    /**
+     * @deprecated not supported in @jaredh159/twrn
+     */
+    addComponents: NotImplemented;
+    /**
+     * @deprecated not supported in @jaredh159/twrn
+     */
+    addBase: NotImplemented;
+    /**
+     * @deprecated not supported in @jaredh159/twrn
+     */
+    addVariant: NotImplemented;
+    /**
+     * @deprecated not supported in @jaredh159/twrn
+     */
+    e: NotImplemented;
+    /**
+     * @deprecated not supported in @jaredh159/twrn
+     */
+    prefix: NotImplemented;
+    /**
+     * @deprecated not supported in @jaredh159/twrn
+     */
+    theme: NotImplemented;
+    /**
+     * @deprecated not supported in @jaredh159/twrn
+     */
+    variants: NotImplemented;
+    /**
+     * @deprecated not supported in @jaredh159/twrn
+     */
+    config: NotImplemented;
+    /**
+     * @deprecated not supported in @jaredh159/twrn
+     */
+    corePlugins: NotImplemented;
+    /**
+     * @deprecated not supported in @jaredh159/twrn
+     */
+    matchUtilities: NotImplemented;
+    /**
+     * @deprecated not supported in @jaredh159/twrn
+     */
+    postcss: unknown;
+}) => unknown;
+
+declare type TwFontSize = string | [string, string] | [string, {
+    lineHeight?: string;
+    letterSpacing?: string;
+}];
+declare type TwScreen = string | {
+    max?: string;
+    min?: string;
+};
+declare type TwColors<K extends keyof any = string, V = string> = {
+    [key: string]: V | TwColors<K, V>;
+};
+interface TwTheme {
+    fontSize?: Record<string, TwFontSize>;
+    lineHeight?: Record<string, string>;
+    spacing?: Record<string, string>;
+    padding?: Record<string, string>;
+    margin?: Record<string, string>;
+    inset?: Record<string, string>;
+    height?: Record<string, string>;
+    width?: Record<string, string>;
+    maxWidth?: Record<string, string>;
+    maxHeight?: Record<string, string>;
+    minWidth?: Record<string, string>;
+    minHeight?: Record<string, string>;
+    letterSpacing?: Record<string, string>;
+    borderWidth?: Record<string, string>;
+    borderRadius?: Record<string, string>;
+    screens?: Record<string, TwScreen>;
+    opacity?: Record<string, number | string>;
+    flex?: Record<string, string>;
+    flexGrow?: Record<string, number | string>;
+    flexShrink?: Record<string, number | string>;
+    fontWeight?: Record<string, number | string>;
+    fontFamily?: Record<string, string | string[]>;
+    zIndex?: Record<string, number | string>;
+    colors?: TwColors;
+    backgroundColor?: TwColors;
+    borderColor?: TwColors;
+    textColor?: TwColors;
+    extend?: Omit<TwTheme, 'extend'>;
+}
+interface TwConfig {
+    theme?: TwTheme;
+    plugins?: Array<{
+        handler: PluginFunction;
+    }>;
+}
+
+/**
+ * This module is used to calculate the layout of the current sub-tree.
+ */
+
+interface SatoriNode {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+    type: string;
+    key?: string | number;
+    props: Record<string, any>;
+    textContent?: string;
+}
+
+type SatoriOptions = ({
+    width: number;
+    height: number;
+} | {
+    width: number;
+} | {
+    height: number;
+}) & {
+    fonts: FontOptions[];
+    embedFont?: boolean;
+    debug?: boolean;
+    graphemeImages?: Record<string, string>;
+    loadAdditionalAsset?: (languageCode: string, segment: string) => Promise<string | Array<FontOptions>>;
+    tailwindConfig?: TwConfig;
+    onNodeDetected?: (node: SatoriNode) => void;
+    /**
+     * Called with the error of each invalid or unsupported style declaration,
+     * which is then ignored instead of failing the render.
+     */
+    onStyleError?: (error: Error) => void;
+    /**
+     * Converts colors that SVG renderers may not support, like `oklch()`,
+     * `lab()` and `color-mix()`, to `rgb()` and `rgba()`. Set it to `false` to
+     * keep them as they are written. Defaults to `true`.
+     */
+    convertColors?: boolean;
+    pointScaleFactor?: number;
+};
+
+declare const satori: (element: ReactNode, options: SatoriOptions) => Promise<string>;
+
+/**
+ * Loads the layout engine from a WebAssembly module provided by the user, for
+ * `satori/standalone`.
+ */
+
+type InitInput = string | Request | URL | Response | BufferSource | Buffer | WebAssembly.Module | Promise<Response | BufferSource | Buffer | WebAssembly.Module>;
+
+/**
+ * Initializes `satori/standalone` with the `layout.wasm` module. The default
+ * build bundles it.
+ */
+declare function init(input: InitInput): Promise<void>;
+
+export { FontOptions as F, Locale as L, SatoriOptions as S, Weight as W, FontStyle as a, SatoriNode as b, init as i, satori as s };

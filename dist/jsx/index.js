@@ -1,0 +1,2 @@
+function o(n,t,e){if("key"in t){let{key:s,...r}=t;e=arguments.length===3?e:s,t=r}return e=e!=null?String(e):null,{type:n,props:t,key:e}}var l=Symbol.for("react.fragment");function y(n,t,...e){if(!t){let i=e.length?{children:e}:{};return o(n,i,null)}let{key:s,...r}=t;return e.length&&(r.children=e),o(n,r,s)}export{l as Fragment,y as createElement};
+//# sourceMappingURL=index.js.map
