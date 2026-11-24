@@ -5,10 +5,9 @@
  */
 
 import opentype from '@shuding/opentype.js'
-import harfbuzzjsPromise from 'harfbuzzjs'
+import type * as HarfBuzz from 'harfbuzzjs'
 
-// HarfBuzz types (will be populated when module loads)
-let hb: any = null
+let hb: typeof HarfBuzz | null = null
 let initPromise: Promise<void> | null = null
 
 /**
@@ -35,11 +34,7 @@ export interface FontFeatures {
 /**
  * Internal cache for HarfBuzz font objects
  */
-const hbFontCache = new WeakMap<opentype.Font, any>()
-const hbFontFinalizer =
-  typeof FinalizationRegistry === 'function'
-    ? new FinalizationRegistry<any>((font) => font.destroy())
-    : null
+const hbFontCache = new WeakMap<opentype.Font, HarfBuzz.Font>()
 
 /**
  * Initialize HarfBuzz WASM module
@@ -56,12 +51,10 @@ export async function initHarfBuzz(): Promise<void> {
   }
 
   // Start initialization
+  // harfbuzzjs is ESM-only and initializes itself with a top-level await, so
+  // it can't be `require`d from the CJS build. `import()` works from both.
   initPromise = (async () => {
-    hb = await harfbuzzjsPromise
-
-    if (!hb || typeof hb.createBlob !== 'function') {
-      throw new Error('HarfBuzz module loaded but API is not available')
-    }
+    hb = await import('harfbuzzjs')
   })()
 
   await initPromise
@@ -70,7 +63,7 @@ export async function initHarfBuzz(): Promise<void> {
 /**
  * Create or get cached HarfBuzz font from opentype.js font
  */
-function getHarfBuzzFont(font: opentype.Font): any {
+function getHarfBuzzFont(font: opentype.Font): HarfBuzz.Font {
   if (!hb) {
     throw new Error('HarfBuzz not initialized. Call initHarfBuzz() first.')
   }
@@ -91,15 +84,10 @@ function getHarfBuzzFont(font: opentype.Font): any {
     )
   }
 
-  const blob = hb.createBlob(new Uint8Array(arrayBuffer))
-  const face = hb.createFace(blob, 0)
-  const hbFont = hb.createFont(face)
-
-  // The HarfBuzz font keeps the face alive, and the face keeps the blob alive.
-  // Release our temporary references immediately and destroy the font when the
-  // matching opentype.js font is collected.
-  face.destroy()
-  blob.destroy()
+  // harfbuzzjs frees these when their JS objects are collected. The native font
+  // references the face, which references the blob, so only the font needs to
+  // stay reachable, and it lives as long as the opentype.js font in the cache.
+  const hbFont = new hb.Font(new hb.Face(new hb.Blob(arrayBuffer), 0))
 
   // Set scale to unitsPerEm so advances are returned in font design units.
   // The caller scales by (fontSize / unitsPerEm) to convert to pixels.
@@ -108,7 +96,6 @@ function getHarfBuzzFont(font: opentype.Font): any {
 
   // Cache the HarfBuzz font
   hbFontCache.set(font, hbFont)
-  hbFontFinalizer?.register(font, hbFont)
 
   return hbFont
 }
@@ -148,52 +135,39 @@ export function shapeText(
   // Get or create HarfBuzz font
   const hbFont = getHarfBuzzFont(font)
 
-  // Create buffer
-  const buffer = hb.createBuffer()
+  const buffer = new hb.Buffer()
+  buffer.addText(text)
 
-  try {
-    // Add text to buffer
-    buffer.addText(text)
+  // Always call guessSegmentProperties() first to detect script, language,
+  // and direction from the text content. This is essential for complex
+  // scripts like Arabic, Devanagari, Thai, Tamil, etc.
+  buffer.guessSegmentProperties()
 
-    // Always call guessSegmentProperties() first to detect script, language,
-    // and direction from the text content. This is essential for complex
-    // scripts like Arabic, Devanagari, Thai, Tamil, etc.
-    buffer.guessSegmentProperties()
-
-    // Override with explicitly provided values if any
-    if (language) buffer.setLanguage(language)
-    if (script) buffer.setScript(script)
-    if (direction) buffer.setDirection(direction)
-
-    // Build features string if provided
-    let featuresString: string | undefined
-    if (features && Object.keys(features).length > 0) {
-      const featureStrings: string[] = []
-      for (const [tag, value] of Object.entries(features)) {
-        if (typeof value === 'boolean') {
-          featureStrings.push(value ? `+${tag}` : `-${tag}`)
-        } else {
-          featureStrings.push(`${tag}=${value}`)
-        }
-      }
-      featuresString = featureStrings.join(',')
-    }
-
-    // Shape the text with optional features (passed as third parameter)
-    if (featuresString) {
-      hb.shape(hbFont, buffer, featuresString)
-    } else {
-      hb.shape(hbFont, buffer)
-    }
-
-    // Get shaped glyphs
-    const result = buffer.json(hbFont)
-
-    return result as ShapedGlyph[]
-  } finally {
-    // Clean up buffer
-    buffer.destroy()
+  // Override with explicitly provided values if any
+  if (language) buffer.setLanguage(language)
+  if (script) buffer.setScript(script)
+  if (direction) {
+    const key = direction.toUpperCase() as Uppercase<typeof direction>
+    buffer.setDirection(hb.Direction[key])
   }
+
+  const hbFeatures = features
+    ? Object.entries(features).map(
+        ([tag, value]) => new hb.Feature(tag, Number(value))
+      )
+    : undefined
+  hb.shape(hbFont, buffer, hbFeatures)
+
+  const infos = buffer.getGlyphInfos()
+  const positions = buffer.getGlyphPositions()
+  return infos.map((info, i) => ({
+    g: info.codepoint,
+    cl: info.cluster,
+    ax: positions[i].xAdvance,
+    ay: positions[i].yAdvance,
+    dx: positions[i].xOffset,
+    dy: positions[i].yOffset,
+  }))
 }
 
 /**

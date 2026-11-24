@@ -4,11 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  harfbuzzjs@0.10.0:
-    hash: 760b5ac12c5d269b507b4dd008b00a9e9957c29d9b08d00047b07cb9305cee97
-    path: patches/harfbuzzjs@0.10.0.patch
-
 importers:
 
   .:
@@ -38,8 +33,8 @@ importers:
         specifier: 0.7.3
         version: 0.7.3
       harfbuzzjs:
-        specifier: 0.10.0
-        version: 0.10.0(patch_hash=760b5ac12c5d269b507b4dd008b00a9e9957c29d9b08d00047b07cb9305cee97)
+        specifier: 1.6.4
+        version: 1.6.4
       linebreak:
         specifier: ^1.1.0
         version: 1.1.0
@@ -3154,8 +3149,8 @@ packages:
   grapheme-splitter@1.0.4:
     resolution: {integrity: sha512-bzh50DW9kTPM00T8y4o8vQg89Di9oLJVLW/KaOGIXJWP/iqCN6WKYkbNOF04vFLJhwcpYUh9ydh/+5vpOqV4YQ==}
 
-  harfbuzzjs@0.10.0:
-    resolution: {integrity: sha512-SN8LVwCOzvTq3OPNd0+EAghgXugItz56wst567D1vs7LnnKGWprhi3EG58aVOBwhN8HEbQxL4I9NDWkcXUutRw==}
+  harfbuzzjs@1.6.4:
+    resolution: {integrity: sha512-T/PyfhVt1gGR2Tkf5KJUj1DQFkVBXHw552lS1iLEEDhV1Lukb3eq1pk2ov85kgbT2YUiZtJBTak9w+M7YgzUEQ==}
 
   has-bigints@1.0.2:
     resolution: {integrity: sha512-tSvCKtBr9lkF0Ex0aQiP9N+OpV4zi2r/Nee5VkRDbaqv35RLYMzbwQfFSZZH0kR+Rd6302UJZ2p/bJCEoR3VoQ==}
@@ -4035,6 +4030,7 @@ packages:
 
   node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
+    deprecated: This package is no longer needed on supported Node.js versions. Node.js 16+ includes AbortController and AbortSignal as built-in globals. All Node.js versions requiring this polyfill are end-of-life. Use the built-in globals instead.
 
   node-dir@0.1.17:
     resolution: {integrity: sha512-tmPX422rYgofd4epzrNoOXiE8XFZYOcCq1vD7MAXCDO+O+zndlA2ztdKKMa+EeuBG5tHETpr4ml4RGgpqDCCAg==}
@@ -8704,7 +8700,7 @@ snapshots:
 
   grapheme-splitter@1.0.4: {}
 
-  harfbuzzjs@0.10.0(patch_hash=760b5ac12c5d269b507b4dd008b00a9e9957c29d9b08d00047b07cb9305cee97): {}
+  harfbuzzjs@1.6.4: {}
 
   has-bigints@1.0.2: {}
 

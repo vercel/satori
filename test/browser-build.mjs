@@ -29,15 +29,6 @@ for (const entry of [
     )
   }
 
-  if (/(?:require\(|from\s*)["']harfbuzzjs["']/.test(source)) {
-    throw new Error(
-      `${entry} imports harfbuzzjs at runtime; it must be bundled instead. ` +
-        'This repo patches harfbuzzjs to drop its Node fs branch and inline ' +
-        'hb.wasm, and that patch does not reach consumers, so leaving the ' +
-        'import external breaks every bundler.'
-    )
-  }
-
   if (entry.endsWith('.js') && source.includes('__dirname')) {
     throw new Error(
       `${entry} refers to __dirname. Node ESM does not define it, so importing ` +
@@ -55,6 +46,10 @@ try {
     platform: 'browser',
     format: 'esm',
     outfile: outfile.pathname,
+    // harfbuzzjs locates its wasm with `new URL(..., import.meta.url)`, which
+    // esbuild doesn't rewrite, so bundling it here would break its loader.
+    // Consumer bundlers that copy the wasm load the package from npm too.
+    external: ['harfbuzzjs'],
   })
 
   // Browsers do not define `Buffer`. Import the browser bundle without it and

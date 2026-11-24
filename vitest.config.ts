@@ -25,7 +25,4 @@ export default defineConfig({
     // SwiftShader), which can crash when a worker thread is torn down.
     poolMatchGlobs: [['**/canvas.test.tsx', 'child_process']],
   },
-  ssr: {
-    noExternal: ['harfbuzzjs'],
-  },
 })
