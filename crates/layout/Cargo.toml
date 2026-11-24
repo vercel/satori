@@ -17,6 +17,8 @@ cssparser = { version = "0.38", default-features = false }
 # Decodes WOFF2 fonts, see `decode_woff2`, with the patches in
 # `patches/woff2-patched`.
 woff2-patched = { path = "../../vendor/woff2-patched" }
+# Shapes text, see `src/shape.rs`.
+harfrust = { version = "0.16.1", default-features = false, features = ["std"] }
 # Generates the JavaScript bindings. Pinned, because the `wasm-bindgen` CLI
 # installed by `scripts/install-wasm-bindgen.mjs` must have the same schema
 # version. Update its `VERSION` together with this.

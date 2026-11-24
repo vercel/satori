@@ -37,6 +37,7 @@ export interface LayoutEngine {
   computeLayout(root: LayoutNode, options?: ComputeLayoutOptions): void
   parseCSS: typeof bindings.parseCss
   decodeWoff2: typeof bindings.decodeWoff2
+  ShapingFont: typeof bindings.ShapingFont
 }
 
 /**
@@ -204,5 +205,6 @@ export function createLayoutEngine(): LayoutEngine {
     },
     parseCSS: bindings.parseCss,
     decodeWoff2: bindings.decodeWoff2,
+    ShapingFont: bindings.ShapingFont,
   }
 }

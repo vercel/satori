@@ -151,7 +151,6 @@
     "emoji-regex-xs": "^2.0.1",
     "escape-html": "^1.0.3",
     "fflate": "0.7.3",
-    "harfbuzzjs": "0.10.0",
     "linebreak": "^1.1.0",
     "parse-css-color": "^0.2.1",
     "postcss-value-parser": "^4.2.0"
