@@ -11,16 +11,9 @@ crate-type = ["cdylib"]
 
 [dependencies]
 # Taffy with the patches in `patches/taffy`, see `scripts/build-layout-wasm.mjs`.
-taffy = { path = "target/taffy", default-features = false, features = ["std", "taffy_tree", "flexbox", "grid", "block_layout", "float_layout", "calc"] }
+taffy = { path = "../../vendor/taffy", default-features = false, features = ["std", "taffy_tree", "flexbox", "grid", "block_layout", "float_layout", "calc"] }
 # Parses the stylesheets of `<style>` elements, see `src/css.rs`.
 cssparser = { version = "0.38", default-features = false }
 # Decodes WOFF2 fonts, see `decode_woff2`, with the patches in
 # `patches/woff2-patched`.
-woff2-patched = { path = "target/woff2-patched" }
-
-[profile.release]
-opt-level = "z"
-lto = true
-codegen-units = 1
-panic = "abort"
-strip = true
+woff2-patched = { path = "../../vendor/woff2-patched" }

@@ -1,0 +1,18 @@
+[workspace]
+members = ["crates/layout", "vendor/taffy", "vendor/woff2-patched"]
+# The crates in `vendor` are downloaded and patched by
+# `scripts/vendor-layout-crates.mjs`. Turborepo requires path dependencies to be
+# members.
+default-members = ["crates/layout"]
+resolver = "2"
+
+[workspace.metadata]
+# The name of the workspace's package in Turborepo.
+name = "satori-cargo"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

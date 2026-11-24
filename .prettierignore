@@ -8,5 +8,7 @@ src/vendor/
 pnpm-lock.yaml
 *.md
 coverage/
-crates/layout/target/
+target/
+vendor/
+.turbo/
 test/fidelity/cases/
