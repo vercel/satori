@@ -14,7 +14,7 @@ import { vendorLayoutCrates } from './vendor-layout-crates.mjs'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-vendorLayoutCrates()
+await vendorLayoutCrates()
 execFileSync(
   'cargo',
   [
