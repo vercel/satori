@@ -37,6 +37,32 @@ for (const entry of [
   }
 }
 
+// @vercel/og inlines Satori with esbuild's `node` platform for its edge build,
+// so dependencies resolve to their `node` export conditions. Edge runtimes
+// cannot load `module`, which e.g. fflate's Node build imports.
+for (const entry of ['index.js', 'experimental.js']) {
+  const { outputFiles } = await build({
+    entryPoints: [new URL(`../dist/${entry}`, import.meta.url).pathname],
+    bundle: true,
+    platform: 'node',
+    format: 'esm',
+    write: false,
+    // See the note on the browser build below.
+    external: ['harfbuzzjs'],
+  })
+  if (
+    /(?:from\s*|import\(|require\()["'](?:node:)?module["']/.test(
+      outputFiles[0].text
+    )
+  ) {
+    throw new Error(
+      `${entry} pulls in the Node \`module\` builtin when bundled for Node, ` +
+        'which breaks edge runtimes. Import the browser build of the ' +
+        'dependency instead.'
+    )
+  }
+}
+
 const outfile = new URL('../.tmp/browser-build.js', import.meta.url)
 
 try {

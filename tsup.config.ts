@@ -20,7 +20,7 @@ export default defineConfig({
   },
   minify: process.env.NODE_ENV !== 'development',
   format: ['esm', 'cjs'],
-  noExternal: ['twrnc', 'emoji-regex-xs'],
+  noExternal: ['twrnc', 'emoji-regex-xs', 'fflate'],
   esbuildOptions(options) {
     options.tsconfig = 'tsconfig.json'
     options.legalComments = 'external'
@@ -32,6 +32,23 @@ export default defineConfig({
     SATORI_STANDALONE: isStandaloneBuild ? '1' : '0',
   },
   esbuildPlugins: [
+    {
+      // fflate's `node` export condition (which tsup and consumers bundling
+      // Satori for Node, like @vercel/og, select) imports the `module` builtin
+      // to reach `worker_threads`. Edge runtimes can't load it. Satori only
+      // uses the sync APIs, which are the same in the browser build. `src`
+      // can't import `fflate/browser` directly: that file is ESM but fflate
+      // isn't `"type": "module"`, so Node 20 loads it as CommonJS.
+      name: 'fflate-browser',
+      setup(build) {
+        build.onResolve({ filter: /^fflate$/ }, (args) =>
+          build.resolve('fflate/browser', {
+            kind: args.kind,
+            resolveDir: args.resolveDir,
+          })
+        )
+      },
+    },
     {
       // The default build bundles `layout.wasm` as bytes. esbuild's `binary`
       // loader decodes them with `Buffer`, which browsers do not define, and

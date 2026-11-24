@@ -29,9 +29,6 @@ importers:
       escape-html:
         specifier: ^1.0.3
         version: 1.0.3
-      fflate:
-        specifier: 0.7.3
-        version: 0.7.3
       harfbuzzjs:
         specifier: 1.6.4
         version: 1.6.4
@@ -81,6 +78,9 @@ importers:
       eslint-plugin-react-hooks:
         specifier: ^4.6.0
         version: 4.6.0(eslint@8.25.0)
+      fflate:
+        specifier: 0.7.3
+        version: 0.7.3
       gl:
         specifier: github:encharm/headless-gl#8c5723171c7081fffb3ef4cea3b05f9220d55ed0
         version: https://codeload.github.com/encharm/headless-gl/tar.gz/8c5723171c7081fffb3ef4cea3b05f9220d55ed0
