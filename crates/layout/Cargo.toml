@@ -14,9 +14,10 @@ crate-type = ["cdylib"]
 taffy = { path = "../../vendor/taffy", default-features = false, features = ["std", "taffy_tree", "flexbox", "grid", "block_layout", "float_layout", "calc"] }
 # Parses the stylesheets of `<style>` elements, see `src/css.rs`.
 cssparser = { version = "0.38", default-features = false }
-# Decodes WOFF2 fonts, see `decode_woff2`, with the patches in
-# `patches/woff2-patched`.
-woff2-patched = { path = "../../vendor/woff2-patched" }
+# Decodes WOFF2 fonts, see `decode_woff2`. WOFF fonts are decoded in JavaScript,
+# so it doesn't need `z`. `brotli-unsafe` uses the faster, unchecked brotli
+# decoder.
+wuff = { version = "0.2.10", default-features = false, features = ["brotli-unsafe"] }
 # Shapes text, see `src/shape.rs`.
 harfrust = { version = "0.16.1", default-features = false, features = ["std"] }
 # Generates the JavaScript bindings. Pinned, because the `wasm-bindgen` CLI
