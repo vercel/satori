@@ -1,13 +1,14 @@
-//! Taffy layout for Satori, compiled to WebAssembly without bindings.
+//! Taffy layout for Satori, compiled to WebAssembly with `wasm-bindgen`.
 //!
-//! JavaScript writes the whole tree into a buffer of `f32`s, `compute` lays it
+//! JavaScript encodes the whole tree into an array of `f32`s, `compute` lays it
 //! out with Taffy and returns the layout of every node. Leaves that need to be
-//! measured, e.g. text, call the imported `measure` function.
+//! measured, e.g. text, are measured by the `LayoutCallbacks` passed to it.
 //!
 //! The format is described in `src/layout-engine/encode.ts`, which must be
 //! kept in sync with this file.
 
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use taffy::prelude::*;
 use taffy::style::{GridTemplateArea, GridTemplateAreas, GridTemplateRepetition};
@@ -16,133 +17,109 @@ use taffy::{
     LEAF_FLOAT_EXCLUSIONS, LayoutInput, LayoutOutput, Overflow, Point, TextAlign,
     compute_leaf_layout,
 };
+use wasm_bindgen::prelude::*;
 
-#[link(wasm_import_module = "env")]
-unsafe extern "C" {
+mod css;
+
+#[wasm_bindgen(typescript_custom_section)]
+const LAYOUT_CALLBACKS: &str = r#"
+export interface LayoutCallbacks {
+  measure(
+    node: number,
+    knownWidth: number,
+    knownHeight: number,
+    availableWidth: number,
+    availableHeight: number,
+    exclusions: Float32Array
+  ): Float32Array | number[]
+  resolveCalc(index: number, basis: number): number
+}
+"#;
+
+#[wasm_bindgen]
+extern "C" {
+    /// Implemented by `src/layout-engine/index.ts` for the tree being laid
+    /// out.
+    #[wasm_bindgen(typescript_type = "LayoutCallbacks")]
+    pub type LayoutCallbacks;
+
     /// Measures a leaf. `NaN` known dimensions are unknown, negative
     /// available sizes are min-content, infinite ones are max-content.
-    /// `exclusions` points to 4 `f32`s for each float that intersects the leaf:
-    /// the top and bottom relative to the leaf, and how far it extends into the
-    /// leaf from the left and the right. Writes the width, height, and first
-    /// and last baselines from the top of the leaf (`NaN` without them) to
-    /// `out`. Measured leaves have no padding or border.
+    /// `exclusions` has 4 `f32`s for each float that intersects the leaf: the
+    /// top and bottom relative to the leaf, and how far it extends into the
+    /// leaf from the left and the right. Returns the width, height, and first
+    /// and last baselines from the top of the leaf (`NaN` without them).
+    /// Measured leaves have no padding or border.
+    #[wasm_bindgen(method, catch)]
     fn measure(
+        this: &LayoutCallbacks,
         node: u32,
         known_width: f32,
         known_height: f32,
         available_width: f32,
         available_height: f32,
-        exclusions: *const f32,
-        exclusion_count: u32,
-        out: *mut f32,
-    );
+        exclusions: &[f32],
+    ) -> Result<Vec<f32>, JsValue>;
+
+    /// Resolves the `calc()` expression at `index` against `basis`, the size
+    /// that percentages are relative to.
+    #[wasm_bindgen(method, catch, js_name = resolveCalc)]
+    fn resolve_calc(this: &LayoutCallbacks, index: u32, basis: f32) -> Result<f32, JsValue>;
 }
 
-/// The number of `f32`s written for each node by `compute`.
+/// The number of `f32`s returned for each node by `compute`.
 const OUTPUT_STRIDE: usize = 16;
 
-thread_local! {
-    static OUTPUT: RefCell<Vec<f32>> = const { RefCell::new(Vec::new()) };
+struct LayoutCall {
+    callbacks: LayoutCallbacks,
+    // a pending error thrown at the end of the layout execution if a JS callback failed during
+    // layout
+    error: RefCell<Option<JsValue>>,
 }
 
-/// Allocates a buffer of `len` `f32`s for the input.
-#[unsafe(no_mangle)]
-pub extern "C" fn alloc(len: usize) -> *mut f32 {
-    let mut buffer = Vec::<f32>::with_capacity(len);
-    let ptr = buffer.as_mut_ptr();
-    std::mem::forget(buffer);
-    ptr
-}
-
-/// Frees a buffer allocated by `alloc`.
-///
-/// # Safety
-///
-/// `ptr` and `len` must come from the same call to `alloc`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn dealloc(ptr: *mut f32, len: usize) {
-    drop(unsafe { Vec::from_raw_parts(ptr, 0, len) });
-}
-
-mod css;
-
-thread_local! {
-    static CSS_OUTPUT: RefCell<String> = const { RefCell::new(String::new()) };
-}
-
-/// Allocates a buffer of `len` bytes for the input of `parse_css`.
-#[unsafe(no_mangle)]
-pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
-    let mut buffer = Vec::<u8>::with_capacity(len);
-    let ptr = buffer.as_mut_ptr();
-    std::mem::forget(buffer);
-    ptr
-}
-
-/// Frees a buffer allocated by `alloc_bytes`.
-///
-/// # Safety
-///
-/// `ptr` and `len` must come from the same call to `alloc_bytes`.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn dealloc_bytes(ptr: *mut u8, len: usize) {
-    drop(unsafe { Vec::from_raw_parts(ptr, 0, len) });
-}
-
-/// Parses the stylesheet in the `len` UTF-8 bytes at `input` into JSON, see
-/// `css.rs`, and returns its length in bytes. `css_output` points to it.
-///
-/// # Safety
-///
-/// `input` must point to `len` initialized bytes.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn parse_css(input: *const u8, len: usize) -> usize {
-    let css = std::str::from_utf8(unsafe { std::slice::from_raw_parts(input, len) }).unwrap_or("");
-    let output = css::parse_stylesheet(css);
-    CSS_OUTPUT.with(|buffer| {
-        *buffer.borrow_mut() = output;
-        buffer.borrow().len()
-    })
-}
-
-/// The JSON written by the last call to `parse_css`.
-#[unsafe(no_mangle)]
-pub extern "C" fn css_output() -> *const u8 {
-    CSS_OUTPUT.with(|buffer| buffer.borrow().as_ptr())
+impl LayoutCall {
+    fn invoke<T>(
+        &self,
+        callback: impl FnOnce(&LayoutCallbacks) -> Result<T, JsValue>,
+    ) -> Option<T> {
+        // Taffy needs a numeric fallback to finish the pass. Once a callback
+        // fails, skip further callbacks and return the original exception.
+        if self.error.borrow().is_some() {
+            return None;
+        }
+        match callback(&self.callbacks) {
+            Ok(value) => Some(value),
+            Err(error) => {
+                self.error.replace(Some(error));
+                None
+            }
+        }
+    }
 }
 
 thread_local! {
-    static FONT_OUTPUT: RefCell<Vec<u8>> = const { RefCell::new(Vec::new()) };
+    /// The calls to `compute` in progress, innermost last.
+    /// Measuring a leaf may lay out another tree, e.g. an atomic inline.
+    static LAYOUT_CALLS: RefCell<Vec<Rc<LayoutCall>>> = const { RefCell::new(Vec::new()) };
 }
 
-/// Decodes the WOFF2 font in the `len` bytes at `input` into a TrueType or
-/// OpenType font, and returns its length in bytes, or 0 if it can't be
-/// decoded. `font_output` points to it until `release_font_output`.
-///
-/// # Safety
-///
-/// `input` must point to `len` initialized bytes.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn decode_woff2(input: *const u8, len: usize) -> usize {
-    let mut data = unsafe { std::slice::from_raw_parts(input, len) };
-    let font = woff2_patched::decode::convert_woff2_to_ttf(&mut data).unwrap_or_default();
-    FONT_OUTPUT.with(|buffer| {
-        let len = font.len();
-        *buffer.borrow_mut() = font;
-        len
-    })
+fn resolve_calc(index: u32, basis: f32) -> f32 {
+    let call = LAYOUT_CALLS.with(|stack| stack.borrow().last().cloned());
+    call.and_then(|call| call.invoke(|callbacks| callbacks.resolve_calc(index, basis)))
+        .unwrap_or(0.0)
 }
 
-/// The font decoded by the last call to `decode_woff2`.
-#[unsafe(no_mangle)]
-pub extern "C" fn font_output() -> *const u8 {
-    FONT_OUTPUT.with(|buffer| buffer.borrow().as_ptr())
+/// Parses a stylesheet into JSON, see `css.rs`.
+#[wasm_bindgen(js_name = parseCss)]
+pub fn parse_css(css: &str) -> String {
+    css::parse_stylesheet(css)
 }
 
-/// Frees the font decoded by `decode_woff2`.
-#[unsafe(no_mangle)]
-pub extern "C" fn release_font_output() {
-    FONT_OUTPUT.with(|buffer| *buffer.borrow_mut() = Vec::new());
+/// Decodes a WOFF2 font into a TrueType or OpenType font, or returns
+/// `undefined` if it can't be decoded.
+#[wasm_bindgen(js_name = decodeWoff2)]
+pub fn decode_woff2(mut data: &[u8]) -> Option<Vec<u8>> {
+    woff2_patched::decode::convert_woff2_to_ttf(&mut data).ok()
 }
 
 /// The handle of the `calc()` expression at `index`, which Taffy passes to
@@ -546,30 +523,50 @@ fn available_space_to_f32(space: AvailableSpace) -> f32 {
     }
 }
 
-/// Lays out the tree in `input` and returns a pointer to `OUTPUT_STRIDE`
-/// `f32`s per node: the position relative to the parent, the size, and the
-/// padding, border and margin (left, right, top, bottom).
-///
-/// # Safety
-///
-/// `input` must point to `len` initialized `f32`s.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn compute(
-    input: *const f32,
-    len: usize,
+/// Lays out the tree in `input` and returns `OUTPUT_STRIDE` `f32`s per node:
+/// the position relative to the parent, the size, and the padding, border and
+/// margin (left, right, top, bottom).
+#[wasm_bindgen]
+pub fn compute(
+    input: &[f32],
     available_width: f32,
     available_height: f32,
-    use_rounding: u32,
-) -> *const f32 {
+    use_rounding: bool,
+    callbacks: LayoutCallbacks,
+) -> Result<Vec<f32>, JsValue> {
+    let call = Rc::new(LayoutCall {
+        callbacks,
+        error: RefCell::new(None),
+    });
+    taffy::tree::CALC_RESOLVER.with(|resolver| resolver.set(resolve_calc));
+    LAYOUT_CALLS.with(|stack| stack.borrow_mut().push(Rc::clone(&call)));
+    let output = compute_with(
+        input,
+        available_width,
+        available_height,
+        use_rounding,
+        &call,
+    );
+    LAYOUT_CALLS.with(|stack| stack.borrow_mut().pop());
+    output
+}
+
+fn compute_with(
+    input: &[f32],
+    available_width: f32,
+    available_height: f32,
+    use_rounding: bool,
+    call: &LayoutCall,
+) -> Result<Vec<f32>, JsValue> {
     let mut reader = Reader {
-        data: unsafe { std::slice::from_raw_parts(input, len) },
+        data: input,
         index: 0,
         intrinsic_limits: Vec::new(),
     };
 
     let node_count = reader.int() as usize;
     let mut tree: TaffyTree<Measured> = TaffyTree::with_capacity(node_count);
-    if use_rounding == 0 {
+    if !use_rounding {
         tree.disable_rounding();
     }
 
@@ -630,25 +627,23 @@ pub unsafe extern "C" fn compute(
             style,
             |_, _| 0.0,
             |known, available| {
-                let mut out = [0.0f32; 4];
-                unsafe {
-                    measure(
+                let Some(out) = call.invoke(|callbacks| {
+                    callbacks.measure(
                         index,
                         known.width.unwrap_or(f32::NAN),
                         known.height.unwrap_or(f32::NAN),
                         available_space_to_f32(available.width),
                         available_space_to_f32(available.height),
-                        exclusions.as_ptr(),
-                        (exclusions.len() / 4) as u32,
-                        out.as_mut_ptr(),
+                        &exclusions,
                     )
+                }) else {
+                    return Size::ZERO;
                 };
-                baselines.first = Some(out[2]).filter(|value| value.is_finite());
-                baselines.last = Some(out[3]).filter(|value| value.is_finite());
-                Size {
-                    width: out[0],
-                    height: out[1],
-                }
+                let [width, height, first, last] =
+                    <[f32; 4]>::try_from(out).unwrap_or([0.0, 0.0, f32::NAN, f32::NAN]);
+                baselines.first = Some(first).filter(|value| value.is_finite());
+                baselines.last = Some(last).filter(|value| value.is_finite());
+                Size { width, height }
             },
         );
         output.baselines = baselines;
@@ -718,31 +713,31 @@ pub unsafe extern "C" fn compute(
     )
     .unwrap();
 
-    OUTPUT.with(|output| {
-        let mut output = output.borrow_mut();
-        output.clear();
-        output.reserve(node_count * OUTPUT_STRIDE);
-        for &node in &nodes {
-            let layout = tree.layout(node).unwrap();
-            output.extend_from_slice(&[
-                layout.location.x,
-                layout.location.y,
-                layout.size.width,
-                layout.size.height,
-                layout.padding.left,
-                layout.padding.right,
-                layout.padding.top,
-                layout.padding.bottom,
-                layout.border.left,
-                layout.border.right,
-                layout.border.top,
-                layout.border.bottom,
-                layout.margin.left,
-                layout.margin.right,
-                layout.margin.top,
-                layout.margin.bottom,
-            ]);
-        }
-        output.as_ptr()
-    })
+    if let Some(error) = call.error.take() {
+        return Err(error);
+    }
+
+    let mut output = Vec::with_capacity(node_count * OUTPUT_STRIDE);
+    for &node in &nodes {
+        let layout = tree.layout(node).unwrap();
+        output.extend_from_slice(&[
+            layout.location.x,
+            layout.location.y,
+            layout.size.width,
+            layout.size.height,
+            layout.padding.left,
+            layout.padding.right,
+            layout.padding.top,
+            layout.padding.bottom,
+            layout.border.left,
+            layout.border.right,
+            layout.border.top,
+            layout.border.bottom,
+            layout.margin.left,
+            layout.margin.right,
+            layout.margin.top,
+            layout.margin.bottom,
+        ]);
+    }
+    Ok(output)
 }

@@ -59,6 +59,10 @@ try {
 
   // Browsers do not define `Buffer`. Import the browser bundle without it and
   // render once, so a Node-only decoder fails here the way it fails there.
+  // Node loads `fetch` and friends lazily with code that needs `Buffer`, and
+  // the layout engine's bindings check for `Response` and `Request`, so load
+  // them first, like browsers define them.
+  void [globalThis.fetch, globalThis.Request, globalThis.Response]
   delete globalThis.Buffer
   const { default: satori } = await import(outfile.href)
   const font = new Uint8Array(

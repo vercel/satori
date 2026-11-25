@@ -5,6 +5,7 @@ node_modules
 **/dist/**
 playground/.webgl-libs/
 src/vendor/
+crates/layout/pkg/
 pnpm-lock.yaml
 *.md
 coverage/

@@ -3,14 +3,11 @@
  */
 
 import binary from '../../layout.wasm'
+import init from '../../crates/layout/pkg/layout.js'
 import { createLayoutEngine } from './index.js'
 
-const engine = createLayoutEngine()
-const loadingEngine = WebAssembly.instantiate(binary, engine.imports).then(
-  ({ instance }) => {
-    engine.setInstance(instance)
-    return engine
-  }
+const loadingEngine = init({ module_or_path: binary }).then(() =>
+  createLayoutEngine()
 )
 
 export function getLayoutEngine() {

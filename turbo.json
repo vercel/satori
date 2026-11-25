@@ -16,7 +16,7 @@
       "cache": false,
       "persistent": true
     },
-    // `layout.wasm` is built by `satori-layout#build`, see
+    // `layout.wasm` and its bindings are built by `satori-layout#build`, see
     // `crates/layout/turbo.json`.
     //
     // The root package. Its `build` and `dev` scripts run these through
@@ -24,7 +24,7 @@
     "satori#build": {
       "command": ["pnpm", "run", "build:package"],
       "dependsOn": ["satori-layout#build"],
-      "inputs": ["$TURBO_DEFAULT$", "layout.wasm"],
+      "inputs": ["$TURBO_DEFAULT$", "layout.wasm", "crates/layout/pkg/**"],
       "outputs": ["dist/**"]
     },
     "satori#dev": {
