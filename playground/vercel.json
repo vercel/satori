@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd .. && rustup toolchain install && node scripts/vendor-layout-crates.mjs && pnpm turbo run build --filter=satori-playground",
   "build": {
     "env": {
       "ENABLE_EXPERIMENTAL_COREPACK": "1"

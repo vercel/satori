@@ -1,0 +1,22 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "command": ["node", "../../scripts/build-layout-wasm.mjs"],
+      // Cargo builds the patched crates in `vendor` as part of this.
+      "dependsOn": [],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "patches/**",
+        // Generated from `patches` and the versions in the script.
+        "!$TURBO_ROOT$/vendor/**",
+        "$TURBO_ROOT$/rust-toolchain.toml",
+        "$TURBO_ROOT$/scripts/build-layout-wasm.mjs",
+        "$TURBO_ROOT$/scripts/vendor-layout-crates.mjs"
+      ],
+      "outputs": ["$TURBO_ROOT$/layout.wasm"],
+      "outputLogs": "new-only"
+    }
+  }
+}

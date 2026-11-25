@@ -1,6 +1,12 @@
 {
-  "$schema": "https://turbo.build/schema.json",
-  "globalPassThroughEnv": ["COREPACK_HOME"],
+  "$schema": "https://turborepo.dev/schema.json",
+  // Where cargo and rustup are installed, if not in the default location.
+  "globalPassThroughEnv": ["COREPACK_HOME", "CARGO_HOME", "RUSTUP_HOME"],
+  "futureFlags": {
+    "experimentalCargoWorkspaces": true,
+    // task commands are used by cargo packages because there's no package.json to hold scripts
+    "experimentalTaskCommand": true
+  },
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -9,6 +15,31 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    // `layout.wasm` is built by `satori-layout#build`, see
+    // `crates/layout/turbo.json`.
+    //
+    // The root package. Its `build` and `dev` scripts run these through
+    // Turborepo, so the tasks run the underlying scripts instead.
+    "satori#build": {
+      "command": ["pnpm", "run", "build:package"],
+      "dependsOn": ["satori-layout#build"],
+      "inputs": ["$TURBO_DEFAULT$", "layout.wasm"],
+      "outputs": ["dist/**"]
+    },
+    "satori#dev": {
+      "command": ["pnpm", "run", "dev:default"],
+      "dependsOn": ["satori-layout#build"],
+      "cache": false,
+      "persistent": true
+    },
+    // `^build` doesn't include the root package, so depend on it explicitly.
+    "satori-playground#build": {
+      "dependsOn": ["satori#build"],
+      // `.webgl-libs` is written by `scripts/bundle-webgl-libs.mjs`, and
+      // depends on the platform, so Vercel's builds aren't shared with others.
+      "env": ["VERCEL"],
+      "outputs": [".next/**", "!.next/cache/**", ".webgl-libs/**"]
     }
   }
 }
