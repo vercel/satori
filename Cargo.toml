@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/layout", "vendor/taffy", "vendor/woff2-patched"]
+members = ["crates/layout", "vendor/taffy"]
 # The crates in `vendor` are downloaded and patched by
 # `scripts/vendor-layout-crates.mjs`. Turborepo requires path dependencies to be
 # members.

@@ -119,8 +119,8 @@ pub fn parse_css(css: &str) -> String {
 /// Decodes a WOFF2 font into a TrueType or OpenType font, or returns
 /// `undefined` if it can't be decoded.
 #[wasm_bindgen(js_name = decodeWoff2)]
-pub fn decode_woff2(mut data: &[u8]) -> Option<Vec<u8>> {
-    woff2_patched::decode::convert_woff2_to_ttf(&mut data).ok()
+pub fn decode_woff2(data: &[u8]) -> Option<Vec<u8>> {
+    wuff::decompress_woff2(data).ok()
 }
 
 /// The handle of the `calc()` expression at `index`, which Taffy passes to

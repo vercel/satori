@@ -25,7 +25,6 @@ import * as tar from 'tar'
 /** The versions of the patched crates, by name. */
 const PATCHED_CRATES = {
   taffy: '0.14.0',
-  'woff2-patched': '0.4.0',
 }
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
