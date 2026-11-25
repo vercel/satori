@@ -2,7 +2,6 @@
   "$schema": "https://turborepo.dev/schema.json",
   "extends": ["//"],
   "tasks": {
-    // `layout.wasm`, which isn't checked in.
     "build": {
       "command": ["node", "../../scripts/build-layout-wasm.mjs"],
       // Cargo builds the patched crates in `vendor` as part of this.
