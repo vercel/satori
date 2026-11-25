@@ -12,12 +12,13 @@ use std::cell::RefCell;
 use taffy::prelude::*;
 use taffy::style::{GridTemplateArea, GridTemplateAreas, GridTemplateRepetition};
 use taffy::{
-    compute_leaf_layout, AlignContent, AlignItems, Baselines, BoxSizing, Clear, CompactLength,
-    Direction, Float, LayoutInput, LayoutOutput, Overflow, Point, TextAlign, LEAF_FLOAT_EXCLUSIONS,
+    AlignContent, AlignItems, Baselines, BoxSizing, Clear, CompactLength, Direction, Float,
+    LEAF_FLOAT_EXCLUSIONS, LayoutInput, LayoutOutput, Overflow, Point, TextAlign,
+    compute_leaf_layout,
 };
 
 #[link(wasm_import_module = "env")]
-extern "C" {
+unsafe extern "C" {
     /// Measures a leaf. `NaN` known dimensions are unknown, negative
     /// available sizes are min-content, infinite ones are max-content.
     /// `exclusions` points to 4 `f32`s for each float that intersects the leaf:
@@ -45,7 +46,7 @@ thread_local! {
 }
 
 /// Allocates a buffer of `len` `f32`s for the input.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn alloc(len: usize) -> *mut f32 {
     let mut buffer = Vec::<f32>::with_capacity(len);
     let ptr = buffer.as_mut_ptr();
@@ -58,9 +59,9 @@ pub extern "C" fn alloc(len: usize) -> *mut f32 {
 /// # Safety
 ///
 /// `ptr` and `len` must come from the same call to `alloc`.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dealloc(ptr: *mut f32, len: usize) {
-    drop(Vec::from_raw_parts(ptr, 0, len));
+    drop(unsafe { Vec::from_raw_parts(ptr, 0, len) });
 }
 
 mod css;
@@ -70,7 +71,7 @@ thread_local! {
 }
 
 /// Allocates a buffer of `len` bytes for the input of `parse_css`.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
     let mut buffer = Vec::<u8>::with_capacity(len);
     let ptr = buffer.as_mut_ptr();
@@ -83,9 +84,9 @@ pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
 /// # Safety
 ///
 /// `ptr` and `len` must come from the same call to `alloc_bytes`.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn dealloc_bytes(ptr: *mut u8, len: usize) {
-    drop(Vec::from_raw_parts(ptr, 0, len));
+    drop(unsafe { Vec::from_raw_parts(ptr, 0, len) });
 }
 
 /// Parses the stylesheet in the `len` UTF-8 bytes at `input` into JSON, see
@@ -94,9 +95,9 @@ pub unsafe extern "C" fn dealloc_bytes(ptr: *mut u8, len: usize) {
 /// # Safety
 ///
 /// `input` must point to `len` initialized bytes.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn parse_css(input: *const u8, len: usize) -> usize {
-    let css = std::str::from_utf8(std::slice::from_raw_parts(input, len)).unwrap_or("");
+    let css = std::str::from_utf8(unsafe { std::slice::from_raw_parts(input, len) }).unwrap_or("");
     let output = css::parse_stylesheet(css);
     CSS_OUTPUT.with(|buffer| {
         *buffer.borrow_mut() = output;
@@ -105,7 +106,7 @@ pub unsafe extern "C" fn parse_css(input: *const u8, len: usize) -> usize {
 }
 
 /// The JSON written by the last call to `parse_css`.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn css_output() -> *const u8 {
     CSS_OUTPUT.with(|buffer| buffer.borrow().as_ptr())
 }
@@ -121,9 +122,9 @@ thread_local! {
 /// # Safety
 ///
 /// `input` must point to `len` initialized bytes.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn decode_woff2(input: *const u8, len: usize) -> usize {
-    let mut data = std::slice::from_raw_parts(input, len);
+    let mut data = unsafe { std::slice::from_raw_parts(input, len) };
     let font = woff2_patched::decode::convert_woff2_to_ttf(&mut data).unwrap_or_default();
     FONT_OUTPUT.with(|buffer| {
         let len = font.len();
@@ -133,13 +134,13 @@ pub unsafe extern "C" fn decode_woff2(input: *const u8, len: usize) -> usize {
 }
 
 /// The font decoded by the last call to `decode_woff2`.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn font_output() -> *const u8 {
     FONT_OUTPUT.with(|buffer| buffer.borrow().as_ptr())
 }
 
 /// Frees the font decoded by `decode_woff2`.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn release_font_output() {
     FONT_OUTPUT.with(|buffer| *buffer.borrow_mut() = Vec::new());
 }
@@ -552,7 +553,7 @@ fn available_space_to_f32(space: AvailableSpace) -> f32 {
 /// # Safety
 ///
 /// `input` must point to `len` initialized `f32`s.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn compute(
     input: *const f32,
     len: usize,
@@ -561,7 +562,7 @@ pub unsafe extern "C" fn compute(
     use_rounding: u32,
 ) -> *const f32 {
     let mut reader = Reader {
-        data: std::slice::from_raw_parts(input, len),
+        data: unsafe { std::slice::from_raw_parts(input, len) },
         index: 0,
         intrinsic_limits: Vec::new(),
     };
@@ -630,16 +631,18 @@ pub unsafe extern "C" fn compute(
             |_, _| 0.0,
             |known, available| {
                 let mut out = [0.0f32; 4];
-                measure(
-                    index,
-                    known.width.unwrap_or(f32::NAN),
-                    known.height.unwrap_or(f32::NAN),
-                    available_space_to_f32(available.width),
-                    available_space_to_f32(available.height),
-                    exclusions.as_ptr(),
-                    (exclusions.len() / 4) as u32,
-                    out.as_mut_ptr(),
-                );
+                unsafe {
+                    measure(
+                        index,
+                        known.width.unwrap_or(f32::NAN),
+                        known.height.unwrap_or(f32::NAN),
+                        available_space_to_f32(available.width),
+                        available_space_to_f32(available.height),
+                        exclusions.as_ptr(),
+                        (exclusions.len() / 4) as u32,
+                        out.as_mut_ptr(),
+                    )
+                };
                 baselines.first = Some(out[2]).filter(|value| value.is_finite());
                 baselines.last = Some(out[3]).filter(|value| value.is_finite());
                 Size {

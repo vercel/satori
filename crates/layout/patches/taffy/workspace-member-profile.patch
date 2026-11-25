@@ -1,0 +1,10 @@
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -166,7 +166,3 @@
+ 
+ [dev-dependencies.serde_json]
+ version = "1.0.93"
+-
+-[profile.release]
+-lto = true
+-panic = "abort"

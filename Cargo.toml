@@ -4,7 +4,7 @@ members = ["crates/layout", "vendor/taffy", "vendor/woff2-patched"]
 # `scripts/vendor-layout-crates.mjs`. Turborepo requires path dependencies to be
 # members.
 default-members = ["crates/layout"]
-resolver = "2"
+resolver = "3"
 
 [workspace.metadata]
 # The name of the workspace's package in Turborepo.
