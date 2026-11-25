@@ -10,6 +10,7 @@ import {
   type ShapedGlyph,
 } from './harfbuzz.js'
 import { segment } from './utils.js'
+import type { LayoutEngine } from './layout-engine/index.js'
 
 const MAX_SHAPED_RUN_CACHE_ENTRIES = 256
 
@@ -556,10 +557,10 @@ export default class FontLoader {
   // identical text runs with HarfBuzz.
   private shapedRunCache = new Map<string, ShapedRun[]>()
   /** Decodes WOFF2 fonts, see `crates/layout`. */
-  private decodeWoff2?: (data: Uint8Array) => ArrayBuffer | undefined
+  private decodeWoff2?: LayoutEngine['decodeWoff2']
   constructor(
     fontOptions: FontOptions[],
-    decodeWoff2?: (data: Uint8Array) => ArrayBuffer | undefined
+    decodeWoff2?: LayoutEngine['decodeWoff2']
   ) {
     this.decodeWoff2 = decodeWoff2
     this.addFonts(fontOptions)
@@ -698,7 +699,10 @@ export default class FontLoader {
           if (!decoded) {
             throw new Error(`Failed to decode the WOFF2 font "${name}".`)
           }
-          arrayBuffer = decoded
+          arrayBuffer = decoded.buffer.slice(
+            decoded.byteOffset,
+            decoded.byteOffset + decoded.byteLength
+          )
         }
 
         font = opentype.parse(

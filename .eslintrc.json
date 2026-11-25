@@ -38,5 +38,5 @@
     "react-hooks/exhaustive-deps": 1,
     "react/prop-types": 0
   },
-  "ignorePatterns": ["dist/", "node_modules", "vendor"]
+  "ignorePatterns": ["dist/", "node_modules", "vendor", "crates/layout/pkg/"]
 }

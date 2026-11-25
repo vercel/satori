@@ -2,20 +2,32 @@
   "$schema": "https://turborepo.dev/schema.json",
   "extends": ["//"],
   "tasks": {
+    // The `wasm-bindgen` CLI in `vendor/wasm-bindgen-cli`. Not cached by
+    // Turborepo, whose hashes don't include the platform. The script skips
+    // the install when it's already there instead.
+    "install-wasm-bindgen": {
+      "command": ["node", "../../scripts/install-wasm-bindgen.mjs"],
+      "cache": false,
+      "outputLogs": "new-only"
+    },
     "build": {
       "command": ["node", "../../scripts/build-layout-wasm.mjs"],
       // Cargo builds the patched crates in `vendor` as part of this.
-      "dependsOn": [],
+      "dependsOn": ["install-wasm-bindgen"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "patches/**",
         // Generated from `patches` and the versions in the script.
         "!$TURBO_ROOT$/vendor/**",
+        "$TURBO_ROOT$/Cargo.lock",
         "$TURBO_ROOT$/rust-toolchain.toml",
         "$TURBO_ROOT$/scripts/build-layout-wasm.mjs",
-        "$TURBO_ROOT$/scripts/vendor-layout-crates.mjs"
+        "$TURBO_ROOT$/scripts/install-wasm-bindgen.mjs",
+        "$TURBO_ROOT$/scripts/vendor-layout-crates.mjs",
+        // The version of `binaryen`, for `wasm-opt`.
+        "$TURBO_ROOT$/package.json"
       ],
-      "outputs": ["$TURBO_ROOT$/layout.wasm"],
+      "outputs": ["$TURBO_ROOT$/layout.wasm", "pkg/**"],
       "outputLogs": "new-only"
     }
   }

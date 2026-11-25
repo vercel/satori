@@ -71,6 +71,9 @@ importers:
       '@vitest/ui':
         specifier: ^0.32.0
         version: 0.32.0(vitest@0.32.0)
+      binaryen:
+        specifier: 132.0.0
+        version: 132.0.0
       concurrently:
         specifier: ^7.3.0
         version: 7.4.0
@@ -2313,6 +2316,10 @@ packages:
   binary-extensions@2.2.0:
     resolution: {integrity: sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA==}
     engines: {node: '>=8'}
+
+  binaryen@132.0.0:
+    resolution: {integrity: sha512-4Usg7yEvwO3FMso3Oov6qkOOHSod1IEv+boKkh77kTljM+eNBouqCTbqWswGzbG+vDNO/b/v2C4gfEh1WgB9Lg==}
+    hasBin: true
 
   bl@4.1.0:
     resolution: {integrity: sha512-1W07cM9gS6DcLperZfFSj+bWLtaPGSOHWhPiGzXmvVJbRLdG82sH/Kn8EtW1VqWVA54AKf2h5k5BbnIbwF3h6w==}
@@ -7745,6 +7752,8 @@ snapshots:
   baseline-browser-mapping@2.11.15: {}
 
   binary-extensions@2.2.0: {}
+
+  binaryen@132.0.0: {}
 
   bl@4.1.0:
     dependencies:

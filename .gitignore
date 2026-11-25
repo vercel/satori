@@ -18,13 +18,15 @@ playground/.webgl-libs
 # Vendor files
 # yoga.wasm
 
-# Rust build output, and the crates that `scripts/vendor-layout-crates.mjs`
-# downloads and patches
+# Rust build output
 /target
+# - Patched crates from `scripts/vendor-layout-crates.mjs`
+# - `wasm-bindgen-cli` from `scripts/install-wasm-bindgen.mjs`
 /vendor
 
 # Built by `pnpm build:wasm`
 /layout.wasm
+/crates/layout/pkg
 
 # The images of `pnpm fidelity`
 test/fidelity/output/
