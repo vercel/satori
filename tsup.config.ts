@@ -20,7 +20,7 @@ export default defineConfig({
   },
   minify: process.env.NODE_ENV !== 'development',
   format: ['esm', 'cjs'],
-  noExternal: ['twrnc', 'emoji-regex-xs', 'harfbuzzjs'],
+  noExternal: ['twrnc', 'emoji-regex-xs'],
   esbuildOptions(options) {
     options.tsconfig = 'tsconfig.json'
     options.legalComments = 'external'
@@ -35,8 +35,7 @@ export default defineConfig({
     {
       // The default build bundles `layout.wasm` as bytes. esbuild's `binary`
       // loader decodes them with `Buffer`, which browsers do not define, and
-      // this module runs while the bundle is imported. The HarfBuzz wasm in
-      // the same bundle already uses this guard.
+      // this module runs while the bundle is imported.
       name: 'wasm-binary',
       setup(build) {
         build.onLoad({ filter: /\.wasm$/ }, async (args) => {

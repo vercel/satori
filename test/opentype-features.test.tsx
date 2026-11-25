@@ -390,5 +390,69 @@ describe('OpenType Features', () => {
       )
       expect(await toImage(svg, 400)).toMatchImageSnapshot()
     })
+
+    describe('parsing', () => {
+      const render = (fontFeatureSettings?: string) =>
+        satori(
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 32,
+              fontFamily: 'Roboto',
+              fontFeatureSettings,
+            }}
+          >
+            fi ffl
+          </div>,
+          { width: 200, height: 50, fonts, embedFont: true }
+        )
+
+      it('should disable ligatures as a baseline', async () => {
+        expect(await render('"liga" off')).not.toBe(await render())
+      })
+
+      it('should treat "normal" as no features', async () => {
+        expect(await render('normal')).toBe(await render())
+      })
+
+      it('should parse CSS syntax', async () => {
+        const disabled = await render('"liga" off')
+        expect(await render("'liga' off")).toBe(disabled)
+        expect(await render('  "liga"   OFF  ')).toBe(disabled)
+        expect(await render('"liga" 0')).toBe(disabled)
+        expect(await render('"liga"/* comment */off')).toBe(disabled)
+        expect(await render('"\\6c iga" off')).toBe(disabled)
+        // A comma is a valid character of a tag.
+        expect(await render('"a,bc", "liga" off')).toBe(disabled)
+      })
+
+      it('should ignore the whole value if any feature is invalid', async () => {
+        const enabled = await render()
+        for (const value of [
+          '"liga" off junk',
+          '"liga" off, junk',
+          '"liga" off,',
+          '"liga" -1',
+          '"liga" 1.5',
+          '"lig" off',
+          '"ligat" off',
+          '"lïga" off',
+          // HarfBuzz's syntax.
+          'liga off',
+          '-liga',
+          'liga=0',
+          '"liga"[0:1] off',
+        ]) {
+          expect(await render(value), value).toBe(enabled)
+        }
+      })
+
+      it('should apply the last value of a repeated feature', async () => {
+        expect(await render('"liga" off, "liga" on')).toBe(await render())
+        expect(await render('"liga" on, "liga" off')).toBe(
+          await render('"liga" off')
+        )
+      })
+    })
   })
 })

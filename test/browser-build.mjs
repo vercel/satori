@@ -29,15 +29,6 @@ for (const entry of [
     )
   }
 
-  if (/(?:require\(|from\s*)["']harfbuzzjs["']/.test(source)) {
-    throw new Error(
-      `${entry} imports harfbuzzjs at runtime; it must be bundled instead. ` +
-        'This repo patches harfbuzzjs to drop its Node fs branch and inline ' +
-        'hb.wasm, and that patch does not reach consumers, so leaving the ' +
-        'import external breaks every bundler.'
-    )
-  }
-
   if (entry.endsWith('.js') && source.includes('__dirname')) {
     throw new Error(
       `${entry} refers to __dirname. Node ESM does not define it, so importing ` +

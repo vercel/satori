@@ -20,6 +20,7 @@ use taffy::{
 use wasm_bindgen::prelude::*;
 
 mod css;
+mod shape;
 
 #[wasm_bindgen(typescript_custom_section)]
 const LAYOUT_CALLBACKS: &str = r#"

@@ -4,11 +4,7 @@
 import opentype from '@shuding/opentype.js'
 import { inflateSync } from 'fflate'
 import { Locale, locales, isValidLocale } from './language.js'
-import {
-  shapeText,
-  parseFontFeatureSettings,
-  type ShapedGlyph,
-} from './harfbuzz.js'
+import { shapeText, type ShapedGlyph, type ShapingFont } from './shaping.js'
 import { segment } from './utils.js'
 import type { LayoutEngine } from './layout-engine/index.js'
 
@@ -27,7 +23,7 @@ function isWhitespace(char: string): boolean {
  *
  * Whitespace characters are kept with the preceding segment's font when
  * possible. This ensures proper spacing within text runs and prevents
- * HarfBuzz from shaping whitespace separately (which can cause spacing issues).
+ * the shaper from shaping whitespace separately (which can cause spacing issues).
  */
 function splitByFont(
   content: string,
@@ -117,7 +113,7 @@ function withoutVariations(data: ArrayBuffer) {
 }
 
 /**
- * Convert WOFF to raw sfnt (TrueType/OpenType) format for HarfBuzz.
+ * Convert WOFF to raw sfnt (TrueType/OpenType) format for shaping.
  */
 function woffToSfnt(woff: ArrayBuffer): ArrayBuffer {
   const view = new DataView(woff)
@@ -549,21 +545,42 @@ const cachedParsedFont = new WeakMap<
   opentype.Font | null | undefined
 >()
 
+/**
+ * The TrueType or OpenType data of each parsed font, until text is shaped
+ * with it. Fonts are copied into the layout engine's memory to be shaped, so
+ * their `ShapingFont`s are created when they're first used, and freed by
+ * wasm-bindgen's `FinalizationRegistry` when the font is collected.
+ */
+const fontData = new WeakMap<opentype.Font, ArrayBuffer>()
+const shapingFonts = new WeakMap<opentype.Font, ShapingFont>()
+
 export default class FontLoader {
   defaultFont: opentype.Font
   fonts = new Map<string, [opentype.Font, Weight?, FontStyle?][]>()
   // Shaping results are cached on the loader (which persists across renders
   // for the same font configuration) so repeated renders don't re-shape
-  // identical text runs with HarfBuzz.
+  // identical text runs.
   private shapedRunCache = new Map<string, ShapedRun[]>()
-  /** Decodes WOFF2 fonts, see `crates/layout`. */
-  private decodeWoff2?: LayoutEngine['decodeWoff2']
+  /** Decodes WOFF2 fonts and shapes text, see `crates/layout`. */
+  private engine: Pick<LayoutEngine, 'decodeWoff2' | 'ShapingFont'>
   constructor(
     fontOptions: FontOptions[],
-    decodeWoff2?: LayoutEngine['decodeWoff2']
+    engine: Pick<LayoutEngine, 'decodeWoff2' | 'ShapingFont'>
   ) {
-    this.decodeWoff2 = decodeWoff2
+    this.engine = engine
     this.addFonts(fontOptions)
+  }
+
+  private getShapingFont(font: opentype.Font): ShapingFont {
+    let shapingFont = shapingFonts.get(font)
+    if (!shapingFont) {
+      shapingFont = new this.engine.ShapingFont(
+        new Uint8Array(fontData.get(font))
+      )
+      shapingFonts.set(font, shapingFont)
+      fontData.delete(font)
+    }
+    return shapingFont
   }
 
   // Get font by name and weight.
@@ -695,7 +712,7 @@ export default class FontLoader {
 
         // WOFF2 fonts are decoded into TrueType or OpenType fonts.
         if (isWoff2(arrayBuffer)) {
-          const decoded = this.decodeWoff2?.(new Uint8Array(arrayBuffer))
+          const decoded = this.engine.decodeWoff2(new Uint8Array(arrayBuffer))
           if (!decoded) {
             throw new Error(`Failed to decode the WOFF2 font "${name}".`)
           }
@@ -711,16 +728,14 @@ export default class FontLoader {
           { lowMemory: true }
         )
 
-        // Store the raw font data for HarfBuzz (convert WOFF to sfnt if needed)
+        // Store the font data for shaping (convert WOFF to sfnt if needed)
         const bytes = new Uint8Array(arrayBuffer)
         const isWoff =
           bytes[0] === 0x77 &&
           bytes[1] === 0x4f &&
           bytes[2] === 0x46 &&
           bytes[3] === 0x46
-        ;(font as any)._rawFontData = isWoff
-          ? woffToSfnt(arrayBuffer)
-          : arrayBuffer
+        fontData.set(font, isWoff ? woffToSfnt(arrayBuffer) : arrayBuffer)
 
         // Modify the `charToGlyphIndex` method, so we can know which char is
         // being mapped to which glyph.
@@ -966,14 +981,14 @@ export default class FontLoader {
         return cached
       }
 
-      const features = fontFeatureSettings
-        ? parseFontFeatureSettings(fontFeatureSettings)
-        : {}
       const shapedRuns = splitByFont(content, resolveFont).map(
         ([text, font]): ShapedRun => [
           text,
           font,
-          shapeText(font, text, { features, direction }),
+          shapeText(this.getShapingFont(font), text, {
+            features: fontFeatureSettings,
+            direction,
+          }),
         ]
       )
 

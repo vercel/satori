@@ -24,7 +24,6 @@ import {
 } from './handler/stylesheet.js'
 import { cache, inflightRequests } from './handler/image.js'
 import { segment } from './utils.js'
-import { initHarfBuzz } from './harfbuzz.js'
 import type { PaintBounds } from './culling.js'
 import {
   sizeStaticPositionPlaceholders,
@@ -71,7 +70,7 @@ function getFontLoader(
   let loader = fontLoaderCache.get(key)
 
   if (!loader) {
-    loader = new FontLoader(fonts, (data) => layoutEngine.decodeWoff2(data))
+    loader = new FontLoader(fonts, layoutEngine)
     if (fontLoaderCache.size >= MAX_FONT_LOADERS) {
       const oldestKey = fontLoaderCache.keys().next().value
       if (oldestKey !== undefined) fontLoaderCache.delete(oldestKey)
@@ -142,8 +141,7 @@ export async function render(
   options: SatoriOptions,
   { replacedElements, projectPlane }: RenderExtensions = {}
 ): Promise<string> {
-  // Initialize the layout and shaping engines together.
-  const [layoutEngine] = await Promise.all([getLayoutEngine(), initHarfBuzz()])
+  const layoutEngine = await getLayoutEngine()
   if (!layoutEngine) {
     throw new Error(
       'Satori is not initialized: expect the layout engine to be loaded, got ' +

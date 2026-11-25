@@ -4,11 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  harfbuzzjs@0.10.0:
-    hash: 760b5ac12c5d269b507b4dd008b00a9e9957c29d9b08d00047b07cb9305cee97
-    path: patches/harfbuzzjs@0.10.0.patch
-
 importers:
 
   .:
@@ -37,9 +32,6 @@ importers:
       fflate:
         specifier: 0.7.3
         version: 0.7.3
-      harfbuzzjs:
-        specifier: 0.10.0
-        version: 0.10.0(patch_hash=760b5ac12c5d269b507b4dd008b00a9e9957c29d9b08d00047b07cb9305cee97)
       linebreak:
         specifier: ^1.1.0
         version: 1.1.0
@@ -3170,9 +3162,6 @@ packages:
 
   grapheme-splitter@1.0.4:
     resolution: {integrity: sha512-bzh50DW9kTPM00T8y4o8vQg89Di9oLJVLW/KaOGIXJWP/iqCN6WKYkbNOF04vFLJhwcpYUh9ydh/+5vpOqV4YQ==}
-
-  harfbuzzjs@0.10.0:
-    resolution: {integrity: sha512-SN8LVwCOzvTq3OPNd0+EAghgXugItz56wst567D1vs7LnnKGWprhi3EG58aVOBwhN8HEbQxL4I9NDWkcXUutRw==}
 
   has-bigints@1.0.2:
     resolution: {integrity: sha512-tSvCKtBr9lkF0Ex0aQiP9N+OpV4zi2r/Nee5VkRDbaqv35RLYMzbwQfFSZZH0kR+Rd6302UJZ2p/bJCEoR3VoQ==}
@@ -8725,8 +8714,6 @@ snapshots:
   graceful-fs@4.2.11: {}
 
   grapheme-splitter@1.0.4: {}
-
-  harfbuzzjs@0.10.0(patch_hash=760b5ac12c5d269b507b4dd008b00a9e9957c29d9b08d00047b07cb9305cee97): {}
 
   has-bigints@1.0.2: {}
 
